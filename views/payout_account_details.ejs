@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+</head>
+
+<body>
+        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card mb-3">
+                            <div class="card-body pb-">
+
+                                <h3>
+                                    <%=storname%>
+                                </h3>
+
+                                <div class="nav">
+                                    <ul class="nav nav-tabs page-header-tabs shadow-sm">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" href="/account/payoutdetails/<%= storeid %>">
+                                                <%= language.Account_Detail %>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" href="/account/payoutransections/<%= storeid %>">
+                                                <%= language.Transection_List %>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <%= language.Account_List %>
+                                </h3>
+                            </div>
+
+                            <div class="d-none">
+                                <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
+                                <input type="hiden" name="pls" value="<%= accessdata.plac %>">
+                                <input type="hiden" name="thousands_separator"
+                                    value="<%= accessdata.thousands_separator %>">
+                            </div>
+
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table
+                                        class="table table-bordered table-striped verticle-middle table-responsive-sm">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">#</th>
+                                                <th scope="col">
+                                                    <%= language.Account_Info %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Balance_Info %>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% account_list.forEach(function(data, i){ %>
+                                                <tr>
+                                                    <td>
+                                                        <%= i + 1%>
+                                                    </td>
+                                                    <td>
+                                                        <div> <b>
+                                                                <%= data.ac_name %>
+                                                            </b> </div>
+                                                        <div> <b>
+                                                                <%= data.ac_number %>
+                                                            </b> </div>
+                                                        <div> <b>
+                                                                <%= data.store_name %>
+                                                            </b> </div>
+                                                        <div>
+                                                            <%= data.ac_decrip %>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div>
+                                                            <%= language.Balance %> : <b class="symbol">
+                                                                    <%= data.balance.toFixed(2) %>
+                                                                </b>
+                                                        </div>
+                                                        <div>
+                                                            <%= language.Total_in %> : <b class="symbol">
+                                                                    <%= data.credit.toFixed(2) %>
+                                                                </b>
+                                                        </div>
+                                                        <div>
+                                                            <%= language.Total_out %> : <b class="symbol">
+                                                                    <%= data.debit.toFixed(2) %>
+                                                                </b>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!--********** Content body end **********-->
+
+        </div>
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+
+</body>
+
+</html>

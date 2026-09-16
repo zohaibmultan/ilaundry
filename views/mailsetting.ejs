@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+
+</head>
+
+<body>
+        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card ">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <%= language.Email_Setting %>
+                                </h3>
+
+                            </div>
+                            <div class="card-body ">
+                                <div class="p-5">
+                                    <% if(data.length> 0){%>
+                                        <% data.forEach(function(data){ %>
+                                            <form action="/tool/mailsetting" method="post" class="need-validation">
+
+                                                <div class="row g-4 justify-content-center">
+
+
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">
+                                                            <%= language.Mail_Host %> <span class="text-danger">*</span>
+                                                        </label>
+                                                        <input type="text" placeholder="Enter Mail Host"
+                                                            class="form-control" name="host" value="<%= data.host %>"
+                                                            required>
+
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">
+                                                            <%= language.Mail_Port %> <span class="text-danger">*</span>
+                                                        </label>
+                                                        <input type="number" class="form-control"
+                                                            placeholder="Enter Mail Port" name="port"
+                                                            value="<%= data.port %>" required>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">
+                                                            <%= language.Mail_Username %> <span
+                                                                    class="text-danger">*</span>
+                                                        </label>
+                                                        <input type="email" placeholder="Enter Mail Username"
+                                                            class="form-control" name="username"
+                                                            value="<%= data.username %>" required>
+
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">
+                                                            <%= language.Mail_Password %> <span
+                                                                    class="text-danger">*</span>
+                                                        </label>
+                                                        <input type="text" class="form-control"
+                                                            placeholder="Enter Mail Password" name="password"
+                                                            value="<%= data.password %>" required>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">
+                                                            <%= language.From_Email_ID %> <span
+                                                                    class="text-danger">*</span>
+                                                        </label>
+                                                        <input type="email" placeholder="Enter From Email ID"
+                                                            class="form-control" name="frommail"
+                                                            value="<%= data.frommail %>" required>
+
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">
+                                                            <%= language.Status %>
+                                                        </label>
+                                                        <select class="default-select form-control wide mb-3"
+                                                            name="status">
+                                                            <option value="1" <%=data.status==1 ? 'selected' : '' %>
+                                                                >Active</option>
+                                                            <option value="0" <%=data.status==0 ? 'selected' : '' %>
+                                                                >Deatctive</option>
+                                                        </select>
+                                                    </div>
+
+
+
+                                                    <hr>
+                                                    <button type="submit" class="btn btn-primary mt-5 col-6 <%= accessdata.roll.mail.includes('edit') ?'':'d-none' %>">
+                                                        <%= language.Save_Data %>
+                                                    </button>
+                                                </div>
+                                            </form>
+                                            <%})%>
+                                                <%}else{%>
+                                                    <form action="/tool/mailsetting" method="post"
+                                                        class="need-validation">
+
+                                                        <div class="row g-4 justify-content-center">
+
+
+                                                            <div class="col-md-6">
+                                                                <label class="form-label">
+                                                                    <%= language.Mail_Host %> <span
+                                                                            class="text-danger">*</span>
+                                                                </label>
+                                                                <input type="text" placeholder="Enter Mail Host"
+                                                                    class="form-control" name="host" value="" required>
+
+                                                            </div>
+
+                                                            <div class="col-md-6">
+                                                                <label class="form-label">
+                                                                    <%= language.Mail_Port %> <span
+                                                                            class="text-danger">*</span>
+                                                                </label>
+                                                                <input type="number" class="form-control"
+                                                                    placeholder="Enter Mail Port" name="port" value=""
+                                                                    required>
+                                                            </div>
+
+                                                            <div class="col-md-6">
+                                                                <label class="form-label">
+                                                                    <%= language.Mail_Username %> <span
+                                                                            class="text-danger">*</span>
+                                                                </label>
+                                                                <input type="email" placeholder="Enter Mail Username"
+                                                                    class="form-control" name="username" value=""
+                                                                    required>
+
+                                                            </div>
+
+                                                            <div class="col-md-6">
+                                                                <label class="form-label">
+                                                                    <%= language.Mail_Password %> <span
+                                                                            class="text-danger">*</span>
+                                                                </label>
+                                                                <input type="text" class="form-control"
+                                                                    placeholder="Enter Mail Password" name="password"
+                                                                    value="" required>
+                                                            </div>
+
+                                                            <div class="col-md-6">
+                                                                <label class="form-label">
+                                                                    <%= language.From_Email_ID %> <span
+                                                                            class="text-danger">*</span>
+                                                                </label>
+                                                                <input type="email" placeholder="Enter From Email ID"
+                                                                    class="form-control" name="frommail" value=""
+                                                                    required>
+
+                                                            </div>
+
+                                                            <div class="col-md-6">
+                                                                <label class="form-label">
+                                                                    <%= language.Status %>
+                                                                </label>
+                                                                <select class="default-select form-control wide mb-3"
+                                                                    name="status">
+                                                                    <option value="1">Active</option>
+                                                                    <option value="0">Deatctive</option>
+                                                                </select>
+                                                            </div>
+
+
+
+                                                            <hr>
+
+                                                            <button type="submit" class="btn btn-primary mt-5 col-6 <%= accessdata.roll.mail.includes('edit') ?'':'d-none' %>">
+                                                                <%= language.Save_Data %>
+                                                            </button>   
+                                                        </div>
+                                                    </form>
+                                                    <%}%>   
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!--********** Content body end **********-->
+
+
+        </div>
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+
+</body>
+
+
+</html>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+
+
+</head>
+
+<body>
+
+    <!-- <style>
+  .select2-container .select2-selection--single {
+    border: 1px solid #7e7e7e;
+    padding: 0.3125rem 1.25rem;
+    color: #080808;
+    height: 3.5rem;
+    width: 100%;
+    border-radius: 0.5rem;
+    font-weight: 400;
+    background-color: transparent;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 46px;
+        padding-left: 0px;
+}
+</style> -->
+
+        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card ">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <%= language.Service_Type %>
+                                </h3>
+                                <button
+                                    class="btn btn-rounded btn-primary <%= accessdata.roll.service.includes('write') ? '' : 'd-none' %>"
+                                    data-bs-toggle="modal" data-bs-target="#service_types">
+                                    <span class="btn-icon-start text-primary">
+                                        <i class="fa fa-plus color-info"></i>
+                                    </span>
+                                    <%= language.Add_New_Service_Type %>
+                                </button>
+                            </div>
+                            <div class="card-body ">
+                                <div class="table-responsive">
+                                    <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>
+                                                    <%= language.Service_Type %>
+                                                </th>
+                                                <th>
+                                                    <%= language.Service_Type_ID %>
+                                                </th>
+                                                <th class="<%= ismulty ? '': 'd-none' %>">
+                                                    <%= language.Store_Name %>
+                                                </th>
+                                                <th>
+                                                    <%= language.Status %>
+                                                </th>
+                                                <th
+                                                    class="text-center <%= accessdata.roll.service.includes('edit') || accessdata.roll.service.includes('delete') ?'':'d-none' %>">
+                                                    <%= language.Action %>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% servicesTypeList.forEach(function(data, i){ %>
+                                                <tr>
+                                                    <td>
+                                                        <%= i+1 %>
+                                                    </td>
+                                                    <td>
+                                                        <%= data.services_type %>
+                                                    </td>
+                                                    <td>
+                                                        <%= data.id %>
+                                                    </td>
+                                                    <td class="<%= ismulty ? '': 'd-none' %>">
+                                                        <%=data.store %>
+                                                    </td>
+                                                    <td>
+                                                        <% if(data.status==0){ %>
+                                                            <span class="badge light badge-secondary">Active</span>
+                                                            <% }else{ %>
+                                                                <span class="badge light badge-danger">Deactive</span>
+                                                                <% } %>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="tbl-action-group">
+                                                            <a href="#"
+                                                                class="btn-tbl-action btn-tbl-edit <%= accessdata.roll.service.includes('edit') ?'':'d-none' %>"
+                                                                id="serviceType" data-bs-toggle="modal"
+                                                                data-bs-target="#service_type_update"
+                                                                data-id="<%= data.id %>"
+                                                                data-serviceType="<%= data.services_type %>"
+                                                                data-status="<%= data.status %>"
+                                                                title="<%= language.Edit || 'Edit' %>">
+                                                                <i class="fas fa-pencil-alt"></i></a>
+
+                                                            <a href="/services/deletservicestype/<%=data.id%>"
+                                                                class="btn-tbl-action btn-tbl-delete <%= accessdata.roll.service.includes('delete') ?'':'d-none' %>"
+                                                                id="delete"
+                                                                title="<%= language.Delete || 'Delete' %>">
+                                                                <i class="fa fa-trash"></i></a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+
+
+                                        </tbody>
+                                    </table>
+                                </div>
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!--********** Content body end **********-->
+
+        <!-- Modal update -->
+        <div class="modal fade" id="service_type_update">
+            <div class="modal-dialog  modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <%= language.Edit_Service_Type %>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/coustomer/update/" id="updateservicetype_form" method="post"
+                            class="need-validation">
+
+                            <div class="row g-1 align-items-center">
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Service_Type_Name %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control " name="service_name"
+                                        id="servicetype_name_update" placeholder="Enter Service Type Name" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="active_update" name="active"
+                                            value="0">
+                                        <label class="form-check-label" for="active_update">
+                                            <%= language.Is_Active %> ?
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                    </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                    <%= language.Cancel %>
+                                </button>
+                                <button type="submit" class="btn btn-sm  btn-primary">
+                                    <%= language.Save %>
+                                </button>
+                            </div>
+                        </form>
+
+
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal add -->
+        <div class="modal fade" id="service_types">
+            <div class="modal-dialog  modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <%= language.Add_Service_Type %>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <!-- Form -->
+                    <div class="modal-body">
+                    <form action="/services/addtype" method="post" class="need-validation">
+
+                            <div class="row g-1 align-items-center">
+
+                                <!-- Service Type Name -->
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Service_Type_Name %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="service_name" id="service_name"
+                                        placeholder="Enter Service Type Name" required>
+                                </div>
+
+                                <!-- Store List (only if ismulty is true) -->
+                                <div class="col-md-12 mb-1 <%= ismulty ? '' : 'd-none' %>">
+
+                                    <label class="form-label"><strong>
+                                            <%= language.Store_List %>
+                                        </strong><span class="text-danger">*</span></label>
+
+                                    <!-- class="default-select"   Add for Design -->
+                                    <select class="form-control mb-3 " name="storeid" id="coupon_storlist" <%=ismulty
+                                        ? 'required' : '' %>>
+                                        <option value="" selected disabled>Select Store</option>
+                                        <% storeList.forEach(function(x) { %>
+                                            <option value="<%= x.id %>">
+                                                <%= x.name %>
+                                            </option>
+                                            <% }); %>
+                                    </select>
+
+                                </div>
+
+                                <!-- Is Active Switch -->
+                                <div class="form-group">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="active" name="active"
+                                            value="0">
+                                        <label class="form-check-label" for="active">
+                                            <%= language.Is_Active %> ?
+                                        </label>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Modal Footer -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                <%= language.Cancel %>
+                            </button>
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <%= language.Save %>
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+        </div>
+
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+                <!-- jQuery (before Select2) -->
+
+
+                <script>
+                    $('#service_types').on('shown.bs.modal', function () {
+                        setTimeout(() => {
+                            $('#coupon_storlist').select2({
+                                dropdownParent: $('#service_types'),
+                                placeholder: 'Select Store',
+                                width: '100%'
+                            });
+                        }, 1);
+                    });
+                </script>
+</body>
+
+
+
+</html>

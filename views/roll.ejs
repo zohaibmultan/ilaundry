@@ -1,0 +1,2277 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+
+</head>
+
+<body>
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card ">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <%= language.Role_List %>
+                                </h3>
+                                <!-- <button
+                                    class="btn btn-rounded btn-primary <%= accessdata.logas == 'master' || accessdata.roll.rollaccess.includes('write') ?'':'d-none' %>"
+                                    data-bs-toggle="modal" data-bs-target="#roll_list"><span
+                                        class="btn-icon-start text-primary"><i class="fa fa-plus color-info"></i></span>
+                                    <%= language.Add_New_Role %>
+                                </button> -->
+                            </div>
+                            <div class="card-body ">
+                                <div class="table-responsive">
+                                    <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>
+                                                    <%= language.Role_Name %>
+                                                </th>
+                                                <!-- <th class="<%= ismulty ? '': 'd-none' %>">
+                                                    <%= language.Store_Name %>
+                                                </th> -->
+                                                <th>
+                                                    <%= language.Role_Status %>
+                                                </th>
+                                                <th
+                                                    class="text-center <%= accessdata.logas == 'master' || accessdata.roll.rollaccess.includes('edit') || accessdata.roll.rollaccess.includes('delete') ?'':'d-none' %>">
+                                                    <%= language.Action %>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% rollList.forEach(function(data, i){ %>
+                                                <tr>
+                                                    <td>
+                                                        <%= i + 1%>
+                                                    </td>
+                                                    <td>
+                                                        <%= data.roll%>
+                                                    </td>
+                                                    <!-- <td class="<%= ismulty ? '': 'd-none' %>">
+                                                        <%=data.store %>
+                                                    </td> -->
+                                                    <td>
+
+                                                        <div class="form-group">
+                                                            <div class="form-check form-switch">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    id="active<%= data.id %>" name="active"
+                                                                    onclick="changeStatus('<%= data.id %>')"
+                                                                    <%=data.roll_status==='active' ? 'checked' : '' %>>
+                                                            </div>
+                                                        </div>
+
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="tbl-action-group">
+                                                            <a href="#"
+                                                                class="btn-tbl-action btn-tbl-edit <%= accessdata.logas == 'master' || accessdata.roll.rollaccess.includes('edit') ?'' : 'd-none' %>"
+                                                                id="updateroll<%= data.rollType  %>" data-bs-toggle="modal"
+                                                                data-bs-target="#roll_list_update_<%= data.rollType  %>"
+                                                                data-id="<%= data.id%>"
+                                                                title="<%= language.Edit || 'Edit' %>">
+                                                                <i class="fas fa-pencil-alt"></i></a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!--********** Content body end **********-->
+
+        <!-- Modal update -->
+
+        <div class="modal fade" id="roll_list_update_master">
+            <div class="modal-dialog modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <%= language.Edit_Role_List %>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/coustomer/update/" id="updateroll_form" method="post" class="need-validation">
+
+                            <div class="row g-1 align-items-center">
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Name %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="name_update" name="name_update"
+                                        placeholder="Enter Name" required>
+                                </div>
+
+                                <div class="form-group d-none">
+                                    <label><strong>
+                                            <%= language.Role_Name %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <select name="rollType" id="roll_type" class="form-control">
+                                        <option value="">Select Roll Type</option>
+                                        <option value="master">master</option>
+                                        <option value="store">store</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.POS %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="update_pos_read"
+                                                name="pos" value="read">
+                                            <label class="form-check-label" for="update_pos_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_pos_write"
+                                                name="pos" value="write">
+                                            <label class="form-check-label" for="update_pos_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="update_pos_edit"
+                                                name="pos" value="edit">
+                                            <label class="form-check-label" for="update_pos_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="update_pos_delete"
+                                                name="pos" value="delete">
+                                            <label class="form-check-label" for="update_pos_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Orders %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="update_orders_read"
+                                                name="orders" value="read">
+                                            <label class="form-check-label" for="update_orders_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="update_orders_write"
+                                                name="orders" value="write">
+                                            <label class="form-check-label" for="update_orders_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_orders_edit"
+                                                name="orders" value="edit">
+                                            <label class="form-check-label" for="update_orders_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="update_orders_delete"
+                                                name="orders" value="delete">
+                                            <label class="form-check-label" for="update_orders_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Customers %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="update_customers_read"
+                                                name="customers" value="read">
+                                            <label class="form-check-label" for="update_customers_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_customers_write"
+                                                name="customers" value="write">
+                                            <label class="form-check-label" for="update_customers_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_customers_edit"
+                                                name="customers" value="edit">
+                                            <label class="form-check-label" for="update_customers_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_customers_delete"
+                                                name="customers" value="delete">
+                                            <label class="form-check-label" for="update_customers_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Coupon %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="update_coupon_read"
+                                                name="couponname" value="read">
+                                            <label class="form-check-label" for="update_coupon_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_coupon_write"
+                                                name="couponname" value="write">
+                                            <label class="form-check-label" for="update_coupon_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_coupon_edit"
+                                                name="couponname" value="edit">
+                                            <label class="form-check-label" for="update_coupon_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_coupon_delete"
+                                                name="couponname" value="delete">
+                                            <label class="form-check-label" for="update_coupon_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Expence %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="update_expense_read"
+                                                name="expense" value="read">
+                                            <label class="form-check-label" for="update_expense_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_expense_write"
+                                                name="expense" value="write">
+                                            <label class="form-check-label" for="update_expense_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_expense_edit"
+                                                name="expense" value="edit">
+                                            <label class="form-check-label" for="update_expense_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_expense_delete"
+                                                name="expense" value="delete">
+                                            <label class="form-check-label" for="update_expense_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Services %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="update_service_read"
+                                                name="service" value="read">
+                                            <label class="form-check-label" for="update_service_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_service_write"
+                                                name="service" value="write">
+                                            <label class="form-check-label" for="update_service_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_service_edit"
+                                                name="service" value="edit">
+                                            <label class="form-check-label" for="update_service_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_service_delete"
+                                                name="service" value="delete">
+                                            <label class="form-check-label" for="update_service_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Account %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="update_account_read" name="accountname" value="read">
+                                            <label class="form-check-label" for="update_account_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="update_account_write" name="accountname" value="write">
+                                            <label class="form-check-label" for="update_account_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="update_account_edit" name="accountname" value="edit">
+                                            <label class="form-check-label" for="update_account_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="update_account_delete" name="accountname" value="delete">
+                                            <label class="form-check-label" for="update_account_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div> -->
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Branch %> /<%= language.Store %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="update_branch_n_store_read" name="branch_n_store" value="read">
+                                            <label class="form-check-label"
+                                                for="update_branch_n_store_read">Read</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="update_branch_n_store_write" name="branch_n_store" value="write">
+                                            <label class="form-check-label"
+                                                for="update_branch_n_store_write">Write</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="update_branch_n_store_edit" name="branch_n_store" value="edit">
+                                            <label class="form-check-label"
+                                                for="update_branch_n_store_edit">Edit</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="update_branch_n_store_delete" name="branch_n_store" value="delete">
+                                            <label class="form-check-label"
+                                                for="update_branch_n_store_delete">Delete</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Staff %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="update_staff_read"
+                                                name="staff" value="read">
+                                            <label class="form-check-label" for="update_staff_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_staff_write"
+                                                name="staff" value="write">
+                                            <label class="form-check-label" for="update_staff_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_staff_edit"
+                                                name="staff" value="edit">
+                                            <label class="form-check-label" for="update_staff_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_staff_delete"
+                                                name="staff" value="delete">
+                                            <label class="form-check-label" for="update_staff_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.SMS %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="update_sms_read"
+                                                name="sms" value="read">
+                                            <label class="form-check-label" for="update_sms_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_sms_write"
+                                                name="sms" value="write">
+                                            <label class="form-check-label" for="update_sms_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_sms_edit"
+                                                name="sms" value="edit">
+                                            <label class="form-check-label" for="update_sms_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_sms_delete"
+                                                name="sms" value="delete">
+                                            <label class="form-check-label" for="update_sms_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Role %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="update_roll_read"
+                                                name="rollname" value="read">
+                                            <label class="form-check-label" for="update_roll_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="update_roll_write"
+                                                name="rollname" value="write">
+                                            <label class="form-check-label" for="update_roll_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_roll_edit"
+                                                name="rollname" value="edit">
+                                            <label class="form-check-label" for="update_roll_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="update_roll_delete"
+                                                name="rollname" value="delete">
+                                            <label class="form-check-label" for="update_roll_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Master_Settings %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="update_master_setting_read" name="master_setting" value="read">
+                                            <label class="form-check-label"
+                                                for="update_master_setting_read">Read</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="update_master_setting_write" name="master_setting" value="write">
+                                            <label class="form-check-label"
+                                                for="update_master_setting_write">Write</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="update_master_setting_edit" name="master_setting" value="edit">
+                                            <label class="form-check-label"
+                                                for="update_master_setting_edit">Edit</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="update_master_setting_delete" name="master_setting" value="delete">
+                                            <label class="form-check-label"
+                                                for="update_master_setting_delete">Delete</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Reports %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="update_reports_read"
+                                                name="reports" value="read">
+                                            <label class="form-check-label" for="update_reports_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="update_reports_write"
+                                                name="reports" value="write">
+                                            <label class="form-check-label" for="update_reports_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="update_reports_edit"
+                                                name="reports" value="edit">
+                                            <label class="form-check-label" for="update_reports_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="update_reports_delete"
+                                                name="reports" value="delete">
+                                            <label class="form-check-label" for="update_reports_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Tools %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="update_tools_read"
+                                                name="tools" value="read">
+                                            <label class="form-check-label" for="update_tools_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="update_tools_write"
+                                                name="tools" value="write">
+                                            <label class="form-check-label" for="update_tools_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="update_tools_edit"
+                                                name="tools" value="edit">
+                                            <label class="form-check-label" for="update_tools_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="update_tools_delete"
+                                                name="tools" value="delete">
+                                            <label class="form-check-label" for="update_tools_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+
+                                <!-- <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Email %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="update_mail_read"
+                                                name="mail" value="read">
+                                            <label class="form-check-label" for="update_mail_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_mail_write"
+                                                name="mail" value="write">
+                                            <label class="form-check-label" for="update_mail_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_mail_edit"
+                                                name="mail" value="edit">
+                                            <label class="form-check-label" for="update_mail_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_mail_delete"
+                                                name="mail" value="delete">
+                                            <label class="form-check-label" for="update_mail_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div> -->
+
+                                <!-- <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Store_Settings %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="update_master_read"
+                                                name="master" value="read">
+                                            <label class="form-check-label" for="update_master_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_master_write"
+                                                name="master" value="write">
+                                            <label class="form-check-label" for="update_master_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_master_edit"
+                                                name="master" value="edit">
+                                            <label class="form-check-label" for="update_master_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="update_master_delete"
+                                                name="master" value="delete">
+                                            <label class="form-check-label" for="update_master_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div> -->
+
+
+
+
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Pay_Out %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="update_Pay_Out_read"
+                                                name="Pay_Out" value="read">
+                                            <label class="form-check-label" for="update_Pay_Out_read">Read</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="update_Pay_Out_write"
+                                                name="Pay_Out" value="write">
+                                            <label class="form-check-label" for="update_Pay_Out_write">Write</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="update_Pay_Out_edit"
+                                                name="Pay_Out" value="edit">
+                                            <label class="form-check-label" for="update_Pay_Out_edit">Edit</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="update_Pay_Out_delete"
+                                                name="Pay_Out" value="delete">
+                                            <label class="form-check-label" for="update_Pay_Out_delete">Delete</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                            <%= language.Cancel %>
+                        </button>
+                        <button type="submit" class="btn btn-sm  btn-primary">
+                            <%= language.Save %>
+                        </button>
+                    </div>
+                    </form>
+
+
+
+                </div>
+            </div>
+        </div>
+
+
+
+
+        <div class="modal fade" id="roll_list_update_store">
+            <div class="modal-dialog modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <%= language.Edit_Role_List %>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/coustomer/update/" id="updateroll_store_form" method="post"
+                            class="need-validation">
+
+                            <div class="row g-1 align-items-center">
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Name %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="name_update_store" name="name_update"
+                                        placeholder="Enter Name" required>
+                                </div>
+
+                                <div class="form-group d-none">
+                                    <label><strong>
+                                            <%= language.Role_Name %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <select name="rollType" id="roll_type_store" class="form-control">
+                                        <option value="">Select Roll Type</option>
+                                        <option value="master">master</option>
+                                        <option value="store">store</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.POS %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_pos_read"
+                                                name="pos" value="read">
+                                            <label class="form-check-label" for="updatestore_pos_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 ">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_pos_write"
+                                                name="pos" value="write">
+                                            <label class="form-check-label" for="updatestore_pos_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_pos_edit"
+                                                name="pos" value="edit">
+                                            <label class="form-check-label" for="updatestore_pos_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_pos_delete"
+                                                name="pos" value="delete">
+                                            <label class="form-check-label" for="updatestore_pos_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Orders %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_orders_read"
+                                                name="orders" value="read">
+                                            <label class="form-check-label" for="updatestore_orders_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_orders_write" name="orders" value="write">
+                                            <label class="form-check-label" for="updatestore_orders_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_orders_edit"
+                                                name="orders" value="edit">
+                                            <label class="form-check-label" for="updatestore_orders_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_orders_delete" name="orders" value="delete">
+                                            <label class="form-check-label" for="updatestore_orders_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Customers %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_customers_read" name="customers" value="read">
+                                            <label class="form-check-label" for="updatestore_customers_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_customers_write" name="customers" value="write">
+                                            <label class="form-check-label" for="update_customers_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_customers_edit" name="customers" value="edit">
+                                            <label class="form-check-label" for="updatestore_customers_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_customers_delete" name="customers" value="delete">
+                                            <label class="form-check-label" for="updatestore_customers_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Coupon %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_coupon_read"
+                                                name="couponname" value="read">
+                                            <label class="form-check-label" for="updatestore_coupon_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_coupon_write"
+                                                name="couponname" value="write">
+                                            <label class="form-check-label" for="updatestore_coupon_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_coupon_edit"
+                                                name="couponname" value="edit">
+                                            <label class="form-check-label" for="updatestore_coupon_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_coupon_delete"
+                                                name="couponname" value="delete">
+                                            <label class="form-check-label" for="updatestore_coupon_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div> -->
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Expence %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_expense_read" name="expense" value="read">
+                                            <label class="form-check-label" for="updatestore_expense_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_expense_write" name="expense" value="write">
+                                            <label class="form-check-label" for="updatestore_expense_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_expense_edit" name="expense" value="edit">
+                                            <label class="form-check-label" for="updatestore_expense_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_expense_delete" name="expense" value="delete">
+                                            <label class="form-check-label" for="updatestore_expense_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Services %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_service_read" name="service" value="read">
+                                            <label class="form-check-label" for="updatestore_service_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_service_write" name="service" value="write">
+                                            <label class="form-check-label" for="updatestore_service_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_service_edit" name="service" value="edit">
+                                            <label class="form-check-label" for="updatestore_service_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_service_delete" name="service" value="delete">
+                                            <label class="form-check-label" for="updatestore_service_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Account %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_account_read" name="accountname" value="read">
+                                            <label class="form-check-label" for="updatestore_account_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_account_write" name="accountname" value="write">
+                                            <label class="form-check-label" for="updatestore_account_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_account_edit" name="accountname" value="edit">
+                                            <label class="form-check-label" for="updatestore_account_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_account_delete" name="accountname" value="delete">
+                                            <label class="form-check-label" for="updatestore_account_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Branch %> /<%= language.Store %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_branch_n_store_read" name="branch_n_store" value="read">
+                                            <label class="form-check-label"
+                                                for="updatestore_branch_n_store_read">Read</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_branch_n_store_write" name="branch_n_store" value="write">
+                                            <label class="form-check-label"
+                                                for="updatestore_branch_n_store_write">Write</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_branch_n_store_edit" name="branch_n_store" value="edit">
+                                            <label class="form-check-label"
+                                                for="updatestore_branch_n_store_edit">Edit</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_branch_n_store_delete" name="branch_n_store" value="delete">
+                                            <label class="form-check-label"
+                                                for="updatestore_branch_n_store_delete">Delete</label>
+                                        </div>
+                                    </div>
+                                </div> -->
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Reports %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_reports_read" name="reports" value="read">
+                                            <label class="form-check-label" for="updatestore_reports_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_reports_write" name="reports" value="write">
+                                            <label class="form-check-label" for="updatestore_reports_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_reports_edit" name="reports" value="edit">
+                                            <label class="form-check-label" for="updatestore_reports_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_reports_delete" name="reports" value="delete">
+                                            <label class="form-check-label" for="updatestore_reports_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Tools %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_tools_read"
+                                                name="tools" value="read">
+                                            <label class="form-check-label" for="updatestore_tools_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_tools_write"
+                                                name="tools" value="write">
+                                            <label class="form-check-label" for="updatestore_tools_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_tools_edit"
+                                                name="tools" value="edit">
+                                            <label class="form-check-label" for="updatestore_tools_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_tools_delete" name="tools" value="delete">
+                                            <label class="form-check-label" for="updatestore_tools_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Role %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_roll_read"
+                                                name="rollname" value="read">
+                                            <label class="form-check-label" for="updatestore_roll_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_roll_write"
+                                                name="rollname" value="write">
+                                            <label class="form-check-label" for="updatestore_roll_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_roll_edit"
+                                                name="rollname" value="edit">
+                                            <label class="form-check-label" for="updatestore_roll_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_roll_delete"
+                                                name="rollname" value="delete">
+                                            <label class="form-check-label" for="updatestore_roll_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Email %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_mail_read"
+                                                name="mail" value="read">
+                                            <label class="form-check-label" for="updatestore_mail_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_mail_write"
+                                                name="mail" value="write">
+                                            <label class="form-check-label" for="updatestore_mail_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_mail_edit"
+                                                name="mail" value="edit">
+                                            <label class="form-check-label" for="updatestore_mail_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_mail_delete"
+                                                name="mail" value="delete">
+                                            <label class="form-check-label" for="updatestore_mail_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Store_Settings %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_master_read"
+                                                name="master" value="read">
+                                            <label class="form-check-label" for="updatestore_master_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_master_write" name="master" value="write">
+                                            <label class="form-check-label" for="updatestore_master_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_master_edit"
+                                                name="master" value="edit">
+                                            <label class="form-check-label" for="updatestore_master_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_master_delete" name="master" value="delete">
+                                            <label class="form-check-label" for="updatestore_master_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Master_Settings %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_master_setting_read" name="master_setting" value="read">
+                                            <label class="form-check-label"
+                                                for="updatestore_master_setting_read">Read</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_master_setting_write" name="master_setting" value="write">
+                                            <label class="form-check-label"
+                                                for="updatestore_master_setting_write">Write</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_master_setting_edit" name="master_setting" value="edit">
+                                            <label class="form-check-label"
+                                                for="updatestore_master_setting_edit">Edit</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_master_setting_delete" name="master_setting" value="delete">
+                                            <label class="form-check-label"
+                                                for="updatestore_master_setting_delete">Delete</label>
+                                        </div>
+                                    </div>
+                                </div> -->
+
+
+
+
+                                <!-- <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Pay_Out %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_Pay_Out_read"
+                                                name="Pay_Out" value="read">
+                                            <label class="form-check-label" for="updatestore_Pay_Out_read">Read</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_Pay_Out_write"
+                                                name="Pay_Out" value="write">
+                                            <label class="form-check-label" for="updatestore_Pay_Out_write">Write</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_Pay_Out_edit"
+                                                name="Pay_Out" value="edit">
+                                            <label class="form-check-label" for="updatestore_Pay_Out_edit">Edit</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_Pay_Out_delete"
+                                                name="Pay_Out" value="delete">
+                                            <label class="form-check-label" for="updatestore_Pay_Out_delete">Delete</label>
+                                        </div>
+                                    </div>
+                                </div> -->
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Staff %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_staff_read"
+                                                name="staff" value="read">
+                                            <label class="form-check-label" for="updatestore_staff_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_staff_write"
+                                                name="staff" value="write">
+                                            <label class="form-check-label" for="updatestore_staff_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_staff_edit"
+                                                name="staff" value="edit">
+                                            <label class="form-check-label" for="updatestore_staff_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatestore_staff_delete" name="staff" value="delete">
+                                            <label class="form-check-label" for="updatestore_staff_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.SMS %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_sms_read"
+                                                name="sms" value="read">
+                                            <label class="form-check-label" for="updatestore_sms_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_sms_write"
+                                                name="sms" value="write">
+                                            <label class="form-check-label" for="updatestore_sms_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_sms_edit"
+                                                name="sms" value="edit">
+                                            <label class="form-check-label" for="updatestore_sms_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="updatestore_sms_delete"
+                                                name="sms" value="delete">
+                                            <label class="form-check-label" for="updatestore_sms_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                            <%= language.Cancel %>
+                        </button>
+                        <button type="submit" class="btn btn-sm  btn-primary">
+                            <%= language.Save %>
+                        </button>
+                    </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="modal fade" id="roll_list_update_customer">
+            <div class="modal-dialog modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <%= language.Edit_Role_List %>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/coustomer/update/" id="updateroll_customer_form" method="post"
+                            class="need-validation">
+
+                            <div class="row g-1 align-items-center">
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Name %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="name_update_customer" name="name_update"
+                                        placeholder="Enter Name" required>
+                                </div>
+
+                                <div class="form-group d-none">
+                                    <label><strong>
+                                            <%= language.Role_Name %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <select name="rollType" id="roll_type_customer" class="form-control">
+                                        <option value="">Select Roll Type</option>
+                                        <option value="master">master</option>
+                                        <option value="store">store</option>
+                                        <option value="customer">customer</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.POS %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="updatecustomer_pos_read"
+                                                name="pos" value="read">
+                                            <label class="form-check-label" for="updatestore_pos_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 ">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatecustomer_pos_write" name="pos" value="write">
+                                            <label class="form-check-label" for="updatestore_pos_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox" id="updatecustomer_pos_edit"
+                                                name="pos" value="edit">
+                                            <label class="form-check-label" for="updatestore_pos_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatecustomer_pos_delete" name="pos" value="delete">
+                                            <label class="form-check-label" for="updatestore_pos_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Orders %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatecustomer_orders_read" name="orders" value="read">
+                                            <label class="form-check-label" for="updatestore_orders_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatecustomer_orders_write" name="orders" value="write">
+                                            <label class="form-check-label" for="updatestore_orders_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatecustomer_orders_edit" name="orders" value="edit">
+                                            <label class="form-check-label" for="updatestore_orders_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatecustomer_orders_delete" name="orders" value="delete">
+                                            <label class="form-check-label" for="updatestore_orders_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Customers %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatecustomer_customers_read" name="customers" value="read">
+                                            <label class="form-check-label" for="updatestore_customers_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatecustomer_customers_write" name="customers" value="write">
+                                            <label class="form-check-label" for="update_customers_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatecustomer_customers_edit" name="customers" value="edit">
+                                            <label class="form-check-label" for="updatestore_customers_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2 invisible">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="updatecustomer_customers_delete" name="customers" value="delete">
+                                            <label class="form-check-label" for="updatestore_customers_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                            </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                            <%= language.Cancel %>
+                        </button>
+                        <button type="submit" class="btn btn-sm  btn-primary">
+                            <%= language.Save %>
+                        </button>
+                    </div>
+                    </form>
+
+
+
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Modal add -->
+        <div class="modal fade" id="roll_list">
+            <div class="modal-dialog modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <%= language.Add_Roll_List %>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="/tool/addroll" method="post" class="need-validation">
+                        <div class="modal-body">
+
+                            <div class="row g-1 align-items-center">
+                                <div class="col-md-12 mb-1 <%= ismulty ? '': 'd-none' %>">
+                                    <!-- <div class="form-group">
+                                        <label class="form-label"><strong>
+                                                <%= language.Store_List %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <select class=" form-control wide mb-3" name="storeid" id="Roll_sorte_list">
+                                            <option value="" selected disabled> Select Store </option>
+                                            <% storeList.forEach(function(x){ %>
+                                                <option value="<%= x.id %>">
+                                                    <%= x.name %>
+                                                </option>
+                                                <% }) %>
+                                        </select>
+                                    </div> -->
+                                </div>
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Name %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control " id="name" name="name"
+                                        placeholder="Enter Name" required>
+                                </div>
+
+                                <!-- <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Role_Name %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <select name="rollType" id="">
+                                        <option value="master">master</option>
+                                        <option value="store">store</option>
+                                    </select>
+                                </div> -->
+
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Orders %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="orders_read"
+                                                name="orders" value="read">
+                                            <label class="form-check-label" for="orders_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="orders_write"
+                                                name="orders" value="write">
+                                            <label class="form-check-label" for="orders_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="orders_edit"
+                                                name="orders" value="edit">
+                                            <label class="form-check-label" for="orders_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="orders_delete"
+                                                name="orders" value="delete">
+                                            <label class="form-check-label" for="orders_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Expence %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="expense_read"
+                                                name="expense" value="read">
+                                            <label class="form-check-label" for="expense_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="expense_write"
+                                                name="expense" value="write">
+                                            <label class="form-check-label" for="expense_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="expense_edit"
+                                                name="expense" value="edit">
+                                            <label class="form-check-label" for="expense_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="expense_delete"
+                                                name="expense" value="delete">
+                                            <label class="form-check-label" for="expense_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Services %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="service_read"
+                                                name="service" value="read">
+                                            <label class="form-check-label" for="service_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="service_write"
+                                                name="service" value="write">
+                                            <label class="form-check-label" for="service_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="service_edit"
+                                                name="service" value="edit">
+                                            <label class="form-check-label" for="service_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="service_delete"
+                                                name="service" value="delete">
+                                            <label class="form-check-label" for="service_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Customers %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="customers_read"
+                                                name="customers" value="read">
+                                            <label class="form-check-label" for="customers_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="customers_write"
+                                                name="customers" value="write">
+                                            <label class="form-check-label" for="customers_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="customers_edit"
+                                                name="customers" value="edit">
+                                            <label class="form-check-label" for="customers_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="customers_delete"
+                                                name="customers" value="delete">
+                                            <label class="form-check-label" for="customers_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Reports %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="reports_read"
+                                                name="reports" value="read">
+                                            <label class="form-check-label" for="reports_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="reports_write"
+                                                name="reports" value="write">
+                                            <label class="form-check-label" for="reports_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="reports_edit"
+                                                name="reports" value="edit">
+                                            <label class="form-check-label" for="reports_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="reports_delete"
+                                                name="reports" value="delete">
+                                            <label class="form-check-label" for="reports_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Pay_Out %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="Pay_Out_read"
+                                                name="Pay_Out" value="read">
+                                            <label class="form-check-label" for="Pay_Out_read">Read</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="Pay_Out_write"
+                                                name="Pay_Out" value="write">
+                                            <label class="form-check-label" for="Pay_Out_write">Write</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="Pay_Out_edit"
+                                                name="Pay_Out" value="edit">
+                                            <label class="form-check-label" for="Pay_Out_edit">Edit</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="Pay_Out_delete"
+                                                name="Pay_Out" value="delete">
+                                            <label class="form-check-label" for="Pay_Out_delete">Delete</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Tools %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="tools_read" name="tools"
+                                                value="read">
+                                            <label class="form-check-label" for="tools_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="tools_write"
+                                                name="tools" value="write">
+                                            <label class="form-check-label" for="tools_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="tools_edit" name="tools"
+                                                value="edit">
+                                            <label class="form-check-label" for="tools_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="tools_delete"
+                                                name="tools" value="delete">
+                                            <label class="form-check-label" for="tools_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Email %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="mail_read" name="mail"
+                                                value="read">
+                                            <label class="form-check-label" for="mail_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="mail_write" name="mail"
+                                                value="write">
+                                            <label class="form-check-label" for="mail_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="mail_edit" name="mail"
+                                                value="edit">
+                                            <label class="form-check-label" for="mail_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="mail_delete" name="mail"
+                                                value="delete">
+                                            <label class="form-check-label" for="mail_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Store_Settings %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="master_read"
+                                                name="master" value="read">
+                                            <label class="form-check-label" for="master_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="master_write"
+                                                name="master" value="write">
+                                            <label class="form-check-label" for="master_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="master_edit"
+                                                name="master" value="edit">
+                                            <label class="form-check-label" for="master_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="master_delete"
+                                                name="master" value="delete">
+                                            <label class="form-check-label" for="master_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Master_Settings %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="master_setting_read"
+                                                name="master_setting" value="read">
+                                            <label class="form-check-label" for="master_setting_read">Read</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="master_setting_write"
+                                                name="master_setting" value="write">
+                                            <label class="form-check-label" for="master_setting_write">Write</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="master_setting_edit"
+                                                name="master_setting" value="edit">
+                                            <label class="form-check-label" for="master_setting_edit">Edit</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="master_setting_delete"
+                                                name="master_setting" value="delete">
+                                            <label class="form-check-label" for="master_setting_delete">Delete</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Branch %> /<%= language.Store %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="branch_n_store_read"
+                                                name="branch_n_store" value="read">
+                                            <label class="form-check-label" for="branch_n_store_read">Read</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="branch_n_store_write"
+                                                name="branch_n_store" value="write">
+                                            <label class="form-check-label" for="branch_n_store_write">Write</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="branch_n_store_edit"
+                                                name="branch_n_store" value="edit">
+                                            <label class="form-check-label" for="branch_n_store_edit">Edit</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="branch_n_store_delete"
+                                                name="branch_n_store" value="delete">
+                                            <label class="form-check-label" for="branch_n_store_delete">Delete</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.SMS %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="sms_read" name="sms"
+                                                value="read">
+                                            <label class="form-check-label" for="sms_read">Read</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="sms_write" name="sms"
+                                                value="write">
+                                            <label class="form-check-label" for="sms_write">Write</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="sms_edit" name="sms"
+                                                value="edit">
+                                            <label class="form-check-label" for="sms_edit">Edit</label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="sms_delete" name="sms"
+                                                value="delete">
+                                            <label class="form-check-label" for="sms_delete">Delete</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Coupon %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="coupon_read"
+                                                name="couponname" value="read">
+                                            <label class="form-check-label" for="coupon_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="coupon_write"
+                                                name="couponname" value="write">
+                                            <label class="form-check-label" for="coupon_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="coupon_edit"
+                                                name="couponname" value="edit">
+                                            <label class="form-check-label" for="coupon_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="coupon_delete"
+                                                name="couponname" value="delete">
+                                            <label class="form-check-label" for="coupon_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Account %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="account_read"
+                                                name="accountname" value="read">
+                                            <label class="form-check-label" for="account_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="account_write"
+                                                name="accountname" value="write">
+                                            <label class="form-check-label" for="account_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="account_edit"
+                                                name="accountname" value="edit">
+                                            <label class="form-check-label" for="account_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="account_delete"
+                                                name="accountname" value="delete">
+                                            <label class="form-check-label" for="account_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Staff %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="staff_read" name="staff"
+                                                value="read">
+                                            <label class="form-check-label" for="staff_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="staff_write"
+                                                name="staff" value="write">
+                                            <label class="form-check-label" for="staff_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="staff_edit" name="staff"
+                                                value="edit">
+                                            <label class="form-check-label" for="staff_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="staff_delete"
+                                                name="staff" value="delete">
+                                            <label class="form-check-label" for="staff_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.POS %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="pos_read" name="pos"
+                                                value="read">
+                                            <label class="form-check-label" for="pos_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="pos_write" name="pos"
+                                                value="write">
+                                            <label class="form-check-label" for="pos_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="pos_edit" name="pos"
+                                                value="edit">
+                                            <label class="form-check-label" for="pos_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="pos_delete" name="pos"
+                                                value="delete">
+                                            <label class="form-check-label" for="pos_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <label class="form-label col-2"><strong>
+                                                <%= language.Role %>
+                                            </strong></label>
+                                        <div class="form-check col-2 ms-4">
+                                            <input class="form-check-input" type="checkbox" id="roll_read"
+                                                name="rollname" value="read">
+                                            <label class="form-check-label" for="roll_read">
+                                                <%= language.Read %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="roll_write"
+                                                name="rollname" value="write">
+                                            <label class="form-check-label" for="roll_write">
+                                                <%= language.Write %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="roll_edit"
+                                                name="rollname" value="edit">
+                                            <label class="form-check-label" for="roll_edit">
+                                                <%= language.Edit %>
+                                            </label>
+                                        </div>
+                                        <div class="form-check col-2 ms-2">
+                                            <input class="form-check-input" type="checkbox" id="roll_delete"
+                                                name="rollname" value="delete">
+                                            <label class="form-check-label" for="roll_delete">
+                                                <%= language.Delete %>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                <%= language.Cancel %>
+                            </button>
+                            <button type="submit" class="btn btn-sm  btn-primary">
+                                <%= language.Save %>
+                            </button>
+                        </div>
+                    </form>
+
+
+                </div>
+            </div>
+        </div>
+
+        </div>
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+                <script>
+                    $('#roll_list').on('shown.bs.modal', function () {
+                        $('#Roll_sorte_list').select2({
+                            dropdownParent: $('#roll_list'),
+                            placeholder: 'Select Store(s)',
+                            width: '100%',
+                            allowClear: true
+                        });
+                    });
+                </script>
+
+                <script>
+                    function changeStatus(id) {
+                        const checkbox = document.getElementById(`active${id}`);
+
+                        const isChecked = checkbox.checked;
+
+                        const status = isChecked ? 'active' : 'deactive';
+
+                        console.log(`ID: ${id}, Checked: ${isChecked}, Status to send: ${status}`);
+                        $.ajax({
+                            type: 'POST',
+                            url: `/tool/rollstatus/${id}`,
+                            data: { status: status },
+                            success: function (res) {
+                                console.log('Server response:', res);
+                            },
+                            error: function (err) {
+                                console.error('Error:', err);
+
+                                checkbox.checked = !checkbox.checked;
+                            }
+                        });
+                    }
+                </script>
+
+
+
+</body>
+
+
+</html>

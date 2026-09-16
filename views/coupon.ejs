@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+
+</head>
+
+<body>
+    <style>
+        .select2-container .select2-search--inline .select2-search__field {
+            padding: 4px !important;
+        }
+        /* Fix dropdown appearing behind date box */
+        .coupon-type-row {
+            position: relative !important;
+            z-index: 30 !important;
+        }
+        .coupon-date-row {
+            position: relative !important;
+            z-index: 10 !important;
+        }
+        .bootstrap-select {
+            position: relative;
+        }
+        .bootstrap-select.show {
+            z-index: 1060 !important;
+        }
+        .bootstrap-select.show .dropdown-menu,
+        .bootstrap-select .dropdown-menu.show {
+            z-index: 1070 !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+        }
+    </style>
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card ">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <%= language.Coupon_List %>
+                                </h3>
+                                <button class="btn btn-rounded btn-sm btn-primary <%= isadmin ? '': 'd-none' %>"
+                                    data-bs-toggle="modal" data-bs-target="#coupon_add"><i
+                                        class="fa fa-plus color-info me-2 text-white"></i></span>
+                                    <%= language.Add_New_Coupon %>
+                                </button>
+                            </div>
+                            <div class="d-none">
+                                <input type="hiden" name="sym" value="<%= accessdata?.symbol %>">
+                                <input type="hiden" name="pls" value="<%= accessdata?.plac %>">
+                                <input type="hiden" name="thousands_separator"
+                                    value="<%= accessdata?.thousands_separator %>">
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table id="example3"
+                                        class="display table table-bordered table-striped verticle-middle table-responsive-sm" style="width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-nowrap">#</th>
+                                                <th class="text-nowrap">
+                                                    <%= language.Title %>
+                                                </th>
+                                                <th class="text-nowrap">
+                                                    <%= language.Code %>
+                                                </th>
+                                                <th class="text-nowrap">
+                                                    <%= language.Minmum_Purchase %>
+                                                </th>
+                                                <th class="text-nowrap">
+                                                    <%= language.Discount %>
+                                                </th>
+                                                <th class="text-nowrap">
+                                                    <%= language.Start_Date %>
+                                                </th>
+                                                <th class="text-nowrap">
+                                                    <%= language.End_Date %>
+                                                </th>
+                                                <th class="text-nowrap">
+                                                    <%= language.Status %>
+                                                </th>
+                                                <th class="<%= isadmin ? '': 'd-none' %> text-nowrap text-center">
+                                                    <%= language.Action %>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% couponList.forEach(function(data, i){ %>
+                                                <tr>
+                                                    <td class="text-nowrap">
+                                                        <%= i + 1 %>
+                                                    </td>
+                                                    <td class="text-nowrap">
+                                                        <%= data.titel %>
+                                                    </td>
+                                                    <td class="text-nowrap">
+                                                        <%= data.code %>
+                                                    </td>
+                                                    <td class="symbol text-nowrap">
+                                                        <%= data.min_purchase %>
+                                                    </td>
+                                                    <td class="symbol text-nowrap">
+                                                        <%= data.discount %>
+                                                    </td>
+                                                    <td class="text-nowrap">
+                                                        <% let start_date=new Date(data.start_date) %>
+                                                            <% let start_date_day=(start_date.getDate() < 10 ? '0' : ''
+                                                                ) + start_date.getDate() %>
+                                                                <% let start_date_month=((start_date.getMonth()+1) < 10
+                                                                    ? '0' : '' ) + (start_date.getMonth()+1) %>
+                                                                    <% let start_date_year=start_date.getFullYear() %>
+                                                                        <% let
+                                                                            start_date_fullDate=`${start_date_year}-${start_date_month}-${start_date_day}`
+                                                                            %>
+
+                                                                            <%= start_date_fullDate %>
+                                                    </td>
+                                                    <td class="text-nowrap">
+                                                        <% let end_date=new Date(data.end_date) %>
+                                                            <% let end_date_day=(end_date.getDate() < 10 ? '0' : '' ) +
+                                                                end_date.getDate() %>
+                                                                <% let end_date_month=((end_date.getMonth()+1) < 10
+                                                                    ? '0' : '' ) + (end_date.getMonth()+1) %>
+                                                                    <% let end_date_year=end_date.getFullYear() %>
+                                                                        <% let
+                                                                            end_date_fullDate=`${end_date_year}-${end_date_month}-${end_date_day}`
+                                                                            %>
+
+                                                                            <%= end_date_fullDate %>
+                                                    </td>
+
+                                                    <td class="text-nowrap">
+                                                        <%if( data.status==0){ %>
+                                                            <span class="badge light badge-success ">Active</span>
+                                                            <% }else{ %>
+                                                                <span class="badge light badge-warning">Deactive</span>
+                                                                <% } %>
+                                                    </td>
+                                                    <td class="<%= isadmin ? '': 'd-none' %> text-nowrap text-center">
+                                                        <div class="tbl-action-group">
+                                                            <a href="#" class="btn-tbl-action btn-tbl-edit"
+                                                                id="coupons_update" data-bs-toggle="modal"
+                                                                data-bs-target="#coupon_update" data-id="<%= data.id %>"
+                                                                data-titel="<%= data.titel %>"
+                                                                data-type="<%= data.coupon_type %>"
+                                                                data-limit="<%= data.limit_forsame_user %>"
+                                                                data-start="<%= data.start_date %>"
+                                                                data-end="<%= data.end_date %>"
+                                                                data-minorder="<%= data.min_purchase %>"
+                                                                data-discount="<%= data.discount %>"
+                                                                data-status="<%= data.status %>"
+                                                                data-storelist="<%= data.store_list_id %>"
+                                                                title="<%= language.Edit || 'Edit' %>">
+                                                                <i class="fas fa-pencil-alt"></i></a>
+
+                                                            <button type="button"
+                                                                class="btn-tbl-action btn-tbl-delete"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#deleteCouponModal"
+                                                                data-id="<%= data.id %>"
+                                                                data-title="<%= data.coupon_titel %>"
+                                                                title="<%= language.Delete || 'Delete' %>">
+                                                                <i class="fa fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!--********** Content body end **********-->
+
+        <!-- Modal update -->
+        <div class="modal fade" id="coupon_update">
+            <div class="modal-dialog  modal-dialog-scrollable modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <%= language.Edit_Coupon_Details %>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="" id="coupon_update_form" method="post" class="need-validation">
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Coupon_Title %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="coupon_titel_update"
+                                            id="coupon_titel_update" placeholder="Enter Coupon Titel" required>
+                                    </div>
+                                </div>
+                                <div class="col-6 <%= mlty ? '': 'd-none' %>">
+                                    <div class="form-group">
+                                        <label class="form-label"><strong>
+                                                <%= language.Store_List %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <select multiple class="form-control wide mb-3" name="storelist"
+                                            id="cupon_update">
+
+                                            <% storeList.forEach(function(x){ %>
+                                                <option value="<%= x.id %>">
+                                                    <%= x.name %>
+                                                </option>
+                                                <% }) %>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row coupon-type-row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label class="form-label"><strong>
+                                                <%= language.Coupon_type %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <select class="default-select form-control wide mb-3" name="coupon_type_update"
+                                            id="coupon_type_update" required>
+                                            <option value="1">Default</option>
+                                            <option value="2">First Order</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Limit_for_same_user %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control " name="coupon_limit_update"
+                                            id="coupon_limit_update" placeholder="Enter Limit" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row coupon-date-row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Start_Date %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control " name="coupon_start_date_update"
+                                            id="coupon_start_date_update" required>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Expire_date %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control " name="coupon_end_date_update"
+                                            id="coupon_end_date_update" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Minmum_Purchase_Order %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control " name="coupon_purchase_update"
+                                            id="coupon_purchase_update" placeholder="Enter Purchase Order" required>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Discount_Amount %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control " name="coupon_discount_amount_update"
+                                            id="coupon_discount_amount_update" placeholder="Enter Discount Amount"
+                                            required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="coupon_status_update"
+                                                name="status" value="0">
+                                            <label class="form-check-label" for="coupon_status_update">
+                                                <%= language.Is_Active %> ?
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                            <%= language.Cancel %>
+                        </button>
+                        <button type="submit" class="btn btn-sm  btn-primary">
+                            <%= language.Save %>
+                        </button>
+                    </div>
+                </div>
+                </form>
+
+            </div>
+        </div>
+
+        <!-- Modal add -->
+        <div class="modal fade" id="coupon_add">
+            <div class="modal-dialog  modal-dialog-scrollable modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <%= language.Add_New_Coupon %>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/coupon/add" method="post" class="need-validation">
+
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Coupon_Title %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control " name="coupon_titel" id="coupon_titel"
+                                            placeholder="Enter Coupon Titel" required>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Coupon_code %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control text-uppercase" name="coupon_code"
+                                            id="coupon_code" maxlength="6" minlength="6" placeholder="Enter Coupon code"
+                                            required>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label> </label><br>
+                                        <button type="button" class="btn btn-primary btn-sm mt-2" id="gen_code"><i
+                                                class="fa fa-refresh"></i>
+                                            <%= language.Generate_code %>
+                                        </button>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row coupon-type-row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label class="form-label"><strong>
+                                                <%= language.Coupon_type %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <select class="default-select form-control wide mb-3" name="coupon_type"
+                                            id="coupon_type" required>
+                                            <option value selected disabled><%= language.Select_Coupon_Type || 'Select Coupon Type' %></option>
+                                            <option value="1">Default</option>
+                                            <option value="2">First Order</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Limit_for_same_user %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control " name="coupon_limit" id="coupon_limit"
+                                            placeholder="Enter Limit" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row coupon-date-row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Start_Date %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control " name="coupon_start_date"
+                                            id="coupon_start_date" required>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Expire_date %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control " name="coupon_end_date"
+                                            id="coupon_end_date" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Minmum_Purchase_Order %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control " name="coupon_purchase"
+                                            id="coupon_purchase" placeholder="Enter Purchase Order" required>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Discount_Amount %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control " name="coupon_discount_amount"
+                                            id="coupon_discount_amount" placeholder="Enter Discount Amount" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row <%= mlty ? '': 'd-none' %>">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label class="form-label"><strong>
+                                                <%= language.Store_List %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <select multiple class="form-control mb-3" name="storelist" id="storelist"
+                                            required>
+                                            <% storeList.forEach(function(x){ %>
+                                                <option value="<%= x.id %>" <%=storeList.length===1 ?'selected' : '' %>>
+                                                    <%= x.name %>
+                                                </option>
+                                                <% }) %>
+                                        </select>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                            <%= language.Cancel %>
+                        </button>
+                        <button type="submit" class="btn btn-sm  btn-primary">
+                            <%= language.Save %>
+                        </button>
+                    </div>
+                </div>
+
+                </form>
+
+
+
+            </div>
+        </div>
+
+
+        </div>
+
+        <!-- Delete Coupon Confirmation Modal -->
+        <div class="modal fade" id="deleteCouponModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+                <div class="modal-content text-center p-3" style="border-radius: 16px;">
+                    <div class="modal-body pt-4">
+                        <div class="mb-3">
+                            <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; justify-content: center; color: #ef4444; font-size: 28px;">
+                                <i class="fa fa-tag"></i>
+                            </div>
+                        </div>
+                        <h4 class="mb-2 fw-bold text-dark"><%= language.Delete_Coupon || 'Delete Coupon' %></h4>
+                        <p class="text-muted mb-1"><%= language.Are_you_sure_delete || 'Are you sure you want to delete this coupon?' %></p>
+                        <p class="fw-bold text-danger fs-5 mb-3" id="deleteCouponModalTitle"></p>
+                        <p class="text-xs text-muted mb-4"><%= language.Action_cannot_be_undone || 'This action cannot be undone.' %></p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal"><%= language.Cancel || 'Cancel' %></button>
+                            <a href="#" id="deleteCouponConfirmBtn" class="btn btn-danger px-4 py-2">
+                                <i class="fa fa-trash me-1"></i> <%= language.Delete || 'Yes, Delete' %>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+                <script>
+                    $('#coupon_add').on('shown.bs.modal', function () {
+                        setTimeout(() => {
+                            $('#storelist').select2({
+                                dropdownParent: $('#coupon_add'),
+                                placeholder: 'Select Store(s)',
+                                width: '100%',
+                                allowClear: true
+                            });
+                        }, 100);
+                    });
+                </script>
+
+                <script>
+                    $('#coupon_update').on('shown.bs.modal', function () {
+
+                        if ($.fn.select2 && $('#cupon_update').hasClass('select2-hidden-accessible')) {
+                            $('#cupon_update').select2('destroy');
+                        }
+
+                        $('#cupon_update').select2({
+                            dropdownParent: $('#coupon_update'),
+                            placeholder: 'Select Store(s)',
+                            width: '100%',
+                            allowClear: true
+                        });
+                    });
+
+                    $(document).on('click', '.btn-tbl-delete[data-bs-target="#deleteCouponModal"]', function() {
+                        const couponId = $(this).attr('data-id');
+                        const couponTitle = $(this).attr('data-title');
+                        $('#deleteCouponModalTitle').text(couponTitle || ('#' + couponId));
+                        $('#deleteCouponConfirmBtn').attr('href', '/coupon/delete/' + couponId);
+                    });
+                </script>
+
+
+</body>
+
+
+</html>

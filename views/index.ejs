@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+        <link rel="stylesheet" href="/css/command-center.css">
+</head>
+
+<body>
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+        <div class="content-body">
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="d-none">
+                        <input type="hidden" name="sym" value="<%= accessdata?.symbol %>">
+                        <input type="hidden" name="pls" value="<%= accessdata?.plac %>">
+                        <input type="hidden" name="thousands_separator" value="<%= accessdata?.thousands_separator %>">
+
+                        <input type="hidden" id="indextosales" value="<%= countsales %>">
+                        <input type="hidden" id="currencySymbol"
+                            value="<%= accessdata?.masterstore?.currency_symbol %>">
+
+                    </div>
+
+                    <div class="col-12">
+                        <div class="command-center-widget">
+                            <div class="cc-container">
+                                <!-- Left Column: Info, Heading, Shortcuts, Feature Tags -->
+                                <div class="cc-left">
+                                    <div class="cc-pill-badge">
+                                        <span class="cc-dot"></span>
+                                        <span>COMMAND CENTER</span>
+                                        <span class="cc-sep">&bull;</span>
+                                        <span>RECENT ORDER</span>
+                                    </div>
+
+                                    <h1 class="cc-title">
+                                        <%= (roll && roll.rollType==='master' ) ? 'Manager' : ((roll && roll.name) ?
+                                            roll.name : 'Manager' ) %>
+                                    </h1>
+
+                                    <p class="cc-subtitle">
+                                        Track sales, orders, customer activity, and operational status from one clean
+                                        view. Use the shortcuts below to jump into the parts of the app you use most
+                                        often.
+                                    </p>
+
+                                    <div class="cc-shortcuts">
+                                        <a href="/order/list" class="btn cc-btn-primary">View Orders</a>
+                                        <a href="/coustomer/list" class="btn cc-btn-outline">Customers</a>
+                                        <a href="/report/daily" class="btn cc-btn-outline">Reports</a>
+                                        <a href="/services/list" class="btn cc-btn-outline">Services</a>
+                                    </div>
+
+                                    <div class="cc-tags">
+                                        <span class="cc-tag-pill">Live Overview</span>
+                                        <span class="cc-tag-pill">Multi-branch ready</span>
+                                        <span class="cc-tag-pill">Auto-updated</span>
+                                    </div>
+                                </div>
+
+                                <!-- Right Column: Live Snapshot Card -->
+                                <div class="cc-right">
+                                    <div class="cc-snapshot-card">
+                                        <div class="cc-snapshot-header">
+                                            <span class="cc-snapshot-title">LIVE SNAPSHOT</span>
+                                            <span class="cc-updating-badge">
+                                                <span class="cc-pulse-dot"></span>
+                                                <span>updating</span>
+                                            </span>
+                                        </div>
+
+                                        <div class="cc-metrics-grid">
+                                            <!-- SALES -->
+                                            <div class="cc-metric-tile">
+                                                <span class="cc-metric-label">SALES</span>
+                                                <div class="cc-metric-value-wrap">
+                                                    <span class="cc-metric-value" id="stat-sales">
+                                                        <%= accessdata?.masterstore?.currency_symbol || '$' %>
+                                                            <%= Number(data?.tottalsales || 0).toLocaleString('en-US', {
+                                                                minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <!-- ORDERS -->
+                                            <div class="cc-metric-tile">
+                                                <span class="cc-metric-label">ORDERS</span>
+                                                <div class="cc-metric-value-wrap">
+                                                    <span class="cc-metric-value" id="stat-orders">
+                                                        <%= Number(data?.totalorder || 0).toLocaleString('en-US') %>
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <!-- SERVICES -->
+                                            <div class="cc-metric-tile">
+                                                <span class="cc-metric-label">SERVICES</span>
+                                                <div class="cc-metric-value-wrap">
+                                                    <span class="cc-metric-value" id="stat-services">
+                                                        <%= Number(data?.totalservices || 0).toLocaleString('en-US') %>
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <!-- CUSTOMERS -->
+                                            <div class="cc-metric-tile">
+                                                <span class="cc-metric-label">CUSTOMERS</span>
+                                                <div class="cc-metric-value-wrap">
+                                                    <span class="cc-metric-value" id="stat-customers">
+                                                        <%= Number(data?.totalcustomer || 0).toLocaleString('en-US') %>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-12 col-lg-12 col-xxl-12 col-sm-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title">
+                                    <%= language.Recent_Order %>
+                                </h4>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive recentOrderTable">
+                                    <table class="table verticle-middle table-responsive-md">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">
+                                                    <%= language.Order_Info %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Customers %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Order_Amount %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Status %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Payment_Amount %>
+                                                </th>
+                                                <% if (accessdata.mutibranch===true) { %>
+
+                                                    <th scope="col">
+                                                        <%= language.Store_Name %>
+                                                    </th>
+                                                    <% } %>
+                                                        <th scope="col" class="text-center" style="width: 50px;">
+                                                            <%= language.Action || language.View || 'Action' %>
+                                                        </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% recentOrder.forEach(function (data){ %>
+                                                <tr>
+                                                    <td>
+                                                        <%= data.order_id %>
+                                                    </td>
+                                                    <td>
+                                                        <%= data.customer %>
+                                                    </td>
+                                                    <td class="symbol">
+                                                        <%= data.gross_total %>
+                                                    </td>
+                                                    <td>
+                                                        <% if(data.order_status==1){ %>
+                                                            <button type="button"
+                                                                class="btn btn-dark btn-xxs text-nowrap" disabled>
+                                                                <%=data.status %>
+                                                            </button>
+                                                            <% }else if(data.order_status==2){ %>
+                                                                <button type="button"
+                                                                    class="btn btn-warning btn-xxs text-nowrap"
+                                                                    disabled>
+                                                                    <%=data.status %>
+                                                                </button>
+                                                                <% }else if(data.order_status==3){ %>
+                                                                    <button type="button"
+                                                                        class="btn btn-secondary btn-xxs text-nowrap"
+                                                                        disabled>
+                                                                        <%=data.status %>
+                                                                    </button>
+                                                                    <% }else if(data.order_status==4){ %>
+                                                                        <button type="button"
+                                                                            class="btn btn-info btn-xxs text-nowrap"
+                                                                            disabled>
+                                                                            <%=data.status %>
+                                                                        </button>
+                                                                        <% }else if(data.order_status==5){ %>
+                                                                            <button type="button"
+                                                                                class="btn btn-danger btn-xxs text-nowrap"
+                                                                                disabled>
+                                                                                <%=data.status %>
+                                                                            </button>
+                                                                            <% }else if(data.order_status==6){ %>
+                                                                                <button type="button"
+                                                                                    class="btn btn-danger btn-xxs text-nowrap"
+                                                                                    disabled>
+                                                                                    <%=data.status %>
+                                                                                </button>
+                                                                                <% } %>
+                                                    </td>
+                                                    <td class="symbol">
+                                                        <%= data.paid_amount %>
+                                                    </td>
+                                                    <% if (accessdata.mutibranch===true) { %>
+                                                        <td>
+                                                            <%= data.store %>
+                                                        </td>
+                                                        <% } %>
+                                                            <td class="text-center">
+                                                                <div class="tbl-action-group">
+                                                                    <a href="/order/view/<%=data.id %>"
+                                                                        class="btn-tbl-action btn-tbl-view"
+                                                                        title="<%= language.View || 'View' %>">
+                                                                        <i class="fa fa-eye"></i>
+                                                                    </a>
+                                                                </div>
+                                                            </td>
+                                                </tr>
+                                                <% }) %>
+
+
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-6 col-lg-12 col-sm-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title">Total Order Chart</h4>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="barChart_2"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="indextotorder" value="<%=countorder%>">
+
+                    <div class="col-xl-6 col-lg-12 col-sm-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title">Total Sales Chart ( <span class="symbol">)</span></h4>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="areaChart_2"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="indextosales" value="<%=countsales%>">
+
+                </div>
+            </div>
+
+
+        </div>
+
+        <!--********** Content body end **********-->
+        <!--**********************************
+            Footer start
+        ***********************************-->
+
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <!--**********************************
+        Scripts
+    ***********************************-->
+
+            <%- include('templet/script')-%>
+                <script src="/vendor/chart.js/Chart.bundle.min.js"></script>
+                <script src="/js/plugins-init/chartjs-init.js"></script>
+                <script>
+                    (function () {
+                        function refreshDashboardStats() {
+                            fetch('/api/dashboard-stats')
+                                .then(function (res) { return res.json(); })
+                                .then(function (result) {
+                                    if (result && result.success && result.data) {
+                                        var d = result.data;
+                                        var salesEl = document.getElementById('stat-sales');
+                                        var ordersEl = document.getElementById('stat-orders');
+                                        var servicesEl = document.getElementById('stat-services');
+                                        var customersEl = document.getElementById('stat-customers');
+
+                                        if (salesEl) {
+                                            var formattedSales = Number(d.tottalsales || 0).toLocaleString('en-US', {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2
+                                            });
+                                            if (salesEl.textContent.trim() !== formattedSales) {
+                                                salesEl.textContent = formattedSales;
+                                                salesEl.classList.add('cc-stat-highlight');
+                                                setTimeout(function () { salesEl.classList.remove('cc-stat-highlight'); }, 1000);
+                                            }
+                                        }
+
+                                        if (ordersEl) {
+                                            var formattedOrders = Number(d.totalorder || 0).toLocaleString('en-US');
+                                            if (ordersEl.textContent.trim() !== formattedOrders) {
+                                                ordersEl.textContent = formattedOrders;
+                                                ordersEl.classList.add('cc-stat-highlight');
+                                                setTimeout(function () { ordersEl.classList.remove('cc-stat-highlight'); }, 1000);
+                                            }
+                                        }
+
+                                        if (servicesEl) {
+                                            var formattedServices = Number(d.totalservices || 0).toLocaleString('en-US');
+                                            if (servicesEl.textContent.trim() !== formattedServices) {
+                                                servicesEl.textContent = formattedServices;
+                                                servicesEl.classList.add('cc-stat-highlight');
+                                                setTimeout(function () { servicesEl.classList.remove('cc-stat-highlight'); }, 1000);
+                                            }
+                                        }
+
+                                        if (customersEl) {
+                                            var formattedCustomers = Number(d.totalcustomer || 0).toLocaleString('en-US');
+                                            if (customersEl.textContent.trim() !== formattedCustomers) {
+                                                customersEl.textContent = formattedCustomers;
+                                                customersEl.classList.add('cc-stat-highlight');
+                                                setTimeout(function () { customersEl.classList.remove('cc-stat-highlight'); }, 1000);
+                                            }
+                                        }
+                                    }
+                                })
+                                .catch(function (err) {
+                                    console.warn('Live stats refresh error:', err);
+                                });
+                        }
+
+                        // Poll every 30 seconds
+                        setInterval(refreshDashboardStats, 30000);
+                    })();
+                </script>
+
+</body>
+
+</html>

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+    <link rel="stylesheet" href="/css/pos-compact.css">
+
+</head>
+
+<body>
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body pos-content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row pos-main-row">
+                    <!-- left side service list part -->
+                    <div class="d-none">
+                        <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
+                        <input type="hiden" name="pls" value="<%= accessdata.plac %>">
+                        <input type="hiden" name="thousands_separator" value="<%= accessdata.thousands_separator %>">
+                    </div>
+
+                    <div class="col-xl-7 col-lg-6">
+                        <div class="pos-card">
+                            <div class="pos-card-body">
+                                <div class="pos-search-box">
+                                    <i class="fa fa-search pos-search-icon"></i>
+                                    <input type="text" class="form-control pos-search-input" id="service_pos_search"
+                                        placeholder="Search services..." autocomplete="off">
+                                    <span class="pos-search-clear" id="pos_search_clear" style="display:none;" title="Clear search">
+                                        <i class="fa fa-times"></i>
+                                    </span>
+                                </div>
+                                <div class="pos-services-grid" id="pos_service">
+                                    <% if(service_list.length < 1 && login=='master' && cart.store_id==0){ %>
+                                        <div class="p-3 text-center w-100">
+                                            <h5 class="text-center text-danger">
+                                                <%= language.Please_Select_Store %>
+                                            </h5>
+                                        </div>
+                                    <% }else if(service_list.length < 1){ %>
+                                        <div class="p-3 text-center w-100">
+                                            <img src="../images/empty.png" style="max-height: 80px; margin-bottom: 8px;">
+                                            <h5 class="text-center text-danger">
+                                                <%= language.Not_listed_any_services_yet %>
+                                            </h5>
+                                        </div>
+                                    <% }else{ %>
+                                        <% service_list.forEach(function(data){ %>
+                                            <a href="#" class="pos-service-item services"
+                                                data-name="<%= (data.name || '').toLowerCase() %>"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#service_type_model"
+                                                id="POS_service" data-id="<%= data.id %>">
+                                                <div class="pos-service-tile">
+                                                    <div class="pos-service-icon-box">
+                                                        <img src="../../uploads/<%= data.image %>"
+                                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                                            alt="<%= data.name %>">
+                                                        <div class="pos-service-fallback-icon" style="display:none;">
+                                                            <i class="fa fa-tshirt"></i>
+                                                        </div>
+                                                    </div>
+                                                    <span class="pos-service-name" title="<%= data.name %>">
+                                                        <%= data.name %>
+                                                    </span>
+                                                </div>
+                                            </a>
+                                        <% }) %>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- right side pos part -->
+                    <div class="col-xl-5 col-lg-6">
+                        <div class="pos-card pos-cart-card">
+                            <div class="pos-card-body">
+                                <div class="row g-2 mb-2">
+                                    <div class="col-12 <%= roll==1 ? '' : 'd-none' %>">
+                                        <input type="text" class="form-control pos-input-sm w-100"
+                                            value="<%= order_date[0].store_name %>" readonly placeholder="Store">
+                                    </div>
+
+                                    <div class="col-12">
+                                        <input type="text" class="form-control pos-input-sm w-100"
+                                            value="<%= order_date[0].customer_name %>" readonly placeholder="Customer">
+                                    </div>
+
+                                    <div class="d-none">
+                                        <input type="text" id="customer_id" value="<%= order_date[0].customer_id %>" readonly>
+                                        <input type="text" id="order_id" value="<%= order_date[0].id %>" readonly>
+                                    </div>
+
+                                    <div class="col-4">
+                                        <div class="pos-date-group">
+                                            <label class="pos-field-label">Order #</label>
+                                            <input type="text" id="pos_order_id" class="form-control pos-input-sm w-100"
+                                                value="<%= order_date[0].order_id %>" readonly title="Order ID">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-4">
+                                        <div class="pos-date-group">
+                                            <label class="pos-field-label"><%= language.Order_Date || 'Order Date' %></label>
+                                            <% let new_date=new Date(order_date[0].order_date) %>
+                                            <% let year=new_date.getFullYear() %>
+                                            <% let new_day=(new_date.getDate() < 10 ? '0' : '' ) + new_date.getDate() %>
+                                            <% let new_month=((new_date.getMonth()+1) < 10 ? '0' : '' ) + (new_date.getMonth()+1) %>
+                                            <% let fullDate=`${year}-${new_month}-${new_day}` %>
+                                            <input type="date"
+                                                class="form-control pos-input-sm w-100"
+                                                id="edit_POS_order_date"
+                                                value="<%=fullDate %>"
+                                                title="<%= language.Order_Date || 'Order Date' %>">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-4">
+                                        <div class="pos-date-group">
+                                            <label class="pos-field-label"><%= language.Delivery_Date || 'Delivery Date' %></label>
+                                            <% let del_raw = order_date[0].delivery_date || order_date[0].order_date %>
+                                            <% let del_date = new Date(del_raw) %>
+                                            <% let del_year = del_date.getFullYear() %>
+                                            <% let del_day = (del_date.getDate() < 10 ? '0' : '' ) + del_date.getDate() %>
+                                            <% let del_month = ((del_date.getMonth()+1) < 10 ? '0' : '' ) + (del_date.getMonth()+1) %>
+                                            <% let del_fullDate = `${del_year}-${del_month}-${del_day}` %>
+                                            <input type="date"
+                                                class="form-control pos-input-sm w-100"
+                                                id="edit_POS_delivery_date"
+                                                name="edit_pos_delivery_date"
+                                                value="<%= del_fullDate %>"
+                                                min="<%= fullDate %>"
+                                                title="<%= language.Delivery_Date || 'Delivery Date' %>">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="pos-table-scroll">
+                                    <table class="pos-cart-table table-bordered verticle-middle text-center">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 38%; text-align: left; padding-left: 8px !important;"><%= language.Service %></th>
+                                                <th style="width: 14%;"><%= language.Color %></th>
+                                                <th style="width: 22%;"><%= language.Rate %></th>
+                                                <th style="width: 18%;"><%= language.Qty %></th>
+                                                <th style="width: 8%;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="POS_service_added_list">
+                                            <% cartservice.forEach(function(x){ %>
+                                                <tr>
+                                                    <td>
+                                                        <div class="pos-cart-service-info">
+                                                            <span class="pos-cart-item-title" title="<%= x.service_name %>"><%= x.service_name %></span>
+                                                            <span class="pos-cart-item-badge">[<%= x.service_type_name %>]</span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <input type="color" class="pos-color-circle"
+                                                            value="<%= x.service_color %>"
+                                                            id="POS_service_color" data-id="<%= x.id %>">
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <input type="number"
+                                                            class="form-control pos-table-input pos-table-input-price"
+                                                            value="<%= x.service_type_price %>"
+                                                            name="service_type_price"
+                                                            id="edit_POSservice_type_price"
+                                                            data-id="<%= x.id %>"
+                                                            data-order_id="<%= order_date[0].id %>">
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <input type="number"
+                                                            class="form-control pos-table-input pos-table-input-qty"
+                                                            id="edit_POSservice_type_quntity"
+                                                            value="<%= x.service_quntity %>" min="1"
+                                                            data-id="<%= x.id %>"
+                                                            data-order_id="<%= order_date[0].id %>">
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <a class="pos-btn-del" id="edit_remove_service_list"
+                                                            data-id="<%= x.id %>"
+                                                            data-order_id="<%= order_date[0].id %>" title="Delete">
+                                                            <i class="fa fa-trash"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="pos-bottom-section">
+                                    <div class="row g-1 align-items-center">
+                                        <div class="col-5">
+                                            <div class="pos-actions-grid">
+                                                <button type="button" class="btn btn-primary pos-btn-mini"
+                                                    data-bs-toggle="modal" data-bs-target="#addons">
+                                                    <i class="fa fa-plus-circle me-1"></i><%= language.Addons %>
+                                                </button>
+                                                <button type="button" class="btn btn-primary pos-btn-mini"
+                                                    id="edit_POS_coupon_model_show">
+                                                    <i class="fa fa-tag me-1"></i><%= language.Coupon %>
+                                                </button>
+                                                <button type="button" class="btn btn-success pos-btn-mini"
+                                                    id="edit_direct_save_btn">
+                                                    <i class="fa fa-save me-1"></i><%= language.Save || 'Save' %>
+                                                </button>
+                                                <a class="btn btn-outline-danger pos-btn-mini"
+                                                    href="/order/view/<%= order_date[0].id %>">
+                                                    <i class="fa fa-arrow-left me-1"></i><%= language.Back || 'Back' %>
+                                                </a>
+                                            </div>
+                                            <button type="button" class="btn btn-info text-white pos-btn-pay-primary"
+                                                id="edit_POS_payment_model_show">
+                                                <i class="fa fa-credit-card me-1"></i> <span>Save & Payment</span> <i class="fas fa-arrow-right ms-1"></i>
+                                            </button>
+                                        </div>
+                                        <div class="col-7">
+                                            <div class="pos-totals-container">
+                                                <div class="pos-total-row">
+                                                    <span class="pos-total-label"><%= language.Sub_Total %>:</span>
+                                                    <span class="pos-total-value symbol possymbol" id="POS_sub_total"><%= order_date[0].sub_total.toFixed(2) %></span>
+                                                </div>
+                                                <div class="pos-total-row">
+                                                    <span class="pos-total-label"><%= language.Addon_Total %>:</span>
+                                                    <span class="pos-total-value symbol possymbol" id="POS_addon_total"><%= order_date[0].addon_price.toFixed(2) %></span>
+                                                </div>
+                                                <div class="pos-total-row">
+                                                    <span class="pos-total-label"><%= language.Coupon_Discount %>:</span>
+                                                    <span class="pos-total-value symbol possymbol" id="POS_coupon_total"><%= order_date[0].coupon_discount.toFixed(2) %></span>
+                                                </div>
+                                                <div class="pos-total-row">
+                                                    <span class="pos-total-label" id="POS_tax_percent"><%= language.TAX %> (<%=order_date[0].tax%> %):</span>
+                                                    <span class="pos-total-value symbol possymbol" id="POS_tax_total"><%= order_date[0].tax_amount.toFixed(2) %></span>
+                                                </div>
+                                                <div class="pos-total-row pos-total-row-gross">
+                                                    <span class="pos-total-label"><%= language.Gross_Total %>:</span>
+                                                    <span class="pos-total-value symbol possymbol" id="POS_gross_total"><%= order_date[0].gross_total.toFixed(2) %></span>
+                                                </div>
+                                                <div class="pos-total-row">
+                                                    <span class="pos-total-label"><%= language.Paid_Amount %>:</span>
+                                                    <span class="pos-total-value symbol possymbol" id="POS_paid_amount"><%= order_date[0].paid_amount.toFixed(2) %></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!--********** Content body end **********-->
+
+            <!-- Modal service type -->
+            <div class="modal fade" id="service_type_model">
+                <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-sm" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <%= language.Select_Service_Type %>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form id="add_service_pos_cart" method="post" class="need-validation">
+                            <input type="hidden" id="pos_order_id" name="order_id" value="<%= order_date[0].id %>">
+                            <input type="hidden" id="POS_serviceid1" name="serviceid" value="5">
+                            <div class="modal-body" id="pos_servicetypeselect">
+
+
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                    <%= language.Cancel %>
+                                </button>
+                                <button type="submit" value="submit" id="edit_service_pos_cart_submit"
+                                    class="btn btn-sm  btn-primary">
+                                    <%= language.Save %>
+                                </button>
+                            </div>
+                        </form>
+
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Modal addons -->
+            <div class="modal fade" id="addons">
+                <div class="modal-dialog modal-dialog-scrollable" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <%= language.Add_Addons %>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                        <form id="add_addons_pos_cart" method="post" class="need-validation">
+
+                                <input type="hidden" id="" name="order_id" value="<%= order_date[0].id %>">
+
+                                <div class="row" id="POS_addons">
+                                    <% if(addonlist.length < 1){ %>
+                                        <div class="p-2 center">
+                                            <div class="card">
+                                                <div class="card-body p-2 ">
+                                                    <h5 class="text-center  text-danger">
+                                                        <%= language.No_addon_List_Found %>
+                                                    </h5>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <% } %>
+                                            <% addonlist.forEach(function(data){ %>
+                                            <label class="col-6 d-flex mb-3 addon-clickable" for="update_customer_read_<%= data.id %>" style="cursor:pointer;">
+                                                <div class="col-12 d-flex mb-3">
+                                                    <div class="mx-3">
+                                                        <input class="form-check-input mt-3" type="checkbox"
+                                                            id="update_customer_read_<%= data.id %>" name="addon"
+                                                            value="<%= data.id %>"
+                                                            <%=order_date[0].addon_data.includes(data.id) ? 'checked'
+                                                            : '' %>>
+                                                    </div>
+                                                    <div class="d-flex flex-column justify-content-between">
+                                                        <h5>
+                                                            <%= data.addon %>
+                                                        </h5>
+                                                        <h6 class="symbol">
+                                                            <%= data.price %>
+                                                        </h6>
+                                                    </div>
+                                                </div>
+                                                </label>
+                                                <% }) %>
+                                </div>
+</div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                        <%= language.Cancel %>
+                                    </button>
+                                    <button type="submit" value="submit" id="edit_addons_pos_cart_submit"
+                                        class="btn btn-sm  btn-primary">
+                                        <%= language.Save %>
+                                    </button>
+                                </div>
+                            </form>
+
+
+                        
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal coupon -->
+            <div class="modal fade" id="POS_coupon_model">
+                <div class="modal-dialog modal-dialog-scrollable" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <%= language.Add_Coupon %>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+
+                        <div class="modal-body">
+
+                            <div class="row mb-4 " id="coupon_search">
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control" placeholder="Enter Coupon Code"
+                                        name="coupon_code">
+                                    <button class="btn btn-primary" id="edit_POS_coupon_code" type="button">
+                                        <%= language.Apply %>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="row" id="coupon_area">
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Modal payment -->
+            <div class="modal fade" id="POS_payment_model">
+                <div class="modal-dialog modal-dialog-scrollable" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <%= language.Make_Payment %>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+
+                        <form id="pyment_POS_cart" method="post" class="need-validation">
+                            <input type="hidden" id="pos_order_id" name="order_id" value="<%= order_date[0].id %>">
+                            <div class="modal-body" id="payment_sum">
+                                <div class="row g-2 align-items-center">
+
+                                    <div class="col-12">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-6 mb-1">
+                                                <label class="form-label">
+                                                    <%= language.Delivery_Date %>
+                                                </label>
+                                                <input type="date" class="form-control" name="deliverydate"
+                                                    id="deliverydate">
+
+                                                <input type="date" class="form-control" name="deliverydate_hidden"
+                                                    id="deliverydate_hidden" hidden>
+                                                <input type="hidden" id="POS_gross_order" value="" name="gross">
+                                                <input type="hidden" id="POS_subtotal_order" value="" name="sub">
+                                            </div>
+                                            <div class="col-md-6 mb-1">
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <label class="form-label mb-0" for="edit_POS_extra_discount_order">
+                                                        <%= language.Extra_Discount %>
+                                                    </label>
+                                                    <div class="pos-discount-type-group" role="group" aria-label="Discount Type">
+                                                        <input type="radio" class="btn-check" name="edit_discount_type" id="edit_pos_disc_type_fixed" value="fixed" checked autocomplete="off">
+                                                        <label class="pos-disc-btn active" for="edit_pos_disc_type_fixed" id="edit_pos_disc_btn_fixed" title="Fixed Amount">Fix ($)</label>
+
+                                                        <input type="radio" class="btn-check" name="edit_discount_type" id="edit_pos_disc_type_percent" value="percent" autocomplete="off">
+                                                        <label class="pos-disc-btn" for="edit_pos_disc_type_percent" id="edit_pos_disc_btn_percent" title="Percentage">% Percent</label>
+                                                    </div>
+                                                </div>
+                                                <div class="input-group pos-discount-input-group">
+                                                    <span class="input-group-text pos-discount-prefix" id="edit_pos_discount_prefix">$</span>
+                                                    <input type="number" id="edit_POS_extra_discount_order"
+                                                        class="form-control" placeholder="0.00" min="0" step="any" autocomplete="off">
+                                                </div>
+                                                <input type="hidden" name="extradiscount" id="edit_POS_extradiscount_hidden" value="0">
+                                                <input type="hidden" id="edit_POS_extra_discount_order_hidden" value="0">
+                                            </div>
+                                        </div>
+                                        <small><span id="POS_worning" class="text-center text-danger "></span></small>
+                                        <hr>
+
+                                        <div class="row">
+                                            <div class="col text-sm ">
+                                                <%= language.Sub_Total %> :
+                                            </div>
+                                            <div class="col-auto text-sm payment_val paysymbol" id="payment_subtotal">$
+                                                0.00</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col text-sm">
+                                                <%= language.Addon %> :
+                                            </div>
+                                            <div class="col-auto text-sm payment_val paysymbol" id="payment_addons">$
+                                                0.00</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col text-sm">
+                                                <%= language.Extra_Discount %> <span id="edit_payment_extradiscount_percent_info" class="text-primary font-weight-bold"></span> :
+                                            </div>
+                                            <div class="col-auto text-sm payment_val paysymbol extsymbol"
+                                                id="payment_extradiscount">$ 0.00</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col text-sm">
+                                                <%= language.Coupon_Discount %> :
+                                            </div>
+                                            <div class="col-auto text-sm payment_val paysymbol"
+                                                id="payment_coupondiscount">$ 0.00</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col text-sm" id="payment_text_perdent">
+                                                <%= language.TAX %> (15%):
+                                            </div>
+                                            <div class="col-auto text-sm payment_val paysymbol"
+                                                id="payment_text_amount"> 0.00</div>
+                                        </div>
+
+                                        <hr>
+
+                                        <div class="row">
+                                            <div class="col text-sm">
+                                                <%= language.Gross_Total %> :
+                                            </div>
+                                            <div class="col-auto text-sm paysymbol extsymbol" id="payment_grosstotal">
+                                                21.00</div>
+                                        </div>
+
+                                        <hr>
+
+                                        <div class="row align-items-center">
+                                            <div class="col-md-6 mb-1">
+                                                <label class="form-label">
+                                                    <%= language.Paid_Amount %>
+                                                </label>
+                                                <input type="number" class="form-control" placeholder="Enter Amount"
+                                                    name="paid_amount" id="edit_paid_amount" min="0" required>
+                                            </div>
+                                            <div class="col-md-6 mb-1">
+                                                <label class="form-label">
+                                                    <%= language.Payment_Type %>
+                                                </label>
+                                                <select class="form-control wide" name="payment_type"
+                                                    id="POS_payment_type_list" required>
+                                                    <option value disabled>Choose Payment Type</option>
+                                                    <option value="cash">Cash</option>
+                                                    <option value="upi">UPI</option>
+                                                    <option value="card">Card</option>
+                                                    <option value="cheque">Cheque</option>
+                                                    <option value="bank_transfer">Bank Transfer</option>
+                                                </select>
+                                            </div>
+
+                                        </div>
+                                        <span id="POS_worning_paid" class="text-center text-danger "></span>
+                                        <hr>
+
+                                        <div class="row">
+                                            <div class="col text-sm">
+                                                <%= language.Balance %> :
+                                            </div>
+                                            <div class="col-auto text-sm paysymbol extsymbol pamtsymbol"
+                                                id="POS_total_balance"> 0.00</div>
+                                        </div>
+
+                                        <hr>
+
+                                        <div class="col-12">
+                                            <label class="form-label">
+                                                <%= language.Notes %> / <%= language.Remarks %>
+                                            </label>
+                                            <input type="text" class="form-control" placeholder="Enter Notes"
+                                                name="note">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <%= language.Cancel %>
+                                </button>
+                                <button class="btn btn-success" type="submit" value="submit"
+                                    id="edit_cart_submit_for_order">
+                                    <%= language.Save %> & <%= language.Print %>
+                                </button>
+                            </div>
+                        </form>
+
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+                <script>
+                    $('#POS_payment_model').on('shown.bs.modal', function () {
+                        if ($('#POS_payment_type_list').hasClass("select2-hidden-accessible")) {
+                            $('#POS_payment_type_list').select2('destroy');
+                        }
+                        $('#POS_payment_type_list').select2({
+                            dropdownParent: $('#POS_payment_model'),
+                            placeholder: 'Choose Payment Type',
+                            width: '100%',
+                            allowClear: false
+                        });
+                    });
+                </script>
+</body>
+
+
+
+</html>

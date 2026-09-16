@@ -1,0 +1,1074 @@
+/* ==========================================================================
+   POS Compact & High-Density UI Styles (10% Scaled for Enhanced Usability)
+   Optimized for maximum screen utilization, sleek inputs, and comfortable touch targets
+   ========================================================================== */
+
+/* Layout & Containers */
+.pos-content-body {
+  padding-top: 5rem;
+  font-size: 0.95rem;
+}
+
+.pos-main-row {
+  margin-left: -8px;
+  margin-right: -8px;
+}
+
+.pos-main-row>[class*="col-"] {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.pos-card {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+  background: #ffffff !important;
+  margin-bottom: 14px !important;
+}
+
+.pos-card-body {
+  padding: 12px 14px !important;
+}
+
+/* ==========================================================================
+   Top Header Controls (Search, Store, Customer, Order ID, Date)
+   ========================================================================== */
+
+/* Search bar on left */
+.pos-search-box {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.pos-search-box .pos-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 15px;
+  pointer-events: none;
+}
+
+.pos-search-input {
+  height: 36px !important;
+  font-size: 15px !important;
+  padding-left: 36px !important;
+  padding-right: 30px !important;
+  border-radius: 8px !important;
+  border: 1px solid #cbd5e1 !important;
+  background-color: #f8fafc !important;
+  transition: all 0.2s ease !important;
+}
+
+.pos-search-input:focus {
+  background-color: #ffffff !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15) !important;
+}
+
+.pos-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.15s ease;
+}
+
+.pos-search-clear:hover {
+  color: #ffffff;
+  background-color: #ef4444;
+}
+
+/* Compact inputs for right side */
+.pos-date-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.pos-field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 3px !important;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.3px;
+}
+
+.pos-input-sm {
+  height: 32px !important;
+  font-size: 14.5px !important;
+  padding: 3px 8px !important;
+  border-radius: 7px !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+}
+
+.pos-input-sm[type="date"] {
+  padding: 2px 6px !important;
+}
+
+.pos-input-sm:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Store & Customer dropdowns compact styling */
+.pos-select-wrap .bootstrap-select .dropdown-toggle,
+.pos-select-wrap .form-control {
+  height: 36px !important;
+  padding: 0 12px !important;
+  font-size: 14.5px !important;
+  line-height: normal !important;
+  border-radius: 7px !important;
+  border: 1px solid #cbd5e1 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.pos-select-wrap .bootstrap-select .filter-option {
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+  line-height: normal !important;
+}
+
+.pos-select-wrap .bootstrap-select .filter-option-inner {
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+}
+
+.pos-select-wrap .bootstrap-select .filter-option-inner-inner {
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+  line-height: 1.2 !important;
+}
+
+.pos-select-wrap .select2-container--default .select2-selection--single {
+  height: 36px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 7px !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 10px !important;
+}
+
+.pos-select-wrap .select2-container--default .select2-selection--single .select2-selection__rendered {
+  line-height: normal !important;
+  font-size: 14.5px !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+}
+
+.pos-select-wrap .select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  top: 0 !important;
+}
+
+.pos-btn-add-customer {
+  height: 36px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 0 10px !important;
+  border-radius: 7px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+}
+
+/* ==========================================================================
+   Left Side: Service Catalog Cards Grid
+   ========================================================================== */
+
+.pos-services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(102px, 1fr));
+  gap: 8px;
+  max-height: calc(100vh - 175px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Custom slim scrollbar */
+.pos-services-grid::-webkit-scrollbar,
+.pos-table-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.pos-services-grid::-webkit-scrollbar-thumb,
+.pos-table-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.pos-service-item {
+  text-decoration: none !important;
+  display: block;
+}
+
+.pos-service-tile {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  padding: 8px 5px !important;
+  min-height: 96px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  cursor: pointer !important;
+  position: relative !important;
+}
+
+.pos-service-tile:hover {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.12) !important;
+  transform: translateY(-2px) !important;
+}
+
+.pos-service-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 5px;
+  border: 1px solid #e2e8f0;
+  color: #3b82f6;
+  font-size: 18px;
+  overflow: hidden;
+}
+
+.pos-service-icon-box img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.pos-service-fallback-icon {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6;
+  font-size: 18px;
+}
+
+.pos-service-name {
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  line-height: 1.25 !important;
+  margin: 0 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-align: center !important;
+}
+
+/* ==========================================================================
+   Right Side: Cart Table (Ultra-Streamlined, Dynamic Full Screen Height)
+   ========================================================================== */
+
+.pos-cart-card,
+.col-xl-5 > .pos-card {
+  display: flex !important;
+  flex-direction: column !important;
+  height: calc(100vh - 98px) !important;
+  min-height: 580px !important;
+}
+
+.pos-cart-card > .pos-card-body,
+.col-xl-5 > .pos-card > .pos-card-body {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.pos-table-scroll {
+  flex: 1 1 auto !important;
+  max-height: none !important;
+  min-height: 220px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-top: 6px;
+  margin-bottom: 8px;
+}
+
+.pos-bottom-section {
+  margin-top: auto !important;
+  flex-shrink: 0 !important;
+}
+
+.pos-cart-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0;
+}
+
+.pos-cart-table thead th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 6px 8px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  border-top: none !important;
+  white-space: nowrap;
+}
+
+.pos-cart-table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s ease;
+}
+
+.pos-cart-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.pos-cart-table tbody td {
+  padding: 5px 8px !important;
+  vertical-align: middle !important;
+  font-size: 12.5px;
+}
+
+/* Service Title & Badge */
+.pos-cart-service-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 150px;
+}
+
+.pos-cart-item-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 145px;
+}
+
+.pos-cart-item-badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  background: #e0f2fe;
+  color: #0284c7;
+  padding: 1px 5px;
+  border-radius: 4px;
+  line-height: 1.3;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Color Circle Swatch */
+.pos-color-circle {
+  width: 23px !important;
+  height: 23px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  border: 1px solid #cbd5e1 !important;
+  cursor: pointer;
+  outline: none;
+  background: none;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.pos-color-circle::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 50%;
+}
+
+.pos-color-circle::-webkit-color-swatch {
+  border: none;
+  border-radius: 50%;
+}
+
+/* Compact Inputs inside Table */
+.pos-table-input {
+  height: 29px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 2px 4px !important;
+  text-align: center !important;
+  border-radius: 5px !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+  background: #ffffff !important;
+}
+
+.pos-table-input:focus {
+  border-color: #3b82f6 !important;
+  outline: none;
+  box-shadow: 0 0 0 1px #3b82f6 !important;
+}
+
+.pos-table-input-price {
+  width: 58px !important;
+}
+
+.pos-table-input-qty {
+  width: 45px !important;
+}
+
+/* Delete Button */
+.pos-btn-del {
+  width: 27px;
+  height: 27px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  color: #ef4444;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+  text-decoration: none !important;
+}
+
+.pos-btn-del:hover {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+.pos-btn-del i {
+  pointer-events: none;
+  font-size: 12px;
+}
+
+.is-hidden {
+  display: none !important;
+}
+
+/* ==========================================================================
+   Bottom Area: 2x2 Action Buttons & Compact Totals
+   ========================================================================== */
+
+.pos-bottom-section {
+  padding-top: 6px;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* 2x2 Action Button Grid */
+.pos-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.pos-btn-mini {
+  height: 29px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  padding: 0 6px !important;
+  border-radius: 5px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+}
+
+/* Prominent Pay / Save & Pay button */
+.pos-btn-pay-primary {
+  height: 36px !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  border-radius: 7px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Totals Box */
+.pos-totals-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 10px;
+}
+
+.pos-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5px 0;
+  font-size: 12px;
+  color: #475569;
+}
+
+.pos-total-row .pos-total-label {
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.pos-total-row .pos-total-value {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 12px;
+}
+
+.pos-total-row-gross {
+  border-top: 1px dashed #cbd5e1;
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.pos-total-row-gross .pos-total-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.pos-total-row-gross .pos-total-value {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* ==========================================================================
+   Dark Theme Overrides ([data-theme-version="dark"])
+   Seamless, high-contrast dark mode matching DexignZone dark palette
+   ========================================================================== */
+
+[data-theme-version="dark"] .pos-card {
+  background: #182235 !important;
+  border-color: #243048 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-theme-version="dark"] .pos-search-box .pos-search-icon {
+  color: #64748b;
+}
+
+[data-theme-version="dark"] .pos-search-input {
+  background-color: #101726 !important;
+  border-color: #2e3d5b !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme-version="dark"] .pos-search-input:focus {
+  background-color: #131d31 !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+}
+
+[data-theme-version="dark"] .pos-field-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme-version="dark"] .pos-input-sm {
+  background-color: #101726 !important;
+  border-color: #2e3d5b !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme-version="dark"] .pos-input-sm:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+}
+
+[data-theme-version="dark"] .pos-select-wrap .bootstrap-select .dropdown-toggle,
+[data-theme-version="dark"] .pos-select-wrap .form-control {
+  background-color: #101726 !important;
+  border-color: #2e3d5b !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme-version="dark"] .pos-select-wrap .select2-container--default .select2-selection--single {
+  background-color: #101726 !important;
+  border-color: #2e3d5b !important;
+}
+
+[data-theme-version="dark"] .pos-select-wrap .select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: #f1f5f9 !important;
+}
+
+[data-theme-version="dark"] .pos-service-tile {
+  background: #182235 !important;
+  border-color: #243048 !important;
+}
+
+[data-theme-version="dark"] .pos-service-tile:hover {
+  background: #1e2a40 !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2) !important;
+}
+
+[data-theme-version="dark"] .pos-service-icon-box {
+  background: #101726 !important;
+  border-color: #243048 !important;
+  color: #60a5fa !important;
+}
+
+[data-theme-version="dark"] .pos-service-name {
+  color: #e2e8f0 !important;
+}
+
+[data-theme-version="dark"] .pos-table-scroll {
+  border-color: #243048;
+}
+
+[data-theme-version="dark"] .pos-cart-table thead th {
+  background: #101726 !important;
+  color: #94a3b8 !important;
+  border-bottom-color: #243048 !important;
+}
+
+[data-theme-version="dark"] .pos-cart-table tbody tr {
+  border-bottom-color: #1c273c !important;
+}
+
+[data-theme-version="dark"] .pos-cart-table tbody tr:hover {
+  background-color: #1c273c !important;
+}
+
+[data-theme-version="dark"] .pos-cart-item-title {
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] .pos-cart-item-badge {
+  background: #1e3a8a !important;
+  color: #93c5fd !important;
+}
+
+[data-theme-version="dark"] .pos-color-circle {
+  border-color: #2e3d5b !important;
+}
+
+[data-theme-version="dark"] .pos-table-input {
+  background-color: #101726 !important;
+  border-color: #2e3d5b !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme-version="dark"] .pos-total-row {
+  color: #94a3b8;
+}
+
+[data-theme-version="dark"] .pos-total-row .pos-total-label {
+  color: #94a3b8;
+}
+
+[data-theme-version="dark"] .pos-total-row .pos-total-value {
+  color: #e2e8f0;
+}
+
+[data-theme-version="dark"] .pos-total-row-gross {
+  border-top-color: #2e3d5b;
+}
+
+[data-theme-version="dark"] .pos-total-row-gross .pos-total-label {
+  color: #f8fafc;
+}
+
+[data-theme-version="dark"] .pos-total-row-gross .pos-total-value {
+  color: #38bdf8;
+}
+
+[data-theme-version="dark"] .modal-content {
+  background-color: #182235 !important;
+  border-color: #243048 !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme-version="dark"] .modal-header,
+[data-theme-version="dark"] .modal-footer {
+  border-color: #243048 !important;
+}
+
+[data-theme-version="dark"] .modal-title {
+  color: #f8fafc !important;
+}
+
+/* POS Silent Printing Status Badge & Popover */
+.pos-printer-dropdown {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.pos-printer-badge-btn {
+  height: 36px;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 0 12px !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.pos-printer-badge-btn:hover {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+}
+
+.pos-printer-badge-btn.btn-outline-success {
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  background: rgba(16, 185, 129, 0.05) !important;
+  color: #065f46 !important;
+}
+
+.pos-printer-badge-btn.btn-outline-danger {
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  background: rgba(239, 68, 68, 0.05) !important;
+  color: #991b1b !important;
+}
+
+.pos-printer-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.pos-printer-dot.dot-online {
+  background-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+}
+
+.pos-printer-dot.dot-offline {
+  background-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+}
+
+.pos-printer-dot.dot-checking {
+  background-color: #f59e0b;
+  animation: printerPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes printerPulse {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.6; }
+}
+
+[data-theme-version="dark"] .pos-printer-badge-btn {
+  background: #182235 !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme-version="dark"] .pos-printer-badge-btn:hover {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+}
+
+[data-theme-version="dark"] .pos-printer-badge-btn.btn-outline-success {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  color: #6ee7b7 !important;
+}
+
+[data-theme-version="dark"] .pos-printer-badge-btn.btn-outline-danger {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #fca5a5 !important;
+}
+
+[data-theme-version="dark"] .pos-printer-popover {
+  background-color: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] .pos-printer-popover .text-dark {
+  color: #f1f5f9 !important;
+}
+
+/* ==========================================================================
+   POS Make Payment Modal - Discount Toggle & Dropdown UI Enhancements
+   ========================================================================== */
+
+/* Modern Segmented Discount Toggle */
+.pos-discount-type-group {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.pos-disc-btn {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  padding: 3px 9px !important;
+  border-radius: 6px !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease-in-out !important;
+  margin-bottom: 0 !important;
+  user-select: none;
+  line-height: 1.3 !important;
+  border: none !important;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pos-disc-btn:hover {
+  color: #1e293b !important;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.btn-check:checked + .pos-disc-btn,
+.pos-disc-btn.active {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.35) !important;
+}
+
+.pos-discount-input-group {
+  display: flex !important;
+  align-items: stretch;
+}
+
+.pos-discount-input-group .pos-discount-prefix {
+  background-color: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  border-right: none !important;
+  border-top-left-radius: 8px !important;
+  border-bottom-left-radius: 8px !important;
+  color: #475569 !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  min-width: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 8px !important;
+}
+
+.pos-discount-input-group .form-control {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+/* Modal Inputs Unified Height and Appearance */
+#POS_payment_model .form-control {
+  height: 42px !important;
+  min-height: 42px !important;
+  border-radius: 8px !important;
+  border: 1px solid #cbd5e1 !important;
+  font-size: 0.925rem !important;
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+  padding: 0.375rem 0.75rem !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+#POS_payment_model .form-control:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18) !important;
+}
+
+/* Modal Select2 Container Styling (Payment Type Dropdown) */
+#POS_payment_model .select2-container {
+  width: 100% !important;
+}
+
+#POS_payment_model .select2-container .select2-selection--single {
+  height: 42px !important;
+  min-height: 42px !important;
+  border-radius: 8px !important;
+  border: 1px solid #cbd5e1 !important;
+  background-color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 14px !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  position: relative !important;
+}
+
+#POS_payment_model .select2-container--focus .select2-selection--single,
+#POS_payment_model .select2-container--open .select2-selection--single {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18) !important;
+  outline: 0 !important;
+}
+
+#POS_payment_model .select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: #1e293b !important;
+  font-size: 0.925rem !important;
+  font-weight: 500 !important;
+  line-height: 40px !important;
+  padding-left: 0 !important;
+  padding-right: 28px !important;
+  width: 100% !important;
+  display: block !important;
+}
+
+#POS_payment_model .select2-container--default .select2-selection--single .select2-selection__placeholder {
+  color: #94a3b8 !important;
+}
+
+#POS_payment_model .select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 40px !important;
+  position: absolute !important;
+  top: 0 !important;
+  right: 12px !important;
+  width: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#POS_payment_model .select2-container--default .select2-selection--single .select2-selection__arrow b {
+  position: static !important;
+  margin: 0 !important;
+  border-color: #64748b transparent transparent transparent !important;
+  border-style: solid !important;
+  border-width: 5px 4.5px 0 4.5px !important;
+  top: auto !important;
+  left: auto !important;
+  transition: transform 0.2s ease !important;
+}
+
+#POS_payment_model .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
+  border-color: transparent transparent #3b82f6 transparent !important;
+  border-width: 0 4.5px 5px 4.5px !important;
+}
+
+/* Hide unstyled clear 'x' cross button */
+#POS_payment_model .select2-selection__clear {
+  display: none !important;
+}
+
+/* Select2 Dropdown Popup Styling */
+.select2-dropdown {
+  border-radius: 8px !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  overflow: hidden !important;
+  z-index: 99999 !important;
+}
+
+.select2-results__option {
+  padding: 9px 14px !important;
+  font-size: 0.9rem !important;
+  color: #334155;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+.select2-container--default .select2-results__option[aria-selected="true"] {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+  font-weight: 600 !important;
+}
+
+/* Dark Theme Support for Modal */
+[data-theme-version="dark"] .pos-discount-type-group {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+[data-theme-version="dark"] .pos-disc-btn {
+  color: #94a3b8 !important;
+}
+
+[data-theme-version="dark"] .pos-disc-btn:hover {
+  color: #f8fafc !important;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme-version="dark"] .btn-check:checked + .pos-disc-btn,
+[data-theme-version="dark"] .pos-disc-btn.active {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+[data-theme-version="dark"] .pos-discount-input-group .pos-discount-prefix {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme-version="dark"] #POS_payment_model .form-control {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] #POS_payment_model .select2-container .select2-selection--single {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme-version="dark"] #POS_payment_model .select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] #POS_payment_model .select2-container--default .select2-selection--single .select2-selection__arrow b {
+  border-color: #94a3b8 transparent transparent transparent !important;
+}
+
+[data-theme-version="dark"] .select2-dropdown {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] .select2-results__option {
+  color: #cbd5e1;
+}
+
+[data-theme-version="dark"] .select2-container--default .select2-results__option[aria-selected="true"] {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+}

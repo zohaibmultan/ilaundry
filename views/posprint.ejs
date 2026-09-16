@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>POS Receipt - <%= order.order_id %></title>
+  <script src="/JsBarcode.all.min.js"></script>
+  <style>
+    @page {
+      size: 80mm auto;
+      margin: 0;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #eef1f5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 11px;
+      line-height: 1.25;
+      color: #000;
+      padding: 0 0 20px 0;
+    }
+
+    /* Sticky Action Toolbar (Excluded from print) */
+    .pos-action-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid #cbd5e1;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .server-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      color: #334155;
+    }
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .status-dot.online {
+      background-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+    }
+    .status-dot.offline {
+      background-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+    }
+    .status-dot.checking {
+      background-color: #f59e0b;
+      animation: pulseDot 1.2s infinite ease-in-out;
+    }
+    @keyframes pulseDot {
+      0% { transform: scale(0.9); opacity: 0.6; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.6; }
+    }
+    .printer-device-info {
+      font-size: 11.5px;
+      color: #64748b;
+    }
+    .printer-device-info b {
+      color: #1e293b;
+    }
+    .toolbar-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s ease-in-out;
+      text-decoration: none;
+      line-height: 1.2;
+    }
+    .toolbar-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .btn-invoice {
+      background: #10b981;
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.35);
+    }
+    .btn-invoice:hover:not(:disabled) {
+      background: #059669;
+      transform: translateY(-1px);
+    }
+    .btn-tag {
+      background: #0284c7;
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
+    }
+    .btn-tag:hover:not(:disabled) {
+      background: #0369a1;
+      transform: translateY(-1px);
+    }
+    .btn-cancel {
+      background: #ffffff;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+    }
+    .btn-cancel:hover:not(:disabled) {
+      background: #f1f5f9;
+      color: #1e293b;
+      border-color: #94a3b8;
+    }
+    .print-alert-banner {
+      width: 76mm;
+      max-width: 90%;
+      margin: 0 auto 12px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      text-align: center;
+      display: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      animation: fadeInAlert 0.2s ease-out;
+    }
+    @keyframes fadeInAlert {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .alert-success-soft {
+      background-color: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+    .alert-info-soft {
+      background-color: #f0f9ff;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+    }
+    .alert-warning-soft {
+      background-color: #fffbeb;
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+
+    .receipt-container {
+      width: 76mm;
+      margin: 0 auto;
+      background: #fff;
+      padding: 4mm 3mm;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Cloth Garment Tag Container & Card Styles */
+    .cloth-tag-container {
+      display: none;
+      width: 76mm;
+      margin: 0 auto;
+    }
+    .cloth-tag {
+      background: #ffffff;
+      border: 1px dashed #000;
+      padding: 3mm 2.5mm;
+      margin-bottom: 3mm;
+      text-align: center;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      color: #000;
+    }
+    .cloth-tag .tag-store-name {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.2;
+      margin-bottom: 2px;
+    }
+    .cloth-tag .tag-order-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      font-weight: 700;
+      border-top: 1px solid #000;
+      border-bottom: 1px solid #000;
+      padding: 2px 0;
+      margin-bottom: 3px;
+    }
+    .cloth-tag .tag-item-name {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      line-height: 1.2;
+    }
+    .cloth-tag .tag-cust-row {
+      font-size: 9.5px;
+      color: #222;
+      margin-bottom: 2px;
+    }
+    .cloth-tag .tag-date-row {
+      font-size: 9.5px;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+    .cloth-tag .tag-barcode-wrap {
+      margin: 2px auto 0;
+      text-align: center;
+    }
+    .cloth-tag .tag-barcode-svg {
+      max-width: 95% !important;
+      height: 38px !important;
+      margin: 0 auto;
+      display: block;
+    }
+
+    @media print {
+      body {
+        background: transparent;
+        padding: 0;
+      }
+      .no-print {
+        display: none !important;
+      }
+      body:not(.printing-tags) .receipt-container {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 2mm 1mm !important;
+        box-shadow: none !important;
+        display: block !important;
+      }
+      body:not(.printing-tags) .cloth-tag-container {
+        display: none !important;
+      }
+
+      body.printing-tags .receipt-container {
+        display: none !important;
+      }
+      body.printing-tags .cloth-tag-container {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+      }
+      body.printing-tags .cloth-tag {
+        margin-bottom: 2mm !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+    }
+    .text-center { text-align: center; }
+    .text-start { text-align: left; }
+    .text-end { text-align: right; }
+    .fw-bold { font-weight: 700; }
+    .text-muted { color: #555; }
+    
+    /* Dividers */
+    .border-dashed {
+      border: none;
+      border-top: 1px dashed #000;
+      margin: 3px 0;
+    }
+    .border-solid {
+      border: none;
+      border-top: 1px solid #000;
+      margin: 3px 0;
+    }
+
+    /* Store Header */
+    .store-header {
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    .store-logo {
+      max-height: 32px;
+      max-width: 70%;
+      margin: 0 auto 2px;
+      display: block;
+      object-fit: contain;
+    }
+    .store-name {
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.15;
+    }
+    .store-info {
+      font-size: 10px;
+      line-height: 1.2;
+      color: #222;
+      margin-top: 2px;
+    }
+
+    /* Invoice Title Banner (Crisp Outline, Zero Solid Black) */
+    .invoice-badge {
+      text-align: center;
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 2px 0;
+      border-top: 1px solid #000;
+      border-bottom: 1px solid #000;
+      margin: 3px 0;
+    }
+
+    /* Metadata Grid */
+    .meta-table {
+      width: 100%;
+      font-size: 10.5px;
+      margin-bottom: 2px;
+    }
+    .meta-table td {
+      padding: 1px 0;
+      vertical-align: top;
+    }
+
+    /* Items Table */
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+    .items-table th {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 0;
+      border-bottom: 1px dashed #000;
+      letter-spacing: 0.3px;
+    }
+    .items-table td {
+      padding: 2px 0;
+      vertical-align: top;
+    }
+    .item-name {
+      font-weight: 700;
+      font-size: 11px;
+      line-height: 1.15;
+    }
+    .item-subtext {
+      font-size: 9.5px;
+      color: #333;
+      display: block;
+    }
+
+    /* Financial Summary */
+    .summary-table {
+      width: 100%;
+      font-size: 10.5px;
+      margin-top: 2px;
+    }
+    .summary-table td {
+      padding: 1px 0;
+    }
+    .grand-total-row td {
+      font-size: 12.5px;
+      font-weight: 800;
+      padding: 2px 0;
+    }
+
+    /* Footer */
+    .receipt-footer {
+      text-align: center;
+      font-size: 9.5px;
+      margin-top: 4px;
+      line-height: 1.2;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sticky Action Toolbar (Hidden during actual print) -->
+  <div class="pos-action-toolbar no-print">
+    <div class="toolbar-left">
+      <div class="server-status-pill" id="serverStatusPill">
+        <span class="status-dot checking" id="serverStatusDot"></span>
+        <span id="serverStatusText">Checking Printing Server...</span>
+      </div>
+      <span class="printer-device-info">
+        Invoice: <b><%= (master && master.invoice_printer_name) ? master.invoice_printer_name : 'Default Printer' %></b>
+        &bull; Tag: <b><%= (master && master.tag_printer_name) ? master.tag_printer_name : 'Default Printer' %></b>
+      </span>
+    </div>
+
+    <div class="toolbar-right">
+      <button type="button" class="toolbar-btn btn-invoice" id="btn_print_invoice" onclick="printInvoice()" title="Print Customer Invoice Receipt">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        Print Invoice
+      </button>
+
+      <button type="button" class="toolbar-btn btn-tag" id="btn_print_tag" onclick="printClothTags()" title="Print Garment Cloth Tags / Barcodes">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+        Print Cloth Tag
+      </button>
+
+      <button type="button" class="toolbar-btn btn-cancel" id="btn_cancel" onclick="cancelAndBack()" title="Return to Previous Screen">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- In-Page Print Notification Banner -->
+  <div id="printNotification" class="print-alert-banner no-print"></div>
+
+  <div class="receipt-container">
+    <!-- Store Header -->
+    <div class="store-header">
+      <% if (accessdata && accessdata.masterstore && accessdata.masterstore.app_favicon) { %>
+        <img src="/uploads/<%= accessdata.masterstore.app_favicon %>" class="store-logo" alt="" />
+      <% } %>
+      <div class="store-name">
+        <%= (shope && shope.name) ? shope.name : (accessdata && accessdata.masterstore ? accessdata.masterstore.app_name : 'iLaundry') %>
+      </div>
+      <div class="store-info">
+        <% if (shope && shope.address) { %>
+          <%= shope.address %><% if (shope.city) { %>, <%= shope.city %><% } %><br />
+        <% } %>
+        <% if (shope && shope.mobile_number) { %>
+          Tel: <%= shope.mobile_number %><% if (shope.store_email) { %> | <%= shope.store_email %><% } %>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Invoice Banner (Crisp outline, saves 100% black ink) -->
+    <div class="invoice-badge">POS Order Receipt</div>
+
+    <!-- Order & Customer Meta (Tight 2-column key-value) -->
+    <table class="meta-table">
+      <tr>
+        <td class="text-start"><b>Order #:</b> <%= order.order_id %></td>
+        <td class="text-end"><b>Date:</b> <%= oate %></td>
+      </tr>
+      <tr>
+        <td class="text-start"><b>Delivery:</b> <%= ddate %></td>
+        <td class="text-end"><b>Status:</b> <%= (order.order_status_name || 'Confirmed') %></td>
+      </tr>
+      <% 
+        let custObj = (Array.isArray(customer) && customer.length > 0) ? customer[0] : (customer || {});
+        let custName = custObj.name || '';
+        let custNumber = custObj.number || '';
+      %>
+      <% if (custName) { %>
+        <tr>
+          <td class="text-start" colspan="2">
+            <b>Customer:</b> <%= custName %>
+            <% if (custNumber) { %> &bull; <%= custNumber %><% } %>
+          </td>
+        </tr>
+      <% } %>
+    </table>
+
+    <hr class="border-dashed" />
+
+    <!-- Items Table -->
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th class="text-start" style="width: 48%;">Item</th>
+          <th class="text-end" style="width: 18%;">Rate</th>
+          <th class="text-center" style="width: 12%;">Qty</th>
+          <th class="text-end" style="width: 22%;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (cartservice && cartservice.length > 0) { %>
+          <% cartservice.forEach(function(item) { %>
+            <tr>
+              <td class="text-start">
+                <span class="item-name"><%= item.service_name %></span>
+                <% if (item.service_type_name) { %>
+                  <span class="item-subtext">[<%= item.service_type_name %>]</span>
+                <% } %>
+              </td>
+              <td class="text-end">
+                <% if (accessdata.plac == "1") { %>
+                  <%= parseFloat(item.service_type_price).toFixed(2) %><%= accessdata.symbol %>
+                <% } else { %>
+                  <%= accessdata.symbol %><%= parseFloat(item.service_type_price).toFixed(2) %>
+                <% } %>
+              </td>
+              <td class="text-center"><%= item.service_quntity %></td>
+              <td class="text-end fw-bold">
+                <% let lineTotal = (parseFloat(item.service_type_price) * parseFloat(item.service_quntity)).toFixed(2); %>
+                <% if (accessdata.plac == "1") { %>
+                  <%= lineTotal %><%= accessdata.symbol %>
+                <% } else { %>
+                  <%= accessdata.symbol %><%= lineTotal %>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        <% } %>
+
+        <% if (addonslist && addonslist.length > 0) { %>
+          <% addonslist.forEach(function(addon) { %>
+            <tr>
+              <td class="text-start" colspan="2">
+                <span class="item-name">+ <%= addon.name %></span>
+                <span class="item-subtext">[Addon]</span>
+              </td>
+              <td class="text-center">1</td>
+              <td class="text-end fw-bold">
+                <% if (accessdata.plac == "1") { %>
+                  <%= parseFloat(addon.price).toFixed(2) %><%= accessdata.symbol %>
+                <% } else { %>
+                  <%= accessdata.symbol %><%= parseFloat(addon.price).toFixed(2) %>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        <% } %>
+      </tbody>
+    </table>
+
+    <hr class="border-dashed" />
+
+    <!-- Financial Summary (Skip 0-value rows to save paper) -->
+    <table class="summary-table">
+      <tr>
+        <td class="text-start">Sub Total:</td>
+        <td class="text-end fw-bold">
+          <% if (accessdata.plac == "1") { %>
+            <%= parseFloat(order.sub_total).toFixed(2) %> <%= accessdata.symbol %>
+          <% } else { %>
+            <%= accessdata.symbol %> <%= parseFloat(order.sub_total).toFixed(2) %>
+          <% } %>
+        </td>
+      </tr>
+
+      <% if (Number(order.addon_price) > 0) { %>
+        <tr>
+          <td class="text-start">Addon Total:</td>
+          <td class="text-end">
+            <% if (accessdata.plac == "1") { %>
+              <%= parseFloat(order.addon_price).toFixed(2) %> <%= accessdata.symbol %>
+            <% } else { %>
+              <%= accessdata.symbol %> <%= parseFloat(order.addon_price).toFixed(2) %>
+            <% } %>
+          </td>
+        </tr>
+      <% } %>
+
+      <% if (Number(order.extra_discount) > 0) { %>
+        <tr>
+          <td class="text-start">Discount:</td>
+          <td class="text-end">
+            - <% if (accessdata.plac == "1") { %>
+              <%= parseFloat(order.extra_discount).toFixed(2) %> <%= accessdata.symbol %>
+            <% } else { %>
+              <%= accessdata.symbol %> <%= parseFloat(order.extra_discount).toFixed(2) %>
+            <% } %>
+          </td>
+        </tr>
+      <% } %>
+
+      <% if (Number(order.coupon_discount) > 0) { %>
+        <tr>
+          <td class="text-start">Coupon Discount:</td>
+          <td class="text-end">
+            - <% if (accessdata.plac == "1") { %>
+              <%= parseFloat(order.coupon_discount).toFixed(2) %> <%= accessdata.symbol %>
+            <% } else { %>
+              <%= accessdata.symbol %> <%= parseFloat(order.coupon_discount).toFixed(2) %>
+            <% } %>
+          </td>
+        </tr>
+      <% } %>
+
+      <% if (Number(order.tax_amount) > 0) { %>
+        <tr>
+          <td class="text-start">Tax (<%= parseFloat(order.tax).toFixed(0) %>%):</td>
+          <td class="text-end">
+            <% if (accessdata.plac == "1") { %>
+              <%= parseFloat(order.tax_amount).toFixed(2) %> <%= accessdata.symbol %>
+            <% } else { %>
+              <%= accessdata.symbol %> <%= parseFloat(order.tax_amount).toFixed(2) %>
+            <% } %>
+          </td>
+        </tr>
+      <% } %>
+
+      <tr class="grand-total-row">
+        <td class="text-start" style="border-top: 1px solid #000; padding-top: 2px;">Gross Total:</td>
+        <td class="text-end" style="border-top: 1px solid #000; padding-top: 2px;">
+          <% if (accessdata.plac == "1") { %>
+            <%= parseFloat(order.gross_total).toFixed(2) %> <%= accessdata.symbol %>
+          <% } else { %>
+            <%= accessdata.symbol %> <%= parseFloat(order.gross_total).toFixed(2) %>
+          <% } %>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="text-start">Paid Amount:</td>
+        <td class="text-end fw-bold">
+          <% if (accessdata.plac == "1") { %>
+            <%= parseFloat(order.paid_amount).toFixed(2) %> <%= accessdata.symbol %>
+          <% } else { %>
+            <%= accessdata.symbol %> <%= parseFloat(order.paid_amount).toFixed(2) %>
+          <% } %>
+        </td>
+      </tr>
+
+      <% if (Number(order.balance_amount) != 0) { %>
+        <tr>
+          <td class="text-start"><b>Due / Balance:</b></td>
+          <td class="text-end fw-bold">
+            <% if (accessdata.plac == "1") { %>
+              <%= parseFloat(order.balance_amount).toFixed(2) %> <%= accessdata.symbol %>
+            <% } else { %>
+              <%= accessdata.symbol %> <%= parseFloat(order.balance_amount).toFixed(2) %>
+            <% } %>
+          </td>
+        </tr>
+      <% } %>
+    </table>
+
+    <hr class="border-dashed" />
+
+    <!-- Notes & Footer -->
+    <% if (order.note && order.note.trim()) { %>
+      <div style="font-size: 10px; font-style: italic; margin: 2px 0;">
+        <b>Note:</b> <%= order.note %>
+      </div>
+    <% } %>
+
+    <div class="receipt-footer">
+      <div>*** Thank You For Your Business! ***</div>
+      <div>Powered By <b><%= (master && master.app_name) ? master.app_name : 'iLaundry' %></b></div>
+    </div>
+  </div>
+
+  <!-- Cloth Tag Container (Populated by JsBarcode, used for tag print) -->
+  <div class="cloth-tag-container" id="clothTagContainer"></div>
+
+  <script src="/js/pos-print-client.js"></script>
+  <script type="text/javascript">
+    "use strict";
+
+    const serverUrl = "<%= (master && master.printing_server_url) ? master.printing_server_url : 'http://127.0.0.1:4321' %>";
+    const silentEnabled = <%= (master && master.silent_print_enabled === 0) ? 'false' : 'true' %>;
+    const invoicePrinter = "<%= (master && master.invoice_printer_name) ? master.invoice_printer_name : '' %>";
+    const invoiceFormat = <%= (master && master.invoice_printer_format !== undefined) ? master.invoice_printer_format : 1 %>;
+    const invoiceWidthMm = invoiceFormat === 2 ? 58 : (invoiceFormat === 0 ? null : 80);
+    const tagPrinter = "<%= (master && master.tag_printer_name) ? master.tag_printer_name : '' %>";
+    const tagFormat = <%= (master && master.tag_printer_format !== undefined) ? master.tag_printer_format : 1 %>;
+    const tagWidthMm = tagFormat === 0 ? 50 : (tagFormat === 1 ? 75 : 80);
+    const autoCut = <%= (master && master.printer_auto_cut === 0) ? 'false' : 'true' %>;
+    const openDrawer = <%= (master && master.printer_open_cash_drawer == 1) ? 'true' : 'false' %>;
+    const copies = <%= (master && master.printer_copies) ? master.printer_copies : 1 %>;
+
+    const cartServices = <%- JSON.stringify(cartservice || []) %>;
+    const orderData = <%- JSON.stringify(order || {}) %>;
+    const customerData = <%- JSON.stringify((Array.isArray(customer) && customer.length > 0) ? customer[0] : (customer || {})) %>;
+    const storeName = "<%= (shope && shope.name) ? shope.name : (accessdata && accessdata.masterstore ? accessdata.masterstore.app_name : 'iLaundry') %>";
+    const deliveryDate = "<%= ddate %>";
+
+    const posClient = new POSPrintClient({ baseUrl: serverUrl, timeout: 5000 });
+    let isServerOnline = false;
+    let serverVersion = "";
+
+    function showNotification(message, type) {
+      const el = document.getElementById("printNotification");
+      if (!el) return;
+      el.className = `print-alert-banner alert-${type}-soft no-print`;
+      el.innerHTML = message;
+      el.style.display = "block";
+      setTimeout(() => {
+        el.style.display = "none";
+      }, 5500);
+    }
+
+    async function updateServerStatus(silent) {
+      const dot = document.getElementById("serverStatusDot");
+      const text = document.getElementById("serverStatusText");
+      const pill = document.getElementById("serverStatusPill");
+
+      if (!silent) {
+        if (dot) dot.className = "status-dot checking";
+        if (text) text.textContent = "Checking Server...";
+      }
+
+      try {
+        isServerOnline = await posClient.isAvailable();
+        if (isServerOnline) {
+          try {
+            const health = await posClient.healthCheck();
+            serverVersion = (health && health.version) ? ` (v${health.version})` : "";
+          } catch (_) {}
+          if (dot) dot.className = "status-dot online";
+          if (text) text.textContent = `Printing Server: Online${serverVersion}`;
+          if (pill) pill.title = `Connected to ${serverUrl}`;
+        } else {
+          if (dot) dot.className = "status-dot offline";
+          if (text) text.textContent = "Printing Server: Offline (Native Fallback)";
+          if (pill) pill.title = `Cannot reach ${serverUrl}. Native browser print will be used.`;
+        }
+      } catch (err) {
+        isServerOnline = false;
+        if (dot) dot.className = "status-dot offline";
+        if (text) text.textContent = "Printing Server: Offline (Native Fallback)";
+      }
+    }
+
+    function renderClothTagsDOM() {
+      const container = document.getElementById("clothTagContainer");
+      if (!container) return;
+
+      let totalPieces = 0;
+      cartServices.forEach(item => {
+        totalPieces += (parseInt(item.service_quntity, 10) || 1);
+      });
+
+      if (totalPieces === 0) {
+        container.innerHTML = '<div class="cloth-tag"><p>No service garments found for cloth tags.</p></div>';
+        return;
+      }
+
+      let pieceIndex = 0;
+      let html = "";
+      const barcodeCalls = [];
+
+      cartServices.forEach(item => {
+        const qty = parseInt(item.service_quntity, 10) || 1;
+        for (let i = 1; i <= qty; i++) {
+          pieceIndex++;
+          const svgId = `tag_barcode_svg_${pieceIndex}`;
+          const itemTitle = item.service_name + (item.service_type_name ? ` [${item.service_type_name}]` : "");
+          const custName = customerData.name || "Customer";
+          const custPhone = customerData.number ? ` &bull; ${customerData.number}` : "";
+
+          html += `
+            <div class="cloth-tag">
+              <div class="tag-store-name">${storeName}</div>
+              <div class="tag-order-row">
+                <span>ORD: <b>${orderData.order_id || ''}</b></span>
+                <span>Piece <b>${pieceIndex}/${totalPieces}</b></span>
+              </div>
+              <div class="tag-item-name">${itemTitle}</div>
+              <div class="tag-cust-row">${custName}${custPhone}</div>
+              <div class="tag-date-row">Delivery: <b>${deliveryDate}</b></div>
+              <div class="tag-barcode-wrap">
+                <svg id="${svgId}" class="tag-barcode-svg"></svg>
+              </div>
+            </div>
+          `;
+
+          barcodeCalls.push({
+            id: `#${svgId}`,
+            value: String(orderData.order_id || "0000"),
+            label: `${orderData.order_id || ''}-${pieceIndex}/${totalPieces}`
+          });
+        }
+      });
+
+      container.innerHTML = html;
+
+      // Render barcodes with JsBarcode
+      if (typeof JsBarcode === "function") {
+        barcodeCalls.forEach(bc => {
+          try {
+            JsBarcode(bc.id, bc.value, {
+              format: "CODE128",
+              width: 1.4,
+              height: 34,
+              displayValue: true,
+              fontSize: 10,
+              text: bc.label,
+              margin: 2
+            });
+          } catch (e) {
+            console.warn("JsBarcode rendering error for " + bc.id, e);
+          }
+        });
+      }
+    }
+
+    async function printInvoice() {
+      const btn = document.getElementById("btn_print_invoice");
+      if (btn) btn.disabled = true;
+
+      try {
+        if (silentEnabled && isServerOnline) {
+          const receiptEl = document.querySelector(".receipt-container");
+          const styleEl = document.querySelector("style");
+          if (receiptEl) {
+            const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${styleEl ? styleEl.innerHTML : ''}</style></head><body>${receiptEl.outerHTML}</body></html>`;
+            const res = await posClient.printHTML(fullHtml, {
+              printerId: invoicePrinter || null,
+              widthMm: invoiceWidthMm || 80,
+              options: {
+                copies: copies,
+                cut: autoCut,
+                openCashDrawer: openDrawer
+              }
+            });
+
+            if (res && res.success) {
+              showNotification(`<b>Invoice Sent:</b> Receipt dispatched to <b>${invoicePrinter || 'Default Printer'}</b> (Job #${res.jobId || 'OK'})`, "success");
+              return;
+            }
+            console.warn("Silent invoice print error, falling back to native:", res);
+          }
+        }
+
+        // Native browser print fallback
+        document.body.classList.remove("printing-tags");
+        window.print();
+      } catch (err) {
+        console.warn("Invoice print exception, using native print:", err);
+        document.body.classList.remove("printing-tags");
+        window.print();
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function printClothTags() {
+      const btn = document.getElementById("btn_print_tag");
+      if (btn) btn.disabled = true;
+
+      try {
+        const container = document.getElementById("clothTagContainer");
+        if (!container || !container.children.length) {
+          renderClothTagsDOM();
+        }
+
+        if (silentEnabled && isServerOnline) {
+          const styleEl = document.querySelector("style");
+          const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${styleEl ? styleEl.innerHTML : ''}.cloth-tag-container { display: block !important; width: 100% !important; margin: 0 !important; }</style></head><body><div class="cloth-tag-container" style="display:block !important;">${container.innerHTML}</div></body></html>`;
+
+          const res = await posClient.printHTML(fullHtml, {
+            printerId: tagPrinter || null,
+            widthMm: tagWidthMm || 75,
+            options: {
+              copies: 1,
+              cut: autoCut
+            }
+          });
+
+          if (res && res.success) {
+            showNotification(`<b>Cloth Tags Sent:</b> Garment wash tags dispatched to <b>${tagPrinter || 'Tag Printer'}</b> (Job #${res.jobId || 'OK'})`, "info");
+            return;
+          }
+          console.warn("Silent cloth tag print failed, falling back to native:", res);
+        }
+
+        // Native print fallback for cloth tags
+        document.body.classList.add("printing-tags");
+        window.onafterprint = function () {
+          document.body.classList.remove("printing-tags");
+        };
+        window.print();
+      } catch (err) {
+        console.warn("Cloth tag print error, using native print:", err);
+        document.body.classList.add("printing-tags");
+        window.onafterprint = function () {
+          document.body.classList.remove("printing-tags");
+        };
+        window.print();
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function cancelAndBack() {
+      if (document.referrer && (document.referrer.indexOf("/admin/") !== -1 || document.referrer.indexOf("/order/") !== -1)) {
+        window.location.href = document.referrer;
+      } else if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = "/admin/pos";
+      }
+    }
+
+    window.onload = function () {
+      // 1. Pre-render cloth tags so barcodes are ready in memory
+      renderClothTagsDOM();
+
+      // 2. Check printing server connectivity (does NOT trigger print window)
+      updateServerStatus(false);
+
+      // 3. Keep status monitored in background
+      setInterval(() => updateServerStatus(true), 25000);
+    };
+  </script>
+</body>
+</html>

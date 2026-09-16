@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="author" content="iLaundry">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= data?.app_name || 'iLaundry' %> &bull; Customer Sign Up</title>
+
+    <!-- Early Theme Loader -->
+    <script>
+        (function () {
+            try {
+                function getCookie(name) {
+                    var nameEQ = name + "=";
+                    var ca = document.cookie.split(';');
+                    for (var i = 0; i < ca.length; i++) {
+                        var c = ca[i];
+                        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+                    }
+                    return null;
+                }
+                var savedTheme = getCookie('theme_version') || localStorage.getItem('theme_version') || 'light';
+                if (savedTheme === 'dark') {
+                    document.documentElement.setAttribute('data-theme-version', 'dark');
+                    document.documentElement.classList.add('dark-only');
+                } else {
+                    document.documentElement.setAttribute('data-theme-version', 'light');
+                    document.documentElement.classList.remove('dark-only');
+                }
+            } catch (e) { }
+        })();
+    </script>
+
+    <!-- Favicon icon -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/uploads/<%= data?.app_favicon || '' %>">
+    <link href="/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/vendor/select2.css">
+    <link href="/css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/liquid-glass-theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Toastr -->
+    <link rel="stylesheet" href="/vendor/toastr/css/toastr.min.css">
+</head>
+
+<body>
+    <div class="auth-split-wrapper">
+        <!-- Floating Theme Switcher -->
+        <div class="auth-top-controls">
+            <button type="button" class="auth-theme-btn" id="auth_theme_toggle" title="Switch Theme">
+                <i class="fas fa-moon lighticon"></i>
+                <i class="fas fa-sun darkicon d-none"></i>
+                <span id="theme_label">Dark Mode</span>
+            </button>
+        </div>
+
+        <!-- Left Canvas: Branding & Showcase -->
+        <div class="auth-hero-canvas">
+            <div class="auth-hero-glow-1"></div>
+            <div class="auth-hero-glow-2"></div>
+
+            <div class="auth-hero-brand">
+                <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-hero-brand-logo" alt="<%= data?.app_name || 'iLaundry' %> Logo">
+                <h2 class="auth-hero-brand-title"><%= data?.app_name || 'iLaundry' %></h2>
+            </div>
+
+            <div class="auth-hero-content">
+                <div class="auth-hero-badge">
+                    <i class="fas fa-sparkles"></i> Customer Portal Access
+                </div>
+                <h1 class="auth-hero-heading">
+                    Effortless Laundry<br>Care At Your Fingertips.
+                </h1>
+                <p class="auth-hero-lead">
+                    Create your customer account to track garment wash stages, view thermal billing receipts, schedule laundry drops, and manage your account ledger in real time.
+                </p>
+
+                <div class="auth-hero-pills">
+                    <div class="auth-hero-pill">
+                        <div class="auth-pill-icon"><i class="fas fa-clock"></i></div>
+                        <div>
+                            <div class="auth-pill-text">Live Order Tracking</div>
+                            <div class="fs-11 text-muted">Real-time Wash Milestones</div>
+                        </div>
+                    </div>
+                    <div class="auth-hero-pill">
+                        <div class="auth-pill-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                        <div>
+                            <div class="auth-pill-text">Digital Receipts</div>
+                            <div class="fs-11 text-muted">Itemized Billing History</div>
+                        </div>
+                    </div>
+                    <div class="auth-hero-pill">
+                        <div class="auth-pill-icon"><i class="fas fa-tags"></i></div>
+                        <div>
+                            <div class="auth-pill-text">Special Offers</div>
+                            <div class="fs-11 text-muted">Discounts &amp; Loyalty Points</div>
+                        </div>
+                    </div>
+                    <div class="auth-hero-pill">
+                        <div class="auth-pill-icon"><i class="fas fa-bell"></i></div>
+                        <div>
+                            <div class="auth-pill-text">Instant Notifications</div>
+                            <div class="fs-11 text-muted">SMS &amp; Email Ready Alerts</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="auth-hero-footer">
+                <span><%= data?.footer_text || 'Copyright &copy; 2026 iLaundry Inc.' %></span>
+                <span><i class="fas fa-shield-alt text-primary me-1 fs-9"></i> Verified Protection</span>
+            </div>
+        </div>
+
+        <!-- Right Canvas: Auth Form -->
+        <div class="auth-form-canvas">
+            <div class="auth-glass-card auth-card-wide">
+                <div class="auth-card-header">
+                    <a href="/">
+                        <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-card-logo" alt="<%= data?.app_name || 'iLaundry' %>">
+                    </a>
+                    <h3 class="auth-card-title">Create Your Account</h3>
+                    <p class="auth-card-subtitle">
+                        Select your registration role and fill in your profile details.
+                    </p>
+                </div>
+
+                <!-- Segmented Role Switcher -->
+                <div class="auth-role-segmented">
+                    <a href="/register" class="role-segment-btn active">
+                        <i class="fas fa-user me-1"></i> Customer Account
+                    </a>
+                    <% if (data?.type == '1') { %>
+                        <a href="/shopregister" class="role-segment-btn">
+                            <i class="fas fa-store me-1"></i> Store / Branch Owner
+                        </a>
+                    <% } %>
+                </div>
+
+                <form action="/register" method="POST" class="needs-validation" id="register_form">
+                    <div class="row g-3">
+                        <!-- Full Name -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>Full Name</strong> <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" placeholder="John Doe" required autofocus>
+                        </div>
+
+                        <!-- Email Address -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>Email Address</strong> <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" name="email" placeholder="john@example.com" required>
+                        </div>
+
+                        <!-- Phone Number -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>Phone Number</strong> <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="number" placeholder="+1234567890" required>
+                        </div>
+
+                        <!-- Tax Number -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>Tax / ID Number</strong></label>
+                            <input type="text" class="form-control" name="taxnumber" placeholder="Optional Tax ID">
+                        </div>
+
+                        <!-- Address -->
+                        <div class="<%= (multiy === false && store && store.length > 0) ? 'col-md-6' : 'col-md-12' %>">
+                            <label class="form-label mb-1"><strong>Physical Address</strong> <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="address" placeholder="Street, Suite, City" required>
+                        </div>
+
+                        <!-- Store Selector (if multi-store mode enabled) -->
+                        <% if (multiy === false && store && store.length > 0) { %>
+                            <div class="col-md-6">
+                                <label class="form-label mb-1"><strong>Preferred Store</strong> <span class="text-danger">*</span></label>
+                                <select class="form-control form-select" name="store" required>
+                                    <option value="" selected disabled>Choose Store Location</option>
+                                    <% store.forEach(function(st){ %>
+                                        <option value="<%= st.id %>"><%= st.name %></option>
+                                    <% }); %>
+                                </select>
+                            </div>
+                        <% } %>
+
+                        <!-- Username -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>Username</strong> <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="username" placeholder="Choose username" required>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>Password</strong> <span class="text-danger">*</span></label>
+                            <div class="position-relative">
+                                <input type="password" class="form-control pe-5" id="reg_password" name="password" placeholder="Create password" required minlength="4">
+                                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reg_password', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="auth-submit-btn mt-4" id="submit_register_btn">
+                        <i class="fas fa-user-check me-1"></i> Register Customer Account
+                    </button>
+                </form>
+
+                <div class="text-center mt-4 pt-2 border-top">
+                    <p class="fs-13 text-muted mb-0">
+                        Already have an account? 
+                        <a href="/" class="text-primary fw-bold text-decoration-none ms-1">
+                            <i class="fas fa-sign-in-alt me-1"></i> Sign In
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/vendor/global/global.min.js"></script>
+    <script src="/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
+    <script src="/vendor/toastr/js/toastr.min.js"></script>
+
+    <!-- Theme Switcher & Password Handlers -->
+    <script>
+        function setCookie(name, value, days) {
+            var expires = "";
+            if (days) {
+                var date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
+        }
+
+        function getCookie(name) {
+            var nameEQ = name + "=";
+            var ca = document.cookie.split(';');
+            for (var i = 0; i < ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+
+        function applyAuthTheme(theme) {
+            if (theme === 'dark') {
+                $('html, body').attr('data-theme-version', 'dark').addClass('dark-only');
+                $('.lighticon').addClass('d-none');
+                $('.darkicon').removeClass('d-none');
+                $('#theme_label').text('Light Mode');
+            } else {
+                $('html, body').attr('data-theme-version', 'light').removeClass('dark-only');
+                $('.lighticon').removeClass('d-none');
+                $('.darkicon').addClass('d-none');
+                $('#theme_label').text('Dark Mode');
+            }
+        }
+
+        function togglePasswordVisibility(fieldId, btn) {
+            var input = document.getElementById(fieldId);
+            var icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        $(document).ready(function () {
+            var currentTheme = getCookie('theme_version') || localStorage.getItem('theme_version') || 'light';
+            applyAuthTheme(currentTheme);
+
+            $('#auth_theme_toggle').on('click', function (e) {
+                e.preventDefault();
+                var active = $('html').attr('data-theme-version');
+                var newTheme = (active === 'dark') ? 'light' : 'dark';
+                setCookie('theme_version', newTheme, 365);
+                localStorage.setItem('theme_version', newTheme);
+                applyAuthTheme(newTheme);
+            });
+        });
+    </script>
+
+    <!-- Toastr Notifications -->
+    <% if(typeof success !== 'undefined' && success && success.length > 0){ %>
+        <script>
+            toastr.success('<%- success %>', {
+                timeOut: 8000,
+                closeButton: true,
+                progressBar: true,
+                positionClass: "toast-top-right",
+                escapeHtml: false
+            });
+        </script>
+    <% } %>
+
+    <% if(typeof error !== 'undefined' && error && error.length > 0){ %>
+        <script>
+            toastr.error('<%= error %>', {
+                timeOut: 6000,
+                closeButton: true,
+                progressBar: true,
+                positionClass: "toast-top-right"
+            });
+        </script>
+    <% } %>
+</body>
+</html>

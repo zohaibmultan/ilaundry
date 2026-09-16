@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="author" content="iLaundry">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= data?.app_name || 'iLaundry' %> &bull; Sign In</title>
+
+    <!-- Early Theme Loader (Prevents FOUC) -->
+    <script>
+        (function () {
+            try {
+                function getCookie(name) {
+                    var nameEQ = name + "=";
+                    var ca = document.cookie.split(';');
+                    for (var i = 0; i < ca.length; i++) {
+                        var c = ca[i];
+                        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+                    }
+                    return null;
+                }
+                var savedTheme = getCookie('theme_version') || localStorage.getItem('theme_version') || 'light';
+                if (savedTheme === 'dark') {
+                    document.documentElement.setAttribute('data-theme-version', 'dark');
+                    document.documentElement.classList.add('dark-only');
+                } else {
+                    document.documentElement.setAttribute('data-theme-version', 'light');
+                    document.documentElement.classList.remove('dark-only');
+                }
+            } catch (e) { }
+        })();
+    </script>
+
+    <!-- Favicon icon -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/uploads/<%= data?.app_favicon || '' %>">
+    <link href="/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/liquid-glass-theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Toastr -->
+    <link rel="stylesheet" href="/vendor/toastr/css/toastr.min.css">
+</head>
+
+<body>
+    <div class="auth-split-wrapper">
+        <!-- Floating Top-Right Theme Switcher -->
+        <div class="auth-top-controls">
+            <button type="button" class="auth-theme-btn" id="auth_theme_toggle" title="Switch Theme">
+                <i class="fas fa-moon lighticon"></i>
+                <i class="fas fa-sun darkicon d-none"></i>
+                <span id="theme_label">Dark Mode</span>
+            </button>
+        </div>
+
+        <!-- Left Canvas: Branding & Feature Highlights -->
+        <div class="auth-hero-canvas">
+            <div class="auth-hero-glow-1"></div>
+            <div class="auth-hero-glow-2"></div>
+
+            <div class="auth-hero-brand">
+                <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-hero-brand-logo" alt="<%= data?.app_name || 'iLaundry' %> Logo">
+                <h2 class="auth-hero-brand-title"><%= data?.app_name || 'iLaundry' %></h2>
+            </div>
+
+            <div class="auth-hero-content">
+                <div class="auth-hero-badge">
+                    <i class="fas fa-sparkles"></i> Next-Gen Laundromat Platform
+                </div>
+                <h1 class="auth-hero-heading">
+                    Streamline Your Laundry Operations & POS Billing.
+                </h1>
+                <p class="auth-hero-lead">
+                    Enterprise multi-store management, high-density POS checkout, garment wash barcode tags, customer ledgers, and financial reporting — unified in one executive console.
+                </p>
+
+                <div class="auth-hero-pills">
+                    <div class="auth-hero-pill">
+                        <div class="auth-pill-icon"><i class="fas fa-receipt"></i></div>
+                        <div>
+                            <div class="auth-pill-text">High-Speed POS</div>
+                            <div class="fs-11 text-muted">80mm & 58mm Thermal Invoicing</div>
+                        </div>
+                    </div>
+                    <div class="auth-hero-pill">
+                        <div class="auth-pill-icon"><i class="fas fa-barcode"></i></div>
+                        <div>
+                            <div class="auth-pill-text">Cloth Wash Tags</div>
+                            <div class="fs-11 text-muted">3"&times;2" Barcode Garment Tracking</div>
+                        </div>
+                    </div>
+                    <div class="auth-hero-pill">
+                        <div class="auth-pill-icon"><i class="fas fa-chart-line"></i></div>
+                        <div>
+                            <div class="auth-pill-text">Financial Analytics</div>
+                            <div class="fs-11 text-muted">Real-time P&amp;L and Ledgers</div>
+                        </div>
+                    </div>
+                    <div class="auth-hero-pill">
+                        <div class="auth-pill-icon"><i class="fas fa-store"></i></div>
+                        <div>
+                            <div class="auth-pill-text">Multi-Store Sync</div>
+                            <div class="fs-11 text-muted">Centralized Branch Operations</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="auth-hero-footer">
+                <span><%= data?.footer_text || 'Copyright &copy; 2026 iLaundry Inc. All rights reserved.' %></span>
+                <span><i class="fas fa-circle text-success me-1 fs-9"></i> Live POS Network</span>
+            </div>
+        </div>
+
+        <!-- Right Canvas: Auth Form -->
+        <div class="auth-form-canvas">
+            <div class="auth-glass-card">
+                <div class="auth-card-header">
+                    <a href="/">
+                        <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-card-logo" alt="<%= data?.app_name || 'iLaundry' %>">
+                    </a>
+                    <h3 class="auth-card-title">Sign In to Your Account</h3>
+                    <p class="auth-card-subtitle">
+                        Welcome back! Please enter your credentials to access the system.
+                    </p>
+                </div>
+
+                <form action="/login" method="POST" class="need-validation" id="login_form">
+                    <!-- Username / Email / Number -->
+                    <div class="mb-3">
+                        <label class="form-label mb-1"><strong>Username, Email or Phone</strong> <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user text-muted"></i></span>
+                            <input type="text" class="form-control" name="username" placeholder="e.g. admin or 9896959793" required autofocus>
+                        </div>
+                    </div>
+
+                    <!-- Password with Eye Toggle -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label mb-0"><strong>Password</strong> <span class="text-danger">*</span></label>
+                            <a href="/forgot-password" class="fs-12 text-primary fw-semibold text-decoration-none" title="Reset your password">
+                                Forgot Password?
+                            </a>
+                        </div>
+                        <div class="position-relative">
+                            <input type="password" class="form-control pe-5" id="login_password" name="password" placeholder="Enter your password" required>
+                            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('login_password', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Remember Preference -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="form-check custom-checkbox mb-0">
+                            <input type="checkbox" class="form-check-input" id="basic_checkbox_1">
+                            <label class="form-check-label fs-12 text-muted" for="basic_checkbox_1">Remember my preference</label>
+                        </div>
+                    </div>
+
+                    <!-- Sign In Submit -->
+                    <button type="submit" class="auth-submit-btn" id="login_submit_btn">
+                        <i class="fas fa-sign-in-alt me-1"></i> Sign In to Console
+                    </button>
+                </form>
+
+                <!-- Quick Demo Credentials Pill Bar -->
+                <div class="auth-demo-bar">
+                    <div class="fs-11 fw-bold text-muted text-uppercase tracking-wider">
+                        <i class="fas fa-bolt text-warning me-1"></i> One-Click Demo Logins
+                    </div>
+                    <div class="auth-demo-pills">
+                        <button type="button" class="auth-demo-pill" id="demo_master_admin" title="Login as Master Admin">
+                            <i class="fas fa-crown text-primary me-1"></i> Admin
+                        </button>
+                        <button type="button" class="auth-demo-pill" id="demo_sub_admin" title="Login as Store Manager">
+                            <i class="fas fa-user-tie text-info me-1"></i> Manager
+                        </button>
+                        <button type="button" class="auth-demo-pill" id="demo_store" title="Login as Store Branch">
+                            <i class="fas fa-store text-success me-1"></i> Store
+                        </button>
+                        <button type="button" class="auth-demo-pill" id="demo_customer" title="Login as Customer">
+                            <i class="fas fa-user text-secondary me-1"></i> Customer
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Registration Links -->
+                <% 
+                   const customer = (typeof rollverify !== 'undefined' && rollverify) ? rollverify.find(r => r.rollType === 'customer') : null;
+                   const store = (typeof rollverify !== 'undefined' && rollverify) ? rollverify.find(r => r.rollType === 'store') : null;
+                   let showstore = data?.type == '1' && store && store.roll_status == 'active';
+                   let showcustomer = customer && customer.roll_status == 'active';
+                %>
+
+                <div class="text-center mt-4 pt-2 border-top">
+                    <p class="fs-13 text-muted mb-2">
+                        Don't have an account yet?
+                    </p>
+                    <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+                        <a href="/register" class="btn btn-sm btn-outline-primary fw-semibold px-3 py-1 fs-12">
+                            <i class="fas fa-user-plus me-1"></i> Customer Sign Up
+                        </a>
+                        <% if (data?.type == '1') { %>
+                            <a href="/shopregister" class="btn btn-sm btn-outline-secondary fw-semibold px-3 py-1 fs-12">
+                                <i class="fas fa-store me-1"></i> Store Sign Up
+                            </a>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/vendor/global/global.min.js"></script>
+    <script src="/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
+    <script src="/vendor/toastr/js/toastr.min.js"></script>
+
+    <!-- Theme Switcher & Interactive Scripts -->
+    <script>
+        function setCookie(name, value, days) {
+            var expires = "";
+            if (days) {
+                var date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
+        }
+
+        function getCookie(name) {
+            var nameEQ = name + "=";
+            var ca = document.cookie.split(';');
+            for (var i = 0; i < ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+
+        function applyAuthTheme(theme) {
+            if (theme === 'dark') {
+                $('html, body').attr('data-theme-version', 'dark').addClass('dark-only');
+                $('.lighticon').addClass('d-none');
+                $('.darkicon').removeClass('d-none');
+                $('#theme_label').text('Light Mode');
+            } else {
+                $('html, body').attr('data-theme-version', 'light').removeClass('dark-only');
+                $('.lighticon').removeClass('d-none');
+                $('.darkicon').addClass('d-none');
+                $('#theme_label').text('Dark Mode');
+            }
+        }
+
+        function togglePasswordVisibility(fieldId, btn) {
+            var input = document.getElementById(fieldId);
+            var icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        $(document).ready(function () {
+            var currentTheme = getCookie('theme_version') || localStorage.getItem('theme_version') || 'light';
+            applyAuthTheme(currentTheme);
+
+            $('#auth_theme_toggle').on('click', function (e) {
+                e.preventDefault();
+                var active = $('html').attr('data-theme-version');
+                var newTheme = (active === 'dark') ? 'light' : 'dark';
+                setCookie('theme_version', newTheme, 365);
+                localStorage.setItem('theme_version', newTheme);
+                applyAuthTheme(newTheme);
+            });
+
+            // Quick Demo Credential buttons
+            $('#demo_master_admin').on('click', function () {
+                $('input[name=username]').val('admin');
+                $('#login_password').val('1234');
+                toastr.info('Filled credentials for Master Admin', { timeOut: 2000 });
+            });
+
+            $('#demo_sub_admin').on('click', function () {
+                $('input[name=username]').val('meera');
+                $('#login_password').val('123');
+                toastr.info('Filled credentials for Store Manager', { timeOut: 2000 });
+            });
+
+            $('#demo_store').on('click', function () {
+                $('input[name=username]').val('trinity');
+                $('#login_password').val('123');
+                toastr.info('Filled credentials for Store Branch', { timeOut: 2000 });
+            });
+
+            $('#demo_customer').on('click', function () {
+                $('input[name=username]').val('watson');
+                $('#login_password').val('123');
+                toastr.info('Filled credentials for Customer', { timeOut: 2000 });
+            });
+        });
+    </script>
+
+    <!-- Toastr Notifications -->
+    <% if(typeof success !== 'undefined' && success && success.length > 0){ %>
+        <script>
+            toastr.success('<%- success %>', {
+                timeOut: 8000,
+                closeButton: true,
+                progressBar: true,
+                positionClass: "toast-top-right",
+                escapeHtml: false
+            });
+        </script>
+    <% } %>
+
+    <% if(typeof error !== 'undefined' && error && error.length > 0){ %>
+        <script>
+            toastr.error('<%= error %>', {
+                timeOut: 6000,
+                closeButton: true,
+                progressBar: true,
+                positionClass: "toast-top-right"
+            });
+        </script>
+    <% } %>
+</body>
+</html>

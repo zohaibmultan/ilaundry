@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+
+</head>
+
+<body>
+
+
+    <style>
+        .form-control.is-invalid {
+            border-color: #FF6746 !important;
+            border-right: 1px #FF6746 solid !important;
+        }
+
+        .invalid-select {
+            border: 1px solid #FF6746 !important;
+            color: #484848 !important;
+            font-weight: 400;
+        }
+
+        .select2-container .select2-selection--single .invalid-select {
+            border: 1px solid #FF6746 !important;
+        }
+
+        .invalid-select:focus {
+            outline: none;
+            box-shadow: 0 0 0 0.15rem rgba(255, 103, 70, 0.25);
+        }
+
+
+        .select2-container .select2-selection--single {
+         
+            padding: 0.3125rem 1.25rem;
+            color: #080808;
+            height: 3.5rem;
+            border-radius: 0.5rem;
+            font-weight: 400;
+            background-color: transparent;
+        }
+
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 41px;
+            color: #484848;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px;
+            width: 25px;
+            position: absolute;
+            top: 6px;
+            right: 12px;
+            font-size: 16px;
+        }
+
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow b {
+            border-style: solid;
+            border-width: 7px 6px 0 6px;
+            border-color: #999 transparent transparent transparent;
+            display: block;
+            width: 0;
+            height: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-top: -4px;
+            margin-left: -6px;
+        }
+
+
+        .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
+            border-width: 0 6px 7px 6px;
+            border-color: transparent transparent #999 transparent;
+        }
+
+
+        .select2-container--bootstrap4 .select2-results__option {
+            padding: 6px 12px;
+            font-size: 14px;
+            color: #484848;
+        }
+
+        .select2-container--bootstrap4 .select2-results__option--highlighted {
+            background-color: #f0f1f5;
+            color: #000;
+        }
+
+
+        #RemoveBox .select2-selection {
+            display: none;
+        }
+    </style>
+
+
+
+        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card ">
+
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <%= language.Edit_Services_Details %>
+                                </h3>
+                                <button type="button" class="btn btn-rounded btn-primary" onclick="history.back()"><i
+                                        class="la la-undo"></i>
+                                    <%= language.Go_Back %>
+                                </button>
+                            </div>
+                            <div class="card-body ">
+                                <form action="/services/updateservices/<%=services.id %>" method="post"
+                                    class="need-validation" enctype="multipart/form-data">
+                                    <div class="row">
+
+
+                                        <!-- left side -->
+
+                                        <div class="col-xl-9">
+                                            <div class="row mt-3">
+                                                <div class="col-md-7" id="RemoveBox">
+                                                    <label class="form-label">
+                                                        <%= language.Service_Name %>
+                                                    </label>
+                                                    <input type="text" placeholder="Enter Service Name"
+                                                        class="form-control" name="name_update"
+                                                        value="<%= services.name %>">
+                                                    <input type="hidden" id="servalid" value="0" min=1 required>
+                                                    <input type="hidden" id="add_servie_storelist"
+                                                        value="<%= services.store_ID %>">
+                                                </div>
+                                                <div class="col-md-4 ">
+                                                    <label class="btn btn-primary mt-4" for="file-1"
+                                                        style="width: 100%;">
+                                                        <%= language.Upload_Image %>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- right side -->
+
+                                        <div class="col-xl-3">
+                                            <div class="center">
+                                                <div class="form-input">
+                                                    <div class="preview m-4 mt-0">
+                                                        <img id="file-preview" width="160"
+                                                            src="../../uploads/<%= services.image %>" alt="image">
+                                                    </div>
+                                                    <input class="d-none" type="file" id="file-1" name="image_update"
+                                                        accept="image/*" onchange="showPreview(event);">
+
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- table -->
+
+                                        <div class="col-xl-12">
+                                            <div class="table-responsive" style="overflow-x:unset !important;">
+                                                <table class="table table-responsive-sm" id="serviceType_tbl">
+                                                    <thead>
+                                                        <tr>
+
+                                                            <th>
+                                                                <%= language.Service_Type %>
+                                                            </th>
+                                                            <th>
+                                                                <%= language.Service_Price %>
+                                                            </th>
+                                                            <th>
+                                                                <%= language.Action %>
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="tblPage">
+                                                        <% type.forEach(function(data, i){ %>
+                                                            <tr>
+                                                                <td>
+                                                                    <div class="input-group"><select
+                                                                            class="form-control service_type_Row"
+                                                                            name="service_type">
+                                                                            <% typedata.forEach(function(x){ %>
+                                                                                <option value="<%=x.id %>" <%=data==x.id
+                                                                                    ? 'selected' : '' %> > <%=
+                                                                                        x.services_type %>
+                                                                                </option>
+                                                                                <% }) %>
+                                                                        </select> </div>
+                                                                </td>
+                                                                <td>
+                                                                    <div class="input-group">
+                                                                        <input type="flot" name="service_price"
+                                                                            class="total form-control"
+                                                                            value="<%= price[i] %>">
+                                                                    </div>
+                                                                </td>
+                                                                <td><a id="remove"><i class="fa fa-times"></i></a></td>
+                                                            </tr>
+                                                            <% }) %>
+
+                                                    </tbody>
+                                                </table>
+
+                                                <div class="d-flex justify-content-end m-1">
+                                                    <button type="button" class="btn btn-outline-secondary btn-xs"
+                                                        id="add_service">
+                                                        <%= language.Add_Service_Type %>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="card-footer mt-4">
+                                            <div class="row">
+
+                                                <!-- left side -->
+                                                <div class="col-xl-9">
+                                                    <div class="form-group">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" id="active"
+                                                                name="active_update" value="0" <%=services.status==0
+                                                                ? 'checked' : '' %> >
+                                                            <label class="form-check-label" for="active">
+                                                                <%= language.Is_Active %> ?
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- right side -->
+                                                <div class="col-xl-3">
+                                                    <button type="button" class="btn btn-secondary"
+                                                        onclick="history.back()">
+                                                        <%= language.Cancel %>
+                                                    </button>
+
+                                                    <button type="submit" id="add" class="btn btn-primary">
+                                                        <%= language.Submit %>
+                                                    </button>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!--********** Content body end **********-->
+
+
+        </div>
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+
+
+
+</body>
+
+
+</html>

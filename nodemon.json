@@ -1,0 +1,14 @@
+{
+  "watch": [
+    "app.js",
+    "routers",
+    "middelwer",
+    "config.env"
+  ],
+  "ignore": [
+    "public/*",
+    "uploads/*",
+    "views/*"
+  ],
+  "ext": "js,mjs,json,env"
+}

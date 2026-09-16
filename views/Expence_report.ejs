@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+
+</head>
+
+<body>
+        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card ">
+                            <div class="card-header justify-content-between">
+                                <h3 class="card-title">
+                                    <%= language.Expence_Report %>
+                                </h3>
+
+                            </div>
+                            <div class="d-none">
+                                <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
+                                <input type="hiden" name="pls" value="<%= accessdata.plac %>">
+                                <input type="hiden" name="thousands_separator"
+                                    value="<%= accessdata.thousands_separator %>">
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div  class="col-sm-4 col-12 mt-2">
+                                        <label class="form-label">
+                                            <%= language.Start_Date %>
+                                        </label>
+                                        <input type="date" class="form-control" name="start_date"
+                                            id="Expence_report_start_date">
+                                    </div>
+
+                                    <div  class="col-sm-4 col-12 mt-2">
+                                        <label class="form-label">
+                                            <%= language.End_Date %>
+                                        </label>
+                                        <input type="date" class="form-control" name="end_date"
+                                            id="Expence_report_end_date">
+                                    </div>
+                                    <div
+                                        class="form-group m-0 col-sm-4 col-12 mt-2 <%= accessdata.logas == 'master' && accessdata.mutibranch  ? '' :'d-none' %>">
+                                        <label class="form-label">
+                                            <%= language.Store_Name %>
+                                        </label>
+                                        <select class="default-select form-control wide " name="storeid"
+                                            id="Expence_report_store">
+                                            <% storeList.forEach(function(x){ %>
+                                                <option value="<%= x.id %>" <%=x.id==store ? 'selected' :'' %> >
+                                                    <%= x.name %>
+                                                </option>
+                                                <% }) %>
+                                        </select>
+
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="card-body">
+                                        <div class="table-responsive " id="invoice_page">
+                                            <div class="tableFixHead">
+                                                <table class="table table-responsive-sm">
+                                                    <thead class="table_head">
+
+                                                        <tr>
+                                                            <th>
+                                                                <%= language.Date %>
+                                                            </th>
+                                                            <th>
+                                                                <%= language.TOWARDS %>
+                                                            </th>
+                                                            <th class="text-nowrap">
+                                                                <%= language.EXPENCE_AMOUNT %>
+                                                            </th>
+                                                            <th class="text-nowrap">
+                                                                <%= language.TAX %> %
+                                                            </th>
+                                                            <th class="text-nowrap" >
+                                                                <%= language.TAX_AMOUNT %>
+                                                            </th>
+                                                            <th class="text-nowrap" >
+                                                                <%= language.PAYMENT_MODE %>
+                                                            </th>
+
+                                                        </tr>
+
+                                                    </thead>
+                                                    <tbody id="tb_row_expence_report">
+                                                        <% Expencedata.forEach(function (data){ %>
+                                                            <tr>
+                                                                <% let new_date=new Date(data.date) %>
+                                                                    <% let year=new_date.getFullYear() %>
+                                                                        <% let new_day=(new_date.getDate() < 10 ? '0'
+                                                                            : '' ) + new_date.getDate() %>
+                                                                            <% let new_month=((new_date.getMonth()+1) <
+                                                                                10 ? '0' : '' ) +
+                                                                                (new_date.getMonth()+1) %>
+                                                                                <% let
+                                                                                    fullDate=`${year}-${new_month}-${new_day}`
+                                                                                    %>
+                                                                                    <td class="text-nowrap">
+                                                                                        <%= fullDate %>
+                                                                                    </td>
+                                                                                    <td class="text-nowrap">
+                                                                                        <%= data.cat_name %>
+                                                                                    </td>
+                                                                                    <td class="symbol">
+                                                                                        <%= data.amount.toFixed(2) %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <%= data.taxpercent %>
+                                                                                    </td>
+                                                                                    <td class="symbol">
+                                                                                        <%= data.taxamount.toFixed(2) %>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <%= data.ac_name %>
+                                                                                    </td>
+                                                            </tr>
+                                                            <% }) %>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col d-flex">
+                                        <strong class="text-nowrap">
+                                            <%= language.Total_Expence %> :
+                                        </strong>
+                                        <strong><span id="expence_report" class="text-nowrap" >0</span></strong>
+                                    </div>
+                                    <div class="col d-flex">
+                                        <strong class="text-nowrap">
+                                            <%= language.Total_Expence_Amount %> :
+                                        </strong>
+                                        <strong> <span id="expence_report_amount"
+                                                class="symbol invosymbol text-nowrap">0</span></strong>
+                                    </div>
+                                    <div class="col  d-flex">
+                                        <strong class="text-nowrap">
+                                            <%= language.Total_Tax_Amount %> :
+                                        </strong>
+                                        <strong> <span id="expence_report_taxamount"
+                                                class="symbol invosymbol  text-nowrap">0</span></strong>
+                                    </div>
+                                    <div class="col">
+<div class="d-flex mt-2">
+                                        <button type="submit" class="btn btn-success me-2 text-nowrap" onclick="downloadExpencereport()"
+                                            id="Download_order_report">
+                                            <%= language.Download_Report %>
+                                        </button>
+
+
+                                        <button type="submit" id="order_report_print" class="btn btn-warning mb-0 text-nowrap">
+                                            <%= language.Print_Report %>
+                                        </button>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!--********** Content body end **********-->
+
+        </div>
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+
+
+
+</body>
+
+
+</html>

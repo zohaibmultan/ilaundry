@@ -1,0 +1,216 @@
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="author" content="laundry">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+    (function () {
+        function getCookie(name) {
+            var match = document.cookie.match(new RegExp('(^|;\\s*)' + name + '=([^;]+)'));
+            return match ? decodeURIComponent(match[2]) : null;
+        }
+        function setCookie(name, value, days) {
+            var expires = "";
+            if (days) {
+                var d = new Date();
+                d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + d.toUTCString();
+            }
+            document.cookie = name + "=" + encodeURIComponent(value || "") + expires + "; path=/; SameSite=Lax";
+        }
+        window.getThemePreference = function () {
+            try {
+                var c = getCookie('version');
+                if (c) return c;
+                var ls = localStorage.getItem('theme_version');
+                if (ls) return ls;
+            } catch (e) {}
+            return 'light';
+        };
+        window.applyAppTheme = function (theme) {
+            var t = (theme === 'dark') ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme-version', t);
+            if (document.body) {
+                document.body.setAttribute('data-theme-version', t);
+                if (t === 'dark') {
+                    document.body.classList.add('dark-only');
+                } else {
+                    document.body.classList.remove('dark-only');
+                }
+            }
+            if (t === 'dark') {
+                document.documentElement.classList.add('dark-only');
+            } else {
+                document.documentElement.classList.remove('dark-only');
+            }
+            var lightIcons = document.querySelectorAll('.lighticon');
+            var darkIcons = document.querySelectorAll('.darkicon');
+            lightIcons.forEach(function (el) { el.style.display = (t === 'dark') ? 'none' : 'inline-block'; });
+            darkIcons.forEach(function (el) { el.style.display = (t === 'dark') ? 'inline-block' : 'none'; });
+
+            var modeContainers = document.querySelectorAll('.mode');
+            modeContainers.forEach(function (m) {
+                if (t === 'dark') {
+                    m.classList.add('dark');
+                    m.setAttribute('data-id', 'light');
+                } else {
+                    m.classList.remove('dark');
+                    m.setAttribute('data-id', 'dark');
+                }
+            });
+
+            if (typeof dezSettings === 'function' && typeof dezSettingsOptions !== 'undefined') {
+                dezSettingsOptions.version = t;
+                new dezSettings(dezSettingsOptions);
+            }
+        };
+        window.toggleAppTheme = function (e) {
+            if (e && e.preventDefault) e.preventDefault();
+            var current = document.documentElement.getAttribute('data-theme-version') || window.getThemePreference();
+            var next = (current === 'dark') ? 'light' : 'dark';
+            window.applyAppTheme(next);
+            try {
+                localStorage.setItem('theme_version', next);
+            } catch (err) {}
+            setCookie('version', next, 365);
+            return false;
+        };
+
+        var initial = window.getThemePreference();
+        window.applyAppTheme(initial);
+
+        document.addEventListener('DOMContentLoaded', function () {
+            window.applyAppTheme(window.getThemePreference());
+        });
+    })();
+</script>
+<title>
+    <%= accessdata?.masterstore?.app_name %>
+</title>
+<!-- Favicon icon -->
+<link rel="icon" type="image/png" sizes="16x16" href="/uploads/<%= accessdata?.masterstore?.app_favicon %>">
+<!-- Datatable -->
+<link href="/vendor/datatables/css/jquery.dataTables.min.css" rel="stylesheet">
+<!-- global style sheet for topbar and sidebar -->
+
+<link rel="stylesheet" type="text/css" href="/vendor/flag-icon.css">
+<link rel="stylesheet" href="/vendor/select2/css/select2.min.css">
+
+<link href="/css/style.css" rel="stylesheet">
+<link href="/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
+<!-- Toastr -->
+<link rel="stylesheet" href="/vendor/toastr/css/toastr.min.css">
+
+<!-- jQuery-ui  -->
+<link rel="stylesheet" href="/Changes/jquery-ui.css">
+
+<!-- Liquid Glass Theme & Typography Scale -->
+<link rel="stylesheet" href="/css/liquid-glass-theme.css">
+
+
+
+<!-- select2 links  -->
+
+<style>
+    .select2-container .select2-selection--single {
+        padding: 0.3125rem 0.75rem;
+        color: #080808;
+        height: 3.5rem;
+        width: 100%;
+        border-radius: 0.5rem;
+        font-weight: 400;
+        background-color: transparent;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        padding-left: 0px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+        width: 10px;
+        top: 77%;
+    }
+</style>
+
+<% if (accessdata?.masterstore?.onesignal_app_id && accessdata.masterstore.onesignal_app_id !== '*****' && accessdata.masterstore.onesignal_app_id.includes('-')) { %>
+<script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" defer></script>
+<script>
+    window.OneSignal = window.OneSignal || [];
+    OneSignal.push(function () {
+        try {
+            OneSignal.init({
+                appId: '<%= accessdata?.masterstore?.onesignal_app_id %>',
+            });
+            OneSignal.on('subscriptionChange', function (isSubscribed) {
+                if (isSubscribed === true) {
+                    console.log('The user subscription state is now:', isSubscribed);
+                    var pathArray = window.location.pathname.split('/');
+                    OneSignal.sendTags({
+                        "Login_ID": '<%= accessdata?.topbardata?.id %>',
+                        "subscription_user_Type": '<%= accessdata?.logas %>',
+                    }).then(function (tagsSent) {
+                        console.log("tagsSent", tagsSent);
+                    }).catch(function (err) {
+                        console.warn("OneSignal tags error:", err);
+                    });
+                }
+            });
+        } catch (e) {
+            console.warn("OneSignal error:", e);
+        }
+    });
+</script>
+<% } %>
+
+<%# Live Reload for Local Development (CSS hot reload & EJS auto refresh) %>
+<script>
+  (function () {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      var isReconnecting = false;
+      function startLiveReload() {
+        if (!window.EventSource) return;
+        var es = new EventSource('/dev-reload-stream');
+        
+        es.onmessage = function (e) {
+          if (e.data === 'reload-css') {
+            console.log('⚡ [LiveReload] CSS updated, reloading stylesheets in-place...');
+            var links = document.querySelectorAll('link[rel="stylesheet"]');
+            links.forEach(function (link) {
+              var href = link.getAttribute('href');
+              if (href && !href.startsWith('http://') && !href.startsWith('https://')) {
+                var cleanHref = href.split('?')[0];
+                link.setAttribute('href', cleanHref + '?v=' + Date.now());
+              }
+            });
+          } else if (e.data === 'reload-page') {
+            console.log('⚡ [LiveReload] Template updated, refreshing page...');
+            window.location.reload();
+          }
+        };
+
+        es.onerror = function () {
+          es.close();
+          if (!isReconnecting) {
+            isReconnecting = true;
+            console.log('⚡ [LiveReload] Server rebooting, waiting to reconnect...');
+            var poll = setInterval(function () {
+              fetch('/dev-reload-stream', { method: 'HEAD', cache: 'no-store' })
+                .then(function (res) {
+                  if (res.ok) {
+                    clearInterval(poll);
+                    console.log('⚡ [LiveReload] Server reconnected, refreshing...');
+                    window.location.reload();
+                  }
+                })
+                .catch(function () {});
+            }, 700);
+          }
+        };
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startLiveReload);
+      } else {
+        startLiveReload();
+      }
+    }
+  })();
+</script>

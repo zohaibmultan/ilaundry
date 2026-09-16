@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+</head>
+
+<body>
+
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card ">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <div class="d-flex">
+                                        <div class="text-start">
+                                            <% if(status == '1'){%>
+                                                 <%=  language.Comission_List  %>
+                                                <%}else if(status == '2'){%>
+                                                  <%=  language.Paid_Comission_List  %>
+                                                    <%}else if(status == '3'){%> 
+                                                         <%=  language.Due_Comission_List  %>
+                                                        <%} %>
+                                        </div>
+                                       
+                                    </div>
+                                </h3>
+                            </div>
+                            <div class="d-none">
+                                <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
+                                <input type="hiden" name="pls" value="<%= accessdata.plac %>">
+                                <input type="hiden" name="thousands_separator"
+                                    value="<%= accessdata.thousands_separator %>">
+                            </div>
+                            <div class="card-body">
+
+
+                                <div class="table-responsive">
+
+                                    <% if (status == '1') { %>
+                                        <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th>
+                                                        <%= language.Date %>
+                                                    </th>
+                                                    <th>
+                                                        <%= language.Order_ID %>
+                                                    </th>
+                                                    <th class="<%= (accessdata.mutibranch == false) || (accessdata.roll.rollType =='store') ? 'd-none' : '' %>">
+                                                        <%= language.Store_Name %>
+                                                    </th>
+                                                    <th>
+                                                        <%= language.Sales_Amount %>
+                                                    </th>
+                                                    <th>
+                                                        <%= language.Store_Commission %>
+                                                    </th>
+                                                    <th>
+                                                        <%= language.Admin_earning %>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% comission.map((data)=> {
+const dateParts = data.order_date.toString().split(" "); %>
+                                                    <tr>
+                                                        <td>
+                                                            <%= dateParts[0] %>
+                                                            <%= dateParts[1] %>
+                                                            <%= dateParts[2] %>
+                                                            <%= dateParts[3] %>
+                                                        </td>
+                                                        <td>
+                                                            <%= data.order_id %>
+                                                        </td>
+                                                        <td  class="<%= (accessdata.mutibranch == false) || (accessdata.roll.rollType =='store') ? 'd-none' : '' %>">
+                                                            <%= data.store_name %>
+                                                        </td>
+                                                        <td class="symbol">
+                                                            <%= data.gross_total %>
+                                                        </td>
+                                                        <td>
+                                                            <%= data.shop_commission %>%
+                                                        </td>
+                                                        <td class="symbol">
+                                                            <%= data.master_comission %>
+                                                        </td>
+                                                    </tr>
+                                                    <% }) %>
+                                            </tbody>
+                                        </table>
+                                        <% } %>
+                                            <% if (status == '2') { %>
+                                                <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>
+                                                                <%= language.Date %>
+                                                            </th>
+                                                            <th  class="<%= (accessdata.mutibranch == false) || (accessdata.roll.rollType =='store') ? 'd-none' : '' %>">
+                                                                <%= language.Store_Name %>
+                                                            </th>
+                                                            <th>
+                                                                <%= language.Amount %>
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <% paidcomission.map((data)=> {
+                                                            const dateParts = data.date.toString().split(" "); %>
+                                                            <tr>
+                                                                <td>
+                                                                    <%= dateParts[0] %>
+                                                                        <%= dateParts[1] %>
+                                                                            <%= dateParts[2] %>
+                                                                                <%= dateParts[3] %>
+                                                                </td>
+                                                                <td  class="<%= (accessdata.mutibranch == false) || (accessdata.roll.rollType =='store') ? 'd-none' : '' %>">
+                                                                    <%= data.name %>
+                                                                </td>
+                                                                <td class="symbol">
+                                                                    <%= data.amount %>
+                                                                </td>
+                                                            </tr>
+                                                            <% }) %>
+                                                    </tbody>
+                                                </table>
+                                                <% } %>
+                                                    <% if (status == '3') { %>
+                                                        <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>#</th>
+                                                                    <th>
+                                                                        <%= language.Store_Name %>
+                                                                    </th>
+                                                                    <th>
+                                                                        <%= language.Amount %>
+                                                                    </th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <% let i=1; %>
+                                                                    <% due.map((data)=> { %>
+                                                                        <tr>
+                                                                            <td>
+                                                                                <%= i++ %>
+                                                                            </td>
+                                                                            <td>
+                                                                                <%= data.store_name %>
+                                                                            </td>
+                                                                            <td class="symbol">
+                                                                                <%= data.due_amount.toFixed(2) %>
+                                                                            </td>
+                                                                        </tr>
+                                                                        <% }) %>
+                                                            </tbody>
+                                                        </table>
+                                                        <% } %>
+
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pdf-clone"></div>
+        </div>
+
+        <!--********** Content body end **********-->
+
+        </div>
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+                <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> -->
+
+                <!-- <script>
+    document.getElementById("cashdownloadbtn").addEventListener("click", function () {
+      const { jsPDF } = window.jspdf;
+      const originalTable = document.getElementById("example3");
+      const cloneContainer = document.getElementById("pdf-clone");
+
+      // Create a wrapper div with heading
+      const wrapper = document.createElement("div");
+      wrapper.style.width = "100%";
+      wrapper.style.padding = "10px";
+      wrapper.style.backgroundColor = "#fff";
+
+      // Add custom header text
+      const header = document.createElement("h2");
+      header.innerText = "Cashbook Report";
+      header.style.textAlign = "center";
+      header.style.marginBottom = "20px";
+      header.style.fontFamily = "Arial, sans-serif";
+
+      // Clone and style the table
+      const clone = originalTable.cloneNode(true);
+      clone.style.borderCollapse = "collapse";
+      clone.style.width = "100%";
+      clone.style.fontFamily = "Arial, sans-serif";
+
+      clone.querySelectorAll("th").forEach(th => {
+        th.style.border = "1px solid black";
+        th.style.backgroundColor = "#d9edf7";
+        th.style.fontWeight = "bold";
+        th.style.padding = "8px";
+        th.style.textAlign = "center";
+      });
+
+      clone.querySelectorAll("td").forEach(td => {
+        td.style.border = "1px solid black";
+        td.style.padding = "8px";
+        td.style.textAlign = "center";
+      });
+
+      // Append header and table to wrapper
+      wrapper.appendChild(header);
+      wrapper.appendChild(clone);
+
+      // Add to DOM temporarily
+      cloneContainer.innerHTML = "";
+      cloneContainer.appendChild(wrapper);
+      cloneContainer.style.display = "block";
+
+      // Capture and generate PDF
+      html2canvas(cloneContainer, {
+        scale: 2,
+        backgroundColor: "#ffffff"
+      }).then(canvas => {
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF('l', 'mm', 'a4');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pageWidth;
+        let imgHeight = canvas.height * imgWidth / canvas.width;
+
+        if (imgHeight > pageHeight) imgHeight = pageHeight;
+
+        pdf.addImage(imgData, 'PNG', 0, 10, imgWidth, imgHeight);
+        pdf.save("Cashbook-Report.pdf");
+
+        // Clean up
+        cloneContainer.style.display = "none";
+      });
+    });
+  </script> -->
+
+
+                <script>
+
+                    function clearCurrency() {
+                        $('#example3 .symbol').each(function () {
+                            const text = $(this).text();
+                            const clean = text.replace(/[^\d.-]/g, '');
+                            $(this).text(clean);
+                        });
+                    }
+
+                    function applyCurrency() {
+                        var sym = $('input[name=sym]').val()
+                        $('#example3 .symbol').each(function () {
+                            const value = parseFloat($(this).text());
+                            if (!isNaN(value)) {
+                                $(this).text(sym + value.toFixed(2));
+                            }
+                        });
+                    }
+
+                    function currency() {
+                        clearCurrency();
+                        applyCurrency();
+                    }
+
+                    function initDataTableWithCurrency() {
+                        if ($.fn.DataTable.isDataTable('#example3')) {
+                            $('#example3').DataTable().destroy();
+                        }
+
+                        $('#example3').DataTable({
+                            "drawCallback": function (settings) {
+                                currency();
+                            }
+                        });
+                    }
+
+                    $(document).ready(function () {
+                        initDataTableWithCurrency();
+                    });
+                </script>
+
+
+
+</body>
+
+</html>

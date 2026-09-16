@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="author" content="iLaundry">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= data?.app_name || 'iLaundry' %> &bull; Store / Branch Registration</title>
+
+    <!-- Early Theme Loader -->
+    <script>
+        (function () {
+            try {
+                function getCookie(name) {
+                    var nameEQ = name + "=";
+                    var ca = document.cookie.split(';');
+                    for (var i = 0; i < ca.length; i++) {
+                        var c = ca[i];
+                        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+                    }
+                    return null;
+                }
+                var savedTheme = getCookie('theme_version') || localStorage.getItem('theme_version') || 'light';
+                if (savedTheme === 'dark') {
+                    document.documentElement.setAttribute('data-theme-version', 'dark');
+                    document.documentElement.classList.add('dark-only');
+                } else {
+                    document.documentElement.setAttribute('data-theme-version', 'light');
+                    document.documentElement.classList.remove('dark-only');
+                }
+            } catch (e) { }
+        })();
+    </script>
+
+    <!-- Favicon icon -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/uploads/<%= data?.app_favicon || '' %>">
+    <link href="/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/vendor/select2.css">
+    <link href="/css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/liquid-glass-theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Toastr -->
+    <link rel="stylesheet" href="/vendor/toastr/css/toastr.min.css">
+</head>
+
+<body>
+    <div class="auth-split-wrapper">
+        <!-- Floating Theme Switcher -->
+        <div class="auth-top-controls">
+            <button type="button" class="auth-theme-btn" id="auth_theme_toggle" title="Switch Theme">
+                <i class="fas fa-moon lighticon"></i>
+                <i class="fas fa-sun darkicon d-none"></i>
+                <span id="theme_label">Dark Mode</span>
+            </button>
+        </div>
+
+        <!-- Left Canvas: Enterprise Partner Showcase -->
+        <div class="auth-hero-canvas">
+            <div class="auth-hero-glow-1"></div>
+            <div class="auth-hero-glow-2"></div>
+
+            <div class="auth-hero-brand">
+                <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-hero-brand-logo" alt="<%= data?.app_name || 'iLaundry' %> Logo">
+                <h2 class="auth-hero-brand-title"><%= data?.app_name || 'iLaundry' %></h2>
+            </div>
+
+            <div class="auth-hero-content">
+                <div class="auth-hero-badge">
+                    <i class="fas fa-building"></i> Store &amp; Branch Partner
+                </div>
+                <h1 class="auth-hero-heading">
+                    Scale Your Laundromat<br>Business With Ease.
+                </h1>
+                <p class="auth-hero-lead">
+                    Register your branch or franchise store to unlock our high-speed POS terminal, garment wash barcode tracking, automated cashier roles, and centralized accounting.
+                </p>
+
+                <div class="auth-hero-pills">
+                    <div class="auth-hero-pill">
+                        <div class="auth-pill-icon"><i class="fas fa-cash-register"></i></div>
+                        <div>
+                            <div class="auth-pill-text">Dedicated POS Terminal</div>
+                            <div class="fs-11 text-muted">Rapid Cart &amp; Checkout</div>
+                        </div>
+                    </div>
+                    <div class="auth-hero-pill">
+                        <div class="auth-pill-icon"><i class="fas fa-print"></i></div>
+                        <div>
+                            <div class="auth-pill-text">Dual Printer Support</div>
+                            <div class="fs-11 text-muted">Receipts &amp; Garment Tags</div>
+                        </div>
+                    </div>
+                    <div class="auth-hero-pill">
+                        <div class="auth-pill-icon"><i class="fas fa-users-cog"></i></div>
+                        <div>
+                            <div class="auth-pill-text">Staff Permissions</div>
+                            <div class="fs-11 text-muted">Role-Based Access Control</div>
+                        </div>
+                    </div>
+                    <div class="auth-hero-pill">
+                        <div class="auth-pill-icon"><i class="fas fa-chart-pie"></i></div>
+                        <div>
+                            <div class="auth-pill-text">Independent Reports</div>
+                            <div class="fs-11 text-muted">Branch Sales &amp; Expense Ledgers</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="auth-hero-footer">
+                <span><%= data?.footer_text || 'Copyright &copy; 2026 iLaundry Inc.' %></span>
+                <span><i class="fas fa-circle text-success me-1 fs-9"></i> Partner Gateway</span>
+            </div>
+        </div>
+
+        <!-- Right Canvas: Auth Form -->
+        <div class="auth-form-canvas">
+            <div class="auth-glass-card auth-card-wide">
+                <div class="auth-card-header">
+                    <a href="/">
+                        <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-card-logo" alt="<%= data?.app_name || 'iLaundry' %>">
+                    </a>
+                    <h3 class="auth-card-title">Register Your Laundromat</h3>
+                    <p class="auth-card-subtitle">
+                        Create a store profile to connect your branch to the central management platform.
+                    </p>
+                </div>
+
+                <!-- Segmented Role Switcher -->
+                <div class="auth-role-segmented">
+                    <a href="/register" class="role-segment-btn">
+                        <i class="fas fa-user me-1"></i> Customer Account
+                    </a>
+                    <a href="/shopregister" class="role-segment-btn active">
+                        <i class="fas fa-store me-1"></i> Store / Branch Owner
+                    </a>
+                </div>
+
+                <form action="/shopregister" method="POST" class="needs-validation" enctype="multipart/form-data" id="shop_register_form">
+                    <div class="row g-3">
+                        <!-- Shop Name -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>Shop / Branch Name</strong> <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" placeholder="e.g. Downtown Laundry Hub" required autofocus>
+                        </div>
+
+                        <!-- Store Email -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>Store Official Email</strong> <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" name="store_email" placeholder="store@laundry.com" required>
+                        </div>
+
+                        <!-- Phone Number -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>Contact Phone Number</strong> <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="number" placeholder="+1234567890" required>
+                        </div>
+
+                        <!-- Tax Number -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>Store Tax / Registration No.</strong> <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="tax_number" placeholder="Tax Registration Number" required>
+                        </div>
+
+                        <!-- State -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>State / Province</strong> <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="state" placeholder="State or Province" required>
+                        </div>
+
+                        <!-- City -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>City</strong> <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="city" placeholder="City" required>
+                        </div>
+
+                        <!-- Store Logo -->
+                        <div class="col-md-12">
+                            <label class="form-label mb-1"><strong>Store Logo / Brand Icon</strong> <span class="text-danger">*</span></label>
+                            <input type="file" class="form-control" name="logo" accept="image/*" required>
+                            <div class="fs-11 text-muted mt-1">Recommended size: 200x200px PNG or JPG image for receipts and badges.</div>
+                        </div>
+
+                        <!-- Username -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>Manager Username</strong> <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="username" placeholder="Choose manager username" required>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>Manager Password</strong> <span class="text-danger">*</span></label>
+                            <div class="position-relative">
+                                <input type="password" class="form-control pe-5" id="store_password" name="password" placeholder="Create password" required minlength="4">
+                                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('store_password', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="auth-submit-btn mt-4" id="submit_shop_btn">
+                        <i class="fas fa-store-alt me-1"></i> Register Store &amp; Apply
+                    </button>
+                </form>
+
+                <div class="text-center mt-4 pt-2 border-top">
+                    <p class="fs-13 text-muted mb-0">
+                        Already have an account? 
+                        <a href="/" class="text-primary fw-bold text-decoration-none ms-1">
+                            <i class="fas fa-sign-in-alt me-1"></i> Sign In
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/vendor/global/global.min.js"></script>
+    <script src="/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
+    <script src="/vendor/toastr/js/toastr.min.js"></script>
+
+    <!-- Theme Switcher & Password Handlers -->
+    <script>
+        function setCookie(name, value, days) {
+            var expires = "";
+            if (days) {
+                var date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
+        }
+
+        function getCookie(name) {
+            var nameEQ = name + "=";
+            var ca = document.cookie.split(';');
+            for (var i = 0; i < ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+
+        function applyAuthTheme(theme) {
+            if (theme === 'dark') {
+                $('html, body').attr('data-theme-version', 'dark').addClass('dark-only');
+                $('.lighticon').addClass('d-none');
+                $('.darkicon').removeClass('d-none');
+                $('#theme_label').text('Light Mode');
+            } else {
+                $('html, body').attr('data-theme-version', 'light').removeClass('dark-only');
+                $('.lighticon').removeClass('d-none');
+                $('.darkicon').addClass('d-none');
+                $('#theme_label').text('Dark Mode');
+            }
+        }
+
+        function togglePasswordVisibility(fieldId, btn) {
+            var input = document.getElementById(fieldId);
+            var icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        $(document).ready(function () {
+            var currentTheme = getCookie('theme_version') || localStorage.getItem('theme_version') || 'light';
+            applyAuthTheme(currentTheme);
+
+            $('#auth_theme_toggle').on('click', function (e) {
+                e.preventDefault();
+                var active = $('html').attr('data-theme-version');
+                var newTheme = (active === 'dark') ? 'light' : 'dark';
+                setCookie('theme_version', newTheme, 365);
+                localStorage.setItem('theme_version', newTheme);
+                applyAuthTheme(newTheme);
+            });
+        });
+    </script>
+
+    <!-- Toastr Notifications -->
+    <% if(typeof success !== 'undefined' && success && success.length > 0){ %>
+        <script>
+            toastr.success('<%- success %>', {
+                timeOut: 8000,
+                closeButton: true,
+                progressBar: true,
+                positionClass: "toast-top-right",
+                escapeHtml: false
+            });
+        </script>
+    <% } %>
+
+    <% if(typeof error !== 'undefined' && error && error.length > 0){ %>
+        <script>
+            toastr.error('<%= error %>', {
+                timeOut: 6000,
+                closeButton: true,
+                progressBar: true,
+                positionClass: "toast-top-right"
+            });
+        </script>
+    <% } %>
+</body>
+</html>

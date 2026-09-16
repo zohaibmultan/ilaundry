@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+        <link rel="stylesheet" href="/css/pos-compact.css">
+
+</head>
+
+<body>
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body pos-content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row pos-main-row">
+                    <!-- left side service list part -->
+                    <div class="d-none">
+                        <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
+                        <input type="hiden" name="pls" value="<%= accessdata.plac %>">
+                        <input type="hiden" name="thousands_separator" value="<%= accessdata.thousands_separator %>">
+                    </div>
+
+                    <div class="col-xl-7 col-lg-6">
+                        <div class="pos-card">
+                            <div class="pos-card-body">
+                                <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                    <div class="pos-search-box flex-grow-1 mb-0">
+                                        <i class="fa fa-search pos-search-icon"></i>
+                                        <input type="text" class="form-control pos-search-input" id="service_pos_search"
+                                            placeholder="Search services..." autocomplete="off">
+                                        <span class="pos-search-clear" id="pos_search_clear" style="display:none;"
+                                            title="Clear search">
+                                            <i class="fa fa-times"></i>
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Printing Server Live Status Badge -->
+                                    <div class="dropdown pos-printer-dropdown">
+                                        <button class="btn btn-sm pos-printer-badge-btn dropdown-toggle d-flex align-items-center gap-1" type="button" id="posPrinterStatusBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Printing Server Status">
+                                            <span class="pos-printer-dot dot-checking" id="posPrinterStatusDot"></span>
+                                            <span class="pos-printer-label" id="posPrinterStatusText">Checking Printer...</span>
+                                            <i class="fas fa-chevron-down ms-1" style="font-size: 9px; opacity: 0.7;"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-end pos-printer-popover p-3 shadow-lg" aria-labelledby="posPrinterStatusBtn" style="min-width: 290px; border-radius: 12px; z-index: 1060;">
+                                            <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
+                                                <strong style="font-size: 13px;"><i class="fas fa-print me-1 text-primary"></i> Silent Printing Service</strong>
+                                                <span class="badge" id="posPopoverStatusBadge">Checking</span>
+                                            </div>
+                                            <div class="small mb-2">
+                                                <div class="d-flex justify-content-between text-muted mb-1">
+                                                    <span>Server URL:</span>
+                                                    <span class="fw-semibold text-dark" id="posPopoverServerUrl"><%= accessdata?.masterstore?.printing_server_url || 'http://127.0.0.1:4321' %></span>
+                                                </div>
+                                                <div class="d-flex justify-content-between text-muted mb-1">
+                                                    <span>Active Printer:</span>
+                                                    <span class="fw-semibold text-dark text-truncate" style="max-width: 150px;" id="posPopoverPrinterName"><%= accessdata?.masterstore?.invoice_printer_name || 'System Default' %></span>
+                                                </div>
+                                                <div class="d-flex justify-content-between text-muted mb-1">
+                                                    <span>Format:</span>
+                                                    <span class="fw-semibold text-dark"><%= accessdata?.masterstore?.invoice_printer_format == 2 ? '58mm Roll' : (accessdata?.masterstore?.invoice_printer_format == 0 ? 'A4 Sheet' : '80mm Thermal') %></span>
+                                                </div>
+                                                <div class="d-flex justify-content-between text-muted">
+                                                    <span>Mode:</span>
+                                                    <span class="fw-semibold" id="posPopoverModeText">Auto-detecting...</span>
+                                                </div>
+                                            </div>
+                                            <div class="d-grid gap-2 pt-2 border-top">
+                                                <button type="button" class="btn btn-outline-primary btn-xs w-100" onclick="pingPosPrintingServer(true)">
+                                                    <i class="fas fa-sync-alt me-1"></i> Check Connection Now
+                                                </button>
+                                                <% if (login === 'master') { %>
+                                                <a href="/tool/setting" class="btn btn-light btn-xs text-center text-muted w-100">
+                                                    <i class="fas fa-cog me-1"></i> Hardware Settings
+                                                </a>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pos-services-grid" id="pos_service">
+                                    <% if(service_list.length < 1 && login=='master' && cart.store_id==0){ %>
+                                        <div class="p-3 text-center w-100">
+                                            <h5 class="text-center text-danger">
+                                                <%= language.Please_Select_Store %>
+                                            </h5>
+                                        </div>
+                                        <% }else if(service_list.length < 1){ %>
+                                            <div class="p-3 text-center w-100">
+                                                <img src="../images/empty.png"
+                                                    style="max-height: 80px; margin-bottom: 8px;">
+                                                <h5 class="text-center text-danger">
+                                                    <%= language.Not_listed_any_services_yet %>
+                                                </h5>
+                                            </div>
+                                            <% }else{ %>
+                                                <% service_list.forEach(function(data){ %>
+                                                    <a href="#" class="pos-service-item services"
+                                                        data-name="<%= (data.name || '').toLowerCase() %>"
+                                                        data-bs-toggle="modal" data-bs-target="#service_type_model"
+                                                        id="POS_service" data-id="<%= data.id %>">
+                                                        <div class="pos-service-tile">
+                                                            <div class="pos-service-icon-box">
+                                                                <img src="../../uploads/<%= data.image %>"
+                                                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                                                    alt="<%= data.name %>">
+                                                                <div class="pos-service-fallback-icon"
+                                                                    style="display:none;">
+                                                                    <i class="fa fa-tshirt"></i>
+                                                                </div>
+                                                            </div>
+                                                            <span class="pos-service-name" title="<%= data.name %>">
+                                                                <%= data.name %>
+                                                            </span>
+                                                        </div>
+                                                    </a>
+                                                    <% }) %>
+                                                        <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- right side pos part -->
+                    <div class="col-xl-5 col-lg-6">
+                        <div class="pos-card pos-cart-card">
+                            <div class="pos-card-body">
+                                <div class="row g-2 mb-3">
+                                    <div
+                                        class="col-6 <%= (ismulty && login == 'master') || (ismulty && accessdata.logas != 'store' && accessdata.masterstore.customer_selection =='1' || accessdata.topbardata.store =='' ) ? '': 'd-none' %>">
+                                        <div class="pos-date-group">
+                                            <label class="pos-field-label">Select Store</label>
+                                            <select class="default-select wide w-100" name="store" id="pos_store_id" data-live-search="true">
+                                                <option value="0" selected disabled>Select Store</option>
+                                                <% storeList.forEach(function(x){ %>
+                                                    <option value="<%= x.id %>" <%=cart.store_id==x.id ? 'selected' : ''
+                                                        %>><%= x.name %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-6 <%= login === 'customer'? 'd-none': '' %>">
+                                        <div class="pos-date-group">
+                                            <label class="pos-field-label">Select Customer</label>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <% if (accessdata.logas==='custmor' ) { %>
+                                                    <input type="hidden" id="single-select" name="customer"
+                                                        value="<%= customerList[0]?.id || 0 %>">
+                                                    <% } else { %>
+                                                        <select id="single-select" name="customer"
+                                                            class="default-select wide w-100" data-live-search="true">
+                                                            <option value="0" selected disabled>Select Customer</option>
+                                                            <% customerList.forEach(function(x) { %>
+                                                                <% let showExtra="" ; %>
+                                                                    <% if ((x.username=='' || x.username==null) &&
+                                                                        (x.email==null || x.email=='' ) &&
+                                                                        (x.number==null || x.number=='' ) ) { %>
+                                                                        <% if (accessdata.logas !='store' ) {
+                                                                            showExtra=x.store_name; } %>
+                                                                            <% } else { %>
+                                                                                <% showExtra=x.number; %>
+                                                                                    <% } %>
+                                                                                        <% let
+                                                                                            selected=(cart.customer_id==x.id)
+                                                                                            ? 'selected' : '' ; %>
+                                                                                            <option value="<%= x.id %>"
+                                                                                                <%=selected %>>
+                                                                                                <%= x.name %>
+                                                                                                    <% if (showExtra) {
+                                                                                                        %>(
+                                                                                                        <%= showExtra %>
+                                                                                                            )<% } %>
+                                                                                            </option>
+                                                                                            <% }); %>
+                                                        </select>
+                                                        <button type="button"
+                                                            class="btn btn-primary ms-2 pos-btn-add-customer"
+                                                            data-bs-toggle="modal" data-bs-target="#addcustomer">
+                                                            <i class="fa fa-plus"></i>
+                                                        </button>
+                                                        <% } %>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-4">
+                                        <div class="pos-date-group">
+                                            <label class="pos-field-label">Order #</label>
+                                            <input type="text" id="pos_order_id" class="form-control pos-input-sm w-100"
+                                                value="<%= cart.order_id %>" readonly title="Order ID">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-4">
+                                        <div class="pos-date-group">
+                                            <label class="pos-field-label">
+                                                <%= language.Order_Date || 'Order Date' %>
+                                            </label>
+                                            <% let new_date=new Date(cart.order_date) %>
+                                                <% let year=new_date.getFullYear() %>
+                                                    <% let new_day=(new_date.getDate() < 10 ? '0' : '' ) +
+                                                        new_date.getDate() %>
+                                                        <% let new_month=((new_date.getMonth()+1) < 10 ? '0' : '' ) +
+                                                            (new_date.getMonth()+1) %>
+                                                            <% let fullDate=`${year}-${new_month}-${new_day}` %>
+                                                                <input type="date"
+                                                                    class="form-control pos-input-sm w-100"
+                                                                    id="POS_order_date" value="<%=fullDate %>"
+                                                                    title="<%= language.Order_Date || 'Order Date' %>"
+                                                                    <%=login==='customer' ? 'readonly' : '' %>>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-4">
+                                        <div class="pos-date-group">
+                                            <label class="pos-field-label">
+                                                <%= language.Delivery_Date || 'Delivery Date' %>
+                                            </label>
+                                            <% let del_raw=cart.delivery_date || cart.order_date %>
+                                                <% let del_date=new Date(del_raw) %>
+                                                    <% let del_year=del_date.getFullYear() %>
+                                                        <% let del_day=(del_date.getDate() < 10 ? '0' : '' ) +
+                                                            del_date.getDate() %>
+                                                            <% let del_month=((del_date.getMonth()+1) < 10 ? '0' : '' )
+                                                                + (del_date.getMonth()+1) %>
+                                                                <% let
+                                                                    del_fullDate=`${del_year}-${del_month}-${del_day}`
+                                                                    %>
+                                                                    <input type="date"
+                                                                        class="form-control pos-input-sm w-100"
+                                                                        id="POS_delivery_date" name="pos_delivery_date"
+                                                                        value="<%= del_fullDate %>"
+                                                                        min="<%= fullDate %>"
+                                                                        title="<%= language.Delivery_Date || 'Delivery Date' %>"
+                                                                        <%=login==='customer' ? 'readonly' : '' %>>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="pos-table-scroll">
+                                    <table class="pos-cart-table table-bordered verticle-middle text-center">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 38%; text-align: left; padding-left: 8px !important;">
+                                                    <%= language.Service %>
+                                                </th>
+                                                <th style="width: 14%;">
+                                                    <%= language.Color %>
+                                                </th>
+                                                <th style="width: 22%;">
+                                                    <%= language.Rate %>
+                                                </th>
+                                                <th style="width: 18%;">
+                                                    <%= language.Qty %>
+                                                </th>
+                                                <th style="width: 8%;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="POS_service_added_list">
+                                            <% cartservice.forEach(function(x){ %>
+                                                <tr>
+                                                    <td>
+                                                        <div class="pos-cart-service-info">
+                                                            <span class="pos-cart-item-title"
+                                                                title="<%= x.service_name %>">
+                                                                <%= x.service_name %>
+                                                            </span>
+                                                            <span class="pos-cart-item-badge">[<%= x.service_type_name
+                                                                    %>]</span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <input type="color" class="pos-color-circle"
+                                                            value="<%= x.service_color %>" id="POS_service_color"
+                                                            data-id="<%= x.id %>">
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <input type="number"
+                                                            class="form-control pos-table-input pos-table-input-price"
+                                                            value="<%= x.service_type_price %>"
+                                                            name="service_type_price" id="POSservice_type_price"
+                                                            data-id="<%= x.id %>" <%=login=='master' || login=='store'
+                                                            ? '' : 'readonly' %>>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <input type="number"
+                                                            class="form-control pos-table-input pos-table-input-qty"
+                                                            id="POSservice_type_quntity"
+                                                            value="<%= x.service_quntity %>" min="1"
+                                                            data-id="<%= x.id %>">
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <a class="pos-btn-del" id="remove_service_list"
+                                                            data-id="<%= x.id %>" title="Delete">
+                                                            <i class="fa fa-trash"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="pos-bottom-section">
+                                    <div class="row g-1 align-items-center">
+                                        <div class="col-5">
+                                            <div
+                                                class="<%= (accessdata.logas == 'custmor' && accessdata.roll.pos.includes('write'))|| accessdata.roll.pos.includes('write') ? 'd-block' : 'd-none' %>">
+                                                <div class="pos-actions-grid">
+                                                    <button type="button" class="btn btn-primary pos-btn-mini"
+                                                        data-bs-toggle="modal" data-bs-target="#addons">
+                                                        <i class="fa fa-plus-circle me-1"></i>
+                                                        <%= language.Addons %>
+                                                    </button>
+                                                    <button type="button" class="btn btn-primary pos-btn-mini"
+                                                        id="POS_coupon_model_show">
+                                                        <i class="fa fa-tag me-1"></i>
+                                                        <%= language.Coupon %>
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-danger pos-btn-mini"
+                                                        id="POS_clear">
+                                                        <i class="fa fa-trash-alt me-1"></i>
+                                                        <%= language.ClearAll %>
+                                                    </button>
+                                                    <button type="button" class="btn btn-light pos-btn-mini"
+                                                        style="visibility: hidden;">
+                                                    </button>
+                                                </div>
+                                                <button type="button" class="btn btn-success pos-btn-pay-primary"
+                                                    id="POS_payment_model_show">
+                                                    <span>
+                                                        <%= language.Payment %>
+                                                    </span> <i class="fas fa-arrow-right ms-2"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="col-7">
+                                            <div class="pos-totals-container">
+                                                <div class="pos-total-row">
+                                                    <span class="pos-total-label">
+                                                        <%= language.Sub_Total %>:
+                                                    </span>
+                                                    <span class="pos-total-value symbol possymbol" id="POS_sub_total">
+                                                        <%= cart.sub_total.toFixed(2) %>
+                                                    </span>
+                                                </div>
+                                                <div class="pos-total-row">
+                                                    <span class="pos-total-label">
+                                                        <%= language.Addon_Total %>:
+                                                    </span>
+                                                    <span class="pos-total-value symbol possymbol" id="POS_addon_total">
+                                                        <%= cart.addon_price.toFixed(2) %>
+                                                    </span>
+                                                </div>
+                                                <div class="pos-total-row">
+                                                    <span class="pos-total-label">
+                                                        <%= language.Coupon_Discount %>:
+                                                    </span>
+                                                    <span class="pos-total-value symbol possymbol"
+                                                        id="POS_coupon_total">
+                                                        <%= cart.coupon_discount.toFixed(2) %>
+                                                    </span>
+                                                </div>
+                                                <div class="pos-total-row">
+                                                    <span class="pos-total-label" id="POS_tax_percent">
+                                                        <%= language.TAX %> (<%=cart.tax%> %):
+                                                    </span>
+                                                    <span class="pos-total-value symbol possymbol" id="POS_tax_total">
+                                                        <%= cart.tax_amount.toFixed(2) %>
+                                                    </span>
+                                                </div>
+                                                <div class="pos-total-row pos-total-row-gross">
+                                                    <span class="pos-total-label">
+                                                        <%= language.Gross_Total %>:
+                                                    </span>
+                                                    <span class="pos-total-value symbol possymbol" id="POS_gross_total">
+                                                        <%= cart.gross_total.toFixed(2) %>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!--********** Content body end **********-->
+
+            <!-- Modal payment -->
+            <div class="modal fade" id="POS_payment_model">
+                <div class="modal-dialog modal-dialog-scrollable" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <%= language.Make_Payment %>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+
+                        <!-- <form id="pyment_POS_cart" method="post" class="need-validation"> -->
+                        <div class="modal-body" id="payment_sum">
+                            <form id="posprintform" action="/admin/posprint" method="post" class="need-validation">
+                                <div class="row g-2 align-items-center">
+
+                                    <div class="col-12">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-6 mb-1">
+                                                <label class="form-label">
+                                                    <%= language.Delivery_Date %>
+                                                </label>
+                                                <input type="date" class="form-control" name="deliverydate"
+                                                    id="deliverydate">
+
+                                                <input type="date" class="form-control" name="deliverydate_hidden"
+                                                    id="deliverydate_hidden" hidden>
+                                                <input type="hidden" id="POS_gross_order" value="" name="gross">
+                                                <input type="hidden" id="POS_subtotal_order" value="" name="sub">
+                                            </div>
+                                            <div class="col-md-6 mb-1 <%= login === 'customer'? 'd-none': '' %>">
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <label class="form-label mb-0" for="POS_extra_discount_order">
+                                                        <%= language.Extra_Discount %>
+                                                    </label>
+                                                    <div class="pos-discount-type-group" role="group" aria-label="Discount Type">
+                                                        <input type="radio" class="btn-check" name="discount_type" id="pos_disc_type_fixed" value="fixed" checked autocomplete="off">
+                                                        <label class="pos-disc-btn active" for="pos_disc_type_fixed" id="pos_disc_btn_fixed" title="Fixed Amount">Fix ($)</label>
+
+                                                        <input type="radio" class="btn-check" name="discount_type" id="pos_disc_type_percent" value="percent" autocomplete="off">
+                                                        <label class="pos-disc-btn" for="pos_disc_type_percent" id="pos_disc_btn_percent" title="Percentage">% Percent</label>
+                                                    </div>
+                                                </div>
+                                                <div class="input-group pos-discount-input-group">
+                                                    <span class="input-group-text pos-discount-prefix" id="pos_discount_prefix">$</span>
+                                                    <input type="number" id="POS_extra_discount_order" class="form-control"
+                                                        placeholder="0.00" min="0" step="any" autocomplete="off">
+                                                </div>
+                                                <input type="hidden" name="extradiscount" id="POS_extradiscount_hidden" value="0">
+                                            </div>
+                                        </div>
+
+                                        <div class="row text-center">
+                                            <div id="show_pos_barcode">
+
+                                            </div>
+                                        </div>
+
+                                        <small><span id="POS_worning" class="text-center text-danger "></span></small>
+                                        <hr>
+
+                                        <div class="row">
+                                            <div class="col text-sm ">
+                                                <%= language.Sub_Total %> :
+                                            </div>
+                                            <div class="col-auto text-sm payment_val paysymbol" id="payment_subtotal">$
+                                                0.00</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col text-sm">
+                                                <%= language.Addon %> :
+                                            </div>
+                                            <div class="col-auto text-sm payment_val paysymbol" id="payment_addons">$
+                                                0.00</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col text-sm">
+                                                <%= language.Extra_Discount %> <span id="payment_extradiscount_percent_info" class="text-primary font-weight-bold"></span> :
+                                            </div>
+                                            <div class="col-auto text-sm payment_val paysymbol extsymbol"
+                                                id="payment_extradiscount">$ 0.00</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col text-sm">
+                                                <%= language.Coupon_Discount %>:
+                                            </div>
+                                            <div class="col-auto text-sm payment_val paysymbol"
+                                                id="payment_coupondiscount">$ 0.00</div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col text-sm">
+                                                <%= language.TAX %> <span id="payment_text_perdent"></span>:
+                                            </div>
+                                            <div class="col-auto text-sm payment_val paysymbol"
+                                                id="payment_text_amount"> 0.00</div>
+                                        </div>
+
+                                        <hr>
+
+                                        <div class="row">
+                                            <div class="col text-sm">
+                                                <%= language.Gross_Total %> :
+                                            </div>
+                                            <div class="col-auto text-sm paysymbol extsymbol" id="payment_grosstotal">
+                                                21.00</div>
+                                        </div>
+
+                                        <hr>
+
+                                        <div class="row align-items-center">
+                                            <div class="col-md-6 mb-1">
+                                                <label class="form-label">
+                                                    <%= language.Paid_Amount %>
+                                                </label>
+                                                <input type="number" class="form-control" placeholder="Enter Amount"
+                                                    name="paid_amount" id="paid_amount" min="0" step="0.01">
+                                            </div>
+                                            <div class="col-md-6 mb-1">
+                                                <label class="form-label">
+                                                    <%= language.Payment_Type %>
+                                                </label>
+                                                <select class=" form-control wide" name="payment_type"
+                                                    id="POS_payment_type_list" required>
+                                                    <option value disabled>Choose Payment Type</option>
+                                                    <option value="cash">Cash</option>
+                                                    <option value="upi">UPI</option>
+                                                    <option value="card">Card</option>
+                                                    <option value="cheque">Cheque</option>
+                                                    <option value="bank_transfer">Bank Transfer</option>
+                                                </select>
+
+                                            </div>
+                                        </div>
+                                        <span id="POS_worning_paid" class="text-center text-danger "></span>
+                                        <hr>
+
+                                        <div class="row">
+                                            <div class="col text-sm">
+                                                <%= language.Balance %> :
+                                            </div>
+                                            <div class="col-auto text-sm paysymbol extsymbol pamtsymbol"
+                                                id="POS_total_balance"> 0.00</div>
+                                        </div>
+
+                                        <hr>
+
+                                        <div class="col-12">
+                                            <label class="form-label">
+                                                <%= language.Notes %> / <%= language.Remarks %>
+                                            </label>
+                                            <input type="text" class="form-control" placeholder="Enter Notes"
+                                                name="note">
+                                        </div>
+                                    </div>
+                                </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <%= language.Cancel %>
+                            </button>
+                            <!-- <button class="btn btn-success" type="submit" value="submit" id="cart_submit_for_order" ><%= language.Save %>  & <%= language.Print %> </button> -->
+                            <button class="btn btn-success" type="submit" value="submit" id="printcheck">
+                                <%= language.Save %> & <%= language.Print %>
+                            </button>
+                        </div>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal add customer -->
+            <div class="modal fade" id="addcustomer">
+                <div class="modal-dialog modal-dialog-scrollable" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <%= language.Add_Coustomer_Detail %>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form action="/coustomer/register" method="post" class="need-validation">
+
+                                <div class="row g-1 align-items-center">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Name %>
+                                            </strong></label>
+                                        <input type="text" class="form-control " name="name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Phone_Number %>
+                                            </strong></label>
+                                        <input type="text" class="form-control" name="number" minlength="10"
+                                            maxlength="10" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Email %>
+                                            </strong></label>
+                                        <input type="email" class="form-control" name="email" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Tax_Number %>
+                                            </strong></label>
+                                        <input type="text" class="form-control" name="taxnumber">
+                                    </div>
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Address %>
+                                            </strong></label>
+                                        <input type="text" class="form-control" name="address">
+                                    </div>
+
+                                    <div
+                                        class="col-md-12 mb-3 <%= ismulty && login == 'master' && accessdata.masterstore.customer_selection =='0' ? '': 'd-none' %>">
+                                        <div class="form-group">
+                                            <label class="form-label"><strong>
+                                                    <%= language.Store_List %>
+                                                </strong><span class="text-danger">*</span></label>
+                                            <select class="form-control wide mb-3" name="storeid"
+                                                id="coupon_storlist_update">
+                                                <option value="" selected disabled> Select Store </option>
+                                                <% storeList.forEach(function(x){ %>
+                                                    <option value="<%= x.id %>">
+                                                        <%= x.name %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select>
+
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Username %>
+                                            </strong></label>
+                                        <input type="text" class="form-control" name="username">
+                                    </div>
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Password %>
+                                            </strong></label>
+                                        <input type="text" class="form-control" name="password">
+                                    </div>
+
+                                </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                <%= language.Cancel %>
+                            </button>
+                            <button type="submit" class="btn btn-sm  btn-primary">
+                                <%= language.Save %>
+                            </button>
+                        </div>
+                        </form>
+
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Modal service type -->
+            <div class="modal fade" id="service_type_model">
+                <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-md" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <%= language.Select_Service_Type %>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form id="add_service_pos_cart" method="post" class="need-validation">
+                            <input type="hidden" id="POS_serviceid1" name="serviceid" value="5">
+                            <div class="modal-body" id="pos_servicetypeselect">
+
+
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                    <%= language.Cancel %>
+                                </button>
+                                <button type="submit" value="submit" id="add_service_pos_cart_submit"
+                                    class="btn btn-sm  btn-primary">
+                                    <%= language.Save %>
+                                </button>
+                            </div>
+                        </form>
+
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Modal addons -->
+            <div class="modal fade" id="addons">
+                <div class="modal-dialog modal-dialog-scrollable" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <%= language.Add_Addons %>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="add_addons_pos_cart" method="post" class="need-validation">
+                                <div class="row" id="POS_addons">
+                                    <% if(addonlist.length < 1){ %>
+                                        <div class="p-2 center">
+                                            <div class="card-body p-2 ">
+                                                <h5 class="text-center  text-danger">
+                                                    <%= language.No_addon_List_Found %>
+                                                </h5>
+                                            </div>
+                                        </div>
+                                        <% } %>
+                                            <% addonlist.forEach(function(data){ %>
+                                                <label class="col-6 d-flex mb-3 addon-clickable"
+                                                    for="update_customer_read_<%= data.id %>" style="cursor:pointer;">
+                                                    <div class="col-12 d-flex mb-3">
+                                                        <div class="mx-3">
+                                                            <input class="form-check-input mt-3" type="checkbox"
+                                                                id="update_customer_read_<%= data.id %>" name="addon"
+                                                                value="<%= data.id %>"
+                                                                <%=cart.addon_id.includes(data.id) ? 'checked' : '' %>>
+                                                        </div>
+                                                        <div class="d-flex flex-column justify-content-between">
+                                                            <h5>
+                                                                <%= data.addon %>
+                                                            </h5>
+                                                            <h6 class="symbol">
+                                                                <%= data.price %>
+                                                            </h6>
+                                                        </div>
+
+                                                    </div>
+                                                </label>
+                                                <% }) %>
+                                </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                <%= language.Cancel %>
+                            </button>
+                            <button type="submit" value="submit" id="add_addons_pos_cart_submit"
+                                class="btn btn-sm  btn-primary">
+                                <%= language.Save %>
+                            </button>
+                        </div>
+                        </form>
+
+
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal coupon -->
+            <div class="modal fade" id="POS_coupon_model">
+                <div class="modal-dialog modal-dialog-scrollable" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <%= language.Add_Coupon %>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+
+                        <div class="modal-body">
+
+                            <div class="row mb-4 " id="coupon_search">
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control" placeholder="Enter Coupon Code"
+                                        name="coupon_code">
+                                    <button class="btn btn-primary" id="POS_coupon_code" type="button">
+                                        <%= language.Apply %>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="row" id="coupon_area">
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Modal invoice -->
+            <div class="modal fade bd-example-modal-sm" id="invoice">
+                <div class="modal-dialog modal-dialog-scrollable modal-sm" role="document">
+                    <div class="modal-content">
+                        <div class="modal-body">
+                            <div class="invoice_page" id="invoice_page">
+                                <div class="d-flex align-items-center" style="margin-left: 10px; margin-right: 10px;">
+                                    <div class="col-6 " id="invoice_header">
+                                        <h3 class="text-uppercase"><span id="shop_name">Laundry</span></h3>
+                                        <h6>
+                                            <%= language.Phone_Number %> <span id="shop_no">+000123456789</span>
+                                        </h6>
+                                        <h6 class="mb-0">
+                                            <%= language.Email %> <span id="shop_email">demo@amtech.com</span>
+                                        </h6>
+                                    </div>
+                                    <div class="col-6 d-flex justify-content-end">
+                                        <div id="show_pos_barcode_print">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex border-top border-bottom pt-2 pb-2"
+                                    style="margin-left: 10px; margin-right: 10px;">
+                                    <div class="col-6 ">
+                                        <h5>
+                                            <%= language.Order_ID %><span id="invoice_order_id"></span>
+                                        </h5>
+                                        <h5 class="mb-0">
+                                            <%= language.Order_Status %> : Pending
+                                        </h5>
+                                    </div>
+
+                                    <div class="col-6 text-end">
+                                        <h5>
+                                            <%= language.Order_Date %> : <span id="invoice_order_date">2022-11-04</span>
+                                        </h5>
+                                        <h5 class="mb-0">
+                                            <%= language.Delivery_Date %><span id="invoice_delivery_date"></span>
+                                        </h5>
+                                    </div>
+                                </div>
+
+
+
+                                <hr class="m-0">
+
+                                <div class="table-responsive" style="margin-left: 10px; margin-right: 10px;">
+                                    <p class="mb-0">
+                                        <%= language.Service_List %>
+                                    </p>
+                                    <table id="default-datatable" class="display table">
+                                        <thead class="table_head">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>
+                                                    <%= language.Item %>
+                                                </th>
+                                                <th>
+                                                    <%= language.QTY %>
+                                                </th>
+                                                <th>
+                                                    <%= language.Price %>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="invoice_item" class="align-items-center">
+
+
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <hr class="m-0">
+
+                                <div class="table-responsive m-3" id="POS_addon_invoice_item">
+                                    <p class="mb-0">
+                                        <%= language.Addons_List %>
+                                    </p>
+                                    <table id="default-datatable" class="display table mb-0">
+                                        <thead class="table_head">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>
+                                                    <%= language.Addons %>
+                                                </th>
+                                                <th>
+                                                    <%= language.Price %>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="addon_item" class="align-items-center">
+
+
+                                        </tbody>
+                                    </table>
+                                    <hr class="m-0">
+                                </div>
+
+                                <table class="table table-borderless px-4" style="margin-bottom: 0px;">
+                                    <tbody>
+                                        <tr>
+                                            <td class="py-0 ">
+                                                <%= language.Item_Price %> :
+                                            </td>
+                                            <td class="py-0 text-end invosymbol" id="invoice_price"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-0">
+                                                <%= language.Addons %> :
+                                            </td>
+                                            <td class="py-0 text-end invosymbol" id="invoice_addon"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-0">
+                                                <%= language.TAX %> :
+                                            </td>
+                                            <td class="py-0 text-end invosymbol" id="invoice_tax"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-0">
+                                                <%= language.Discount %> :
+                                            </td>
+                                            <td class="py-0 text-end invosymbol" id="invoice_Discount"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-0">
+                                                <%= language.Coupon %> :
+                                            </td>
+                                            <td class="py-0 text-end invosymbol" id="invoice_Coupon"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-0">
+                                                <%= language.Total %> :
+                                            </td>
+                                            <td class="py-0 text-end invosymbol" id="invoice_gross"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <hr class="m-0">
+
+                                <div class="" style="margin-left: 10px; margin-right: 10px; margin-top: 8px;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5>
+                                            <%= language.Payment_Method %> : <span id="invoice_paid_method"></span>
+                                        </h5>
+                                        <div>
+                                            <h5>
+                                                <%= language.Paid_Amount %> : <span class="invosymbol"
+                                                        id="invoice_paid_amount"></span>
+                                            </h5>
+                                            <h5>
+                                                <%= language.Due_Amount %> : <span class="invosymbol"
+                                                        id="invoice_due_amount"></span>
+                                            </h5>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr class="last_hr m-0">
+
+                                <p class="Invoice_To mb-0 px-4">
+                                    <%= language.Invoice_To %>
+                                </p>
+                                <table class="table table-borderless px-4 customer_details mb-0">
+                                    <tbody>
+                                        <tr>
+                                            <td class="py-0 ">
+                                                <%= language.Name %> :
+                                            </td>
+                                            <td class="py-0 text-end" id="invoice_Name_customer"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-0">
+                                                <%= language.Number %> :
+                                            </td>
+                                            <td class="py-0 text-end" id="invoice_Number_customer"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-0">
+                                                <%= language.Email %> :
+                                            </td>
+                                            <td class="py-0 text-end" id="invoice_Email_customer"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-0">
+                                                <%= language.Address %> :
+                                            </td>
+                                            <td class="py-0 text-end" id="invoice_Address_customer"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-0">
+                                                <%= language.Tax_ID %> :
+                                            </td>
+                                            <td class="py-0 text-end" id="invoice_Tax_customer"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+
+                                <hr class="m-0">
+
+                                <div class="d-flex justify-content-start px-4" id="order_note">
+
+
+                                </div>
+
+                                <hr class="mt-0">
+
+                                <div class="d-flex justify-content-center">
+                                    ******** <%= language.Thank_You %> ********
+                                </div>
+
+                                <hr class="m-0">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <footer class="m-3 d-flex justify-content-end">
+                                <button type="button" class="btn btn-primary mx-2" id="pri_invo">
+                                    <%= language.Print_Invoice %>
+                                </button>
+                                <button type="button" class="btn btn-danger mx-2" onclick="location.reload()">
+                                    <%= language.Go_Back %>
+                                </button>
+                            </footer>
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+                <script>
+                    $('#POS_payment_model').on('shown.bs.modal', function () {
+                        if ($('#POS_payment_type_list').hasClass("select2-hidden-accessible")) {
+                            $('#POS_payment_type_list').select2('destroy');
+                        }
+                        $('#POS_payment_type_list').select2({
+                            dropdownParent: $('#POS_payment_model'),
+                            placeholder: 'Choose Payment Type',
+                            width: '100%',
+                            allowClear: false
+                        });
+                    });
+                </script>
+
+                <script>
+                    $('#addcustomer').on('shown.bs.modal', function () {
+                        $('#coupon_storlist_update').select2({
+                            dropdownParent: $('#addcustomer'),
+                            placeholder: 'Select Store(s)',
+                            width: '100%',
+                            allowClear: true
+                        });
+                    });
+                </script>
+                <script>
+                    document.getElementById("paid_amount").addEventListener("input", function () {
+                        const paidAmount = parseFloat(this.value) || 0;
+                        const paymentTypeSelect = document.getElementById("POS_payment_type_list");
+
+                        if (paidAmount > 0) {
+                            paymentTypeSelect.setAttribute("required", "required");
+                        } else {
+                            paymentTypeSelect.removeAttribute("required");
+                        }
+                    });
+                </script>
+                <script src="/js/pos-print-client.js"></script>
+                <script>
+                    (function() {
+                        const serverUrl = "<%= accessdata?.masterstore?.printing_server_url || 'http://127.0.0.1:4321' %>";
+                        const silentEnabled = <%= (accessdata?.masterstore?.silent_print_enabled !== 0) ? 'true' : 'false' %>;
+                        const targetPrinter = "<%= accessdata?.masterstore?.invoice_printer_name || '' %>";
+                        const posClient = new POSPrintClient({ baseUrl: serverUrl, timeout: 4000 });
+
+                        async function pingPosPrintingServer(isManual) {
+                            const btn = document.getElementById('posPrinterStatusBtn');
+                            const dot = document.getElementById('posPrinterStatusDot');
+                            const text = document.getElementById('posPrinterStatusText');
+                            const popBadge = document.getElementById('posPopoverStatusBadge');
+                            const popMode = document.getElementById('posPopoverModeText');
+
+                            if (isManual && typeof toastr !== 'undefined') {
+                                toastr.info('Checking printing server at ' + serverUrl + '...', 'Connecting');
+                            }
+
+                            try {
+                                const health = await posClient.request('/health');
+                                if (health && health.status === 'running') {
+                                    if (dot) dot.className = 'pos-printer-dot dot-online';
+                                    if (text) {
+                                        const shortName = targetPrinter ? (targetPrinter.length > 15 ? targetPrinter.substring(0, 15) + '...' : targetPrinter) : 'Ready';
+                                        text.textContent = 'Silent Print: Online (' + shortName + ')';
+                                    }
+                                    if (btn) {
+                                        btn.classList.remove('btn-outline-danger', 'btn-outline-secondary');
+                                        btn.classList.add('btn-outline-success');
+                                    }
+                                    if (popBadge) {
+                                        popBadge.className = 'badge bg-success text-white';
+                                        popBadge.textContent = 'Online';
+                                    }
+                                    if (popMode) {
+                                        popMode.className = 'fw-semibold text-success';
+                                        popMode.textContent = silentEnabled ? 'Silent Zero-Click Spooler' : 'Silent Disabled (Native Print)';
+                                    }
+                                    if (isManual && typeof toastr !== 'undefined') {
+                                        toastr.success('Printing Server is online! Ready for silent receipts.', 'Hardware Connected');
+                                    }
+                                } else {
+                                    throw new Error('Server offline');
+                                }
+                            } catch (e) {
+                                if (dot) dot.className = 'pos-printer-dot dot-offline';
+                                if (text) text.textContent = 'Silent Print: Offline';
+                                if (btn) {
+                                    btn.classList.remove('btn-outline-success', 'btn-outline-secondary');
+                                    btn.classList.add('btn-outline-danger');
+                                }
+                                if (popBadge) {
+                                    popBadge.className = 'badge bg-danger text-white';
+                                    popBadge.textContent = 'Offline';
+                                }
+                                if (popMode) {
+                                    popMode.className = 'fw-semibold text-danger';
+                                    popMode.textContent = 'Native Browser Dialog (Ctrl+P)';
+                                }
+                                if (isManual && typeof toastr !== 'undefined') {
+                                    toastr.warning('Printing server is offline. Standard browser print dialog will be used.', 'Native Fallback Active');
+                                }
+                            }
+                        }
+
+                        window.pingPosPrintingServer = pingPosPrintingServer;
+
+                        document.addEventListener('DOMContentLoaded', () => {
+                            pingPosPrintingServer(false);
+                            // Periodic background ping every 25 seconds
+                            setInterval(() => pingPosPrintingServer(false), 25000);
+                        });
+                    })();
+                </script>
+</body>
+
+
+
+</html>

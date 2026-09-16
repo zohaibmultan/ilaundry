@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+
+</head>
+
+<body>
+        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+
+                    <div class="col-sm-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                     <table id="example" class="table display table-responsive-md" aria-label="table">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    <%= language.Invoice %>
+                                                </th>
+                                                <th>
+                                                    <%= language.Date %>
+                                                </th>
+                                                <th>
+                                                    <%= language.Notification %>
+                                                </th>
+                                                <th class="text-center">
+                                                    <%= language.Action %>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% notification_data.forEach((data)=> { %>
+                                                <tr>
+                                                    <td>
+                                                        <%= data.invoice %>
+                                                    </td>
+                                                    <td class="text-nowrap">
+                                                        <%= data.date %>
+                                                    </td>
+                                                    <td>
+                                                        <%= data.notification %>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="tbl-action-group">
+                                                            <% order_date.forEach((order_date)=> { %>
+                                                                <% if (data.invoice==order_date.order_id) { %>
+                                                                    <a href="/order/view/<%=order_date.id %>"
+                                                                        class="btn-tbl-action btn-tbl-view"
+                                                                        title="<%= language.View || 'View' %>">
+                                                                        <i class="fa fa-eye"></i></a>
+                                                                <% } %>
+                                                            <% }) %>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+
+        </div>
+
+        <!--********** Content body end **********-->
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <!--**********************************
+        Scripts
+    ***********************************-->
+            <%- include('templet/script')-%>
+
+</body>
+
+</html>

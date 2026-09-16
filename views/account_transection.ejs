@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+
+</head>
+
+<body>
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+
+            <div class="container-fluid pt-3" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card ">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <%= language.Transaction_List %>
+                                </h3>
+                            </div>
+                            <div class="d-none">
+                                <input type="hiden" name="sym" value="<%= accessdata?.symbol %>">
+                                <input type="hiden" name="pls" value="<%= accessdata?.plac %>">
+                                <input type="hiden" name="thousands_separator"
+                                    value="<%= accessdata?.thousands_separator %>">
+                            </div>
+                            <div class="card-body">
+                                <form id="transform" action="/account/transefilter" method="post">
+
+                                    <div class="row">
+                                        <div class="col">
+                                            <label class="form-label">
+                                                <%= language.Account %>
+                                            </label>
+                                            <select class="default-select form-control wide mb-3" name="account"
+                                                id="account" required>
+                                                <option value selected disabled>Select Account</option>
+                                                <% account_list.forEach(function(data){ %>
+                                                    <option value="<%= data.id %>" <%=data.id==account ? 'selected' : ''
+                                                        %>><%= data.ac_name %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select>
+                                        </div>
+
+                                        <div class="col">
+                                            <label class="form-label">
+                                                <%= language.Start_Date %>
+                                            </label>
+                                            <input type="date" class="form-control" id="startdate" name="start_date"
+                                                value="<%= start_date %>" required>
+                                        </div>
+
+                                        <div class="col">
+                                            <label class="form-label">
+                                                <%= language.End_Date %>
+                                            </label>
+                                            <input type="date" class="form-control" id="enddate" name="end_date"
+                                                value="<%= end_date %>" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-center">
+                                        <p class="text-danger d-none m-0 pb-2" id="details_error">Select All Detail</p>
+                                    </div>
+
+                              
+                                <div class="d-flex justify-content-center ">
+                                    <button class="btn btn-rounded btn-info col-3 mx-3 mt-3 text-nowrap" id="atransection" type="submit">
+                                        <%= language.Filter %>
+                                    </button>
+                                    <a href="/account/transection" class="btn btn-rounded btn-danger col-3 mx-3 mt-3 text-nowrap">
+                                        <%= language.Reset %>
+                                    </a>
+                                    <button type="button" class="btn btn-rounded btn-success col-3 mx-3 mt-3 text-nowrap" id="tdownload">
+                                        <%= language.Download %>
+                                    </button>
+                                </div>
+                                  </form>
+                                <hr>
+
+                                <!----- table ----->
+
+                                <div class="table-responsive mt-5">
+                                    <table
+                                        class="table table-bordered table-striped verticle-middle table-responsive-sm">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">
+                                                    <%= language.Date %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Account %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Type %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Description %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Debit %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Credit %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Balance %>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% transection_list.forEach(function(data, i){ %>
+                                                <tr>
+                                                     <% let Order_date=new Date(data.date) %>
+                                                            <% let Order_day=(Order_date.getDate() < 10 ? '0' : '' ) +
+                                                                Order_date.getDate() %>
+                                                                <% let Order_month=((Order_date.getMonth()+1) < 10 ? '0'
+                                                                    : '' ) + (Order_date.getMonth()+1) %>
+                                                                    <% let Order_year=Order_date.getFullYear() %>
+                                                                        <% let
+                                                                            Order_fullDate=`${Order_year}-${Order_month}-${Order_day}`
+                                                                            %>
+                                                    <td class="text-nowrap">
+                                                       
+                                                                            <%= Order_fullDate %>
+                                                    </td>
+                                                    <td class="text-nowrap">
+                                                        <%= data.ac_name %>
+                                                    </td>
+                                                    <td>
+                                                        <%= data.transec_type %>
+                                                    </td>
+                                                    <td class="text-nowrap">
+                                                        <%= data.transec_detail %>
+                                                    </td>
+                                                    <td class="symbol text-nowrap">
+                                                        <%= data.debit_amount %>
+                                                    </td>
+                                                    <td class="symbol text-nowrap">
+                                                        <%= data.credit_amount %>
+                                                    </td>
+                                                    <td class="symbol text-nowrap">
+                                                        <%= data.balance_amount %>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!--********** Content body end **********-->
+
+        </div>
+        <!--**********************************
+            Footer start
+        ***********************************-->
+                <%- include('templet/footer')-%>
+
+        <!--**********************************
+            Footer end
+        ***********************************-->
+
+        </div>
+
+        <!--********** Main wrapper end **********-->
+        <%- include('templet/script')-%>
+
+
+<script>
+    const transectionList = <%- JSON.stringify(transection_list) %>;
+
+    $('#tdownload').click(function () {
+        $.ajax({
+            url: '/tool/download',
+            method: 'POST',
+            xhrFields: {
+                responseType: 'blob'  
+            },
+            contentType: 'application/json',
+            data: JSON.stringify({ transectionList: transectionList }),
+            success: function (data, status, xhr) {
+                const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+ 
+                const disposition = xhr.getResponseHeader('Content-Disposition');
+                let filename = `Transaction_Report_${Math.floor(10000 + Math.random() * 90000)}.xlsx`;
+                if (disposition && disposition.indexOf('filename=') !== -1) {
+                    filename = disposition.split('filename=')[1].replace(/"/g, '');
+                }
+
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+           
+                
+            },
+            error: function (err) {
+                console.error('Download failed:', err);
+                alert("Download failed!");
+            }
+        });
+    });
+</script>
+
+</body>
+
+
+
+</html>

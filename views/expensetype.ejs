@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+
+</head>
+
+<body>
+        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card ">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <%= language.Expence_Category_Type_List %>
+                                </h3>
+                                <button
+                                    class="btn btn-rounded btn-sm btn-primary  <%= accessdata.roll.expense.includes('write') ?'':'d-none' %>"
+                                    data-bs-toggle="modal" data-bs-target="#addexpcattype"><i class="fa fa-plus color-info me-2 text-white"></i>
+                                    <%= language.Add_Category_Type %>
+                                </button>
+                            </div>
+                            <div class="card-body ">
+                                <div class="table-responsive">
+                                    <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>
+                                                    <%= language.Expence_Category_Type %>
+                                                </th>
+                                                <th class="<%= ismulty ? '': 'd-none' %>">
+                                                    <%= language.Store_Name %>
+                                                </th>
+                                                <th
+                                                    class="text-center <%= accessdata.roll.expense.includes('edit') || accessdata.roll.expense.includes('delete') ?'':'d-none' %>">
+                                                    <%= language.Action %>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% type.forEach(function(data, i){ %>
+                                                <tr>
+                                                    <td>
+                                                        <%= i + 1 %>
+                                                    </td>
+                                                    <td>
+                                                        <%=data.type_name %>
+                                                    </td>
+                                                    <td class="<%= ismulty ? '': 'd-none' %>">
+                                                        <%=data.store %>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="tbl-action-group">
+                                                            <a href="#"
+                                                                class="btn-tbl-action btn-tbl-edit <%= accessdata.roll.expense.includes('edit') ?'':'d-none' %>"
+                                                                id="action" data-bs-toggle="modal"
+                                                                data-bs-target="#editexpcattype"
+                                                                data-name="<%=data.type_name %>" data-id="<%=data.id %>"
+                                                                title="<%= language.Edit || 'Edit' %>">
+                                                                <i class="fas fa-pencil-alt"></i></a>
+
+                                                            <a href="/expense/deletcategorytype/<%= data.id%>"
+                                                                class="btn-tbl-action btn-tbl-delete <%= accessdata.roll.expense.includes('delete') ?'':'d-none' %>"
+                                                                title="<%= language.Delete || 'Delete' %>">
+                                                                <i class="fa fa-trash"></i></a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!--********** Content body end **********-->
+
+        <!-- Modal update -->
+        <div class="modal fade" id="editexpcattype">
+            <div class="modal-dialog  modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <%= language.Coustomer_Detail %>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="" id="editexpcattype_form" method="post" class="need-validation">
+
+                            <div class="row g-1 align-items-center">
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Type_Name %>
+                                        </strong></label>
+                                    <input type="text" class="form-control" id="name" name="name" required>
+                                </div>
+                            </div>
+                    </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                    <%= language.Cancel %>
+                                </button>
+                                <button type="submit" class="btn btn-sm  btn-primary">
+                                    <%= language.Save %>
+                                </button>
+                            </div>
+                        </form>
+
+
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal add -->
+        <div class="modal fade" id="addexpcattype">
+            <div class="modal-dialog  modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <%= language.Add_Expence_Category_Type %>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/expense/addcategorytype" method="post" class="need-validation">
+
+                            <div class="col-md-12 mb-1 <%= ismulty ? '': 'd-none' %>">
+                                <div class="form-group">
+                                    <label class="form-label"><strong>
+                                            <%= language.Store_List %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <select class="form-control wide mb-3" name="storeid" id="coupon_storlist_update">
+                                        <option value="" selected disabled> Select Store </option>
+                                        <% storeList.forEach(function(x){ %>
+                                            <option value="<%= x.id %>">
+                                                <%= x.name %>
+                                            </option>
+                                            <% }) %>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row g-1 align-items-center">
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Type_Name %>
+                                        </strong></label>
+                                    <input type="text" class="form-control " name="name" required>
+                                </div>
+
+                            </div>
+                    </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-sm  btn-primary">
+                                    <%= language.Save %>
+                                </button>
+                            </div>
+                        </form>
+
+
+
+                </div>
+            </div>
+
+
+        </div>
+
+
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+
+                <script>
+                    $('#addexpcattype').on('shown.bs.modal', function () {
+
+                        $('#coupon_storlist_update').select2({
+                            dropdownParent: $('#addexpcattype'),
+                            placeholder: 'Select Store(s)',
+                            width: '100%',
+                            allowClear: true
+                        });
+                    });
+                </script>
+
+</body>
+
+</html>

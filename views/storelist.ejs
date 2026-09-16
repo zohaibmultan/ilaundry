@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+
+
+
+</head>
+
+<body>
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card ">
+                            <div class="card-header justify-content-end">
+                                <a href="/tool/addshop" class="btn btn-rounded btn-primary"><span
+                                        class="btn-icon-start text-primary">
+                                        <i class="fa fa-plus color-info"></i></span>
+                                    <%= language.Add_New_Store %>
+                                </a>
+                            </div>
+
+                            <div class="card-body">
+
+                                <!----- shop table ----->
+
+                                <div class="shop_table">
+
+                                    <h3>
+                                        <%= language.Shop_List_Table %>
+                                    </h3>
+
+                                    <div class="table-responsive">
+                                        <table id="example2" class="table display table-responsive-md" style="width: 100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>
+                                                        <%= language.Shop_Name %>
+                                                    </th>
+                                                    <th>
+                                                        <%= language.Store_ID %>
+                                                    </th>
+                                                    <th>
+                                                        <%= language.Status %>
+                                                    </th>
+                                                    <th class="text-center">
+                                                        <%= language.Action %>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tb_row">
+                                                <% storeList.forEach(function(data, i){ %>
+                                                    <tr>
+                                                        <td>
+                                                            <%= i + 1 %>
+                                                        </td>
+                                                        <td>
+                                                            <%= data.name%>
+                                                        </td>
+                                                        <td>
+                                                            <%= data.id%>
+                                                        </td>
+                                                        <td>
+                                                            <% if(data.status==1){ %>
+                                                                <div class="form-group">
+                                                                    <div class="form-check form-switch">
+                                                                        <input class="form-check-input" type="checkbox"
+                                                                            id="active" name="active" checked
+                                                                            onclick="changeStatus('active','<%= data.id %>')">
+                                                                    </div>
+                                                                </div>
+                                                                <% }else if(data.status==0){ %>
+                                                                    <div class="form-group">
+                                                                        <div class="form-check form-switch">
+                                                                            <input class="form-check-input"
+                                                                                type="checkbox" id="active"
+                                                                                name="active"
+                                                                                onclick="changeStatus('deactive','<%= data.id %>')">
+                                                                        </div>
+                                                                    </div>
+                                                                    <% } %>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <div class="tbl-action-group">
+                                                                <a href="/tool/approvedshop/<%= data.id %>"
+                                                                    class="btn-tbl-action btn-tbl-edit"
+                                                                    id="action"
+                                                                    title="<%= language.Edit || 'Edit' %>">
+                                                                    <i class="fas fa-pencil-alt"></i></a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <% }) %>
+                                            </tbody>
+                                        </table>
+
+                                    </div>
+                                </div>
+
+                                <!----- end shop table ----->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!--********** Content body end **********-->
+
+        </div>
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+
+
+
+                <script>
+                    function changeStatus(n, id) {
+                        let status = n === 'active' ? 'deactive' : 'active'
+                        console.log(id);
+
+                        $.ajax({
+                            type: 'post',
+                            url: `/tool/storestatus/${id}`,
+                            data: { status: status },
+                            success: function (res) {
+                                console.log(res);
+
+                            }
+
+                        })
+                    }
+                </script>
+
+</body>
+
+
+</html>     

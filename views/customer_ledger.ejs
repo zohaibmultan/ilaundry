@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+
+</head>
+
+<body>
+        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="d-none">
+                        <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
+                        <input type="hiden" name="pls" value="<%= accessdata.plac %>">
+                        <input type="hiden" name="thousands_separator" value="<%= accessdata.thousands_separator %>">
+                    </div>
+                    <div class="col-12">
+                        <div class="card ">
+                            <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                <div>
+                                    <h4 class="card-title mb-1 text-primary fw-bold">
+                                        <i class="fas fa-book-open me-2"></i>
+                                        <%= language.Customer_Ledger || 'Customer Ledger' %>: 
+                                        <span class="text-dark"><%= customer ? customer.name : '' %></span>
+                                    </h4>
+                                    <% if (customer) { %>
+                                        <div class="text-muted text-sm d-flex flex-wrap align-items-center gap-3">
+                                            <% if (customer.number) { %>
+                                                <span>
+                                                    <i class="fas fa-phone-alt me-1 text-success"></i> <strong><%= customer.number %></strong>
+                                                </span>
+                                            <% } %>
+                                            <% if (customer.email) { %>
+                                                <span>
+                                                    <i class="fas fa-envelope me-1 text-info"></i> <%= customer.email %>
+                                                </span>
+                                            <% } %>
+                                            <% if (customer.address) { %>
+                                                <span>
+                                                    <i class="fas fa-map-marker-alt me-1 text-secondary"></i> <%= customer.address %>
+                                                </span>
+                                            <% } %>
+                                        </div>
+                                    <% } %>
+                                </div>
+                                <div>
+                                    <a href="/coustomer/list" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-arrow-left me-1"></i> <%= language.Back || 'Back to Customers' %>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="card-body ">
+                                <div class="table-responsive">
+                                    <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th scope="col">
+                                                    <%= language.Date %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Account %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Type %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Description %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Debit %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Credit %>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% transection_list.forEach(function(data, i){ %>
+                                                <tr>
+                                                    <td>
+                                                        <%= i + 1 %>
+                                                    </td>
+                                                    <td>
+                                                        <% let Order_date=new Date(data.date) %>
+                                                            <% let Order_day=(Order_date.getDate() < 10 ? '0' : '' ) +
+                                                                Order_date.getDate() %>
+                                                                <% let Order_month=((Order_date.getMonth()+1) < 10 ? '0'
+                                                                    : '' ) + (Order_date.getMonth()+1) %>
+                                                                    <% let Order_year=Order_date.getFullYear() %>
+                                                                        <% let
+                                                                            Order_fullDate=`${Order_year}/${Order_month}/${Order_day}`
+                                                                            %>
+                                                                            <%= Order_fullDate %>
+                                                    </td>
+                                                    <td>
+                                                        <%=data.ac_name %>
+                                                    </td>
+                                                    <td>
+                                                        <%=data.transec_type %>
+                                                    </td>
+                                                    <td>
+                                                        <%=data.transec_detail %>
+                                                    </td>
+                                                    <td class="symbol">
+                                                        <%=data.debit_amount %>
+                                                    </td>
+                                                    <td class="symbol">
+                                                        <%=data.credit_amount %>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!--********** Content body end **********-->
+
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+            <script src="/vendor/datatables/js/jquery.dataTables.min.js"></script>
+<script src="/js/plugins-init/datatables.init.js"></script>  
+<script>
+ 
+  function clearCurrency(){
+    $('#example3 .symbol').each(function () {
+      const text = $(this).text();
+      const clean = text.replace(/[^\d.-]/g, ''); 
+      $(this).text(clean);
+    });
+  }
+
+  function applyCurrency(){
+   var sym = $('input[name=sym]').val()
+    $('#example3 .symbol').each(function () {
+      const value = parseFloat($(this).text());
+      if (!isNaN(value)) {
+        $(this).text(sym + value.toFixed(2));
+      }
+    });
+  }
+
+  function currency(){
+    clearCurrency();
+    applyCurrency();
+  }
+
+  function initDataTableWithCurrency(){
+    if ($.fn.DataTable.isDataTable('#example3')) {
+      $('#example3').DataTable().destroy();
+    }
+
+    $('#example3').DataTable({
+      "drawCallback": function (settings) {
+        currency(); 
+      }
+    });
+  }
+
+  $(document).ready(function (){
+    initDataTableWithCurrency();
+  });
+</script>         
+
+
+</body>
+
+
+</html>

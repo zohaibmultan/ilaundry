@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+
+</head>
+
+<body>
+        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card ">
+                            <div class="card-header justify-content-between">
+                                <h3 class="card-title">
+                                    <%= language.Tax_Reports %>
+                                </h3>
+                                <div
+                                    class="form-group m-0 col-5 <%= accessdata.logas == 'master' && accessdata.mutibranch  ? '' :'d-none' %>">
+                                    <label class="form-label">
+                                        <%= language.Store_Name %>
+                                    </label>
+                                    <select class="default-select form-control wide " name="storeid"
+                                        id="tax_report_store">
+                                        <% storeList.forEach(function(x){ %>
+                                            <option value="<%= x.id %>" <%=x.id==store ? 'selected' :'' %> ><%= x.name
+                                                    %>
+                                            </option>
+                                            <% }) %>
+                                    </select>
+
+                                </div>
+                            </div>
+                            <div class="d-none">
+                                <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
+                                <input type="hiden" name="pls" value="<%= accessdata.plac %>">
+                                <input type="hiden" name="thousands_separator"
+                                    value="<%= accessdata.thousands_separator %>">
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-sm-4 col-12 mt-2">
+                                        <label class="form-label">
+                                            <%= language.Start_Date %>
+                                        </label>
+                                        <input type="date" class="form-control" name="start_date"
+                                            id="tax_report_start_date">
+                                    </div>
+
+                                    <div class="col-sm-4 col-12 mt-2">
+                                        <label class="form-label">
+                                            <%= language.End_Date %>
+                                        </label>
+                                        <input type="date" class="form-control" name="end_date"
+                                            id="tax_report_end_date">
+                                    </div>
+
+                                    <div class="col-sm-4 col-12 mt-2">
+                                        <label class="form-label">
+                                            <%= language.Filter %>
+                                        </label>
+                                        <select class="default-select form-control wide mb-3" name="status"
+                                            id="tax_report_status">
+
+                                            <option value="0" selected>Expence</option>
+                                            <option value="1">Sales</option>
+
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="card-body">
+                                        <div class="table-responsive " id="invoice_page">
+                                            <div class="tableFixHead">
+                                                <table class="table table-responsive-sm">
+                                                    <thead class="table_head">
+                                                        <tr>
+                                                            <th>#</th>
+                                                            <th>
+                                                                <%= language.DATE %>
+                                                            </th>
+                                                            <th>
+                                                                <%= language.Particulars %>
+                                                            </th>
+                                                            <th class="text-nowrap">
+                                                                <%= language.Before_Tax %>
+                                                            </th>
+                                                            <th class="text-nowrap">
+                                                                <%= language.TAX_AMOUNT %>
+                                                            </th>
+                                                            <th class="text-nowrap">
+                                                                <%= language.Total_Amount %>
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="tb_row_tax_report">
+                                                        <% taxdata.forEach(function (data, i ){ %>
+                                                            <tr>
+                                                                <td>
+                                                                    <%= i + 1 %>
+                                                                </td>
+
+                                                                <% let new_date=new Date(data.date) %>
+                                                                    <% let year=new_date.getFullYear() %>
+                                                                        <% let new_day=(new_date.getDate() < 10 ? '0'
+                                                                            : '' ) + new_date.getDate() %>
+                                                                            <% let new_month=((new_date.getMonth()+1) <
+                                                                                10 ? '0' : '' ) +
+                                                                                (new_date.getMonth()+1) %>
+                                                                                <% let
+                                                                                    fullDate=`${year}-${new_month}-${new_day}`
+                                                                                    %>
+
+                                                                                    <td class="text-nowrap">
+                                                                                        <%= fullDate %>
+                                                                                    </td>
+                                                                                    <td class="text-nowrap">
+                                                                                        <%= data.particulars %>
+                                                                                    </td>
+                                                                                    <td class="symbol text-nowrap">
+                                                                                        <%= data.befortax.toFixed(2)%>
+                                                                                    </td>
+                                                                                    <td class="symbol text-nowrap">
+                                                                                        <%= data.taxamount.toFixed(2) %>
+                                                                                    </td>
+                                                                                    <td class="symbol text-nowrap">
+                                                                                        <%= data.amount.toFixed(2) %>
+                                                                                    </td>
+                                                            </tr>
+                                                            <% }) %>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col d-flex">
+                                        <strong class="text-nowrap">
+                                            <%= language.Total_Amount %> :
+                                        </strong>
+                                        <strong class="text-nowrap"><span id="tax_report_amount" class="symbol">0</span></strong>
+                                    </div>
+                                    <div class="col d-flex">
+                                        <strong class="text-nowrap">
+                                            <%= language.Total_Tax %> :
+                                        </strong>
+                                        <strong class="text-nowrap"> <span id="tax_report_tax" class="symbol">0</span></strong>
+                                    </div>
+                                    <div class="col">
+                                        <div class="d-flex mt-2">
+                                        <button type="submit" class="btn btn-success text-nowrap me-2" onclick="downloadtaxreport()"
+                                            id="Download_order_report">
+                                            <%= language.Download_Report %>
+                                        </button>
+                                        <button type="submit" id="order_report_print" class="btn btn-warning mb-0 text-nowrap">
+                                            <%= language.Print_Report %>
+                                        </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!--********** Content body end **********-->
+
+        </div>
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+
+</body>
+
+
+
+</html>

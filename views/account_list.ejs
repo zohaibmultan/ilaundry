@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+
+</head>
+
+<body>
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+
+
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="d-none">
+                        <input type="hiden" name="sym" value="<%= accessdata?.symbol %>">
+                        <input type="hiden" name="pls" value="<%= accessdata?.plac %>">
+                        <input type="hiden" name="thousands_separator" value="<%= accessdata?.thousands_separator %>">
+                    </div>
+                    <div class="col-12">
+  <div class="card mb-3">
+    <div class="card-body position-relative">
+
+      <!-- Payment Button -->
+      <% if ((accessdata.mutibranch == false && due.toFixed(2) > 0) || (accessdata?.roll?.rollType === 'store' && accessdata?.roll?.account?.includes('write') && due.toFixed(2) > 0)) { %>
+        <!-- For large screens (top-right corner) -->
+        <div class="d-none d-md-block position-absolute top-50 end-0   me-5 translate-middle-y">
+          <a href="#" class="btn btn-primary btn-lg px-4 py-2" data-bs-toggle="modal" data-bs-target="#payment">
+            <%= language.Payment %>
+          </a>
+        </div>
+
+        <!-- For smaller screens (centered) -->
+        <div class="d-md-none text-center mb-3">
+          <a href="#" class="btn btn-primary btn-lg px-4 py-2" data-bs-toggle="modal" data-bs-target="#payment">
+            <%= language.Payment %>
+          </a>
+        </div>
+      <% } %>
+
+      <!-- Summary Cards -->
+      <div class="d-flex flex-wrap justify-content-md-start justify-content-center align-items-center text-center">
+        <div class="col-xl-2 col-md-4 col-sm-6 col-12 mx-3 mb-3">
+          <h3><span class="symbol"><%= comission %></span></h3>
+          <h5><%= language.Total_commission_Amount %></h5>
+          <a href="/account/viewcomission/commission">
+            <button class="btn btn-primary btn-sm btn-rounded text-nowrap">
+              <%= language.View_Comission %>
+            </button>
+          </a>
+        </div>
+
+        <div class="col-xl-2 col-md-4 col-sm-6 col-12 mx-3 mb-3">
+          <h3><span class="symbol"><%= paidcomission %></span></h3>
+          <h5><%= language.Total_Paid_Amount %></h5>
+          <a href="/account/viewcomission/paidcommission">
+            <button class="btn btn-success btn-sm btn-rounded text-nowrap">
+              <%= language.View_Paid_Comission %>
+            </button>
+          </a>
+        </div>
+
+        <div class="col-xl-2  col-md-4 col-sm-6 col-12 mx-3 mb-3">
+          <h3><span class="symbol" id="due"><%= due.toFixed(2) %></span></h3>
+          <h5><%= language.Total_Due_Amount %></h5>
+        </div>
+      </div>
+
+    </div>
+  </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card ">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <%= language.Account_List %>
+                                </h3>
+                                <button   
+                                    class="btn btn-rounded btn-primary <%= (accessdata.roll.rollType == 'master') || (accessdata.mutibranch === false  || accessdata?.roll?.account?.includes('write')) ?'':'d-none' %>"
+                                    data-bs-toggle="modal" data-bs-target="#account_add"><span
+                                        class="btn-icon-start text-primary"><i class="fa fa-plus color-info"></i></span>
+                                    <%= language.Add_New_Account %>
+                                </button>
+                            </div>
+
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table
+                                        class="table table-bordered table-striped verticle-middle table-responsive-sm">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">#</th>
+                                                <th scope="col">
+                                                    <%= language.Account_Info %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Balance_Info %>
+                                                </th>
+                                                <th scope="col"
+                                                    class="text-center <%= (accessdata.roll.rollType == 'master') ||(accessdata.mutibranch === false  || accessdata?.roll?.account?.includes('edit') || accessdata?.roll?.account?.includes('delete')) ?'':'d-none' %>">
+                                                    <%= language.Action %>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% account_list.forEach(function(data, i){ %>
+                                                <tr>
+                                                    <td>
+                                                        <%= i + 1%>
+                                                    </td>
+                                                    <td>
+                                                        <div> <b>
+                                                                <%= data.ac_name %>
+                                                            </b> </div>
+                                                        <div> <b>
+                                                                <%= data.ac_number %>
+                                                            </b> </div>
+                                                        <div> <b>
+                                                                <%= data.store_name %>
+                                                            </b> </div>
+                                                        <div class="text-nowrap">
+                                                            <%= data.ac_decrip %>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="d-flex text-nowrap">
+                                                            <%= language.Balance %> : <b>
+                                                                <span class="symbol">
+                                                                    <%= data.balance.toFixed(2) %> 
+                                                                    </span>
+                                                                </b>   
+                                                        </div>
+                                                        <div class="d-flex text-nowrap">
+                                                            <%= language.Total_in %> : <b>
+                                                                <span class="symbol">
+                                                                    <%= data.credit.toFixed(2) %> 
+                                                                    </span>
+                                                                </b>
+                                                        </div>
+                                                        <div class="d-flex text-nowrap">
+                                                            <%= language.Total_out %> : <b>
+                                                                <span class="symbol">
+                                                                    <%= data.debit.toFixed(2) %>   
+                                                                    </span>
+                                                                </b>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="tbl-action-group">
+                                                            <a href="#"
+                                                                class="btn-tbl-action btn-tbl-edit <%=  (accessdata.roll.rollType == 'master') || (accessdata.mutibranch === false  || accessdata?.roll?.account?.includes('edit')) ?'':'d-none' %>"
+                                                                data-bs-toggle="modal" id="update_Account"
+                                                                data-bs-target="#account_update" data-id="<%= data.id %>"
+                                                                data-titel="<%= data.ac_name %>"
+                                                                data-number="<%= data.ac_number %>"
+                                                                data-descrip="<%= data.ac_decrip %>"
+                                                                title="<%= language.Edit || 'Edit' %>">
+                                                                <i class="fas fa-pencil-alt"></i></a>
+
+                                                            <a href="/account/deletaccount/<%=data.id %>"
+                                                                class="btn-tbl-action btn-tbl-delete <%=   (accessdata.roll.rollType == 'master') || (accessdata.mutibranch === false  || accessdata?.roll?.account?.includes('delete')) ?'':'d-none' %>"
+                                                                title="<%= language.Delete || 'Delete' %>">
+                                                                <i class="fa fa-trash"></i></a>
+                                                        </div>   
+                                                    </td>
+                                                </tr>
+
+
+
+                                                <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--********** Content body end **********-->
+        <!-- Modal payment -->
+        <div class="modal fade" id="payment">
+            <div class="modal-dialog modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <%= language.Payment %>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/account/comission" method="post" class="need-validation" id="paymentForm">
+
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Total_Due_Amount %>
+                                            </strong></label>
+                                        <input type="number" class="form-control " name="due_amount"
+                                            value="<%=due.toFixed(2) %>" id="due_amount" readonly>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong><%= language.Pay_Amount %></strong></label>
+                                        <input type="number" class="form-control " name="pay_amount" id="pay_amount"
+                                               placeholder="Enter Amount" step="0.01"   required>
+                                        <span class="text-danger d-none" style="font-size: 14px !important;" id="isValidamount"><%= language.Please_enter_valid_amount %></span>
+                                    </div> 
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label class="form-label"><strong>
+                                                <%= language.Select_To_Account %>
+                                            </strong></label>
+                                        <select class="form-control wide mb-3" name="to_account"
+                                            id="to_account" required>
+                                            <option value selected disabled>Select Account</option>
+                                            <% toaccount.forEach(function(data){ %>
+                                                <option value="<%= data.id %>">
+                                                    <%= data.ac_name %>
+                                                </option>
+                                                <% }) %>
+
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label class="form-label"><strong>
+                                                <%= language.Select_From_Account %>
+                                            </strong></label>
+                                        <select class="form-control wide mb-3" name="from_account"
+                                            id="from_account" required>
+                                            <option value selected disabled>Select Account</option>
+                                            <% fromaccount.forEach(function(data){ %>
+                                                <option value="<%= data.id %>">
+                                                    <%= data.ac_name %> (<span class="symbol"><%= data.balance %></span>)
+                                                </option>
+                                                <% }) %>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Date %>
+                                            </strong></label>
+                                        <input type="date" class="form-control " name="date" id="date" required>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Description %>
+                                            </strong></label>
+                                        <input type="text" class="form-control " name="description"
+                                            id="description_update" placeholder="Enter Description">
+                                    </div>
+                                </div>
+                            </div>
+                    </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                    <%= language.Cancel %>
+                                </button>
+                                <button type="submit" class="btn btn-sm  btn-primary">
+                                    <%= language.Save %>
+                                </button>
+                            </div>
+                        </form>
+
+
+
+                </div>
+            </div>
+        </div>
+        <!-- Modal update -->
+        <div class="modal fade" id="account_update">
+            <div class="modal-dialog modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <%= language.Edit_Account_Details %>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="" id="account_form" method="post" class="need-validation">
+
+                            <div class="row g-1 align-items-center">
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Account_title %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control " name="ac_name" id="ac_name_update"
+                                        placeholder="Enter Account Name" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Account_Number %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control " name="ac_number" id="ac_number_update"
+                                        placeholder="Enter Account Number" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Description %>
+                                        </strong></label>
+                                    <input type="text" class="form-control " name="ac_decrip" id="ac_description_update"
+                                        placeholder="Enter Description">
+                                </div>
+
+                            </div>
+</div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                    <%= language.Cancel %>
+                                </button>
+                                <button type="submit" class="btn btn-sm  btn-primary">
+                                    <%= language.Save %>
+                                </button>
+                            </div>
+                        </form>
+
+
+                    
+
+                </div>
+            </div>
+        </div>
+        <!-- Modal add -->
+        <div class="modal fade" id="account_add">
+            <div class="modal-dialog modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <%= language.Add_New_Account %>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                    <form action="/account/addaccount" method="post" class="need-validation">
+
+                            <div class="row g-1 align-items-center">
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Account_title %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control " name="ac_name" id="ac_name"
+                                        placeholder="Enter Account Name" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Account_Number %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control " name="ac_number" id="ac_number"
+                                        placeholder="Enter Account Number" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Balance %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control " name="balance" id="balance" min="0"
+                                        placeholder="Initial Balance" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Description %>
+                                        </strong></label>
+                                    <input type="text" class="form-control " name="description" id="description"
+                                        placeholder="Enter Description">
+                                </div>
+
+                            </div>
+                </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                    <%= language.Cancel %>
+                                </button>
+                                <button type="submit" class="btn btn-sm  btn-primary">
+                                    <%= language.Save %>
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+
+
+
+            </div>
+        </div>
+        </div>
+        <!--********************************** Footer start***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************Footer end***********************************-->
+            </div>
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+<script>
+  $('#payment').on('shown.bs.modal', function () {
+    
+    $('#to_account').select2({
+      dropdownParent: $('#payment'),
+      placeholder: 'Select Account(a)',
+      width: '100%',
+      allowClear: true
+    });
+  });
+</script>  
+<script>
+  $('#payment').on('shown.bs.modal', function () {
+    
+    $('#from_account').select2({
+      dropdownParent: $('#payment'),
+      placeholder: 'Select Account(a)',
+      width: '100%',
+      allowClear: true
+    });
+  });
+</script>
+<script>
+    let isValidamount = true
+  $('#pay_amount').on('input', function () {
+    let dueamount = parseFloat($('#due_amount').val()) || 0;
+    let payamount = parseFloat($('#pay_amount').val()) || 0;
+
+    if (payamount > dueamount) {
+      $('#isValidamount').removeClass('d-none'); 
+     isValidamount = false
+
+    } else {
+      $('#isValidamount').addClass('d-none'); 
+     isValidamount = true
+
+    }
+      $('#paymentForm').on('submit', function (e) {
+    if (!isValidamount) {
+      e.preventDefault(); 
+    }
+  });
+  });
+</script>
+</body>
+
+
+</html>

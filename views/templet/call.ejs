@@ -1,0 +1,4045 @@
+<script>
+   function setCookie(name, value, days) {
+      var expires = "";
+      if (days) {
+         var date = new Date();
+         date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+         expires = "; expires=" + date.toUTCString();
+      }
+      document.cookie = name + "=" + encodeURIComponent(value || "") + expires + "; path=/; SameSite=Lax";
+   }
+
+   function getCookie(name) {
+      var nameEQ = name + "=";
+      var ca = document.cookie.split(';');
+      for (var i = 0; i < ca.length; i++) {
+         var c = ca[i];
+         while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+         if (c.indexOf(nameEQ) == 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
+      }
+      return null;
+   }
+
+   function eraseCookie(name) {
+      document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+   }
+
+   function applyTheme(theme) {
+      var targetTheme = (theme === 'dark') ? 'dark' : 'light';
+      $('body').attr('data-theme-version', targetTheme);
+      $('html').attr('data-theme-version', targetTheme);
+
+      if (targetTheme === 'dark') {
+         $('body').addClass('dark-only');
+         $('html').addClass('dark-only');
+         $('.mode').addClass('dark').attr('data-id', 'light');
+         $('.lighticon').hide();
+         $('.darkicon').show();
+      } else {
+         $('body').removeClass('dark-only');
+         $('html').removeClass('dark-only');
+         $('.mode').removeClass('dark').attr('data-id', 'dark');
+         $('.darkicon').hide();
+         $('.lighticon').show();
+      }
+
+      if (typeof dezSettings === 'function' && typeof dezSettingsOptions !== 'undefined') {
+         dezSettingsOptions.version = targetTheme;
+         new dezSettings(dezSettingsOptions);
+      }
+   }
+
+   $(document).on("click", "#header_theme_toggle, .mode", function (e) {
+      if (typeof window.toggleAppTheme === 'function') {
+         window.toggleAppTheme(e);
+      } else {
+         e.preventDefault();
+         var currentTheme = $('body').attr('data-theme-version') || getCookie('version') || (typeof localStorage !== 'undefined' ? localStorage.getItem('theme_version') : 'light');
+         var newTheme = (currentTheme === 'dark') ? 'light' : 'dark';
+
+         applyTheme(newTheme);
+
+         try {
+            if (typeof localStorage !== 'undefined') {
+               localStorage.setItem('theme_version', newTheme);
+            }
+         } catch (err) {}
+         setCookie('version', newTheme, 365);
+      }
+   });
+
+   (function () {
+      var saved = getCookie('version') || (typeof localStorage !== 'undefined' ? localStorage.getItem('theme_version') : '') || $('html').attr('data-theme-version') || 'light';
+      applyTheme(saved);
+   })();
+
+   $('.lang').on('click', function () {
+      var type = $(this).attr('data-lang');
+      html.attr('dir', type);
+      html.attr('class', '');
+      html.addClass(type);
+      body.attr('direction', type);
+      setCookie('direction', type);
+   });
+   $(document).ready(function () {
+      var savedTheme = getCookie('version') || (typeof localStorage !== 'undefined' ? localStorage.getItem('theme_version') : '') || $('html').attr('data-theme-version') || 'light';
+      applyTheme(savedTheme);
+
+      $(document).on("click", ".lang", function () {
+         var lang = $(this).attr("data-value")
+         var base_url = window.location.origin;
+
+         $.ajax({
+            url: base_url + "/lang/" + lang,
+            type: "GET",
+            dataType: "JSON",
+            success: function (res) {
+               location.reload();
+            }
+         })
+      })
+   })
+
+
+   $(document).on('click', '#action', function () {
+      var id = $(this).attr('data-id')
+      var act = "/expense/updatecategorytype/'" + id + "'"
+
+      $('#name').attr('value', ($(this).attr('data-name')))
+      $("#editexpcattype_form").attr('action', act)
+   })
+
+
+   $(document).on('click', '#expcataction', function () {
+      var baseUrl = window.location.origin;
+      var storeid = $(this).attr('data-storeid');
+      var cattypeid = $(this).attr('data-exp_cat_type_id')
+
+      $.ajax({
+         type: 'get',
+         url: baseUrl + "/expense/cattypelist/" + storeid,
+         dataType: 'json',
+         success: function (res) {
+            $('#cttyid').html('')
+            $.each(res.data, function (index, value) {
+
+               $('#cttyid').append('<option value="' + value.id + '">' + value.type_name + '</option>')
+               $('.default-select').selectpicker('refresh');
+            })
+            // $('#cttyid').val(cattypeid);
+            $('select[name=type_id]').val(cattypeid);
+            $('.default-select').selectpicker('refresh');
+         }
+      })
+
+
+      var id = $(this).attr('data-id')
+      var act = "/expense/updateexpcat/'" + id + "'"
+      $('#name').attr('value', ($(this).attr('data-catname')))
+      $("#updateexpcat_form").attr('action', act)
+
+   })
+
+
+   $('body').on("change", "#expense_add_admin", function () {
+
+      var baseUrl = window.location.origin;
+      var id = this.value
+      $.ajax({
+         type: 'get',
+         url: baseUrl + "/expense/expcatlist/" + id,
+         dataType: 'json',
+         success: function (res) {
+            $('#exp_add_category').html('<option value selected disabled>Select One</option>')
+
+            $.each(res.data, function (index, value) {
+               $('#exp_add_category').append('<option value=' + value.id + '>' + value.cat_name + '</option>')
+            })
+
+            $('#exp_add_payment').html('<option value selected disabled>Select One</option>')
+            $.each(res.acountlist, function (index, value) {
+               $('#exp_add_payment').append('<option value=' + value.id + '>' + value.ac_name + '</option>')
+            })
+
+            $('.default-select').selectpicker('refresh');
+
+
+         }
+      })
+   })
+
+
+   $('#myexpen input[type=radio]').click(function () {
+
+      if (this.value == "no") {
+         $('#tex_perce').addClass('d-none')
+         $('#tex_perce').prop('required', false)
+      } else {
+         $('#tex_perce').removeClass('d-none')
+         $('#tex_perce').prop('required', true)
+      }
+   })
+
+
+
+
+   $(document).on('click', '#expaction', function () {
+      var baseUrl = window.location.origin;
+      var storeid = $(this).attr('data-storeid');
+      var cat = $(this).attr('data-category')
+      var payment = $(this).attr('data-payment')
+      $.ajax({
+         type: 'get',
+         url: baseUrl + "/expense/expcatlist/" + storeid,
+         dataType: 'json',
+         success: function (res) {
+            $('#category_update').html('')
+            $.each(res.data, function (index, value) {
+               $('#category_update').append('<option value=' + value.id + '>' + value.cat_name + '</option>')
+               $('.default-select').selectpicker('refresh');
+            })
+
+            $('#payment_update').html(' ')
+            $.each(res.acountlist, function (index, value) {
+               $('#payment_update').append('<option value=' + value.id + '>' + value.ac_name + '</option>')
+            })
+            // $('#cttyid').val(cattypeid);
+            $('select[name=expense_category]').val(cat);
+            $('select[name=payment_update]').val(payment);
+            $('.default-select').selectpicker('refresh');
+         }
+      })
+
+
+      var id = $(this).attr('data-id')
+      var act = "/expense/updateexp/'" + id + "'"
+      var pay = $(this).attr('data-payment')
+      var tax = $(this).attr('data-tex')
+      const amount = Number($(this).attr('data-amount'))
+      var date = ($(this).attr('data-date'))
+      if (tax == "yes") {
+         $('#yes_taxincluded_update').prop('checked', true)
+         $('#tex_perce_update').removeClass('d-none')
+         $('#tex_perce_update').prop('required', true)
+      } else {
+         $('#no_tax_included_update').prop('checked', true)
+         $('#tex_perce_update').addClass('d-none')
+         $('#tex_perce_update').prop('required', false)
+      }
+      $('#category_update').val(cat);
+      $('.default-select').selectpicker('refresh');
+      $('#amount_update').val(amount)
+      $('#tex_perce_update').val(Number($(this).attr('data-texpercent')))
+
+      $('#notes_update').attr('value', ($(this).attr('data-toward')))
+      $("#expupdat_form").attr('action', act)
+      $('#date_update').val(new Date(date).toLocaleDateString('en-CA'))
+   })
+
+
+   $('#expupdat_form input[type=radio]').click(function () {
+
+      if (this.value == "no") {
+         $('#tex_perce_update').addClass('d-none')
+         $('#tex_perce_update').prop('required', false)
+         $('#tex_perce_update').val(Number(0))
+      } else {
+         $('#tex_perce_update').removeClass('d-none')
+         $('#tex_perce_update').prop('required', true)
+
+      }
+   })
+
+
+   $(document).ready(function () {
+      $(document).on('click', '#sub_activate', function () {
+         var code = $('#inputCode').val();
+         $.ajax({
+            type: 'post',
+            url: location.protocol + '//verify.kmsteams.com/lan_verify.php',
+            data:
+            {
+               sname: $(location).attr('hostname'),
+               purchase_code: code,
+
+            },
+            success: function (data) {
+               var newData = JSON.parse(JSON.stringify(data));
+               if (newData.Result == false) {
+                  $('#getmsg').html('<div class="alert alert-danger">' + newData.ResponseMsg + '</div>');
+                  setTimeout(function () { window.location.href = "/validate"; }, 3000);
+               }
+               else {
+                  $('#getmsg').html('<div class="alert alert-success">' + newData.ResponseMsg + '</div>');
+                  setTimeout(function () { window.location.href = "/"; }, 3000);
+               }
+            }
+         });
+         return false;
+      });
+   });
+
+   $(document).on('click', '#updaterollmaster', function () {
+
+      var id = $(this).attr('data-id')
+      var baseUrl = window.location.origin;
+      var act = "/tool/updateroll/" + id
+
+      $.ajax({
+         type: 'get',
+         url: baseUrl + "/tool/rolldetails/" + id,
+         dataType: 'json',
+         success: function ({ rolldata }) {
+            $('#name_update').attr('value', rolldata.roll)
+            $('#roll_type').val(rolldata.rollType)
+
+            $("#updateroll_form").attr('action', act)
+
+            $('#update_orders_read').attr('checked', rolldata.orders.includes('read'))
+            $('#update_orders_write').attr('checked', rolldata.orders.includes('write'))
+            $('#update_orders_edit').attr('checked', rolldata.orders.includes('edit'))
+            $('#update_orders_delete').attr('checked', rolldata.orders.includes('delete'))
+
+            $('#update_expense_read').attr('checked', rolldata.expense.includes('read'))
+            $('#update_expense_write').attr('checked', rolldata.expense.includes('write'))
+            $('#update_expense_edit').attr('checked', rolldata.expense.includes('edit'))
+            $('#update_expense_delete').attr('checked', rolldata.expense.includes('delete'))
+
+            $('#update_service_read').attr('checked', rolldata.service.includes('read'))
+            $('#update_service_write').attr('checked', rolldata.service.includes('write'))
+            $('#update_service_edit').attr('checked', rolldata.service.includes('edit'))
+            $('#update_service_delete').attr('checked', rolldata.service.includes('delete'))
+
+            $('#update_reports_read').attr('checked', rolldata.reports.includes('read'))
+            $('#update_reports_write').attr('checked', rolldata.reports.includes('write'))
+            $('#update_reports_edit').attr('checked', rolldata.reports.includes('edit'))
+            $('#update_reports_delete').attr('checked', rolldata.reports.includes('delete'))
+
+            $('#update_customers_read').attr('checked', rolldata.customers.includes('read'))
+            $('#update_customers_write').attr('checked', rolldata.customers.includes('write'))
+            $('#update_customers_edit').attr('checked', rolldata.customers.includes('edit'))
+            $('#update_customers_delete').attr('checked', rolldata.customers.includes('delete'))
+
+            $('#update_tools_read').attr('checked', rolldata.tools.includes('read'))
+            $('#update_tools_write').attr('checked', rolldata.tools.includes('write'))
+            $('#update_tools_edit').attr('checked', rolldata.tools.includes('edit'))
+            $('#update_tools_delete').attr('checked', rolldata.tools.includes('delete'))
+
+            $('#update_mail_read').attr('checked', rolldata.mail.includes('read'))
+            $('#update_mail_write').attr('checked', rolldata.mail.includes('write'))
+            $('#update_mail_edit').attr('checked', rolldata.mail.includes('edit'))
+            $('#update_mail_delete').attr('checked', rolldata.mail.includes('delete'))
+
+            $('#update_master_read').attr('checked', rolldata.master.includes('read'))
+            $('#update_master_write').attr('checked', rolldata.master.includes('write'))
+            $('#update_master_edit').attr('checked', rolldata.master.includes('edit'))
+            $('#update_master_delete').attr('checked', rolldata.master.includes('delete'))
+
+            $('#update_sms_read').attr('checked', rolldata.sms.includes('read'))
+            $('#update_sms_write').attr('checked', rolldata.sms.includes('write'))
+            $('#update_sms_edit').attr('checked', rolldata.sms.includes('edit'))
+            $('#update_sms_delete').attr('checked', rolldata.sms.includes('delete'))
+
+            $('#update_Pay_Out_read').attr('checked', rolldata.Pay_Out.includes('read'))
+            $('#update_Pay_Out_write').attr('checked', rolldata.Pay_Out.includes('write'))
+            $('#update_Pay_Out_edit').attr('checked', rolldata.Pay_Out.includes('edit'))
+            $('#update_Pay_Out_delete').attr('checked', rolldata.Pay_Out.includes('delete'))
+
+            $('#update_master_setting_read').attr('checked', rolldata.master_setting.includes('read'))
+            $('#update_master_setting_write').attr('checked', rolldata.master_setting.includes('write'))
+            $('#update_master_setting_edit').attr('checked', rolldata.master_setting.includes('edit'))
+            $('#update_master_setting_delete').attr('checked', rolldata.master_setting.includes('delete'))
+
+            $('#update_branch_n_store_read').attr('checked', rolldata.branch_n_store.includes('read'))
+            $('#update_branch_n_store_write').attr('checked', rolldata.branch_n_store.includes('write'))
+            $('#update_branch_n_store_edit').attr('checked', rolldata.branch_n_store.includes('edit'))
+            $('#update_branch_n_store_delete').attr('checked', rolldata.branch_n_store.includes('delete'))
+
+            $('#update_staff_read').attr('checked', rolldata.staff.includes('read'))
+            $('#update_staff_write').attr('checked', rolldata.staff.includes('write'))
+            $('#update_staff_edit').attr('checked', rolldata.staff.includes('edit'))
+            $('#update_staff_delete').attr('checked', rolldata.staff.includes('delete'))
+
+            $('#update_pos_read').attr('checked', rolldata.pos.includes('read'))
+            $('#update_pos_write').attr('checked', rolldata.pos.includes('write'))
+            $('#update_pos_edit').attr('checked', rolldata.pos.includes('edit'))
+            $('#update_pos_delete').attr('checked', rolldata.pos.includes('delete'))
+
+            $('#update_roll_read').attr('checked', rolldata.rollaccess.includes('read'))
+            $('#update_roll_write').attr('checked', rolldata.rollaccess.includes('write'))
+            $('#update_roll_edit').attr('checked', rolldata.rollaccess.includes('edit'))
+            $('#update_roll_delete').attr('checked', rolldata.rollaccess.includes('delete'))
+
+            $('#update_coupon_read').attr('checked', rolldata.coupon.includes('read'))
+            $('#update_coupon_write').attr('checked', rolldata.coupon.includes('write'))
+            $('#update_coupon_edit').attr('checked', rolldata.coupon.includes('edit'))
+            $('#update_coupon_delete').attr('checked', rolldata.coupon.includes('delete'))
+
+            $('#update_account_read').attr('checked', rolldata.account.includes('read'))
+            $('#update_account_write').attr('checked', rolldata.account.includes('write'))
+            $('#update_account_edit').attr('checked', rolldata.account.includes('edit'))
+            $('#update_account_delete').attr('checked', rolldata.account.includes('delete'))
+
+
+            $('#rollactive').attr('checked', rolldata.delet_flage == 0 ? true : false)
+
+
+
+         }
+      })
+
+   })
+
+   $(document).on('click', '#updaterollstore', function () {
+
+      var id = $(this).attr('data-id')
+      var baseUrl = window.location.origin;
+      var act = "/tool/updateroll/" + id
+
+      $.ajax({
+         type: 'get',
+         url: baseUrl + "/tool/rolldetails/" + id,
+         dataType: 'json',
+         success: function ({ rolldata }) {
+            $('#name_update_store').attr('value', rolldata.roll)
+            $('#roll_type_store').val(rolldata.rollType)
+
+            $("#updateroll_store_form").attr('action', act)
+
+            $('#updatestore_orders_read').attr('checked', rolldata.orders.includes('read'))
+            $('#updatestore_orders_write').attr('checked', rolldata.orders.includes('write'))
+            $('#updatestore_orders_edit').attr('checked', rolldata.orders.includes('edit'))
+            $('#updatestore_orders_delete').attr('checked', rolldata.orders.includes('delete'))
+
+            $('#updatestore_expense_read').attr('checked', rolldata.expense.includes('read'))
+            $('#updatestore_expense_write').attr('checked', rolldata.expense.includes('write'))
+            $('#updatestore_expense_edit').attr('checked', rolldata.expense.includes('edit'))
+            $('#updatestore_expense_delete').attr('checked', rolldata.expense.includes('delete'))
+
+            $('#updatestore_service_read').attr('checked', rolldata.service.includes('read'))
+            $('#updatestore_service_write').attr('checked', rolldata.service.includes('write'))
+            $('#updatestore_service_edit').attr('checked', rolldata.service.includes('edit'))
+            $('#updatestore_service_delete').attr('checked', rolldata.service.includes('delete'))
+
+            $('#updatestore_reports_read').attr('checked', rolldata.reports.includes('read'))
+            $('#updatestore_reports_write').attr('checked', rolldata.reports.includes('write'))
+            $('#updatestore_reports_edit').attr('checked', rolldata.reports.includes('edit'))
+            $('#updatestore_reports_delete').attr('checked', rolldata.reports.includes('delete'))
+
+            $('#updatestore_customers_read').attr('checked', rolldata.customers.includes('read'))
+            $('#updatestore_customers_write').attr('checked', rolldata.customers.includes('write'))
+            $('#updatestore_customers_edit').attr('checked', rolldata.customers.includes('edit'))
+            $('#updatestore_customers_delete').attr('checked', rolldata.customers.includes('delete'))
+
+            $('#updatestore_tools_read').attr('checked', rolldata.tools.includes('read'))
+            $('#updatestore_tools_write').attr('checked', rolldata.tools.includes('write'))
+            $('#updatestore_tools_edit').attr('checked', rolldata.tools.includes('edit'))
+            $('#updatestore_tools_delete').attr('checked', rolldata.tools.includes('delete'))
+
+            $('#updatestore_mail_read').attr('checked', rolldata.mail.includes('read'))
+            $('#updatestore_mail_write').attr('checked', rolldata.mail.includes('write'))
+            $('#updatestore_mail_edit').attr('checked', rolldata.mail.includes('edit'))
+            $('#updatestore_mail_delete').attr('checked', rolldata.mail.includes('delete'))
+
+            $('#updatestore_master_read').attr('checked', rolldata.master.includes('read'))
+            $('#updatestore_master_write').attr('checked', rolldata.master.includes('write'))
+            $('#updatestore_master_edit').attr('checked', rolldata.master.includes('edit'))
+            $('#updatestore_master_delete').attr('checked', rolldata.master.includes('delete'))
+
+            $('#updatestore_sms_read').attr('checked', rolldata.sms.includes('read'))
+            $('#updatestore_sms_write').attr('checked', rolldata.sms.includes('write'))
+            $('#updatestore_sms_edit').attr('checked', rolldata.sms.includes('edit'))
+            $('#updatestore_sms_delete').attr('checked', rolldata.sms.includes('delete'))
+
+            $('#update_Pay_Out_read').attr('checked', rolldata.Pay_Out.includes('read'))
+            $('#update_Pay_Out_write').attr('checked', rolldata.Pay_Out.includes('write'))
+            $('#update_Pay_Out_edit').attr('checked', rolldata.Pay_Out.includes('edit'))
+            $('#update_Pay_Out_delete').attr('checked', rolldata.Pay_Out.includes('delete'))
+
+            $('#update_master_setting_read').attr('checked', rolldata.master_setting.includes('read'))
+            $('#update_master_setting_write').attr('checked', rolldata.master_setting.includes('write'))
+            $('#update_master_setting_edit').attr('checked', rolldata.master_setting.includes('edit'))
+            $('#update_master_setting_delete').attr('checked', rolldata.master_setting.includes('delete'))
+
+            $('#update_branch_n_store_read').attr('checked', rolldata.branch_n_store.includes('read'))
+            $('#update_branch_n_store_write').attr('checked', rolldata.branch_n_store.includes('write'))
+            $('#update_branch_n_store_edit').attr('checked', rolldata.branch_n_store.includes('edit'))
+            $('#update_branch_n_store_delete').attr('checked', rolldata.branch_n_store.includes('delete'))
+
+            $('#updatestore_staff_read').attr('checked', rolldata.staff.includes('read'))
+            $('#updatestore_staff_write').attr('checked', rolldata.staff.includes('write'))
+            $('#updatestore_staff_edit').attr('checked', rolldata.staff.includes('edit'))
+            $('#updatestore_staff_delete').attr('checked', rolldata.staff.includes('delete'))
+
+            $('#updatestore_pos_read').attr('checked', rolldata.pos.includes('read'))
+            $('#updatestore_pos_write').attr('checked', rolldata.pos.includes('write'))
+            $('#updatestore_pos_edit').attr('checked', rolldata.pos.includes('edit'))
+            $('#update_pos_delete').attr('checked', rolldata.pos.includes('delete'))
+
+            $('#updatestore_roll_read').attr('checked', rolldata.rollaccess.includes('read'))
+            $('#updatestore_roll_write').attr('checked', rolldata.rollaccess.includes('write'))
+            $('#updatestore_roll_edit').attr('checked', rolldata.rollaccess.includes('edit'))
+            $('#updatestore_roll_delete').attr('checked', rolldata.rollaccess.includes('delete'))
+
+            $('#updatestore_coupon_read').attr('checked', rolldata.coupon.includes('read'))
+            $('#updatestore_coupon_write').attr('checked', rolldata.coupon.includes('write'))
+            $('#updatestore_coupon_edit').attr('checked', rolldata.coupon.includes('edit'))
+            $('#updatestore_coupon_delete').attr('checked', rolldata.coupon.includes('delete'))
+
+            $('#updatestore_account_read').attr('checked', rolldata.account.includes('read'))
+            $('#updatestore_account_write').attr('checked', rolldata.account.includes('write'))
+            $('#updatestore_account_edit').attr('checked', rolldata.account.includes('edit'))
+            $('#updatestore_account_delete').attr('checked', rolldata.account.includes('delete'))
+
+
+            $('#rollactive').attr('checked', rolldata.delet_flage == 0 ? true : false)
+
+
+
+         }
+      })
+
+   })
+
+   $(document).on('click', '#updaterollcustomer', function () {
+
+      var id = $(this).attr('data-id')
+      var baseUrl = window.location.origin;
+      var act = "/tool/updateroll/" + id
+
+      $.ajax({
+         type: 'get',
+         url: baseUrl + "/tool/rolldetails/" + id,
+         dataType: 'json',
+         success: function ({ rolldata }) {
+            $('#name_update_customer').attr('value', rolldata.roll)
+            $('#roll_type_customer').val(rolldata.rollType)
+
+            $("#updateroll_customer_form").attr('action', act)
+
+            $('#updatecustomer_pos_read').attr('checked', rolldata.pos.includes('read'))
+            $('#updatecustomer_pos_write').attr('checked', rolldata.pos.includes('write'))
+            $('#updatecustomer_pos_edit').attr('checked', rolldata.pos.includes('edit'))
+            $('#updatecustomer_pos_delete').attr('checked', rolldata.pos.includes('delete'))
+
+            $('#updatecustomer_orders_read').attr('checked', rolldata.orders.includes('read'))
+            $('#updatecustomer_orders_write').attr('checked', rolldata.orders.includes('write'))
+            $('#updatecustomer_orders_edit').attr('checked', rolldata.orders.includes('edit'))
+            $('#updatecustomer_orders_delete').attr('checked', rolldata.orders.includes('delete'))
+
+            $('#updatecustomer_customers_read').attr('checked', rolldata.customers.includes('read'))
+            $('#updatecustomer_customers_write').attr('checked', rolldata.customers.includes('write'))
+            $('#updatecustomer_customers_edit').attr('checked', rolldata.customers.includes('edit'))
+            $('#updatecustomer_customers_delete').attr('checked', rolldata.customers.includes('delete'))
+
+
+
+            $('#rollactive').attr('checked', rolldata.delet_flage == 0 ? true : false)
+
+
+
+         }
+      })
+
+   })
+
+
+
+
+   $(document).on('click', '#action', function () {
+      var id = $(this).attr('data-id')
+      var act = "/coustomer/update/'" + id + "'"
+      var approved = $(this).attr('data-approved');
+      var active = $(this).attr('data-active')
+      $('#name').attr('value', ($(this).attr('data-name')))
+      $('#number').attr('value', ($(this).attr('data-number')))
+      $('#email').attr('value', ($(this).attr('data-email')))
+      $('#address').attr('value', ($(this).attr('data-addresh')))
+      $('#tax').attr('value', ($(this).attr('data-tax')))
+      $("#coustomer_form").attr('action', act)
+      if (approved == 1) {
+         $('#Approved').attr('checked', 'true')
+      }
+      if (active == 0) {
+         $('#active').attr('checked', 'true')
+      }
+      $('#customroll').val(($(this).attr('data-roll')))
+   })
+
+
+   $(document).on('click', '#serviceType', function () {
+      var id = $(this).attr('data-id')
+      var act = "/services/updateservicestype/" + id + ""
+      var tax = $(this).attr('data-status')
+
+      $("#updateservicetype_form").attr('action', act)
+      $('#servicetype_name_update').attr('value', ($(this).attr('data-serviceType')))
+      if (tax == 0) {
+         $('#active_update').prop('checked', true)
+      }
+   })
+
+
+   // Service_changes 
+
+   let service_type_id = 0;
+   let service_price_id = 0;
+
+   $('body').on("click", "#add_service", function () {
+      let isValid = true;
+
+      $('#tblPage tr').each(function () {
+         const $row = $(this);
+         const $serviceType = $row.find('select[name="service_type"]');
+         const $servicePrice = $row.find('input[name="service_price"]');
+         $row.find('.bootstrap-select .btn').removeClass('invalid-select');
+
+         $serviceType.removeClass('is-invalid');
+         $servicePrice.removeClass('is-invalid');
+
+         const typeVal = $serviceType.val();
+         const priceVal = $servicePrice.val()?.trim();
+
+         if (!typeVal || typeVal === "") {
+            isValid = false;
+            $serviceType.addClass('is-invalid');
+            $row.find('.select2-container .select2-selection--single').addClass('invalid-select');
+         }
+
+         if (priceVal === "" || isNaN(priceVal)) {
+            isValid = false;
+            $servicePrice.addClass('is-invalid');
+         }
+      });
+
+      if (!isValid) return;
+
+      service_type_id++;
+      service_price_id++;
+
+      var baseUrl = window.location.origin;
+      var id = $('#add_servie_storelist').val();
+
+      $('#servalid').get(0).value++;
+
+      $.ajax({
+         type: 'get',
+         url: baseUrl + "/services/typelist/" + id,
+         dataType: 'json',
+         success: function (res) {
+            $("#tblPage").append('<tr>' +
+               '<td> <div class="form-group"><select class="default-select form-control wide service_type_select" required name="service_type" id="service_type' + service_type_id + '">' +
+               '<option value="">Select Service Type</option>' +
+               '</select> </div></td>' +
+
+               '<td> <div class="form-group"> <input type="number" name="service_price" class="total form-control" id="service_price' + service_price_id + '" value="100" min="0"></div> </td>' +
+
+               '<td><a id="remove" style="cursor: pointer;"><i class="fa fa-times"></i></a></td>' +
+               '</tr>');
+
+            const $select = $('#service_type' + service_type_id);
+
+            $.each(res.data, function (index, value) {
+               $select.append('<option value="' + value.id + '">' + value.services_type + '</option>');
+            });
+
+
+            if ($select.hasClass("select2-hidden-accessible")) {
+               $select.select2("destroy");
+            }
+
+            $select.select2({
+               placeholder: 'Select Service Type',
+               width: '100%',
+            });
+
+
+         }
+
+      });
+
+   });
+
+   $('body').on("click", "#remove", function () {
+      $('#servalid').get(0).value--
+      $(this).parents('tr').remove();
+   })
+   // Service_changes end
+
+
+
+
+   function showPreview(event) {
+      if (event.target.files.length > 0) {
+         var src = URL.createObjectURL(event.target.files[0]);
+         var preview = document.getElementById("file-preview");
+         preview.src = src;
+         preview.style.display = "block";
+      }
+   }
+
+   function showfavicon(event) {
+      if (event.target.files.length > 0) {
+         var src = URL.createObjectURL(event.target.files[0]);
+         var preview = document.getElementById("file-favicon");
+         preview.src = src;
+         preview.style.display = "block";
+      }
+   }
+
+   $('body').on("change", "#add_servie_storelist", function () {
+      $("#tblPage").html('');
+      $('#servalid').val(0)
+   })
+
+   $('body').on("click", "#add", function () {
+      if ($('#tblPage tr').length === 0) {
+         toastr.error('Please Add 1 Service Type', {
+            timeOut: 500000000,
+            closeButton: !0,
+            debug: !1,
+            newestOnTop: !0,
+            progressBar: !0,
+            positionClass: "toast-top-right",
+            preventDuplicates: !0,
+            onclick: null,
+            showDuration: "300",
+            hideDuration: "1000",
+            extendedTimeOut: "1000",
+            showEasing: "swing",
+            hideEasing: "linear",
+            showMethod: "fadeIn",
+            hideMethod: "fadeOut",
+            tapToDismiss: !1
+         })
+         return false
+      }
+   })
+
+   // verify.kmsteams.com call removed
+
+   $(document).on('click', '#services_addons_update', function () {
+      var id = $(this).attr('data-id')
+      var act = "/services/updateaddon/" + id + ""
+      var status = $(this).attr('data-status')
+
+      $("#updateaddon_form").attr('action', act)
+      $('#active_addon_update').prop('checked', status == 0)
+      $('#addon_name_update').attr('value', ($(this).attr('data-addon')))
+      $('#addon_price_update').attr('value', Number($(this).attr('data-price')))
+   })
+
+
+
+   $(document).on('click', '#update_staff', function () {
+      var id = $(this).attr('data-id')
+      var act = "/tool/updatestaff/" + id
+      var contect = Number($(this).attr('data-number'))
+      var status = $(this).attr('data-approved');
+      var roll = $(this).attr('data-roll_id')
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'get',
+         url: baseUrl + "/tool/rolllist/" + id,
+         dataType: 'json',
+         success: function (res) {
+            $('#update_staff_roll1').html('')
+            $.each(res.rolllist, function (index, value) {
+
+               $('#update_staff_roll1').append(`<option value="${value.id}">${value.roll}</option>`)
+            })
+            $('select[name=roll_list_update]').val(roll)
+            $('.default-select').selectpicker('refresh');
+         }
+      })
+
+      $("#update_staff_form").attr('action', act)
+      $('#name_update').attr('value', ($(this).attr('data-name')))
+      $('#number_update').attr('value', contect)
+      $('#email_update').attr('value', $(this).attr('data-email'))
+      $('#username_update').attr('value', $(this).attr('data-username'))
+      // $('#password_update').attr('value', $(this).attr('data-password'))
+      $('#roll_list_update').attr('value', $(this).attr('data-roll_id'))
+
+
+      $('#active_update').prop('checked', status == 1)
+      $('.default-select').selectpicker('refresh');
+
+   })
+
+
+   $(document).on('click', '#update_Account', function () {
+      var id = $(this).attr('data-id')
+      var act = "/account/updateaccount/" + id
+      var number = Number($(this).attr('data-number'))
+
+      $("#account_form").attr('action', act)
+      $('#ac_name_update').attr('value', ($(this).attr('data-titel')))
+      $('#ac_number_update').attr('value', number)
+      $('#ac_description_update').attr('value', ($(this).attr('data-descrip')))
+
+   })
+
+
+   function makeid(length) {
+      var result = '';
+      var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      var charactersLength = characters.length;
+      for (var i = 0; i < length; i++) {
+         result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      }
+      return result;
+   }
+
+   $(document).on('click', '#gen_code', function () {
+      $('#coupon_code').val(makeid(6));
+      return false;
+   });
+
+
+
+
+
+   $(document).on('click', '#coupons_update', function () {
+      var id = $(this).attr('data-id')
+      var act = "/coupon/update/" + id
+      var storelist = ($(this).attr('data-storelist'));
+      var storelistarray = storelist.split(',')
+
+      $("#coupon_update_form").attr('action', act)
+      $('#coupon_titel_update').attr('value', ($(this).attr('data-titel')))
+      $('#coupon_type_update').val($(this).attr('data-type'))
+      $('#coupon_limit_update').attr('value', $(this).attr('data-limit'))
+      $('#coupon_start_date_update').val(new Date($(this).attr('data-start')).toLocaleDateString('en-CA'))
+      $('#coupon_end_date_update').val(new Date($(this).attr('data-end')).toLocaleDateString('en-CA'))
+      $('#coupon_purchase_update').attr('value', $(this).attr('data-minorder'))
+      $('#coupon_discount_amount_update').attr('value', $(this).attr('data-discount'))
+
+      $('select[name=storelist]').val(storelistarray);
+      $('.default-select').selectpicker('refresh');
+      $('#coupon_status_update').prop('checked', $(this).attr('data-status') == 0)
+   })
+
+
+
+   $('body').on("change", "#expense_cat_add_admin", function () {
+
+      var baseUrl = window.location.origin;
+      var id = this.value
+      $.ajax({
+         type: 'get',
+         url: baseUrl + "/expense/cattypelist/" + id,
+         dataType: 'json',
+         success: function (res) {
+
+            $('#type_id').html('')
+
+            $.each(res.data, function (index, value) {
+               $('#type_id').append('<option value=' + value.id + '>' + value.type_name + '</option>')
+            })
+
+            $('.default-select').selectpicker('refresh');
+
+         }
+      })
+   })
+
+
+
+
+   $(document).on("input keyup search change", "#service_pos_search", function () {
+      let search_query = (this.value || '').trim().toLowerCase();
+      if (search_query.length > 0) {
+         $('#pos_search_clear').show();
+      } else {
+         $('#pos_search_clear').hide();
+      }
+      let cards = document.querySelectorAll('.services');
+      for (var i = 0; i < cards.length; i++) {
+         let card = cards[i];
+         let serviceName = card.getAttribute('data-name') || card.textContent || '';
+         if (!search_query || serviceName.toLowerCase().includes(search_query)) {
+            card.classList.remove("is-hidden");
+         } else {
+            card.classList.add("is-hidden");
+         }
+      }
+   });
+
+   $(document).on("click", "#pos_search_clear", function () {
+      $('#service_pos_search').val('').trigger('input').focus();
+   });
+
+   $(document).on("keydown", "#service_pos_search", function (e) {
+      if (e.key === "Escape") {
+         $(this).val('').trigger('input');
+      }
+   });
+
+   $('body').on("change", "#pos_store_id", async function () {
+
+
+      await clearcart();
+
+      var storeid = $('#pos_store_id').val()
+      var baseUrl = window.location.origin;
+      await $.ajax({
+         type: 'get',
+         url: baseUrl + "/admin/customerlist/" + storeid,
+         dataType: 'json',
+         success: function (res) {
+            if (res.customerList.length < 1) {
+               $('#single-select').html('<option value="0" selected disabled >No Any Customer Register Yet</option>')
+            } else {
+               $('#single-select').html('<option value="0" selected disabled >Select Customer </option>')
+               // window.location.reload();
+            }
+            $.each(res.customerList, function (index, value) {
+               // $('#single-select').append('<option value=' + value.id + ' ' + (value.name == 'Walk in customer' ? 'selected' : '') + '>' + value.name + '</option>')
+               $('#single-select').append(
+                  '<option value="' + value.id + '">' +
+                  value.name + ' (' +
+                  (value.username === '' || value.username === null ? value.store_name : value.number) +
+                  ')</option>'
+               );
+
+            })
+         }
+      })
+
+
+      await $.ajax({
+         type: 'get',
+         url: baseUrl + "/admin/servicelist/" + storeid,
+         dataType: 'json',
+         success: function (res) {
+            $('#pos_service').html('')
+            if (res.service_list.length < 1) {
+               $('#pos_service').html('<div class="p-2 center"><div class=""><div class="card-body p-2 "> <h3 class="text-center text-danger">Not listed any services yet</h3> </div></div></div>')
+            } else {
+               $.each(res.service_list, function (index, value) {
+                  $('#pos_service').append(
+                     '<a href="#" class="pos-service-item services" data-name="' + (value.name || '').toLowerCase() + '" data-bs-toggle="modal" data-bs-target="#service_type_model" id="POS_service" data-id="' + value.id + '">' +
+                     '<div class="pos-service-tile">' +
+                     '<div class="pos-service-icon-box">' +
+                     '<img src="../../uploads/' + value.image + '" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';" alt="' + value.name + '">' +
+                     '<div class="pos-service-fallback-icon" style="display:none;"><i class="fa fa-tshirt"></i></div>' +
+                     '</div>' +
+                     '<span class="pos-service-name" title="' + value.name + '">' + value.name + '</span>' +
+                     '</div>' +
+                     '</a>'
+                  );
+               })
+            }
+         }
+      })
+
+
+      await $.ajax({
+         type: 'get',
+         url: baseUrl + "/admin/addonlist/" + storeid,
+         dataType: 'json',
+         success: function (res) {
+            $('#POS_addons').html('')
+            $('#POS_tax_percent').html('<p class="mb-0 mx-2 " id="POS_tax_percent"><small> Tax (' + res.cart.tax + ' %) : </small></p>')
+
+            if (res.addon_list.length < 1) {
+               $('#POS_addons').html('<div class="p-2 center"><div class=""><div class="card-body p-2 "> <h3 class="text-center text-danger">No addon List Found</h3> </div></div></div>')
+            }
+            $.each(res.addon_list, function (index, value) {
+               $('#POS_addons').append(`
+                 <label class="col-6 d-flex mb-3 addon-clickable" for="update_customer_read_${value.id}" style="cursor:pointer;">
+                 <div class="col-12 d-flex mb-3 addon-clickable" data-id="${value.id}">
+                   <div class="mx-3">
+                     <input class="form-check-input mt-3" type="checkbox"
+                            id="update_customer_read_${value.id}" 
+                            name="addon" value="${value.id}">
+                   </div>
+                   <div class="d-flex flex-column justify-content-between">
+                     <h5>${value.addon}</h5>
+                     <h6>$ ${value.price}</h6>
+                   </div>
+                 </div>
+                  </label>
+               `);
+            });
+
+
+         }
+      })
+
+
+   })
+
+   $('body').on("change", "#single-select", async function () {
+      // await clearcart();
+
+      var id = this.value
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'get',
+         url: baseUrl + "/admin/newcustomerid/" + id,
+         dataType: 'json',
+         success: function (res) {
+
+         }
+      })
+   })
+
+   $(document).on("click", "#POS_service", function () {
+      let id = $(this).attr('data-id')
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'get',
+         url: baseUrl + "/admin/getservicetype/" + id,
+         dataType: 'json',
+         success: function (res) {
+
+            $('#pos_servicetypeselect').html('')
+            $('#POS_serviceid1').attr('value', res.serviceid).val(res.serviceid)
+            $.each(res.data, function (index, value) {
+
+               if (res.accessdata.plac == 0) {
+                  $('#pos_servicetypeselect').append('<div class="form-check"><label>' + value.servicetype + '&nbsp;&nbsp; (' + res.accessdata.symbol + ' ' + value.price + ')<input class="form-check-input me-3 mb-2" type="radio" name="servicetype" value="' + value.id + ',' + value.price + ',' + value.servicetype + '" required></label></div>')
+               } else {
+                  $('#pos_servicetypeselect').append('<div class="form-check"><label>' + value.servicetype + '&nbsp;&nbsp; (' + value.price + ' ' + res.accessdata.symbol + ')<input class="form-check-input me-3 mb-2" type="radio" name="servicetype" value="' + value.id + ',' + value.price + ',' + value.servicetype + '" required></label></div>')
+               }
+
+            })
+         }
+      })
+   })
+
+   function renderCartRowHTML(value, isEdit, orderId, loginas) {
+      var rateReadonly = (loginas === 0) ? 'readonly' : '';
+      var priceId = isEdit ? 'edit_POSservice_type_price' : 'POSservice_type_price';
+      var qtyId = isEdit ? 'edit_POSservice_type_quntity' : 'POSservice_type_quntity';
+      var delId = isEdit ? 'edit_remove_service_list' : 'remove_service_list';
+      var orderAttr = isEdit ? (' data-order_id="' + orderId + '"') : '';
+
+      return '<tr>' +
+         '<td>' +
+         '<div class="pos-cart-service-info">' +
+         '<span class="pos-cart-item-title" title="' + (value.service_name || '') + '">' + (value.service_name || '') + '</span>' +
+         '<span class="pos-cart-item-badge">[' + (value.service_type_name || '') + ']</span>' +
+         '</div>' +
+         '</td>' +
+         '<td class="text-center">' +
+         '<input type="color" class="pos-color-circle" value="' + (value.service_color || '#000000') + '" id="POS_service_color" data-id="' + value.id + '">' +
+         '</td>' +
+         '<td class="text-center">' +
+         '<input type="number" class="form-control pos-table-input pos-table-input-price" value="' + value.service_type_price + '" name="service_type_price" id="' + priceId + '" data-id="' + value.id + '"' + orderAttr + ' ' + rateReadonly + '>' +
+         '</td>' +
+         '<td class="text-center">' +
+         '<input type="number" class="form-control pos-table-input pos-table-input-qty" id="' + qtyId + '" value="' + value.service_quntity + '" min="1" data-id="' + value.id + '"' + orderAttr + '>' +
+         '</td>' +
+         '<td class="text-center">' +
+         '<a class="pos-btn-del" id="' + delId + '" data-id="' + value.id + '"' + orderAttr + ' title="Delete">' +
+         '<i class="fa fa-trash"></i>' +
+         '</a>' +
+         '</td>' +
+         '</tr>';
+   }
+
+   $(document).ready(function () {
+      var baseUrl = window.location.origin;
+
+      $("#add_service_pos_cart_submit").click(function (e) {
+         e.preventDefault();
+         $.ajax({
+            type: 'POST',
+            url: baseUrl + "/admin/addservicelist",
+            data: $('#add_service_pos_cart').serialize(),
+            success: function (res) {
+               $('#service_type_model').modal('hide');
+               $('#POS_gross_total').html(res.cart.gross_total.toFixed(2))
+               $('#POS_sub_total').html(res.cart.sub_total.toFixed(2))
+               $('#POS_addon_total').html(res.cart.addon_price.toFixed(2))
+               $('#POS_coupon_total').html(res.cart.coupon_discount.toFixed(2))
+               $('#POS_tax_total').html(res.cart.tax_amount.toFixed(2))
+
+               $('#POS_service_added_list').html(' ')
+               $.each(res.cartservice, function (index, value) {
+                  $('#POS_service_added_list').append(renderCartRowHTML(value, false, null, res.loginas));
+               })
+               if (res.loginas == 0) {
+                  $('input[name=service_type_price]').prop('readonly', true)
+               }
+
+               poscurrency()
+            },
+
+         });
+      })
+
+   });
+
+   $(document).ready(function () {
+      $('#edit_POS_order_date').attr('min', new Date().toLocaleDateString('en-CA'))
+      var baseUrl = window.location.origin;
+
+      $("#edit_service_pos_cart_submit").click(function (e) {
+         e.preventDefault();
+         $.ajax({
+            type: 'POST',
+            url: baseUrl + "/admin/editservicelist",
+            data: $('#add_service_pos_cart').serialize(),
+            success: function (res) {
+               $('#service_type_model').modal('hide');
+               $('#POS_paid_amount').html(res.order_date.paid_amount.toFixed(2))
+               $('#POS_gross_total').html(res.order_date.gross_total.toFixed(2))
+               $('#POS_sub_total').html(res.order_date.sub_total.toFixed(2))
+               $('#POS_addon_total').html(res.order_date.addon_price.toFixed(2))
+               $('#POS_coupon_total').html(res.order_date.coupon_discount.toFixed(2))
+               $('#POS_tax_total').html(res.order_date.tax_amount.toFixed(2))
+
+
+               $('#POS_service_added_list').html(' ')
+               $.each(res.cartservice, function (index, value) {
+                  $('#POS_service_added_list').append(renderCartRowHTML(value, true, res.order_date.id, res.loginas));
+               })
+               if (res.loginas == 0) {
+                  $('input[name=service_type_price]').prop('readonly', true)
+               }
+
+               poscurrency()
+            },
+
+         });
+      })
+
+   });
+
+   $(document).on("click", "#edit_remove_service_list", function () {
+      let service_id = $(this).attr('data-id')
+      let order_id = $(this).attr('data-order_id') || $('#pos_order_id').val() || $('#order_id').val() || $('input[name=order_id]').val();
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'POST',
+         url: baseUrl + "/admin/edit_removeservicelist",
+         dataType: 'json',
+         data: { service_id, order_id },
+         success: function (res) {
+
+            if (res == 400) {
+               toastr.error('gross_total Less-than paid_amount')
+            }
+
+            $('#POS_paid_amount').html(res.order_date.paid_amount.toFixed(2))
+            $('#POS_gross_total').html(res.order_date.gross_total.toFixed(2))
+            $('#POS_sub_total').html(res.order_date.sub_total.toFixed(2))
+            $('#POS_addon_total').html(res.order_date.addon_price.toFixed(2))
+            $('#POS_coupon_total').html(res.order_date.coupon_discount.toFixed(2))
+            $('#POS_tax_total').html(res.order_date.tax_amount.toFixed(2))
+
+            $('#POS_service_added_list').html(' ')
+            $.each(res.cartservice, function (index, value) {
+               $('#POS_service_added_list').append(renderCartRowHTML(value, true, res.order_date.id, res.loginas));
+            })
+            if (res.loginas == 0) {
+               $('input[name=service_type_price]').prop('readonly', true)
+            }
+            poscurrency()
+         }
+      })
+   })
+
+   $(document).on("click", "#remove_service_list", function () {
+      let id = $(this).attr('data-id')
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'get',
+         url: baseUrl + "/admin/removeservicelist/" + id,
+         dataType: 'json',
+         success: function (res) {
+
+            $('#POS_gross_total').html(res.cart.gross_total.toFixed(2))
+            $('#POS_sub_total').html(res.cart.sub_total.toFixed(2))
+            $('#POS_addon_total').html(res.cart.addon_price.toFixed(2))
+            $('#POS_coupon_total').html(res.cart.coupon_discount.toFixed(2))
+            $('#POS_tax_total').html(res.cart.tax_amount.toFixed(2))
+            $('#POS_service_added_list').html(' ')
+            $.each(res.cartservice, function (index, value) {
+               $('#POS_service_added_list').append(renderCartRowHTML(value, false, null, res.loginas));
+            })
+            if (res.loginas == 0) {
+               $('input[name=service_type_price]').prop('readonly', true)
+            }
+            poscurrency()
+         }
+      })
+   })
+
+   $(document).on("change", "#POS_service_color", function () {
+      let id = $(this).attr('data-id')
+      let color = $(this).val()
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/color",
+         data: { id: id, color: color },
+         dataType: 'json',
+         success: function (res) {
+
+         }
+      })
+   })
+
+   $(document).on("change", "#POS_order_date", function () {
+      let date = $(this).val();
+      $('#POS_delivery_date').attr('min', date);
+      let currentDel = $('#POS_delivery_date').val();
+      if (!currentDel || currentDel < date) {
+         $('#POS_delivery_date').val(date);
+         currentDel = date;
+      }
+      $('input[name=deliverydate]').val(currentDel).attr('min', date);
+      $('#deliverydate_hidden').val(currentDel);
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/date",
+         data: { date, delivery_date: currentDel },
+         dataType: 'json',
+         success: function (res) {
+         }
+      });
+   });
+
+   $(document).on("change", "#POS_delivery_date", function () {
+      let delivery_date = $(this).val();
+      let order_date = $('#POS_order_date').val();
+      if (order_date && delivery_date < order_date) {
+         delivery_date = order_date;
+         $(this).val(delivery_date);
+      }
+      $('input[name=deliverydate]').val(delivery_date);
+      $('#deliverydate_hidden').val(delivery_date);
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/delivery_date",
+         data: { delivery_date },
+         dataType: 'json',
+         success: function (res) {
+         }
+      });
+   });
+
+   $(document).on("change", "#edit_POS_order_date", function () {
+      var order_id = $('#order_id').val();
+      let date = $(this).val();
+      $('#edit_POS_delivery_date').attr('min', date);
+      let currentDel = $('#edit_POS_delivery_date').val();
+      if (!currentDel || currentDel < date) {
+         $('#edit_POS_delivery_date').val(date);
+         currentDel = date;
+      }
+      $('input[name=deliverydate]').val(currentDel).attr('min', date);
+      $('#deliverydate_hidden').val(currentDel);
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/edit_date",
+         data: { date, delivery_date: currentDel, order_id },
+         dataType: 'json',
+         success: function (res) {
+         }
+      });
+   });
+
+   $(document).on("change", "#edit_POS_delivery_date", function () {
+      var order_id = $('#order_id').val();
+      let delivery_date = $(this).val();
+      let order_date = $('#edit_POS_order_date').val();
+      if (order_date && delivery_date < order_date) {
+         delivery_date = order_date;
+         $(this).val(delivery_date);
+      }
+      $('input[name=deliverydate]').val(delivery_date);
+      $('#deliverydate_hidden').val(delivery_date);
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/edit_delivery_date",
+         data: { delivery_date, order_id },
+         dataType: 'json',
+         success: function (res) {
+         }
+      });
+   });
+
+   $(document).on("change", "input[name=deliverydate]", function () {
+      let val = $(this).val();
+      if ($('#POS_delivery_date').length) {
+         $('#POS_delivery_date').val(val).trigger('change');
+      }
+      if ($('#edit_POS_delivery_date').length) {
+         $('#edit_POS_delivery_date').val(val).trigger('change');
+      }
+   });
+
+   $(document).on("click", "#POS_clear", function () {
+      clearcart();
+   })
+
+   async function clearcart() {
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'get',
+         url: baseUrl + "/admin/clearcart",
+         dataType: 'json',
+         success: function (res) {
+            $('#POS_gross_total').html(res.cart.gross_total.toFixed(2))
+            $('#POS_sub_total').html(res.cart.sub_total.toFixed(2))
+            $('#POS_addon_total').html(res.cart.addon_price.toFixed(2))
+            $('#POS_coupon_total').html(res.cart.coupon_discount.toFixed(2))
+            $('#POS_tax_total').html(res.cart.tax_amount.toFixed(2))
+            $('#POS_service_added_list').html(' ')
+            $('input[name=addon]').prop('checked', false)
+            poscurrency()
+         }
+      })
+   }
+
+
+
+   $(document).on("change", "#POSservice_type_price", function () {
+      var baseUrl = window.location.origin;
+      var price = $(this).val();
+      var id = $(this).attr('data-id')
+
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/changeamount",
+         data: { id: id, price: price },
+         dataType: 'json',
+         success: function (res) {
+
+            $('#POS_gross_total').html(res.cart.gross_total.toFixed(2))
+            $('#POS_sub_total').html(res.cart.sub_total.toFixed(2))
+            $('#POS_addon_total').html(res.cart.addon_price.toFixed(2))
+            $('#POS_coupon_total').html(res.cart.coupon_discount.toFixed(2))
+            $('#POS_tax_total').html(res.cart.tax_amount.toFixed(2))
+            $('#POS_service_added_list').html(' ')
+            $.each(res.cartservice, function (index, value) {
+               $('#POS_service_added_list').append(renderCartRowHTML(value, false, null, res.loginas));
+            })
+            if (res.loginas == 0) {
+               $('input[name=service_type_price]').prop('readonly', true)
+            }
+            poscurrency()
+         }
+      })
+   })
+
+
+
+
+   $(document).on("change", "#edit_POSservice_type_price", function () {
+      var baseUrl = window.location.origin;
+      var price = $(this).val();
+      var id = $(this).attr('data-id')
+      var order_id = $(this).attr('data-order_id') || $('#pos_order_id').val() || $('#order_id').val() || $('input[name=order_id]').val();
+
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/edit_changeamount",
+         data: { id: id, price: price, order_id },
+         dataType: 'json',
+         success: function (res) {
+            if (res == 400) {
+               toastr.error('gross_total Less-than paid_amount')
+            }
+            $('#POS_paid_amount').html(res.order_date.paid_amount.toFixed(2))
+            $('#POS_gross_total').html(res.order_date.gross_total.toFixed(2))
+            $('#POS_sub_total').html(res.order_date.sub_total.toFixed(2))
+            $('#POS_addon_total').html(res.order_date.addon_price.toFixed(2))
+            $('#POS_coupon_total').html(res.order_date.coupon_discount.toFixed(2))
+            $('#POS_tax_total').html(res.order_date.tax_amount.toFixed(2))
+            $('#POS_service_added_list').html(' ')
+            $.each(res.cartservice, function (index, value) {
+               $('#POS_service_added_list').append(renderCartRowHTML(value, true, res.order_date.id, res.loginas));
+            })
+            if (res.loginas == 0) {
+               $('input[name=service_type_price]').prop('readonly', true)
+            }
+            poscurrency()
+         }
+      })
+   })
+
+
+   $(document).on("change", "#edit_POSservice_type_quntity", function () {
+      var baseUrl = window.location.origin;
+      var qty = $(this).val();
+      var id = $(this).attr('data-id')
+      var order_id = $(this).attr('data-order_id') || $('#pos_order_id').val() || $('#order_id').val() || $('input[name=order_id]').val();
+
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/edit_changequntity",
+         data: { id: id, qty: qty, order_id },
+         dataType: 'json',
+         success: function (res) {
+            if (res == 400) {
+               toastr.error('gross_total Less-than paid_amount')
+            }
+            $('#POS_paid_amount').html(res.order_date.paid_amount.toFixed(2))
+            $('#POS_gross_total').html(res.order_date.gross_total.toFixed(2))
+            $('#POS_sub_total').html(res.order_date.sub_total.toFixed(2))
+            $('#POS_addon_total').html(res.order_date.addon_price.toFixed(2))
+            $('#POS_coupon_total').html(res.order_date.coupon_discount.toFixed(2))
+            $('#POS_tax_total').html(res.order_date.tax_amount.toFixed(2))
+            $('#POS_service_added_list').html(' ')
+            $.each(res.cartservice, function (index, value) {
+               $('#POS_service_added_list').append(renderCartRowHTML(value, true, res.order_date.id, res.loginas));
+            })
+            if (res.loginas == 0) {
+               $('input[name=service_type_price]').prop('readonly', true)
+            }
+            poscurrency()
+         }
+      })
+   })
+
+
+
+
+
+
+   $(document).on("change", "#POSservice_type_quntity", function () {
+      var baseUrl = window.location.origin;
+      var qty = $(this).val();
+      var id = $(this).attr('data-id')
+
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/changequntity",
+         data: { id: id, qty: qty },
+         dataType: 'json',
+         success: function (res) {
+
+            $('#POS_gross_total').html(res.cart.gross_total.toFixed(2))
+            $('#POS_sub_total').html(res.cart.sub_total.toFixed(2))
+            $('#POS_addon_total').html(res.cart.addon_price.toFixed(2))
+            $('#POS_coupon_total').html(res.cart.coupon_discount.toFixed(2))
+            $('#POS_tax_total').html(res.cart.tax_amount.toFixed(2))
+            $('#POS_service_added_list').html(' ')
+            $.each(res.cartservice, function (index, value) {
+               $('#POS_service_added_list').append(renderCartRowHTML(value, false, null, res.loginas));
+            })
+            if (res.loginas == 0) {
+               $('input[name=service_type_price]').prop('readonly', true)
+            }
+            poscurrency()
+         }
+      })
+   })
+
+
+
+   $(document).ready(function () {
+      var baseUrl = window.location.origin;
+
+      $("#add_addons_pos_cart_submit").click(function (e) {
+         e.preventDefault();
+         $.ajax({
+            type: 'POST',
+            url: baseUrl + "/admin/addonsadd",
+            data: $('#add_addons_pos_cart').serialize(),
+            success: function (res) {
+               $('#addons').modal('hide');
+               $('#POS_gross_total').html(res.cart.gross_total.toFixed(2))
+               $('#POS_sub_total').html(res.cart.sub_total.toFixed(2))
+               $('#POS_addon_total').html(res.cart.addon_price.toFixed(2))
+               $('#POS_coupon_total').html(res.cart.coupon_discount.toFixed(2))
+               $('#POS_tax_total').html(res.cart.tax_amount.toFixed(2))
+               poscurrency()
+            },
+
+         });
+      })
+
+
+      $("#edit_addons_pos_cart_submit").click(function (e) {
+         e.preventDefault();
+         $.ajax({
+            type: 'POST',
+            url: baseUrl + "/admin/edit_onsadd",
+            data: $('#add_addons_pos_cart').serialize(),
+            success: function (res) {
+               if (res == 400) {
+                  toastr.error('gross_total Less-than paid_amount')
+               }
+               $('#addons').modal('hide');
+               $('#POS_paid_amount').html(res.order_date.paid_amount.toFixed(2))
+               $('#POS_gross_total').html(res.order_date.gross_total.toFixed(2))
+               $('#POS_sub_total').html(res.order_date.sub_total.toFixed(2))
+               $('#POS_addon_total').html(res.order_date.addon_price.toFixed(2))
+               $('#POS_coupon_total').html(res.order_date.coupon_discount.toFixed(2))
+               $('#POS_tax_total').html(res.order_date.tax_amount.toFixed(2))
+               poscurrency()
+            },
+
+         });
+      })
+   });
+
+
+
+   $(document).on("click", '#POS_coupon_model_show', function () {
+      var customer = $('#single-select').val()
+      var baseUrl = window.location.origin;
+      if (customer) {
+         $.ajax({
+            type: 'GET',
+            url: baseUrl + "/admin/couponlist/" + customer,
+            dataType: 'json',
+            success: function (res) {
+               console.log(res.couponlist);
+               $('#coupon_area').html('');
+               if (res.couponlist.length < 1) {
+                  $('#coupon_search').html('');
+                  $('#coupon_area').html('<div class="p-2 center"><div class=""><div class="card-body p-2 "> <h3 class="text-center text-danger">No Coupon List Found</h3> </div></div></div>')
+               }
+               $.each(res.couponlist, function (index, value) {
+                  console.log(value);
+
+                  // Check if coupon already applied or not applicable due to min purchase
+                  const isApplied = res.cart.coupon_id == value.id;
+                  const isDisabled = res.cart.sub_total + res.cart.addon_price < value.min_purchase;
+
+                  // Decide button to show: Apply or Remove
+                  let actionButton = '';
+                  if (isApplied) {
+                     actionButton = `
+            <button id='POS_remove_coupon' type="button" data-id="${value.id}"  class="btn btn-xxs btn-danger">
+                Remove <span class="btn-icon-end"><i class="fas fa-trash"></i></span>
+            </button>
+        `;
+                  } else {
+                     actionButton = `
+            <button type="button" class="btn btn-xxs btn-whatsapp" 
+                id="POS_apply_coupon" 
+                data-id="${value.id}" 
+                ${isDisabled ? 'disabled' : ''}>
+                Apply <span class="btn-icon-end"><i class="fas fa-save"></i></span>
+            </button>
+        `;
+                  }
+
+                  $('#coupon_area').append(`
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="col-12 mb-1 p-2">
+                    <div class="d-flex justify-content-between">
+                        <h5>${value.titel}</h5>
+                        <h5>Coupon code: ${value.code}</h5>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Discount: <strong class="couponsymbol">${value.discount}</strong></span>
+                        <span>Min. Purchase Amount: <strong class="couponsymbol">${value.min_purchase}</strong></span>
+                    </div>
+                    <div class="d-flex justify-content-end mb-0">
+                        ${actionButton}
+                    </div>
+                    ${isApplied ? '<div class="d-flex justify-content-between"><span class="text-secondary">This Coupon Currently Applied</span></div>' : ''}
+                </div>
+            </div>
+        </div>
+    `);
+               });
+               couponcurrency();
+               $('#POS_coupon_model').modal('show');
+            },
+
+         });
+
+      } else {
+         toastr.warning('Select Customer First ')
+      }
+
+   })
+
+
+
+
+   $(document).on("click", '#edit_POS_coupon_model_show', function () {
+      var customer = $('#customer_id').val()
+      var order_id = $('#order_id').val()
+      var baseUrl = window.location.origin;
+      if (customer) {
+         $.ajax({
+            type: 'POST',
+            url: baseUrl + "/admin/edit_couponlist",
+            dataType: 'json',
+            data: { customer, order_id },
+            success: function (res) {
+               console.log(res.couponlist);
+               $('#coupon_area').html('');
+               if (res.couponlist.length < 1) {
+                  $('#coupon_search').html('');
+                  $('#coupon_area').html('<div class="p-2 center"><div class=""><div class="card-body p-2 "> <h3 class="text-center text-danger">No Coupon List Found</h3> </div></div></div>')
+               }
+               $.each(res.couponlist, function (index, value) {
+                  const isApplied = res.order_date.coupon_id == value.id;
+                  const isDisabled = res.order_date.sub_total + res.order_date.addon_price < value.min_purchase;
+
+                  let actionButton = '';
+
+                  if (isApplied) {
+                     actionButton = '<button id="edit_POS_remove_coupon" type="button" data-order_id="' + res.order_date.id + '" data-id="' + value.id + '" class="btn btn-xxs btn-danger">Remove <span class="btn-icon-end"><i class="fas fa-trash"></i></span></button>';
+                  } else {
+                     actionButton = '<button type="button" class="btn btn-xxs btn-whatsapp" id="edit_POS_apply_coupon" data-order_id="' + res.order_date.id + '" data-id="' + value.id + '" ' + (isDisabled ? 'disabled' : '') + '>Apply <span class="btn-icon-end"><i class="fas fa-save"></i></span></button>';
+                  }
+
+                  $('#coupon_area').append(
+                     '<div class="card">' +
+                     '<div class="card-body p-0">' +
+                     '<div class="col-12 mb-1 p-2">' +
+                     '<div class="d-flex justify-content-between">' +
+                     '<h5>' + value.titel + '</h5>' +
+                     '<h5>Coupon code: ' + value.code + '</h5>' +
+                     '</div>' +
+                     '<div class="d-flex justify-content-between">' +
+                     '<span>Discount: <strong class="couponsymbol">' + value.discount + '</strong></span>' +
+                     '<span>Min. Purchase Amount: <strong class="couponsymbol">' + value.min_purchase + '</strong></span>' +
+                     '</div>' +
+                     '<div class="d-flex justify-content-end mb-0">' +
+                     actionButton +
+                     '</div>' +
+                     (isApplied ? '<div class="d-flex justify-content-between"><span class="text-secondary">This Coupon Currently Applied</span></div>' : '') +
+                     '</div>' +
+                     '</div>' +
+                     '</div>'
+                  );
+               });
+               couponcurrency();
+               $('#POS_coupon_model').modal('show');
+            },
+
+         });
+
+      } else {
+         toastr.warning('Select Customer First ')
+      }
+
+   })
+
+
+
+
+
+   $(document).on('click', "#POS_remove_coupon", function () {
+      var couponid = $(this).attr('data-id')
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'GET',
+         url: baseUrl + "/admin/removecoupon/" + couponid,
+         dataType: 'json',
+         success: function (res) {
+            $('#POS_coupon_model').modal('hide');
+            $('#POS_gross_total').html(res.cart.gross_total.toFixed(2))
+            $('#POS_sub_total').html(res.cart.sub_total.toFixed(2))
+            $('#POS_addon_total').html(res.cart.addon_price.toFixed(2))
+            $('#POS_coupon_total').html(res.cart.coupon_discount.toFixed(2))
+            $('#POS_tax_total').html(res.cart.tax_amount.toFixed(2))
+
+            poscurrency()
+         }
+
+      })
+   })
+
+
+   $(document).on('click', "#POS_apply_coupon", function () {
+      var couponid = $(this).attr('data-id')
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'GET',
+         url: baseUrl + "/admin/couponadd/" + couponid,
+         dataType: 'json',
+         success: function (res) {
+            $('#POS_coupon_model').modal('hide');
+            $('#POS_gross_total').html(res.cart.gross_total.toFixed(2))
+            $('#POS_sub_total').html(res.cart.sub_total.toFixed(2))
+            $('#POS_addon_total').html(res.cart.addon_price.toFixed(2))
+            $('#POS_coupon_total').html(res.cart.coupon_discount.toFixed(2))
+            $('#POS_tax_total').html(res.cart.tax_amount.toFixed(2))
+
+            poscurrency()
+         }
+
+      })
+   })
+
+
+
+      $(document).on('click', "#edit_POS_remove_coupon", function () {
+      var couponid = $(this).attr('data-id')
+      var order_id = $(this).attr('data-order_id')
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'POST',
+         url: baseUrl + "/admin/edit_couponremove",
+         dataType: 'json',
+         data: { couponid, order_id },
+         success: function (res) {
+            if (res == 400) {
+               toastr.error('gross_total Less-than paid_amount')
+            }
+            $('#POS_coupon_model').modal('hide');
+            $('#POS_paid_amount').html(res.order_date.paid_amount.toFixed(2))
+            $('#POS_gross_total').html(res.order_date.gross_total.toFixed(2))
+            $('#POS_sub_total').html(res.order_date.sub_total.toFixed(2))
+            $('#POS_addon_total').html(res.order_date.addon_price.toFixed(2))
+            $('#POS_coupon_total').html(res.order_date.coupon_discount.toFixed(2))
+            $('#POS_tax_total').html(res.order_date.tax_amount.toFixed(2))
+
+            poscurrency()
+         }
+
+      })
+   })
+
+
+
+   $(document).on('click', "#edit_POS_apply_coupon", function () {
+      var couponid = $(this).attr('data-id')
+      var order_id = $(this).attr('data-order_id')
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'POST',
+         url: baseUrl + "/admin/edit_couponadd",
+         dataType: 'json',
+         data: { couponid, order_id },
+         success: function (res) {
+            if (res == 400) {
+               toastr.error('gross_total Less-than paid_amount')
+            }
+            $('#POS_coupon_model').modal('hide');
+            $('#POS_paid_amount').html(res.order_date.paid_amount.toFixed(2))
+            $('#POS_gross_total').html(res.order_date.gross_total.toFixed(2))
+            $('#POS_sub_total').html(res.order_date.sub_total.toFixed(2))
+            $('#POS_addon_total').html(res.order_date.addon_price.toFixed(2))
+            $('#POS_coupon_total').html(res.order_date.coupon_discount.toFixed(2))
+            $('#POS_tax_total').html(res.order_date.tax_amount.toFixed(2))
+
+            poscurrency()
+         }
+
+      })
+   })
+
+
+
+
+
+   $(document).on('click', "#POS_coupon_code", function () {
+      var code = $('input[name=coupon_code]').val()
+      if (code.length !== 6) {
+         toastr.warning('Please Enter Valid Coupon Code')
+      } else {
+         var baseUrl = window.location.origin;
+         $.ajax({
+            type: 'GET',
+            url: baseUrl + "/admin/manualcoupon/" + code,
+            dataType: 'json',
+            success: function (res) {
+               if (res.status === "error") {
+                  toastr.error(res.message)
+               }
+               $('#POS_coupon_model').modal('hide');
+               $('input[name=coupon_code]').val('')
+               $('#POS_gross_total').html(res.cart.gross_total.toFixed(2))
+               $('#POS_sub_total').html(res.cart.sub_total.toFixed(2))
+               $('#POS_addon_total').html(res.cart.addon_price.toFixed(2))
+               $('#POS_coupon_total').html(res.cart.coupon_discount.toFixed(2))
+               $('#POS_tax_total').html(res.cart.tax_amount.toFixed(2))
+
+               poscurrency()
+            }
+
+         })
+      }
+   })
+
+
+
+   $(document).on('click', "#edit_POS_coupon_code", function () {
+      var code = $('input[name=coupon_code]').val()
+      var order_id = $('#order_id').val()
+      if (code.length !== 6) {
+         toastr.warning('Please Enter Valid Coupon Code')
+      } else {
+         var baseUrl = window.location.origin;
+         $.ajax({
+            type: 'POST',
+            url: baseUrl + "/admin/edit_manualcoupon",
+            dataType: 'json',
+            data: { code, order_id },
+            success: function (res) {
+               if (res == 400) {
+                  toastr.error('gross_total Less-than paid_amount')
+               }
+               if (res.status === "error") {
+                  toastr.error(res.message)
+               }
+               $('#POS_coupon_model').modal('hide');
+               $('input[name=coupon_code]').val('')
+               $('#POS_paid_amount').html(res.order_date.paid_amount.toFixed(2))
+               $('#POS_gross_total').html(res.order_date.gross_total.toFixed(2))
+               $('#POS_sub_total').html(res.order_date.sub_total.toFixed(2))
+               $('#POS_addon_total').html(res.order_date.addon_price.toFixed(2))
+               $('#POS_coupon_total').html(res.order_date.coupon_discount.toFixed(2))
+               $('#POS_tax_total').html(res.order_date.tax_amount.toFixed(2))
+
+               poscurrency()
+            }
+
+         })
+      }
+   })
+
+
+
+
+   $(document).on("click", '#POS_payment_model_show', function () {
+      var customer = $('#single-select').val()
+      var serviselength = $('#POS_service_added_list tr').length
+      var baseUrl = window.location.origin;
+      if (!customer) {
+         toastr.warning('Please Select Coustomer')
+      } else if (serviselength < 1) {
+         toastr.warning('Min One Service Required')
+      } else {
+         $.ajax({
+            type: 'GET',
+            url: baseUrl + "/admin/paymentdata/",
+            dataType: 'json',
+            success: function (res) {
+               $('#POS_payment_type_list').html('<option value="0"  disabled>Choose Payment Type</option>')
+               $.each(res.payment, function (index, value) {
+                  $('#POS_payment_type_list').append('<option value="' + value.id + '">' + value.ac_name + '</option>')
+               })
+               $("#POS_payment_type_list").prop('required', true);
+               $('.default-select').selectpicker('refresh');
+               let orderDateMin = $('#POS_order_date').val() || new Date(res.cart.order_date).toLocaleDateString('en-CA');
+                let chosenDel = $('#POS_delivery_date').val() || new Date(res.cart.delivery_date).toLocaleDateString('en-CA');
+                $('input[name=deliverydate]').val(chosenDel);
+                $('input[name=deliverydate]').attr('min', orderDateMin);
+                $('#deliverydate_hidden').val(chosenDel);
+                 $('#pos_disc_type_fixed').prop('checked', true);
+                 $('#pos_disc_btn_fixed').addClass('active');
+                 $('#pos_disc_btn_percent').removeClass('active');
+                 var initSym = $('input[name=sym]').val() || '$';
+                 $('#pos_discount_prefix').text(initSym);
+                 $('#payment_extradiscount_percent_info').text('');
+                 var initDisc = Number(res.cart.extra_discount) || 0;
+                 $('input[name=extradiscount]').val(initDisc);
+                 $('#POS_extra_discount_order').val(initDisc > 0 ? initDisc : '');
+                $('input[name=paid_amount]').val(res.cart.paid_amount)
+               $('input[name=note]').val(res.cart.notes)
+
+
+               $('#payment_grosstotal').html(res.cart.gross_total.toFixed(2))
+               $('#POS_gross_order').val(res.cart.gross_total.toFixed(2))
+               $('#POS_subtotal_order').val(res.cart.sub_total.toFixed(2))
+               $('#payment_subtotal').html(res.cart.sub_total.toFixed(2))
+               $('#payment_addons').html(res.cart.addon_price.toFixed(2))
+               $('#payment_coupondiscount').html(res.cart.coupon_discount.toFixed(2))
+               $('#payment_text_amount').html(res.cart.tax_amount.toFixed(2))
+               $('#payment_extradiscount').html(res.cart.extra_discount.toFixed(2))
+               $('#payment_text_perdent').html(' (' + res.cart.tax + ' %)')
+               $('#POS_total_balance').html('00')
+
+               $('#paid_amount').attr('max', (res.cart.gross_total))
+               paymentcurrency();
+               $('#POS_payment_model').modal('show');
+            }
+         })
+      }
+   })
+
+
+
+
+   $(document).on("click", '#edit_POS_payment_model_show', function () {
+      var customer = $('#customer_id').val()
+      var order_id = $('#order_id').val()
+      var serviselength = $('#POS_service_added_list tr').length
+
+      var baseUrl = window.location.origin;
+      if (!customer) {
+         toastr.warning('Please Select Coustomer')
+      } else if (serviselength < 1) {
+         toastr.warning('Min One Service Required')
+      } else {
+         $.ajax({
+            type: 'POST',
+            url: baseUrl + "/admin/edit_paymentdata",
+            dataType: 'json',
+            data: { customer, order_id },
+            success: function (res) {
+               $('#POS_payment_type_list').html('<option value="0"  disabled>Choose Payment Type</option>')
+               $.each(res.payment, function (index, value) {
+                  $('#POS_payment_type_list').append(' <option value="' + value.id + '">' + value.ac_name + '</option>')
+               })
+               $("#POS_payment_type_list").prop('required', true);
+               $('.default-select').selectpicker('refresh');
+               let editOrderDateMin = $('#edit_POS_order_date').val() || new Date(res.order_date.order_date).toLocaleDateString('en-CA');
+               let editChosenDel = $('#edit_POS_delivery_date').val() || new Date(res.order_date.delivery_date).toLocaleDateString('en-CA');
+               $('input[name=deliverydate]').val(editChosenDel);
+               $('input[name=deliverydate]').attr('min', editOrderDateMin);
+               $('#deliverydate_hidden').val(editChosenDel);
+                 $('#edit_pos_disc_type_fixed').prop('checked', true);
+                 $('#edit_pos_disc_btn_fixed').addClass('active');
+                 $('#edit_pos_disc_btn_percent').removeClass('active');
+                 var initEditSym = $('input[name=sym]').val() || '$';
+                 $('#edit_pos_discount_prefix').text(initEditSym);
+                 $('#edit_payment_extradiscount_percent_info').text('');
+                 var initEditDisc = Number(res.order_date.extra_discount) || 0;
+                 $('input[name=extradiscount]').val(initEditDisc);
+                 $('#edit_POS_extra_discount_order').val(initEditDisc > 0 ? initEditDisc : '');
+                 $('#edit_POS_extra_discount_order_hidden').val(initEditDisc);
+                $('input[name=paid_amount]').val(res.order_date.paid_amount)
+               $('input[name=note]').val(res.order_date.notes)
+
+
+               $('#payment_grosstotal').html(res.order_date.gross_total.toFixed(2))
+               $('#POS_gross_order').val(res.order_date.gross_total.toFixed(2))
+               $('#POS_subtotal_order').val(res.order_date.sub_total.toFixed(2))
+               $('#payment_subtotal').html(res.order_date.sub_total.toFixed(2))
+               $('#payment_addons').html(res.order_date.addon_price.toFixed(2))
+               $('#payment_coupondiscount').html(res.order_date.coupon_discount.toFixed(2))
+               $('#payment_text_amount').html(res.order_date.tax_amount.toFixed(2))
+               $('#payment_extradiscount').html(res.order_date.extra_discount.toFixed(2))
+               $('#payment_text_perdent').html(' (' + res.order_date.tax + ' %)')
+               $('#POS_total_balance').html(res.order_date.balance_amount.toFixed(2))
+
+               $('#edit_paid_amount').attr('max', (res.order_date.gross_total))
+               paymentcurrency();
+               $('#POS_payment_model').modal('show');
+            }
+         })
+      }
+   })
+
+
+
+
+    $(document).on('change', 'input[name=discount_type]', function () {
+       var selected = $(this).val();
+       if (selected === 'percent') {
+          $('#pos_disc_btn_percent').addClass('active');
+          $('#pos_disc_btn_fixed').removeClass('active');
+          $('#pos_discount_prefix').text('%');
+          $('#POS_extra_discount_order').attr('placeholder', '0 - 100%');
+       } else {
+          $('#pos_disc_btn_fixed').addClass('active');
+          $('#pos_disc_btn_percent').removeClass('active');
+          var sym = $('input[name=sym]').val() || '$';
+          $('#pos_discount_prefix').text(sym);
+          $('#POS_extra_discount_order').attr('placeholder', '0.00');
+       }
+       $('#POS_extra_discount_order').trigger('input');
+    });
+
+    $(document).on('change', 'input[name=edit_discount_type]', function () {
+       var selected = $(this).val();
+       if (selected === 'percent') {
+          $('#edit_pos_disc_btn_percent').addClass('active');
+          $('#edit_pos_disc_btn_fixed').removeClass('active');
+          $('#edit_pos_discount_prefix').text('%');
+          $('#edit_POS_extra_discount_order').attr('placeholder', '0 - 100%');
+       } else {
+          $('#edit_pos_disc_btn_fixed').addClass('active');
+          $('#edit_pos_disc_btn_percent').removeClass('active');
+          var sym = $('input[name=sym]').val() || '$';
+          $('#edit_pos_discount_prefix').text(sym);
+          $('#edit_POS_extra_discount_order').attr('placeholder', '0.00');
+       }
+       $('#edit_POS_extra_discount_order').trigger('input');
+    });
+
+    $(document).on('input', '#POS_extra_discount_order', function () {
+       var discType = $('input[name=discount_type]:checked').val() || 'fixed';
+       var rawVal = parseFloat($(this).val()) || 0;
+       var sub_total = Number($('#POS_subtotal_order').val()) || Number($('input[name=sub]').val()) || 0;
+       var gross = Number($('#POS_gross_order').val()) || 0;
+       var paid = Number($('input[name=paid_amount]').val()) || 0;
+
+       if (rawVal < 0) {
+          rawVal = 0;
+          $(this).val(0);
+       }
+
+       var disc = 0;
+       if (discType === 'percent') {
+          if (rawVal > 100) {
+             rawVal = 100;
+             $(this).val(100);
+          }
+          disc = (sub_total * rawVal) / 100;
+          disc = Math.round(disc * 100) / 100;
+          if (rawVal > 0) {
+             $('#payment_extradiscount_percent_info').text('(' + rawVal + '%)');
+          } else {
+             $('#payment_extradiscount_percent_info').text('');
+          }
+       } else {
+          disc = rawVal;
+          $('#payment_extradiscount_percent_info').text('');
+       }
+
+       $('input[name=extradiscount]').val(disc);
+       $('#payment_extradiscount').html(disc.toFixed(2));
+
+       var newGross = Math.max(0, gross - disc);
+       $('#payment_grosstotal').html(newGross.toFixed(2));
+       $('#paid_amount').attr('max', newGross.toFixed(2));
+       $('#POS_total_balance').html((newGross - paid).toFixed(2));
+
+       if (disc > sub_total) {
+          $('#POS_worning').html('Discount Amount Cannot Be Greater Than Sub-Total Amount');
+          $('#printcheck, #cart_submit_for_order').prop('disabled', true);
+       } else if (paid > newGross) {
+          $('#POS_worning_paid').html('Paid Amount Cannot Be Greater Than Total Amount');
+          $('#printcheck, #cart_submit_for_order').prop('disabled', true);
+       } else {
+          $('#POS_worning_paid').html('');
+          $('#POS_worning').html('');
+          $('#printcheck, #cart_submit_for_order').prop('disabled', false);
+       }
+       extracurrency();
+    });
+
+    $(document).on('input', '#edit_POS_extra_discount_order', function () {
+       var discType = $('input[name=edit_discount_type]:checked').val() || 'fixed';
+       var rawVal = parseFloat($(this).val()) || 0;
+       var hidden_disc = Number($('#edit_POS_extra_discount_order_hidden').val()) || 0;
+       var sub_total = Number($('#POS_subtotal_order').val()) || Number($('input[name=sub]').val()) || 0;
+       var gross = Number($('#POS_gross_order').val()) || 0;
+       var paid = Number($('input[name=paid_amount]').val()) || 0;
+
+       if (rawVal < 0) {
+          rawVal = 0;
+          $(this).val(0);
+       }
+
+       var disc = 0;
+       if (discType === 'percent') {
+          if (rawVal > 100) {
+             rawVal = 100;
+             $(this).val(100);
+          }
+          disc = (sub_total * rawVal) / 100;
+          disc = Math.round(disc * 100) / 100;
+          if (rawVal > 0) {
+             $('#edit_payment_extradiscount_percent_info').text('(' + rawVal + '%)');
+          } else {
+             $('#edit_payment_extradiscount_percent_info').text('');
+          }
+       } else {
+          disc = rawVal;
+          $('#edit_payment_extradiscount_percent_info').text('');
+       }
+
+       $('input[name=extradiscount]').val(disc);
+       $('#payment_extradiscount').html(disc.toFixed(2));
+
+       var newGross = Math.max(0, gross - disc + hidden_disc);
+       $('#payment_grosstotal').html(newGross.toFixed(2));
+       $('#edit_paid_amount').attr('max', newGross.toFixed(2));
+       $('#POS_total_balance').html((newGross - paid).toFixed(2));
+
+       if (disc > sub_total) {
+          $('#POS_worning').html('Discount Amount Cannot Be Greater Than Sub-Total Amount');
+          $('#edit_cart_submit_for_order').prop('disabled', true);
+       } else if (paid > newGross) {
+          $('#POS_worning_paid').html('Paid Amount Cannot Be Greater Than Total Amount');
+          $('#edit_cart_submit_for_order').prop('disabled', true);
+       } else {
+          $('#POS_worning_paid').html('');
+          $('#POS_worning').html('');
+          $('#edit_cart_submit_for_order').prop('disabled', false);
+       }
+       extracurrency();
+    });
+
+    $(document).on('input', '#paid_amount', function () {
+       var disc = Number($('input[name=extradiscount]').val()) || 0;
+       var gross = Number($('#POS_gross_order').val()) || 0;
+       var paid = Number($('input[name=paid_amount]').val()) || 0;
+       var sub_total = Number($('#POS_subtotal_order').val()) || Number($('input[name=sub]').val()) || 0;
+       var newGross = Math.max(0, gross - disc);
+
+       $('#POS_total_balance').html((newGross - paid).toFixed(2));
+
+       if (paid > newGross) {
+          $('#POS_worning_paid').html('Paid Amount Cannot Be Greater Than Total Amount');
+          $('#printcheck, #cart_submit_for_order').prop('disabled', true);
+       } else if (disc > sub_total) {
+          $('#POS_worning').html('Discount Amount Cannot Be Greater Than Sub-Total Amount');
+          $('#printcheck, #cart_submit_for_order').prop('disabled', true);
+       } else if (paid < 0) {
+          $('#POS_worning_paid').html('Paid Amount Cannot Be Negative');
+          $('#printcheck, #cart_submit_for_order').prop('disabled', true);
+       } else {
+          $('#POS_worning_paid').html('');
+          $('#POS_worning').html('');
+          $('#printcheck, #cart_submit_for_order').prop('disabled', false);
+       }
+       payamucurrency();
+    });
+
+    $(document).on('input', '#edit_paid_amount', function () {
+       var hidden_disc = Number($('#edit_POS_extra_discount_order_hidden').val()) || 0;
+       var disc = Number($('input[name=extradiscount]').val()) || 0;
+       var gross = Number($('#POS_gross_order').val()) || 0;
+       var paid = Number($('input[name=paid_amount]').val()) || 0;
+       var sub_total = Number($('#POS_subtotal_order').val()) || Number($('input[name=sub]').val()) || 0;
+       var newGross = Math.max(0, gross - disc + hidden_disc);
+
+       $('#POS_total_balance').html((newGross - paid).toFixed(2));
+
+       if (paid > newGross) {
+          $('#POS_worning_paid').html('Paid Amount Cannot Be Greater Than Total Amount');
+          $('#edit_cart_submit_for_order').prop('disabled', true);
+       } else if (disc > sub_total) {
+          $('#POS_worning').html('Discount Amount Cannot Be Greater Than Sub-Total Amount');
+          $('#edit_cart_submit_for_order').prop('disabled', true);
+       } else if (paid < 0) {
+          $('#POS_worning_paid').html('Paid Amount Cannot Be Negative');
+          $('#edit_cart_submit_for_order').prop('disabled', true);
+       } else {
+          $('#POS_worning_paid').html('');
+          $('#POS_worning').html('');
+          $('#edit_cart_submit_for_order').prop('disabled', false);
+       }
+       payamucurrency();
+    });
+
+
+
+   $("#cart_submit_for_order").click(function (e) {
+      e.preventDefault();
+      var paid = Number($('input[name=paid_amount]').val())
+      var date = $('input[name=deliverydate]').val()
+      var date_hidden = $('input[name=deliverydate_hidden]').val()
+      var payment_type = $('#POS_payment_type_list').val()
+      var baseUrl = window.location.origin;
+
+
+      if (paid > 0) {
+         if (!payment_type) {
+            return toastr.warning('Please Select Payment Type')
+         }
+
+      }
+
+      if (date < date_hidden) {
+         return document.getElementById("POS_worning").innerHTML = "Enter Delivery Date";
+      }
+
+      $.ajax({
+         type: 'POST',
+         url: baseUrl + "/admin/order",
+         data: $('#pyment_POS_cart').serialize(),
+         success: function (res) {
+            $('#POS_payment_model').modal('hide');
+            toastr.success('Order Success fully Save')
+
+            if (res.order.customer_id != 0) {
+
+               // $('#invoice_header').html('<h3 class="text-uppercase">'+res.shope.name+'</h3>'+
+               //                                  '<h6>Phone : '+res.shope.mobile_number+'</h6>'+
+               //                                  '<h6>Email : '+res.shope.store_email+'</h6>')
+
+               $('#shop_name').html(' ' + res.shope.name + '')
+               $('#shop_no').html(' : ' + res.shope.mobile_number + '')
+               $('#shop_email').html(' : ' + res.shope.store_email + '')
+
+               $('#invoice_order_id').html(' : ' + res.order.order_id + '')
+
+               $('#invoice_order_date').html(' ' + new Date(res.order.order_date).toLocaleDateString('en-CA') + '')
+               $('#invoice_delivery_date').html(' : ' + new Date(res.order.delivery_date).toLocaleDateString('en-CA'));
+
+               $('#invoice_item').html('');
+               $.each(res.cartservice, function (index, value) {
+
+                  $('#invoice_item').append('<tr>' +
+                     ' <td>' + Number(index + 1) + '</td>' +
+                     ' <td>' +
+                     '   <h5 class="mb-0">' + value.service_name + '</h5>' +
+                     '   <span class="mb-0 fs-6">[' + value.service_type_name + '] </span> <br>' +
+                     '</td>' +
+                     '<td> ' + value.service_quntity + ' </td>' +
+                     '<td class="invosymbol">' + value.service_type_price.toFixed(2) + '</td>' +
+                     '</tr>')
+               })
+
+               if (res.addonslist.length < 1) {
+                  $('#POS_addon_invoice_item').addClass('d-none')
+               }
+               $('#addon_item').html('');
+               $.each(res.addonslist, function (index, value) {
+
+                  $('#addon_item').append('<tr>' +
+                     ' <td>' + Number(index + 1) + '</td>' +
+                     '<td> ' + value.name + ' </td>' +
+                     '<td class="invosymbol">' + value.price.toFixed(2) + '</td>' +
+                     '</tr>')
+               })
+
+
+
+               $('#invoice_price').html(res.order.sub_total.toFixed(2));
+               $('#invoice_addon').html(res.order.addon_price.toFixed(2));
+               $('#invoice_tax').html(res.order.tax_amount.toFixed(2));
+               $('#invoice_Discount').html(res.order.extra_discount.toFixed(2));
+               $('#invoice_Coupon').html(res.order.coupon_discount.toFixed(2));
+               $('#invoice_gross').html(res.order.gross_total.toFixed(2));
+
+               $('#invoice_paid_method').html(' ' + res.paymenttype);
+               $('#invoice_paid_amount').html(' ' + res.order.paid_amount.toFixed(2));
+               $('#invoice_due_amount').html(' ' + res.order.balance_amount.toFixed(2));
+
+               if (res.customer.name == 'Walk in customer') {
+                  $('.last_hr').addClass('d-none')
+                  $('.Invoice_To').addClass('d-none')
+                  $('.customer_details').addClass('d-none')
+               }
+
+               $('#invoice_Name_customer').html(res.customer.name);
+               $('#invoice_Number_customer').html(res.customer.number);
+               $('#invoice_Email_customer').html(res.customer.email);
+               $('#invoice_Address_customer').html(res.customer.address);
+               $('#invoice_Tax_customer').html(res.customer.taxnumber);
+
+
+
+               $('#order_note').html(res.order.note);
+
+               $('#invoice').modal('show');
+               invocurrency()
+
+            } else {
+               location.reload();
+            }
+         },
+
+      });
+   })
+
+
+
+
+
+   $("#edit_cart_submit_for_order").click(function (e) {
+      e.preventDefault();
+      var paid = Number($('input[name=paid_amount]').val())
+      var date = $('input[name=deliverydate]').val()
+      var date_hidden = $('input[name=deliverydate_hidden]').val()
+      var payment_type = $('#POS_payment_type_list').val()
+      var baseUrl = window.location.origin;
+
+
+      if (paid > 0) {
+         if (!payment_type) {
+            return toastr.warning('Please Select Payment Type')
+         }
+
+      }
+
+      if (date < date_hidden) {
+         return document.getElementById("POS_worning").innerHTML = "Enter Delivery Date";
+      }
+
+      $.ajax({
+         type: 'POST',
+         url: baseUrl + "/admin/edit_order",
+         data: $('#pyment_POS_cart').serialize(),
+         success: function (res) {
+            $('#POS_payment_model').modal('hide');
+            toastr.success('Order successfully updated');
+            var targetId = (res && res.order && res.order.id) ? res.order.id : ($('#pos_order_id').val() || $('input[name=order_id]').val());
+            setTimeout(function () {
+               window.location.href = baseUrl + "/order/view/" + targetId;
+            }, 600);
+         },
+         error: function (err) {
+            toastr.error('Failed to update order');
+         }
+      });
+   });
+
+   $(document).on("click", "#edit_direct_save_btn", function (e) {
+      e.preventDefault();
+      var order_id = $('#order_id').val() || $('#pos_order_id').val();
+      var baseUrl = window.location.origin;
+
+      $.ajax({
+         type: 'POST',
+         url: baseUrl + "/admin/edit_order_direct",
+         data: { order_id: order_id },
+         success: function (res) {
+            toastr.success('Order changes saved successfully');
+            setTimeout(function () {
+               window.location.href = baseUrl + "/order/view/" + order_id;
+            }, 600);
+         },
+         error: function (err) {
+            toastr.error('Failed to save order changes');
+         }
+      });
+   });
+
+
+
+
+
+   // $(document).on('click', '#pri_invo', function () {
+   //    var printContents = document.getElementById('invoice_page').innerHTML;
+   //    document.body.innerHTML = printContents;
+   //    window.print();
+   //    location.reload();
+   // })
+
+   $(document).ready(function () {
+      let todayStr = new Date().toLocaleDateString('en-CA');
+      $('#POS_order_date').attr('min', todayStr);
+      let orderVal = $('#POS_order_date').val() || todayStr;
+      $('#POS_delivery_date').attr('min', orderVal);
+
+      if ($('#edit_POS_order_date').length) {
+         let editOrderVal = $('#edit_POS_order_date').val() || todayStr;
+         $('#edit_POS_delivery_date').attr('min', editOrderVal);
+      }
+
+      $('#invoice').modal({
+         backdrop: 'static',
+         keyboard: false
+      })
+
+      $('#POS_payment_model').modal({
+         backdrop: 'static',
+         keyboard: false
+      })
+   });
+
+
+   async function changeOrderStatus(statusid, orderid) {
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'GET',
+         url: baseUrl + "/order/changestatus/" + statusid + ',' + orderid,
+         dataType: 'json',
+         success: function (res) {
+            if (res.status == "error") {
+               toastr.error(res.messge)
+            } else if (res.status == "success") {
+               toastr.success(res.messge)
+
+               setTimeout(() => {
+                  location.reload()
+               }, 1000)
+            }
+
+         }
+      })
+   }
+
+
+   async function open_patment_model(orderid) {
+
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'GET',
+         url: baseUrl + "/order/paymodel/" + orderid,
+         dataType: 'json',
+         success: function (res) {
+
+
+            $('#orderlistpaymentmodel').html('<form id="add_order_payment"  method="post" class="need-validation"><div class="row g-2 align-items-center">' +
+               '<div class=" col-12">' +
+
+               '<div class="row mb-50 align-items-center">' +
+               ' <div class="col text-sm">Customer Name:</div>' +
+               '<div class="col-auto text-sm">' + res.customer.name + '</div>' +
+               '</div>' +
+
+               '<div class="row mb-50 align-items-center">' +
+               '<div class="col text-sm">Order ID: </div>' +
+               '<div class="col-auto text-sm">' + res.order.order_id + '</div>' +
+               '</div>' +
+
+               '<div class="row mb-50 align-items-center">' +
+               '<div class="col text-sm">Order Date: </div>' +
+               '<div class="col-auto text-sm">' + new Date(res.order.order_date).toLocaleDateString('en-CA') + '</div>' +
+               '</div>' +
+
+               '<div class="row mb-50 align-items-center">' +
+               '<div class="col text-sm"> Delivery Date:</div>' +
+               '<div class="col-auto text-sm">' + new Date(res.order.delivery_date).toLocaleDateString('en-CA') + '</div>' +
+               '</div>' +
+
+               '<hr>' +
+
+               '<div class="row mb-50 align-items-center">' +
+               '<div class="col text-sm"> Order Amount:</div>' +
+               '<div class="col-auto text-sm invosymbol">' + res.order.gross_total.toFixed(2) + '</div>' +
+               '</div>' +
+
+               '<div class="row mb-50 align-items-center">' +
+               '<div class="col text-sm">Paid Amount:</div>' +
+               '<div class="col-auto text-sm invosymbol">' + res.order.paid_amount.toFixed(2) + '</div>' +
+               '</div>' +
+
+               '<hr>' +
+
+               '<div class="row align-items-center">' +
+               '<div class="col text-sm">Balance:</div>' +
+               '<div class="col-auto text-sm invosymbol">' + res.order.balance_amount.toFixed(2) + '</div>' +
+               '</div>' +
+
+               '<hr>' +
+
+               ' <div class="row align-items-center">' +
+               '<div class="col-md-6 mb-1">' +
+               '<label class="form-label">Paid Amount</label>' +
+               '<input type="flot" class="form-control" placeholder="Enter Amount" name="paid" value="0">' +
+               '<input type="hidden"  name="orderid" value="' + res.order.id + '">' +
+               '<input type="hidden"  name="balan" value="' + res.order.balance_amount + '">' +
+               '</div>' +
+               '<div class="col-md-6 mb-1">' +
+               '<label class="form-label">Payment Type</label>' +
+               ' <select class="form-control wide" name="payment" id="payment">' +
+               ' <option value  disabled>Choose Payment Type</option>' +
+               ' </select>' +
+               '</div>' +
+               '</div>' +
+               '</div>' +
+               '</div></form>')
+
+            $.each(res.account, function (index, data) {
+               console.log(data);
+               $('#payment').append('<option value=' + data.id + '>' + data.ac_name + '</option>')
+            })
+            $('.default-select').selectpicker('refresh');
+            $('#addpaymentmodel1').modal('show');
+
+            invocurrency()
+         }
+      })
+   }
+
+
+   $('#add_order_payment_submit').click(function (e) {
+      e.preventDefault();
+
+      var balance = Number($('input[name=balan]').val())
+      var paid = Number($('input[name=paid]').val())
+      var payment_type = $('#payment').val()
+      var baseUrl = window.location.origin;
+      // alert(balance)
+      // alert(paid)
+      // alert(payment_type)
+
+
+
+      if (balance < paid) {
+         return toastr.warning('Paid amount is not more then Order Amount')
+      }
+      if (paid > 0) {
+         if (!payment_type) {
+            return toastr.warning('Please Select Payment Type')
+         }
+      }
+      if (paid < 0) {
+         return toastr.warning('Please Select Payment Amount')
+      }
+
+      $.ajax({
+         type: 'POST',
+         url: baseUrl + "/order/addpayment",
+         data: $('#add_order_payment').serialize(),
+         success: function (res) {
+            if (res.status == "success") {
+               toastr.success(res.message)
+
+               setTimeout(() => {
+                  location.reload()
+               }, 100)
+            }
+         }
+      })
+
+   })
+
+
+   $('#daily_report_store').on("change", function () {
+
+      var store = $(this).val()
+      var date = $('#daily_report_date').val()
+      dailyorder(date, store)
+
+   })
+
+
+   $('#daily_report_date').on("change", function () {
+
+      var store = $('#daily_report_store').val()
+      var date = $(this).val()
+      dailyorder(date, store)
+
+   })
+
+
+
+   $('#order_report_store').on("change", function () {
+
+      var store = $(this).val()
+      var startdate = $('#order_report_start_date').val()
+      var enddate = $('#order_report_end_date').val()
+      var status = $('#order_report_status').val()
+
+      orderreports(store, startdate, enddate, status)
+   })
+
+
+   $('#order_report_status').on("change", function () {
+
+      var status = $(this).val()
+      var store = $('#order_report_store').val()
+      var startdate = $('#order_report_start_date').val()
+      var enddate = $('#order_report_end_date').val()
+
+      orderreports(store, startdate, enddate, status)
+   })
+
+
+   $('#order_report_start_date').on("change", function () {
+
+      var store = $('#order_report_store').val()
+      var startdate = $(this).val()
+      var enddate = $('#order_report_end_date').val()
+      var status = $('#order_report_status').val()
+
+      orderreports(store, startdate, enddate, status)
+   })
+
+
+   $('#order_report_end_date').on("change", function () {
+
+      var store = $('#order_report_store').val()
+      var startdate = $('#order_report_start_date').val()
+      var enddate = $(this).val()
+      var status = $('#order_report_status').val()
+
+      orderreports(store, startdate, enddate, status)
+   })
+
+
+
+   $('#sales_report_store').on("change", function () {
+
+      var store = $(this).val()
+      var startdate = $('#sales_report_start_date').val()
+      var enddate = $('#sales_report_end_date').val()
+
+      salesreports(store, startdate, enddate)
+   })
+
+
+   $('#sales_report_start_date').on("change", function () {
+
+      var store = $('#sales_report_store').val()
+      var startdate = $(this).val()
+      var enddate = $('#sales_report_end_date').val()
+
+      salesreports(store, startdate, enddate)
+   })
+
+
+   $('#sales_report_end_date').on("change", function () {
+
+      var store = $('#sales_report_store').val()
+      var startdate = $('#sales_report_start_date').val()
+      var enddate = $(this).val()
+
+      salesreports(store, startdate, enddate)
+   })
+
+
+
+   $('#Expence_report_store').on("change", function () {
+
+      var store = $(this).val()
+      var startdate = $('#Expence_report_start_date').val()
+      var enddate = $('#Expence_report_end_date').val()
+
+      expencereports(store, startdate, enddate)
+   })
+
+
+   $('#Expence_report_start_date').on("change", function () {
+
+      var store = $('#Expence_report_store').val()
+      var startdate = $(this).val()
+      var enddate = $('#Expence_report_end_date').val()
+
+      expencereports(store, startdate, enddate)
+   })
+
+
+   $('#Expence_report_end_date').on("change", function () {
+
+      var store = $('#Expence_report_store').val()
+      var startdate = $('#Expence_report_start_date').val()
+      var enddate = $(this).val()
+
+      expencereports(store, startdate, enddate)
+   })
+
+
+
+
+
+   $('#tax_report_store').on("change", function () {
+
+      var store = $(this).val()
+      var startdate = $('#tax_report_start_date').val()
+      var enddate = $('#tax_report_end_date').val()
+      var filter = $('#tax_report_status').val()
+
+      taxreports(store, startdate, enddate, filter)
+   })
+
+
+   $('#tax_report_start_date').on("change", function () {
+
+      var store = $('#tax_report_store').val()
+      var startdate = $(this).val()
+      var enddate = $('#tax_report_end_date').val()
+      var filter = $('#tax_report_status').val()
+
+      taxreports(store, startdate, enddate, filter)
+   })
+
+
+   $('#tax_report_end_date').on("change", function () {
+
+      var store = $('#tax_report_store').val()
+      var startdate = $('#tax_report_start_date').val()
+      var enddate = $(this).val()
+      var filter = $('#tax_report_status').val()
+
+      taxreports(store, startdate, enddate, filter)
+   })
+
+
+   $('#tax_report_status').on("change", function () {
+
+      var store = $('#tax_report_store').val()
+      var startdate = $('#tax_report_start_date').val()
+      var enddate = $('#tax_report_end_date').val()
+      var filter = $(this).val()
+
+      taxreports(store, startdate, enddate, filter)
+   })
+
+
+   $('#multy').on('change', function () {
+
+      var multy = $('#multy').prop('checked')
+
+      if (!multy) {
+
+
+         $('#POS_coupon_model').modal('show');
+      }
+
+   })
+
+
+   $(document).on('click', '#order_report_print', function () {
+
+      var printContents = document.getElementById('invoice_page').innerHTML;
+      document.body.innerHTML = printContents;
+      window.print();
+      location.reload();
+   })
+
+
+
+   $(document).ready(function () {
+      var list = Intl.supportedValuesOf('timeZone')
+      var timezone = $('#timezone').attr('data-id')
+
+      $.each(list, function (index, value) {
+         $('#timezone').append(' <option value="' + value + '" >' + value + '</option>')
+      })
+
+      $('select[name=timezone]').val(timezone)
+      $('.default-select').selectpicker('refresh');
+
+
+   })
+
+
+   $(document).ready(function () {
+      orderreport()
+   });
+
+   function orderreport() {
+      var rowCount = $("#tb_row_order_report tr").length;
+
+      $("#orders_report").text(rowCount);
+      var sum = 0;
+      $("td:nth-child(4):visible").each(function () {
+         sum += Number($(this).text())
+      });
+      $("#order_report_amount").html(sum.toFixed(2));
+   }
+
+
+
+   $(document).ready(function () {
+      $("#order_list_serach").on("keyup", function () {
+         var value = $(this).val().toLowerCase();
+         $("#order_list_tbl tr").filter(function () {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+         });
+      });
+
+
+      $("#orders_list_status").on("change", function () {
+
+         var value = $(this).val();
+
+         // $("#order_list_tbl tr").filter(function () {
+         //    $(this).toggle($(this.children[3]).text().indexOf(value) > -1)
+         // });
+
+         $.ajax({
+            type: 'get',
+            url: `/order/liststattus/${value}`,
+            success: function (res) {
+
+
+
+               const orderlist = res.orderlist;
+               const accessdata = res.accessdata;
+               const language = res.language;
+               const login = res.login;
+
+               let html = "";
+
+     
+    
+            
+if (orderlist.length < 9) {
+      $('#loadMoreorder').addClass("d-none")
+      console.log("d-none");
+   }else{
+      $('#loadMoreorder').removeClass("d-none")
+   }
+
+               if (!orderlist || orderlist.length === 0) {
+                  html += `
+      <tr>
+        <td colspan="10" class="text-center text-danger">
+          ${language.No_Order_List_Found}
+        </td>
+      </tr>
+    `;
+               } else {
+                  orderlist.forEach(function (data) {
+
+                     const formatDate = (rawDate) => {
+                        const date = new Date(rawDate);
+                        const dd = String(date.getDate()).padStart(2, '0');
+                        const mm = String(date.getMonth() + 1).padStart(2, '0');
+                        const yyyy = date.getFullYear();
+                        return `${yyyy}-${mm}-${dd}`;
+                     };
+
+                     const orderDateStr = formatDate(data.order_date);
+                     const deliveryDateStr = formatDate(data.delivery_date);
+
+
+                     const statusMap = {
+                        1: 'dark',
+                        2: 'warning',
+                        3: 'secondary',
+                        4: 'info',
+                        5: 'danger',
+                        6: 'danger'
+                     };
+                     const statusClass = statusMap[data.order_status] || 'dark';
+                     const statusBtn = `<button type="button" class="btn btn-${statusClass} btn-xxs text-nowrap" disabled>${data.orderStatus}</button>`;
+
+
+                     let paymentBtn = '';
+                     if (data.balance_amount > 0) {
+                        if (accessdata.logas === 'custmor') {
+                           paymentBtn = `<button type="button" class="btn light  btn-info btn-xxs mb-2" disabled>${language.Pending}</button>`;
+                        } else {
+                           const canEdit = accessdata.roll.orders.includes('edit') ? '' : 'disabled';
+                           paymentBtn = `<button onclick="open_patment_model('${data.id}')" type="button" class="btn light  btn-success btn-xxs mb-2" ${canEdit}>${language.Add_Payment}</button>`;
+                        }
+                     } else {
+                        paymentBtn = `<button type="button" class="btn light  btn-dark btn-xxs mb-2" disabled>${language.Fully_Paid}</button>`;
+                     }
+
+
+                     const editBtn = (data.order_status != 6)
+                        ? `<a href="/admin/edit/${data.id}" class="btn-tbl-action btn-tbl-edit" title="${language.Edit || 'Edit'}"><i class="fas fa-pencil-alt"></i></a>`
+                        : '';
+
+                     const deleteBtn = (accessdata.logas !== 'custmor')
+                        ? `<button type="button" class="btn-tbl-action btn-tbl-delete" data-bs-toggle="modal" data-bs-target="#deleteOrderModal" data-id="${data.id}" data-orderid="${data.order_id}" title="${language.Delete || 'Delete'}"><i class="fa fa-trash"></i></button>`
+                        : '';
+
+                     const storeCol = login === 'master'
+                        ? `<td><p class="text-sm mb-0 text-uppercase">${data.storeName || ''}</p></td>`
+                        : `<td class="d-none"></td>`;
+
+
+                     html += `
+        <tr class="load_data">
+          <td>
+            <p class="text-sm mb-0 text-nowrap"><span class="me-1">${language.Order_ID || 'Order ID'} :</span><span>${data.order_id}</span></p>
+            <p class="text-sm mb-0 text-nowrap"><span class="me-1">${language.Order_Date || 'Order Date'} :</span><span>${orderDateStr}</span></p>
+            <p class="text-sm mb-0 text-nowrap"><span class="me-1">${language.Delivery_Date || 'Delivery Date'} :</span><span>${deliveryDateStr}</span></p>
+          </td>
+          <td>
+            <p class="text-sm px-2 mb-0 text-nowrap">${data.name}</p>
+            <p class="text-sm px-2 mb-0">${data.number}</p>
+          </td>
+          <td>
+            <p class="text-sm px-2 mb-0 text-nowrap symbol">${data.gross_total}</p>
+          </td>
+          <td>${statusBtn}</td>
+          <td>
+            <p class="text-sm mb-0 text-nowrap"><span class="me-2">${language.Total_Amount || 'Total Amount'} :</span><span class="symbol">${data.gross_total}</span></p>
+            <p class="text-sm mb-1 text-nowrap"><span class="me-2">${language.Paid_Amount || 'Paid Amount'} :</span><span class="symbol">${data.paid_amount}</span></p>
+            ${paymentBtn}
+          </td>
+          ${storeCol}
+          <td class="text-center">
+            <div class="tbl-action-group">
+              ${editBtn}
+              <a href="/order/view/${data.id}" class="btn-tbl-action btn-tbl-view" title="${language.View || 'View'}">
+                <i class="fa fa-eye"></i>
+              </a>
+              <button type="button" class="btn-tbl-action btn-tbl-print" id="print_barcode" data-bs-toggle="modal" data-bs-target="#exampleModalLong" data-id="${data.id}" title="${language.Print || 'Print'}">
+                <i class="fa fa-print"></i>
+              </button>
+              ${deleteBtn}
+            </div>
+          </td>
+        </tr>
+      `;
+                  });
+               }
+
+               $("#order_list_tbl").html(html);
+
+               setTimeout(() => {
+                  if (typeof forcurrency === 'function') forcurrency();
+                  if (typeof pagetablecurrency === 'function') pagetablecurrency();
+               }, 0);
+            }
+
+         })
+      });
+   });
+
+
+   $(document).ready(function () {
+      sale()
+   });
+
+   function sale() {
+      var rowCount = $("#tb_row_sales_report tr").length;
+
+      $("#sales_report").text(rowCount);
+      var tax = 0;
+      $("td:nth-child(8):visible").each(function () {
+         tax += Number($(this).text())
+      });
+
+      $("#sales_report_tax").html(tax.toFixed(2));
+      var sum = 0;
+      $("td:nth-child(9):visible").each(function () {
+         sum += Number($(this).text())
+      });
+
+      $("#sales_report_amount").html(sum.toFixed(2));
+   }
+
+
+
+
+
+   $(document).ready(function () {
+      expence()
+   });
+
+   function expence() {
+      var rowCount = $("#tb_row_expence_report tr").length;
+      $("#expence_report").text(rowCount);
+
+
+      var tax = 0;
+      $("td:nth-child(5):visible").each(function () {
+         tax += Number($(this).text())
+      });
+      $("#expence_report_taxamount").html(tax.toFixed(2));
+
+
+      var sum = 0;
+      $("td:nth-child(3):visible").each(function () {
+         sum += Number($(this).text())
+      });
+      $("#expence_report_amount").html(sum.toFixed(2));
+   }
+
+
+
+
+   $(document).ready(function () {
+      tax()
+   });
+
+   function tax() {
+
+      var tax = 0;
+      $("td:nth-child(5):visible").each(function () {
+         tax += Number($(this).text())
+      });
+      $("#tax_report_tax").html(tax.toFixed(2));
+
+      var sum = 0;
+      $("td:nth-child(6):visible").each(function () {
+         sum += Number($(this).text())
+      });
+      $("#tax_report_amount").html(sum.toFixed(2));
+   }
+
+
+
+
+   $(document).ready(function () {
+      currency();
+   })
+
+
+
+
+   function currency() {
+      var sym = $('input[name=sym]').val()
+      var pls = $('input[name=pls]').val()
+
+      var thousands_replace = $('input[name=thousands_separator]').val()
+      var num = document.getElementsByClassName("symbol")
+
+      if (thousands_replace == '1') {
+         var separator = ','
+      } else if (thousands_replace == '2') {
+         var separator = '.'
+      } else if (thousands_replace == '3') {
+         var separator = '`'
+      } else if (thousands_replace == '4') {
+         var separator = ''
+      } else {
+         var separator = ' '
+      }
+
+      for (var i = 0; i < num.length; ++i) {
+         var val = num[i]
+         var data = val.innerHTML
+
+         var num_parts = data.toString().split(".");
+         num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator);
+
+         val.innerHTML = num_parts.join(".")
+      }
+
+      if (pls == 1) {
+         var users = document.getElementsByClassName('symbol');
+         for (var i = 0; i < users.length; ++i) {
+            var user = users[i];
+            user.innerHTML = user.innerHTML + ' ' + sym;
+         }
+      } else {
+         var users = document.getElementsByClassName('symbol');
+         for (var i = 0; i < users.length; ++i) {
+            var user = users[i];
+            user.innerHTML = sym + ' ' + user.innerHTML;
+         }
+      }
+
+   }
+
+   function couponcurrency() {
+      var sym = $('input[name=sym]').val()
+      var pls = $('input[name=pls]').val()
+
+
+      var thousands_replace = $('input[name=thousands_separator]').val()
+      var num = document.getElementsByClassName("couponsymbol")
+
+      if (thousands_replace == '1') {
+         var separator = ','
+      } else if (thousands_replace == '2') {
+         var separator = '.'
+      } else if (thousands_replace == '3') {
+         var separator = '`'
+      } else if (thousands_replace == '4') {
+         var separator = ''
+      } else {
+         var separator = ' '
+      }
+
+      for (var i = 0; i < num.length; ++i) {
+         var val = num[i]
+         var data = val.innerHTML
+
+         var num_parts = data.toString().split(".");
+         num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator);
+
+         val.innerHTML = num_parts.join(".")
+      }
+
+
+      if (pls == 1) {
+         var users = document.getElementsByClassName('couponsymbol');
+         for (var i = 0; i < users.length; ++i) {
+            var user = users[i];
+            user.innerHTML = user.innerHTML + ' ' + sym;
+         }
+      } else {
+         var users = document.getElementsByClassName('couponsymbol');
+         for (var i = 0; i < users.length; ++i) {
+            var user = users[i];
+            user.innerHTML = sym + ' ' + user.innerHTML;
+         }
+      }
+
+   }
+
+   function paymentcurrency() {
+      var sym = $('input[name=sym]').val()
+      var pls = $('input[name=pls]').val()
+
+      var thousands_replace = $('input[name=thousands_separator]').val()
+      var num = document.getElementsByClassName("paysymbol")
+
+      if (thousands_replace == '1') {
+         var separator = ','
+      } else if (thousands_replace == '2') {
+         var separator = '.'
+      } else if (thousands_replace == '3') {
+         var separator = '`'
+      } else if (thousands_replace == '4') {
+         var separator = ''
+      } else {
+         var separator = ' '
+      }
+
+      for (var i = 0; i < num.length; ++i) {
+         var val = num[i]
+         var data = val.innerHTML
+
+         var num_parts = data.toString().split(".");
+         num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator);
+
+         val.innerHTML = num_parts.join(".")
+      }
+
+      if (pls == 1) {
+         var users = document.getElementsByClassName('paysymbol');
+         for (var i = 0; i < users.length; ++i) {
+            var user = users[i];
+            user.innerHTML = user.innerHTML + ' ' + sym;
+         }
+      } else {
+         var users = document.getElementsByClassName('paysymbol');
+         for (var i = 0; i < users.length; ++i) {
+            var user = users[i];
+            user.innerHTML = sym + ' ' + user.innerHTML;
+         }
+      }
+
+   }
+
+   function extracurrency() {
+      var sym = $('input[name=sym]').val()
+      var pls = $('input[name=pls]').val()
+
+
+      var thousands_replace = $('input[name=thousands_separator]').val()
+      var num = document.getElementsByClassName("extsymbol")
+
+      if (thousands_replace == '1') {
+         var separator = ','
+      } else if (thousands_replace == '2') {
+         var separator = '.'
+      } else if (thousands_replace == '3') {
+         var separator = '`'
+      } else if (thousands_replace == '4') {
+         var separator = ''
+      } else {
+         var separator = ' '
+      }
+
+      for (var i = 0; i < num.length; ++i) {
+         var val = num[i]
+         var data = val.innerHTML
+
+         var num_parts = data.toString().split(".");
+         num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator);
+
+         val.innerHTML = num_parts.join(".")
+      }
+
+      if (pls == 1) {
+         var users = document.getElementsByClassName('extsymbol');
+         for (var i = 0; i < users.length; ++i) {
+            var user = users[i];
+            user.innerHTML = user.innerHTML + ' ' + sym;
+         }
+      } else {
+         var users = document.getElementsByClassName('extsymbol');
+         for (var i = 0; i < users.length; ++i) {
+            var user = users[i];
+            user.innerHTML = sym + ' ' + user.innerHTML;
+         }
+      }
+
+   }
+
+   function payamucurrency() {
+      var sym = $('input[name=sym]').val()
+      var pls = $('input[name=pls]').val()
+
+
+      var thousands_replace = $('input[name=thousands_separator]').val()
+      var num = document.getElementsByClassName("pamtsymbol")
+
+      if (thousands_replace == '1') {
+         var separator = ','
+      } else if (thousands_replace == '2') {
+         var separator = '.'
+      } else if (thousands_replace == '3') {
+         var separator = '`'
+      } else if (thousands_replace == '4') {
+         var separator = ''
+      } else {
+         var separator = ' '
+      }
+
+      for (var i = 0; i < num.length; ++i) {
+         var val = num[i]
+         var data = val.innerHTML
+
+         var num_parts = data.toString().split(".");
+         num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator);
+
+         val.innerHTML = num_parts.join(".")
+      }
+
+
+      if (pls == 1) {
+         var users = document.getElementsByClassName('pamtsymbol');
+         for (var i = 0; i < users.length; ++i) {
+            var user = users[i];
+            user.innerHTML = user.innerHTML + ' ' + sym;
+         }
+      } else {
+         var users = document.getElementsByClassName('pamtsymbol');
+         for (var i = 0; i < users.length; ++i) {
+            var user = users[i];
+            user.innerHTML = sym + ' ' + user.innerHTML;
+         }
+      }
+
+   }
+
+   function poscurrency() {
+      var sym = $('input[name=sym]').val()
+      var pls = $('input[name=pls]').val()
+
+
+      var thousands_replace = $('input[name=thousands_separator]').val()
+      var num = document.getElementsByClassName("possymbol")
+
+      if (thousands_replace == '1') {
+         var separator = ','
+      } else if (thousands_replace == '2') {
+         var separator = '.'
+      } else if (thousands_replace == '3') {
+         var separator = '`'
+      } else if (thousands_replace == '4') {
+         var separator = ''
+      } else {
+         var separator = ' '
+      }
+
+      for (var i = 0; i < num.length; ++i) {
+         var val = num[i]
+         var data = val.innerHTML
+
+         var num_parts = data.toString().split(".");
+         num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator);
+
+         val.innerHTML = num_parts.join(".")
+      }
+
+
+      if (pls == 1) {
+         var users = document.getElementsByClassName('possymbol');
+         for (var i = 0; i < users.length; ++i) {
+            var user = users[i];
+            user.innerHTML = user.innerHTML + ' ' + sym;
+         }
+      } else {
+         var users = document.getElementsByClassName('possymbol');
+         for (var i = 0; i < users.length; ++i) {
+            var user = users[i];
+            user.innerHTML = sym + ' ' + user.innerHTML;
+         }
+      }
+
+   }
+
+   function invocurrency() {
+      var sym = $('input[name=sym]').val()
+      var pls = $('input[name=pls]').val()
+
+
+      var thousands_replace = $('input[name=thousands_separator]').val()
+      var num = document.getElementsByClassName("invosymbol")
+
+      if (thousands_replace == '1') {
+         var separator = ','
+      } else if (thousands_replace == '2') {
+         var separator = '.'
+      } else if (thousands_replace == '3') {
+         var separator = '`'
+      } else if (thousands_replace == '4') {
+         var separator = ''
+      } else {
+         var separator = ' '
+      }
+
+      for (var i = 0; i < num.length; ++i) {
+         var val = num[i]
+         var data = val.innerHTML
+
+         var num_parts = data.toString().split(".");
+         num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator);
+
+         val.innerHTML = num_parts.join(".")
+      }
+
+
+      if (pls == 1) {
+         var users = document.getElementsByClassName('invosymbol');
+         for (var i = 0; i < users.length; ++i) {
+            var user = users[i];
+            user.innerHTML = user.innerHTML + ' ' + sym;
+         }
+      } else {
+         var users = document.getElementsByClassName('invosymbol');
+         for (var i = 0; i < users.length; ++i) {
+            var user = users[i];
+            user.innerHTML = sym + ' ' + user.innerHTML;
+         }
+      }
+
+   }
+
+
+
+
+
+
+
+
+
+   function dailyorder(date, store) {
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'POST',
+         url: baseUrl + "/report/report",
+         data: { date, store },
+         dataType: 'json',
+         success: function (res) {
+
+            $('#daily_report_date').val(new Date(res.date).toLocaleDateString('en-CA'))
+            $('select[name=storeid]').val(res.store)
+            $('.default-select').selectpicker('refresh');
+
+            $('#daily_report_orders').html(res.orders)
+            $('#daily_report_ordersdelivery').html(res.ordersdeliver)
+            $('#daily_report_totalsale').html(res.orderstotalseal.toFixed(2))
+            $('#daily_report_payment').html(res.totalpay.toFixed(2))
+            $('#daily_report_expence').html(res.expence.toFixed(2))
+            currency()
+         }
+      })
+
+   }
+
+
+
+   function orderreports(store, startdate, enddate, status) {
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'POST',
+         url: baseUrl + "/report/orderreports",
+         data: { startdate, store, enddate, status },
+         dataType: 'json',
+         success: function (res) {
+
+            $('#order_report_start_date').val(new Date(res.startdate).toLocaleDateString('en-CA'))
+            $('#order_report_end_date').val(new Date(res.enddate).toLocaleDateString('en-CA'))
+            $('select[name=storeid]').val(res.store)
+            // $('select[name=status]').val('e')
+            $('.default-select').selectpicker('refresh');
+
+            $('#tb_row_order_report').html('')
+            $.each(res.orderdata, function (index, value) {
+
+               var status;
+
+               if (value.status == "Pending") {
+                  status = 'badge badge-warning';
+               } else if (value.status == "Processing") {
+                  status = 'badge badge-info';
+               } else if (value.status == "Ready To deliver") {
+                  status = 'badge badge-secondary';
+               } else if (value.status == "Deliver") {
+                  status = 'badge badge-primary';
+               } else {
+                  status = 'badge badge-dark';
+               }
+
+               $('#tb_row_order_report').append('<tr>' +
+                  '<td> ' + new Date(value.order_date).toLocaleDateString('en-CA') + ' </td>' +
+                  '<td>' + value.order_id + ' </td>' +
+                  '<td>' + value.custoname + '</td>' +
+                  '<td class="symbol">' + value.gross_total + '</td>' +
+                  // '<td><span class="symbol"> '+value.status +'</span></td>'+                 
+                  '<td><span class="' + status + '">' + value.status + '</span></td>' +
+                  '</tr>')
+            })
+
+
+            var rowCount = $("#tb_row_order_report tr").length;
+
+            $("#orders_report").text(rowCount);
+            var table = document.getElementById("tb_row_order_report")
+
+            var sum = 0;
+
+            for (var i = 0; i < table.rows.length; i++) {
+               sum = sum + parseFloat(table.rows[i].cells[3].innerHTML);
+            }
+
+
+            $("#order_report_amount").html(sum);
+
+            currency()
+         }
+      })
+
+   }
+
+
+   function salesreports(store, startdate, enddate) {
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'POST',
+         url: baseUrl + "/report/salesreports",
+         data: { startdate, store, enddate },
+         dataType: 'json',
+         success: function (res) {
+            $('#sales_report_start_date').val(new Date(res.startdate).toLocaleDateString('en-CA'))
+            $('#sales_report_end_date').val(new Date(res.enddate).toLocaleDateString('en-CA'))
+            $('select[name=storeid]').val(res.store)
+            $('.default-select').selectpicker('refresh');
+
+            $('#tb_row_sales_report').html('')
+            $.each(res.salesdata, function (index, value) {
+
+               $('#tb_row_sales_report').append('<tr>' +
+                  '<td> ' + new Date(value.order_date).toLocaleDateString('en-CA') + ' </td>' +
+                  '<td>' + value.order_id + ' </td>' +
+                  '<td>' + value.custoname + '</td>' +
+                  '<td class="symbol">' + value.sub_total + '</td>' +
+                  '<td class="symbol">' + value.addon_price + '</td>' +
+                  '<td class="symbol">' + value.extra_discount + '</td>' +
+                  '<td class="symbol">' + value.coupon_discount + '</td>' +
+                  '<td class="symbol">' + value.tax_amount + '</td>' +
+                  '<td class="symbol">' + value.gross_total + '</td>' +
+
+                  '</tr>')
+            });
+
+            var rowCount = $("#tb_row_sales_report tr").length;
+            $("#sales_report").text(rowCount);
+
+
+            var table = document.getElementById("tb_row_sales_report")
+            var sum = 0;
+            var tax = 0;
+
+            for (var i = 0; i < table.rows.length; i++) {
+               tax = tax + parseFloat(table.rows[i].cells[7].innerHTML);
+            }
+
+            for (var i = 0; i < table.rows.length; i++) {
+               sum = sum + parseFloat(table.rows[i].cells[8].innerHTML);
+            }
+
+            document.getElementById("sales_report_amount").innerHTML = sum.toFixed(2);
+            document.getElementById("sales_report_tax").innerHTML = tax.toFixed(2);
+
+            currency()
+
+
+
+         }
+
+      })
+   }
+
+
+   function expencereports(store, startdate, enddate) {
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'POST',
+         url: baseUrl + "/report/expencereport",
+         data: { startdate, store, enddate },
+         dataType: 'json',
+         success: function (res) {
+            $('#Expence_report_start_date').val(new Date(res.startdate).toLocaleDateString('en-CA'))
+            $('#Expence_report_end_date').val(new Date(res.enddate).toLocaleDateString('en-CA'))
+            $('select[name=storeid]').val(res.store)
+            $('.default-select').selectpicker('refresh');
+
+            $('#tb_row_expence_report').html('')
+            $.each(res.expencedata, function (index, value) {
+
+               $('#tb_row_expence_report').append('<tr>' +
+                  '<td> ' + new Date(value.date).toLocaleDateString('en-CA') + ' </td>' +
+                  '<td>' + value.cat_name + '</td>' +
+                  '<td class="symbol">' + value.amount.toFixed(2) + '</td>' +
+                  '<td>' + value.taxpercent + '</td>' +
+                  '<td class="symbol">' + value.taxamount.toFixed(2) + '</td>' +
+                  '<td>' + value.ac_name + '</td>' +
+
+                  '</tr>')
+            });
+
+            var rowCount = $("#tb_row_expence_report tr").length;
+            $("#expence_report").text(rowCount);
+
+            var tax = 0;
+            $("td:nth-child(5):visible").each(function () {
+               tax += Number($(this).text())
+            });
+            $("#expence_report_taxamount").html(tax.toFixed(2));
+
+
+            var sum = 0;
+            $("td:nth-child(3):visible").each(function () {
+               sum += Number($(this).text())
+            });
+            $("#expence_report_amount").html(sum.toFixed(2));
+
+            currency()
+
+
+
+         }
+
+      })
+   }
+
+
+
+   function taxreports(store, startdate, enddate, filter) {
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'POST',
+         url: baseUrl + "/report/taxreport",
+         data: { store, startdate, enddate, filter },
+         dataType: 'json',
+         success: function (res) {
+            $('#tax_report_start_date').val(new Date(res.startdate).toLocaleDateString('en-CA'))
+            $('#tax_report_end_date').val(new Date(res.enddate).toLocaleDateString('en-CA'))
+            $('select[name=storeid]').val(res.store)
+            $('select[name=status]').val(res.filter)
+            $('.default-select').selectpicker('refresh');
+
+            $('#tb_row_tax_report').html('')
+            $.each(res.taxdata, function (index, value) {
+
+               $('#tb_row_tax_report').append('<tr>' +
+                  '<td>' + Number(index + 1) + '</td>' +
+                  '<td> ' + new Date(value.date).toLocaleDateString('en-CA') + ' </td>' +
+                  '<td>' + value.particulars + '</td>' +
+                  '<td class="symbol">' + value.befortax.toFixed(2) + '</td>' +
+                  '<td class="symbol">' + value.taxamount.toFixed(2) + '</td>' +
+                  '<td class="symbol">' + value.amount.toFixed(2) + '</td>' +
+                  '</tr>')
+            });
+
+            var tax = 0;
+            $("td:nth-child(5):visible").each(function () {
+               tax += Number($(this).text())
+            });
+            $("#tax_report_tax").html(tax.toFixed(2));
+
+
+            var sum = 0;
+            $("td:nth-child(6):visible").each(function () {
+               sum += Number($(this).text())
+            });
+            $("#tax_report_amount").html(sum.toFixed(2));
+
+            currency()
+
+
+
+         }
+
+      })
+   }
+
+   function downloadreport() {
+      var baseUrl = window.location.origin;
+      var store = $('#order_report_store').val()
+      var startdate = $('#order_report_start_date').val()
+      var enddate = $('#order_report_end_date').val()
+
+      window.location.href = baseUrl + "/report/export-order/" + startdate + "+" + store + "+" + enddate;
+
+   }
+
+
+   function downloadsalesreport() {
+      var baseUrl = window.location.origin;
+      var store = $('#sales_report_store').val()
+      var startdate = $('#sales_report_start_date').val()
+      var enddate = $('#sales_report_end_date').val()
+
+      window.location.href = baseUrl + "/report/export-sales/" + startdate + "+" + store + "+" + enddate;
+
+   }
+
+
+   function downloadExpencereport() {
+      var baseUrl = window.location.origin;
+      var store = $('#Expence_report_store').val()
+      var startdate = $('#Expence_report_start_date').val()
+      var enddate = $('#Expence_report_end_date').val()
+
+      window.location.href = baseUrl + "/report/export-expence/" + startdate + "+" + store + "+" + enddate;
+   }
+
+
+   function downloadtaxreport() {
+      var baseUrl = window.location.origin;
+      var store = $('#tax_report_store').val()
+      var startdate = $('#tax_report_start_date').val()
+      var enddate = $('#tax_report_end_date').val()
+      var filter = $('#tax_report_status').val()
+      window.location.href = baseUrl + "/report/export-tax/" + startdate + "+" + store + "+" + enddate + "+" + filter;
+   }
+
+
+   $(document).ready(function () {
+      var size_item = $('.load_data').length;
+      var v = 10;
+      $('.load_data').hide(); // hide all divs with class `listing`
+      $('.load_data:lt(' + v + ')').show();
+      $('#loadMore').click(function () {
+         v = (v + 10 <= size_item) ? v + 10 : size_item;
+         $('.load_data:lt(' + v + ')').show();
+         // hide load more button if all items are visible
+         if ($(".load_data:visible").length >= size_item) { $("#loadMore").hide(); }
+      });
+
+
+      $(document).on('click', '#print_barcode', function () {
+         var baseUrl = window.location.origin;
+         const id = $(this).attr('data-id')
+
+         $.ajax({
+            type: 'GET',
+            url: baseUrl + '/order/barcode/' + id,
+            dataType: 'json',
+            success: function (res) {
+               $('#add_barcode').html(" ")
+               $.each(res.service_list, function (index, value) {
+                  var a = '#barcode' + index
+                  $.each(res.service_list_data, function (x, data) {
+                     if (value == data.id) {
+                        console.log(data.service_name);
+                        $('#add_barcode').append('<div class="mb-3">' +
+                           '<h4 class="text-black">' + res.accessdata.masterstore.app_name + '</h4>' +
+                           '<h5 class="mb-0">Order id: ' + res.order_date[0].order_id + '</h5>' +
+                           '<svg class="barcode" style="width: 200px !important;" id="barcode' + index + '"></svg>' +
+                           '</div>')
+                        JsBarcode(a, res.order_date[0].order_id, {
+                           width: 1.7,
+                           height: 100,
+                           fontSize: 14,
+                           text: data.service_name + '[' + data.service_type_name + ']'
+                        });
+                     }
+                  })
+               })
+            }
+         })
+
+      })
+
+      $(document).on('click', '#print_label', function () {
+         var printContents = document.getElementById('add_barcode').innerHTML;
+         document.body.innerHTML = printContents;
+         window.print();
+         location.reload();
+      })
+
+
+
+
+
+
+   });
+
+
+
+   //    var size_item = $('.load_data').length;
+   // console.log("ordersize",ordersize);
+
+   // $('.load_data').hide(); // hide all divs with class `listing`
+   // $('.load_data:lt('+v+')').show();
+
+
+   //    var size_item = $('.load_data').length;
+   // console.log("ordersize",ordersize);
+
+   // $('.load_data').hide(); // hide all divs with class `listing`
+   // $('.load_data:lt('+v+')').show();
+
+   function clearCurrency() {
+      $('.symbol').each(function () {
+         const text = $(this).text();
+         const clean = text.replace(/[^\d.-]/g, '');
+         $(this).text(clean);
+      });
+   }
+
+   function applyCurrency() {
+      var sym = $('input[name=sym]').val()
+      $('.symbol').each(function () {
+         const value = parseFloat($(this).text());
+         if (!isNaN(value)) {
+            $(this).text(sym + value.toFixed(2));
+         }
+      });
+   }
+
+   function forcurrency() {
+      clearCurrency();
+      applyCurrency();
+   }
+
+
+   var ordersize = $('.load_data').length;
+   let v = 10;
+   console.log("ordersize", ordersize);
+
+
+   if (ordersize < 9) {
+      $('#loadMoreorder').addClass("d-none")
+      console.log("d-none");
+   }
+
+   $('#loadMoreorder').click(function () {
+
+      // v = (v + 10 <= size_item) ? v + 10 : size_item;
+      // $('.load_data:lt('+v+')').show();
+      // // hide load more button if all items are visible
+      // if($(".load_data:visible").length >= size_item ){ $("#loadMore").hide(); }
+
+      var orderstatus = $("#orders_list_status").val()
+      let from = v
+      v = parseFloat(ordersize) + v
+
+      $.ajax({
+         type: 'POST',
+         url: '/order/getmore',
+         data: { from, orderstatus },
+         success: function (res) {
+            console.log(res);
+
+            if (res.orderlists != "") {
+               const lang = (res && res.language) ? res.language : {};
+               const lblOrderId = lang.Order_ID || 'Order ID';
+               const lblOrderDate = lang.Order_Date || 'Order Date';
+               const lblDeliveryDate = lang.Delivery_Date || 'Delivery Date';
+               const lblTotalAmount = lang.Total_Amount || 'Total Amount';
+               const lblPaidAmount = lang.Paid_Amount || 'Paid Amount';
+               const lblPending = lang.Pending || 'Pending';
+               const lblAddPayment = lang.Add_Payment || 'Add Payment';
+               const lblFullyPaid = lang.Fully_Paid || 'Fully Paid';
+                const lblEdit = lang.Edit || 'Edit';
+                const lblView = lang.View || 'View';
+                const lblPrint = lang.Print || 'Print';
+                const lblDelete = lang.Delete || 'Delete';
+
+                $.each(res.orderlists, function (index, value) {
+
+                   let Order_date = new Date(value.order_date);
+                   let Order_day = (Order_date.getDate() < 10 ? '0' : '') + Order_date.getDate();
+                   let Order_month = ((Order_date.getMonth() + 1) < 10 ? '0' : '') + (Order_date.getMonth() + 1);
+                   let Order_year = Order_date.getFullYear();
+                   let Order_fullDate = `${Order_year}-${Order_month}-${Order_day}`;
+
+                   let Delivery_date = new Date(value.delivery_date);
+                   let Delivery_day = (Delivery_date.getDate() < 10 ? '0' : '') + Delivery_date.getDate();
+                   let Delivery_month = ((Delivery_date.getMonth() + 1) < 10 ? '0' : '') + (Delivery_date.getMonth() + 1);
+                   let Delivery_year = Delivery_date.getFullYear();
+                   let Delivery_fullDate = `${Delivery_year}-${Delivery_month}-${Delivery_day}`;
+
+                   let statusClass = 'dark';
+                   if (value.order_status == 1) statusClass = 'dark';
+                   else if (value.order_status == 2) statusClass = 'warning';
+                   else if (value.order_status == 3) statusClass = 'secondary';
+                   else if (value.order_status == 4) statusClass = 'info';
+                   else if (value.order_status == 5) statusClass = 'danger';
+                   else if (value.order_status == 6) statusClass = 'danger';
+
+                   const statusBadge = `<button type="button" class="btn btn-${statusClass} btn-xxs text-nowrap" disabled>${value.orderStatus || ''}</button>`;
+
+                   let aedit = "";
+                   if (!res.accessdata?.roll?.orders?.includes('edit')) aedit = "disabled";
+
+                   let paymentBtnHtml = '';
+                   if (value.balance_amount > 0) {
+                      if (res.accessdata?.logas == 'custmor') {
+                         paymentBtnHtml = `<button type="button" class="btn light btn-info btn-xxs mb-2" disabled>${lblPending}</button>`;
+                      } else {
+                         paymentBtnHtml = `<button onclick="open_patment_model(${value.id})" type="button" class="btn light btn-success btn-xxs mb-2" ${aedit}>${lblAddPayment}</button>`;
+                      }
+                   } else {
+                      paymentBtnHtml = `<button type="button" class="btn btn-dark btn-xxs mb-2" disabled>${lblFullyPaid}</button>`;
+                   }
+
+                   let loginClass = (res.login !== 'master') ? 'd-none' : '';
+
+                   let editBtnHtml = '';
+                   if (value.order_status != 6) {
+                      editBtnHtml = `<a href="/admin/edit/${value.id}" class="btn-tbl-action btn-tbl-edit" title="${lblEdit}"><i class="fas fa-pencil-alt"></i></a>`;
+                   }
+
+                   let deleteBtnHtml = '';
+                   if (res.accessdata?.logas !== 'custmor') {
+                      deleteBtnHtml = `<button type="button" class="btn-tbl-action btn-tbl-delete" data-bs-toggle="modal" data-bs-target="#deleteOrderModal" data-id="${value.id}" data-orderid="${value.order_id}" title="${lblDelete}"><i class="fa fa-trash"></i></button>`;
+                   }
+
+                   let data = `<tr class="load_data">
+                      <td>
+                        <p class="text-sm mb-0 text-nowrap"><span class="me-1">${lblOrderId} :</span><span>${value.order_id}</span></p>
+                        <p class="text-sm mb-0 text-nowrap"><span class="me-1">${lblOrderDate} :</span><span>${Order_fullDate}</span></p>
+                        <p class="text-sm mb-0 text-nowrap"><span class="me-1">${lblDeliveryDate} :</span><span>${Delivery_fullDate}</span></p>
+                      </td>
+                      <td>
+                        <p class="text-sm px-2 mb-0 text-nowrap">${value.name || ''}</p>
+                        <p class="text-sm px-2 mb-0">${value.number || ''}</p>
+                      </td>
+                      <td>
+                        <p class="text-sm px-2 mb-0 text-nowrap symbol">${value.gross_total}</p>
+                      </td>
+                      <td>${statusBadge}</td>
+                      <td>
+                        <p class="text-sm mb-0 text-nowrap"><span class="me-2">${lblTotalAmount} :</span><span class="symbol">${value.gross_total}</span></p>
+                        <p class="text-sm mb-1 text-nowrap"><span class="me-2">${lblPaidAmount} :</span><span class="symbol">${value.paid_amount}</span></p>
+                        ${paymentBtnHtml}
+                      </td>
+                      <td class="${loginClass}">
+                        <p class="text-sm mb-0 text-uppercase">${value.storeName || ''}</p>
+                      </td>
+                      <td class="text-center">
+                        <div class="tbl-action-group">
+                          ${editBtnHtml}
+                          <a href="/order/view/${value.id}" class="btn-tbl-action btn-tbl-view" title="${lblView}">
+                            <i class="fa fa-eye"></i>
+                          </a>
+                          <button type="button" class="btn-tbl-action btn-tbl-print" id="print_barcode" data-bs-toggle="modal" data-bs-target="#exampleModalLong" data-id="${value.id}" title="${lblPrint}">
+                            <i class="fa fa-print"></i>
+                          </button>
+                          ${deleteBtnHtml}
+                        </div>
+                      </td>
+                   </tr>`;
+
+                  $('#order_list_tbl').append(data);
+               });
+                setTimeout(() => {
+                   if (typeof forcurrency === 'function') forcurrency();
+                   if (typeof pagetablecurrency === 'function') pagetablecurrency();
+                }, 0);
+            } else {
+               $("#orderloadbtn").addClass("d-none")
+            }
+
+         }
+      })
+   })
+
+
+
+
+   $(document).on('click', '#rollmanegemaster', function () {
+
+      var id = $(this).attr('data-rollup-id')
+      var act = `/tool/rollUp/${id}`
+      console.log(id);
+
+      $.ajax({
+         type: 'get',
+         url: `/tool/rolldetailstaff/${id}`,
+         success: function ({ rolldata }) {
+            $('#name_update').attr('value', rolldata.roll)
+            $('#roll_type').val(rolldata.rollType)
+
+            $("#updateroll_form_master").attr('action', act)
+
+            $('#update_orders_read').attr('checked', rolldata.orders.includes('read'))
+            $('#update_orders_write').attr('checked', rolldata.orders.includes('write'))
+            $('#update_orders_edit').attr('checked', rolldata.orders.includes('edit'))
+            $('#update_orders_delete').attr('checked', rolldata.orders.includes('delete'))
+
+            $('#update_expense_read').attr('checked', rolldata.expense.includes('read'))
+            $('#update_expense_write').attr('checked', rolldata.expense.includes('write'))
+            $('#update_expense_edit').attr('checked', rolldata.expense.includes('edit'))
+            $('#update_expense_delete').attr('checked', rolldata.expense.includes('delete'))
+
+            $('#update_service_read').attr('checked', rolldata.service.includes('read'))
+            $('#update_service_write').attr('checked', rolldata.service.includes('write'))
+            $('#update_service_edit').attr('checked', rolldata.service.includes('edit'))
+            $('#update_service_delete').attr('checked', rolldata.service.includes('delete'))
+
+            $('#update_reports_read').attr('checked', rolldata.reports.includes('read'))
+            $('#update_reports_write').attr('checked', rolldata.reports.includes('write'))
+            $('#update_reports_edit').attr('checked', rolldata.reports.includes('edit'))
+            $('#update_reports_delete').attr('checked', rolldata.reports.includes('delete'))
+
+            $('#update_customers_read').attr('checked', rolldata.customers.includes('read'))
+            $('#update_customers_write').attr('checked', rolldata.customers.includes('write'))
+            $('#update_customers_edit').attr('checked', rolldata.customers.includes('edit'))
+            $('#update_customers_delete').attr('checked', rolldata.customers.includes('delete'))
+
+            $('#update_tools_read').attr('checked', rolldata.tools.includes('read'))
+            $('#update_tools_write').attr('checked', rolldata.tools.includes('write'))
+            $('#update_tools_edit').attr('checked', rolldata.tools.includes('edit'))
+            $('#update_tools_delete').attr('checked', rolldata.tools.includes('delete'))
+
+            $('#update_mail_read').attr('checked', rolldata.mail.includes('read'))
+            $('#update_mail_write').attr('checked', rolldata.mail.includes('write'))
+            $('#update_mail_edit').attr('checked', rolldata.mail.includes('edit'))
+            $('#update_mail_delete').attr('checked', rolldata.mail.includes('delete'))
+
+            $('#update_master_read').attr('checked', rolldata.master.includes('read'))
+            $('#update_master_write').attr('checked', rolldata.master.includes('write'))
+            $('#update_master_edit').attr('checked', rolldata.master.includes('edit'))
+            $('#update_master_delete').attr('checked', rolldata.master.includes('delete'))
+
+            $('#update_sms_read').attr('checked', rolldata.sms.includes('read'))
+            $('#update_sms_write').attr('checked', rolldata.sms.includes('write'))
+            $('#update_sms_edit').attr('checked', rolldata.sms.includes('edit'))
+            $('#update_sms_delete').attr('checked', rolldata.sms.includes('delete'))
+
+            $('#update_Pay_Out_read').attr('checked', rolldata.Pay_Out.includes('read'))
+            $('#update_Pay_Out_write').attr('checked', rolldata.Pay_Out.includes('write'))
+            $('#update_Pay_Out_edit').attr('checked', rolldata.Pay_Out.includes('edit'))
+            $('#update_Pay_Out_delete').attr('checked', rolldata.Pay_Out.includes('delete'))
+
+            $('#update_master_setting_read').attr('checked', rolldata.master_setting.includes('read'))
+            $('#update_master_setting_write').attr('checked', rolldata.master_setting.includes('write'))
+            $('#update_master_setting_edit').attr('checked', rolldata.master_setting.includes('edit'))
+            $('#update_master_setting_delete').attr('checked', rolldata.master_setting.includes('delete'))
+
+            $('#update_branch_n_store_read').attr('checked', rolldata.branch_n_store.includes('read'))
+            $('#update_branch_n_store_write').attr('checked', rolldata.branch_n_store.includes('write'))
+            $('#update_branch_n_store_edit').attr('checked', rolldata.branch_n_store.includes('edit'))
+            $('#update_branch_n_store_delete').attr('checked', rolldata.branch_n_store.includes('delete'))
+
+            $('#update_staff_read').attr('checked', rolldata.staff.includes('read'))
+            $('#update_staff_write').attr('checked', rolldata.staff.includes('write'))
+            $('#update_staff_edit').attr('checked', rolldata.staff.includes('edit'))
+            $('#update_staff_delete').attr('checked', rolldata.staff.includes('delete'))
+
+            $('#update_pos_read').attr('checked', rolldata.pos.includes('read'))
+            $('#update_pos_write').attr('checked', rolldata.pos.includes('write'))
+            $('#update_pos_edit').attr('checked', rolldata.pos.includes('edit'))
+            $('#update_pos_delete').attr('checked', rolldata.pos.includes('delete'))
+
+            $('#update_roll_read').attr('checked', rolldata.rollaccess.includes('read'))
+            $('#update_roll_write').attr('checked', rolldata.rollaccess.includes('write'))
+            $('#update_roll_edit').attr('checked', rolldata.rollaccess.includes('edit'))
+            $('#update_roll_delete').attr('checked', rolldata.rollaccess.includes('delete'))
+
+            $('#update_coupon_read').attr('checked', rolldata.coupon.includes('read'))
+            $('#update_coupon_write').attr('checked', rolldata.coupon.includes('write'))
+            $('#update_coupon_edit').attr('checked', rolldata.coupon.includes('edit'))
+            $('#update_coupon_delete').attr('checked', rolldata.coupon.includes('delete'))
+
+            $('#update_account_read').attr('checked', rolldata.account.includes('read'))
+            $('#update_account_write').attr('checked', rolldata.account.includes('write'))
+            $('#update_account_edit').attr('checked', rolldata.account.includes('edit'))
+            $('#update_account_delete').attr('checked', rolldata.account.includes('delete'))
+
+
+            $('#rollactive').attr('checked', rolldata.delet_flage == 0 ? true : false)
+
+
+
+         }
+      })
+
+   })
+
+   $(document).on('click', '#rollmanegestore', function () {
+
+      var id = $(this).attr('data-rollup-id')
+      var act = `/tool/rollUp/${id}`
+
+      $.ajax({
+         type: 'get',
+         url: `/tool/rolldetailstaff/${id}`,
+         success: function ({ rolldata }) {
+            $('#name_update_store').attr('value', rolldata.roll)
+            $('#roll_type_store').val(rolldata.rollType)
+
+            $("#updateroll_store_form").attr('action', act)
+
+            $('#updatestore_orders_read').attr('checked', rolldata.orders.includes('read'))
+            $('#updatestore_orders_write').attr('checked', rolldata.orders.includes('write'))
+            $('#updatestore_orders_edit').attr('checked', rolldata.orders.includes('edit'))
+            $('#updatestore_orders_delete').attr('checked', rolldata.orders.includes('delete'))
+
+            $('#updatestore_expense_read').attr('checked', rolldata.expense.includes('read'))
+            $('#updatestore_expense_write').attr('checked', rolldata.expense.includes('write'))
+            $('#updatestore_expense_edit').attr('checked', rolldata.expense.includes('edit'))
+            $('#updatestore_expense_delete').attr('checked', rolldata.expense.includes('delete'))
+
+            $('#updatestore_service_read').attr('checked', rolldata.service.includes('read'))
+            $('#updatestore_service_write').attr('checked', rolldata.service.includes('write'))
+            $('#updatestore_service_edit').attr('checked', rolldata.service.includes('edit'))
+            $('#updatestore_service_delete').attr('checked', rolldata.service.includes('delete'))
+
+            $('#updatestore_reports_read').attr('checked', rolldata.reports.includes('read'))
+            $('#updatestore_reports_write').attr('checked', rolldata.reports.includes('write'))
+            $('#updatestore_reports_edit').attr('checked', rolldata.reports.includes('edit'))
+            $('#updatestore_reports_delete').attr('checked', rolldata.reports.includes('delete'))
+
+            $('#updatestore_customers_read').attr('checked', rolldata.customers.includes('read'))
+            $('#updatestore_customers_write').attr('checked', rolldata.customers.includes('write'))
+            $('#updatestore_customers_edit').attr('checked', rolldata.customers.includes('edit'))
+            $('#updatestore_customers_delete').attr('checked', rolldata.customers.includes('delete'))
+
+            $('#updatestore_tools_read').attr('checked', rolldata.tools.includes('read'))
+            $('#updatestore_tools_write').attr('checked', rolldata.tools.includes('write'))
+            $('#updatestore_tools_edit').attr('checked', rolldata.tools.includes('edit'))
+            $('#updatestore_tools_delete').attr('checked', rolldata.tools.includes('delete'))
+
+            $('#updatestore_mail_read').attr('checked', rolldata.mail.includes('read'))
+            $('#updatestore_mail_write').attr('checked', rolldata.mail.includes('write'))
+            $('#updatestore_mail_edit').attr('checked', rolldata.mail.includes('edit'))
+            $('#updatestore_mail_delete').attr('checked', rolldata.mail.includes('delete'))
+
+            $('#updatestore_master_read').attr('checked', rolldata.master.includes('read'))
+            $('#updatestore_master_write').attr('checked', rolldata.master.includes('write'))
+            $('#updatestore_master_edit').attr('checked', rolldata.master.includes('edit'))
+            $('#updatestore_master_delete').attr('checked', rolldata.master.includes('delete'))
+
+            $('#updatestore_sms_read').attr('checked', rolldata.sms.includes('read'))
+            $('#updatestore_sms_write').attr('checked', rolldata.sms.includes('write'))
+            $('#updatestore_sms_edit').attr('checked', rolldata.sms.includes('edit'))
+            $('#updatestore_sms_delete').attr('checked', rolldata.sms.includes('delete'))
+
+            $('#update_Pay_Out_read').attr('checked', rolldata.Pay_Out.includes('read'))
+            $('#update_Pay_Out_write').attr('checked', rolldata.Pay_Out.includes('write'))
+            $('#update_Pay_Out_edit').attr('checked', rolldata.Pay_Out.includes('edit'))
+            $('#update_Pay_Out_delete').attr('checked', rolldata.Pay_Out.includes('delete'))
+
+            $('#update_master_setting_read').attr('checked', rolldata.master_setting.includes('read'))
+            $('#update_master_setting_write').attr('checked', rolldata.master_setting.includes('write'))
+            $('#update_master_setting_edit').attr('checked', rolldata.master_setting.includes('edit'))
+            $('#update_master_setting_delete').attr('checked', rolldata.master_setting.includes('delete'))
+
+            $('#update_branch_n_store_read').attr('checked', rolldata.branch_n_store.includes('read'))
+            $('#update_branch_n_store_write').attr('checked', rolldata.branch_n_store.includes('write'))
+            $('#update_branch_n_store_edit').attr('checked', rolldata.branch_n_store.includes('edit'))
+            $('#update_branch_n_store_delete').attr('checked', rolldata.branch_n_store.includes('delete'))
+
+            $('#updatestore_staff_read').attr('checked', rolldata.staff.includes('read'))
+            $('#updatestore_staff_write').attr('checked', rolldata.staff.includes('write'))
+            $('#updatestore_staff_edit').attr('checked', rolldata.staff.includes('edit'))
+            $('#updatestore_staff_delete').attr('checked', rolldata.staff.includes('delete'))
+
+            $('#updatestore_pos_read').attr('checked', rolldata.pos.includes('read'))
+            $('#updatestore_pos_write').attr('checked', rolldata.pos.includes('write'))
+            $('#updatestore_pos_edit').attr('checked', rolldata.pos.includes('edit'))
+            $('#updatestore_pos_delete').attr('checked', rolldata.pos.includes('delete'))
+
+            $('#updatestore_roll_read').attr('checked', rolldata.rollaccess.includes('read'))
+            $('#updatestore_roll_write').attr('checked', rolldata.rollaccess.includes('write'))
+            $('#updatestore_roll_edit').attr('checked', rolldata.rollaccess.includes('edit'))
+            $('#updatestore_roll_delete').attr('checked', rolldata.rollaccess.includes('delete'))
+
+            $('#updatestore_coupon_read').attr('checked', rolldata.coupon.includes('read'))
+            $('#updatestore_coupon_write').attr('checked', rolldata.coupon.includes('write'))
+            $('#updatestore_coupon_edit').attr('checked', rolldata.coupon.includes('edit'))
+            $('#updatestore_coupon_delete').attr('checked', rolldata.coupon.includes('delete'))
+
+            $('#updatestore_account_read').attr('checked', rolldata.account.includes('read'))
+            $('#updatestore_account_write').attr('checked', rolldata.account.includes('write'))
+            $('#updatestore_account_edit').attr('checked', rolldata.account.includes('edit'))
+            $('#updatestore_account_delete').attr('checked', rolldata.account.includes('delete'))
+
+
+            $('#rollactive').attr('checked', rolldata.delet_flage == 0 ? true : false)
+
+
+
+         }
+      })
+
+   })
+   </script>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+</head>
+
+<body>
+  
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card mb-3">
+                            <div class="card-body pb-">
+
+                                <h3>
+                                    <%=storname%>
+                                </h3>
+
+                                <div class="nav">
+                                    <ul class="nav nav-tabs page-header-tabs shadow-sm">
+                                        <li class="nav-item">
+                                            <a class="nav-link " href="/account/payoutdetails/<%= storeid %>">
+                                                <%= language.Account_Detail %>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link active" href="/account/payoutransections/<%= storeid %>">
+                                                <%= language.Transection_List %>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="card ">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <%= language.Transection_List %>
+                                </h3>
+                            </div>
+                            <div class="d-none">
+                                <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
+                                <input type="hiden" name="pls" value="<%= accessdata.plac %>">
+                                <input type="hiden" name="thousands_separator"
+                                    value="<%= accessdata.thousands_separator %>">
+                            </div>
+                            <div class="card-body">
+                                <form id="cashform" action="/account/payouttransefilter" method="post">
+                                    <div class="row">
+                                        <div class="col">
+                                            <label class="form-label">
+                                                <%= language.Account %>
+                                            </label>
+                                            <select class="default-select form-control wide mb-3" name="account"
+                                                id="account" required>
+                                                <option value selected disabled>Select Account</option>
+                                                <% account_list.forEach(function(data){ %>
+                                                    <option value="<%= data.id %>" <%=data.id==account ? 'selected' : ''
+                                                        %>><%= data.ac_name %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select>
+                                        </div>
+
+                                        <div class="col">
+                                            <label class="form-label">
+                                                <%= language.Start_Date %>
+                                            </label>
+                                            <input type="date" id="cashstart" class="form-control" name="start_date"
+                                                value="<%= start_date %>" required>
+                                            <input type="hidden" name="store_id" value="<%= storeid %>">
+                                        </div>
+
+                                        <div class="col">
+                                            <label class="form-label">
+                                                <%= language.End_Date %>
+                                            </label>
+                                            <input type="date" id="cashend" class="form-control" name="end_date"
+                                                value="<%= end_date %>" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-center">
+                                        <p class="text-danger d-none m-0 pb-2" id="details_errors">Select All Detail</p>
+                                    </div>
+
+
+
+                                    <div class="d-flex justify-content-center">
+                                         <button class="btn btn-sm btn-primary col-3 mx-3 mt-3 text-nowrap" id="cashclick" type="submit">
+                                            <%= language.Filter %>
+                                         </button>
+
+                                         <a href="/account/payoutransections/<%= storeid %>"
+                                            class="btn btn-sm btn-danger col-3 mx-3 mt-3 text-nowrap">
+                                            <%= language.Reset %>
+                                         </a>
+
+                                         <button class="btn btn-sm btn-success col-3 mx-3 mt-3 text-nowrap" id="cashdownloadbtn" type="button">
+                                            <%= language.Download %>
+                                         </button>
+                                    </div>
+                                   
+                                </form>
+                                <hr>
+
+                                <!----- table ----->
+
+                                <div class="table-responsive">
+                                    <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">
+                                                    <%= language.Date %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Account %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Type %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Description %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Debit %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Credit %>
+                                                </th>
+                                                <th scope="col">
+                                                    <%= language.Balance %>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% transection_list.forEach(function(data, i){ %>
+                                                <tr>
+                                                    <td class="text-nowrap">
+                                                        <% let Order_date=new Date(data.date) %>
+                                                            <% let Order_day=(Order_date.getDate() < 10 ? '0' : '' ) +
+                                                                Order_date.getDate() %>
+                                                                <% let Order_month=((Order_date.getMonth()+1) < 10 ? '0'
+                                                                    : '' ) + (Order_date.getMonth()+1) %>
+                                                                    <% let Order_year=Order_date.getFullYear() %>
+                                                                        <% let
+                                                                            Order_fullDate=`${Order_year}-${Order_month}-${Order_day}`
+                                                                            %>
+
+                                                                            <%= Order_fullDate %>
+                                                    </td>
+                                                    <td>
+                                                        <%= data.ac_name %>
+                                                    </td>
+                                                    <td>
+                                                        <%= data.transec_type %>
+                                                    </td>
+                                                    <td class="text-nowrap">
+                                                        <%= data.transec_detail %>
+                                                    </td>
+                                                    <td class="symbol">
+                                                        <%= data.debit_amount %>
+                                                    </td>
+                                                    <td class="symbol">
+                                                        <%= data.credit_amount %>
+                                                    </td>
+                                                    <td class="symbol">
+                                                        <%= data.balance_amount %>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+  <div id="pdf-clone"></div>
+        </div>
+
+        <!--********** Content body end **********-->
+
+        </div>
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+ 
+
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> -->
+
+<!-- <script>
+    document.getElementById("cashdownloadbtn").addEventListener("click", function () {
+      const { jsPDF } = window.jspdf;
+      const originalTable = document.getElementById("example3");
+      const cloneContainer = document.getElementById("pdf-clone");
+
+      // Create a wrapper div with heading
+      const wrapper = document.createElement("div");
+      wrapper.style.width = "100%";
+      wrapper.style.padding = "10px";
+      wrapper.style.backgroundColor = "#fff";
+
+      // Add custom header text
+      const header = document.createElement("h2");
+      header.innerText = "Cashbook Report";
+      header.style.textAlign = "center";
+      header.style.marginBottom = "20px";
+      header.style.fontFamily = "Arial, sans-serif";
+
+      // Clone and style the table
+      const clone = originalTable.cloneNode(true);
+      clone.style.borderCollapse = "collapse";
+      clone.style.width = "100%";
+      clone.style.fontFamily = "Arial, sans-serif";
+
+      clone.querySelectorAll("th").forEach(th => {
+        th.style.border = "1px solid black";
+        th.style.backgroundColor = "#d9edf7";
+        th.style.fontWeight = "bold";
+        th.style.padding = "8px";
+        th.style.textAlign = "center";
+      });
+
+      clone.querySelectorAll("td").forEach(td => {
+        td.style.border = "1px solid black";
+        td.style.padding = "8px";
+        td.style.textAlign = "center";
+      });
+
+      // Append header and table to wrapper
+      wrapper.appendChild(header);
+      wrapper.appendChild(clone);
+
+      // Add to DOM temporarily
+      cloneContainer.innerHTML = "";
+      cloneContainer.appendChild(wrapper);
+      cloneContainer.style.display = "block";
+
+      // Capture and generate PDF
+      html2canvas(cloneContainer, {
+        scale: 2,
+        backgroundColor: "#ffffff"
+      }).then(canvas => {
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF('l', 'mm', 'a4');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pageWidth;
+        let imgHeight = canvas.height * imgWidth / canvas.width;
+
+        if (imgHeight > pageHeight) imgHeight = pageHeight;
+
+        pdf.addImage(imgData, 'PNG', 0, 10, imgWidth, imgHeight);
+        pdf.save("Cashbook-Report.pdf");
+
+        // Clean up
+        cloneContainer.style.display = "none";
+      });
+    });
+  </script> -->
+ 
+
+<script>
+ 
+  function clearCurrency(){
+    $('#example3 .symbol').each(function () {
+      const text = $(this).text();
+      const clean = text.replace(/[^\d.-]/g, ''); 
+      $(this).text(clean);
+    });
+  }
+
+  function applyCurrency(){
+   var sym = $('input[name=sym]').val()
+    $('#example3 .symbol').each(function () {
+      const value = parseFloat($(this).text());
+      if (!isNaN(value)) {
+        $(this).text(sym + value.toFixed(2));
+      }
+    });
+  }
+
+  function currency(){
+    clearCurrency();
+    applyCurrency();
+  }
+
+  function initDataTableWithCurrency(){
+    if ($.fn.DataTable.isDataTable('#example3')) {
+      $('#example3').DataTable().destroy();
+    }
+
+    $('#example3').DataTable({
+      "drawCallback": function (settings) {
+        currency(); 
+      }
+    });
+  }
+
+  $(document).ready(function (){
+    initDataTableWithCurrency();
+  });
+</script>
+
+<script>
+    const transectionList = <%- JSON.stringify(transection_list) %>;
+
+    $('#cashdownloadbtn').click(function () {
+        $.ajax({
+            url: '/tool/download',
+            method: 'POST',
+            xhrFields: {
+                responseType: 'blob'  
+            },
+            contentType: 'application/json',
+            data: JSON.stringify({ transectionList: transectionList }),
+            success: function (data, status, xhr) {
+                const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+ 
+                const disposition = xhr.getResponseHeader('Content-Disposition');
+                let filename = `Transaction_Report_${Math.floor(10000 + Math.random() * 90000)}.xlsx`;
+                if (disposition && disposition.indexOf('filename=') !== -1) {
+                    filename = disposition.split('filename=')[1].replace(/"/g, '');
+                }
+
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+           
+                
+            },
+            error: function (err) {
+                console.error('Download failed:', err);
+                alert("Download failed!");
+            }
+        });
+    });
+</script>
+
+
+
+</body>
+
+</html>

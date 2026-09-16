@@ -1,0 +1,116 @@
+<%- scriptFile -%>
+<script src="/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
+<script>
+   if (window.jQuery && jQuery.fn && jQuery.fn.selectpicker) {
+      if (jQuery.fn.selectpicker.Constructor && jQuery.fn.selectpicker.Constructor.DEFAULTS) {
+         jQuery.fn.selectpicker.Constructor.DEFAULTS.liveSearch = true;
+         jQuery.fn.selectpicker.Constructor.DEFAULTS.liveSearchPlaceholder = "Search...";
+         jQuery.fn.selectpicker.Constructor.DEFAULTS.size = 8;
+      }
+   }
+</script>
+<script src="/vendor/toastr/js/toastr.min.js"></script>
+<script src="/vendor/select2/js/select2.full.min.js"></script>
+<script>
+   if (window.jQuery && jQuery.fn && jQuery.fn.select2) {
+      if (jQuery.fn.select2.defaults && jQuery.fn.select2.defaults.set) {
+         try {
+            jQuery.fn.select2.defaults.set('minimumResultsForSearch', 0);
+         } catch(e) {}
+      }
+   }
+</script>
+<script src="/vendor/datatables/js/jquery.dataTables.min.js"></script>
+<script src="/JsBarcode.all.min.js"></script>
+<%- include('call.ejs') %>
+<% if(success.length> 0){ %>
+   <script>
+      (function ($) {
+         "use strict"
+         console.log('<%=success%>');
+         if (typeof toastr !== 'undefined') {
+            toastr.success('<%=success%>', {
+               timeOut: 5000,
+               closeButton: !0,
+               debug: !1,
+               newestOnTop: !0,
+               progressBar: !0,
+               positionClass: "toast-top-right",
+               preventDuplicates: !0,
+               onclick: null,
+               showDuration: "300",
+               hideDuration: "1000",
+               extendedTimeOut: "1000",
+               showEasing: "swing",
+               hideEasing: "linear",
+               showMethod: "fadeIn",
+               hideMethod: "fadeOut",
+               tapToDismiss: !1
+            })
+         }
+      })(jQuery)
+   </script>
+   <% } %>
+      <% if(error.length> 0){ %>
+         <script>
+               (function ($) {
+                  "use strict"
+                  if (typeof toastr !== 'undefined') {
+                     toastr.error('<%=error%>', {
+                        timeOut: 5000,
+                        closeButton: !0,
+                        debug: !1,
+                        newestOnTop: !0,
+                        progressBar: !0,
+                        positionClass: "toast-top-right",
+                        preventDuplicates: !0,
+                        onclick: null,
+                        showDuration: "300",
+                        hideDuration: "1000",
+                        extendedTimeOut: "1000",
+                        showEasing: "swing",
+                        hideEasing: "linear",
+                        showMethod: "fadeIn",
+                        hideMethod: "fadeOut",
+                        tapToDismiss: !1
+                     })
+                  }
+               })(jQuery)
+         </script>
+         <% } %>
+<script src="/js/custom.min.js"></script>
+<script src="/js/deznav-init.js"></script>
+<script src="/js/plugins-init/datatables.init.js"></script>
+<script>
+   (function ($) {
+      "use strict";
+      // Auto-ensure all bootstrap selects enable live search
+      if (typeof $ !== 'undefined' && $.fn.selectpicker) {
+         $('select.default-select:not([data-live-search="false"])').each(function () {
+            $(this).attr('data-live-search', 'true');
+         });
+      }
+   })(jQuery);
+</script>
+<script>
+   (function () {
+      function dismissPreloader() {
+         var p = document.getElementById("preloader");
+         if (p) {
+            p.style.opacity = "0";
+            p.style.transition = "opacity 0.3s ease";
+            setTimeout(function () { p.style.display = "none"; }, 300);
+         }
+         var w = document.getElementById("main-wrapper");
+         if (w && !w.classList.contains("show")) {
+            w.classList.add("show");
+         }
+      }
+      if (document.readyState === "complete") {
+         dismissPreloader();
+      } else {
+         window.addEventListener("load", dismissPreloader);
+         setTimeout(dismissPreloader, 1000);
+      }
+   })();
+</script>

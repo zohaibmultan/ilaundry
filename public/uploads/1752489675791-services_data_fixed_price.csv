@@ -1,0 +1,24 @@
+name,image,services_type_id,services_type_price,store_ID,status
+Service 1,download (4).jpg,"32,38","100,100",58,0
+Service 2,download (23).jpg,35,100,58,0
+Service 3,download (19).jpg,"38,32","100,100",58,0
+Service 4,download (19).jpg,"34,37","100,100",57,0
+Service 5,download (1).jpg,"34,37,31","100,100,100",57,0
+Service 6,download (13).jpg,"38,32","100,100",58,0
+Service 7,download (16).jpg,"35,38,32","100,100,100",58,0
+Service 8,download (18).jpg,"36,30,33","100,100,100",56,0
+Service 9,download (5).jpg,33,100,56,0
+Service 10,download (7).jpg,"37,31,34","100,100,100",57,0
+Service 11,download (7).jpg,"34,31,37","100,100,100",57,0
+Service 12,download (21).jpg,"38,32,35","100,100,100",58,0
+Service 13,download (5).jpg,"37,34","100,100",57,0
+Service 14,download (8).jpg,37,100,57,0
+Service 15,download (17).jpg,38,100,58,0
+Service 16,download (8).jpg,"33,36","100,100",56,0
+Service 17,download (18).jpg,"38,32","100,100",58,0
+Service 18,download (18).jpg,"35,38,32","100,100,100",58,0
+Service 19,download (23).jpg,35,100,58,0
+Service 20,download (12).jpg,"38,35","100,100",58,0
+Service 21,download (10).jpg,37,100,57,1
+Service 22,download (5).jpg,38,100,58,1
+Service 23,download (20).jpg,37,100,57,1

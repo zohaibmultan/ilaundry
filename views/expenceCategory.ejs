@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+
+</head>
+
+<body>
+        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card ">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <%= language.Expence_Category_List %>
+                                </h3>
+                                <button
+                                    class="btn btn-rounded btn-sm btn-primary <%= accessdata.roll.expense.includes('write') ?'':'d-none' %>"
+                                    data-bs-toggle="modal" data-bs-target="#addexpcat"><i class="fa fa-plus color-info me-2 text-white"></i>
+                                    <%= language.Add_Category %>
+                                </button>
+                            </div>
+                            <div class="card-body ">
+                                <div class="table-responsive">
+                                    <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>
+                                                    <%= language.Category_Name %>
+                                                </th>
+                                                <th>
+                                                    <%= language.Category_Type %>
+                                                </th>
+                                                <th class="<%= ismulty ? '': 'd-none' %>">
+                                                    <%= language.Store_Name %>
+                                                </th>
+                                                <th>
+                                                    <%= language.Status %>
+                                                </th>
+                                                <th
+                                                    class="text-center <%= accessdata.roll.expense.includes('edit') || accessdata.roll.expense.includes('delete') ?'':'d-none' %>">
+                                                    <%= language.Action %>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% list.forEach(function(data, i){ %>
+                                                <tr>
+                                                    <td>
+                                                        <%= i + 1 %>
+                                                    </td>
+                                                    <td>
+                                                        <%=data.cat_name %>
+                                                    </td>
+                                                    <td>
+                                                        <%=data.type_name %>
+                                                    </td>
+                                                    <td class="<%= ismulty ? '': 'd-none' %>">
+                                                        <%=data.store %>
+                                                    </td>
+                                                    <td>
+                                                        <%if( data.delet_flage==0){ %>
+                                                            <span class="badge light badge-success">Active</span>
+                                                            <% }else{ %>
+                                                                <span class="badge light badge-warning">Deactive</span>
+                                                                <% } %>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="tbl-action-group">
+                                                            <a href="#"
+                                                                class="btn-tbl-action btn-tbl-edit <%= accessdata.roll.expense.includes('edit') ?'':'d-none' %>"
+                                                                id="expcataction" data-bs-toggle="modal"
+                                                                data-bs-target="#updateexpcat"
+                                                                data-catname="<%=data.cat_name %>"
+                                                                data-exp_cat_type_id="<%=data.exp_cat_type_id %>"
+                                                                data-id="<%=data.id %>" data-storeid="<%=data.store_ID %>"
+                                                                title="<%= language.Edit || 'Edit' %>">
+                                                                <i class="fas fa-pencil-alt"></i></a>
+
+                                                            <a href="/expense/deletexpcat/<%= data.id%>"
+                                                                class="btn-tbl-action btn-tbl-delete <%= accessdata.roll.expense.includes('delete') ?'':'d-none' %>"
+                                                                title="<%= language.Delete || 'Delete' %>">
+                                                                <i class="fa fa-trash"></i></a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+
+                                        </tbody>
+                                    </table>
+                                </div>
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!--********** Content body end **********-->
+
+        <!-- Modal update -->
+        <div class="modal fade" id="updateexpcat">
+            <div class="modal-dialog  modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <%= language.Coustomer_Detail %>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/coustomer/update/" id="updateexpcat_form" method="post" class="need-validation">
+
+                            <div class="row g-1 align-items-center">
+                                <div class="row g-1 align-items-center">
+                                    <div class="form-group">
+                                        <label><strong>
+                                                <%= language.Category_Name %>
+                                            </strong></label>
+                                        <input type="text" class="form-control " id="name" name="name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="type"><strong>
+                                                <%= language.Category_Type %>
+                                            </strong></label>
+                                        <select class="form-control wide mb-3" id="cttyid" name="type_id" required>
+                                            <% type.forEach(function(data){ %>
+                                                <option value="<%=data.id%>">
+                                                    <%= data.type_name%>
+                                                </option>
+                                                <% }) %>
+
+                                        </select>
+                                    </div>
+
+                                </div>
+                            </div>
+                    </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                    <%= language.Cancel %>
+                                </button>
+                                <button type="submit" class="btn btn-sm  btn-primary">
+                                    <%= language.Save %>
+                                </button>
+                            </div>
+                        </form>
+
+
+
+                </div>
+            </div>
+        </div>
+        <!-- <<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
+        <!-- Modal add -->
+        <div class="modal fade" id="addexpcat">
+            <div class="modal-dialog  modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <%= language.Add_Expence_Category %>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/expense/addexpcate" method="post" class="need-validation">
+
+                            <div class="row g-1 align-items-center">
+                                <div class="col-md-12 mb-1 <%= ismulty ? '': 'd-none' %>">
+                                    <div class="form-group">
+                                        <label class="form-label"><strong>
+                                                <%= language.Store_List %>
+                                            </strong><span class="text-danger">*</span></label>
+                                        <select class="form-control wide mb-3" name="storeid"
+                                            id="expense_cat_add_admin" required >
+                                            <option value="" selected disabled> Select Store </option>
+                                            <% storeList.forEach(function(x){ %>
+                                                <option value="<%= x.id %>">
+                                                    <%= x.name %>
+                                                </option>
+                                                <% }) %>
+
+
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Category_Name %>
+                                        </strong></label>
+                                    <input type="text" class="form-control " name="name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="type_id"><strong>
+                                            <%= language.Category_Type %>
+                                        </strong></label>
+                                    <select class="form-control wide" id="type_id" name="type_id" required>
+                                        <% type.forEach(function(data){ %>
+                                            <option value="<%=data.id%>">
+                                                <%= data.type_name%>
+                                            </option>
+                                            <% }) %>
+
+                                    </select>
+                                </div>
+
+                            </div>
+                    </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                    <%= language.Cancel %>
+                                </button>
+                                <button type="submit" class="btn btn-sm  btn-primary">
+                                    <%= language.Save %>
+                                </button>
+                            </div>
+                        </form>
+
+
+
+                </div>
+            </div>
+
+
+        </div>
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+
+                <script>
+                    $('#addexpcat').on('shown.bs.modal', function () {
+
+                        $('#expense_cat_add_admin').select2({
+                            dropdownParent: $('#addexpcat'),
+                            placeholder: 'Select Store(s)',
+                            width: '100%',
+                            allowClear: true
+                        });
+                    });
+
+
+                    $('#addexpcat').on('shown.bs.modal', function () {
+
+                        $('#type_id').select2({
+                            dropdownParent: $('#addexpcat'),
+                            placeholder: 'Select Category(cat)',
+                            width: '100%',
+                            allowClear: true
+                        });
+                    });
+
+                    $('#updateexpcat').on('shown.bs.modal', function () {
+
+                        $('#cttyid').select2({
+                            dropdownParent: $('#updateexpcat'),
+                            placeholder: 'Select Category(cat)',
+                            width: '100%',
+                            allowClear: true
+                        });
+                    });
+
+                </script>
+
+</body>
+
+
+</html>

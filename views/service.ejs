@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+
+</head>
+
+<body>
+        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+        <!--********** Content body start **********-->
+
+        <div class="content-body">
+
+            <div class="container-fluid" style="min-height: 100vh;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card ">
+                            <div class="card-header d-flex justify-content-between">
+                                <div>
+                                    <h3 class="card-title">
+                                        <%= language.Services %>
+                                    </h3>
+                                </div>
+                              <div class="text-end">
+                                    <a href="/services/csv_file" class="btn btn-rounded btn-primary mx-3 mb-2">
+                                        <%= language.Bulk_Upload_Services %>
+                                    </a>
+                                
+                                    <a href="/services/addservice"><button
+                                            class="btn btn-rounded btn-primary  <%= accessdata.roll.service.includes('write') ?'':'d-none' %> mb-2"><span
+                                                class="btn-icon-start text-primary"><i
+                                                    class="fa fa-plus color-info"></i></span>
+                                            <%= language.Add_New_Services %>
+                                        </button></a>
+                               </div>
+                            </div>
+                            <div class="card-body ">
+                                <div class="table-responsive">
+                                    <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>
+                                                    <%= language.Service_Name %>
+                                                </th>
+                                                <th class="text-center">
+                                                    <%= language.Service_Type %>
+                                                </th>
+                                                <th class="<%= ismulty ? '': 'd-none' %>">
+                                                    <%= language.Store_Name %>
+                                                </th>
+                                                <th>
+                                                    <%= language.Status %>
+                                                </th>
+                                                <th
+                                                    class="text-center <%= accessdata.roll.service.includes('edit') || accessdata.roll.service.includes('delete') ?'':'d-none' %>">
+                                                    <%= language.Action %>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% servicesdata.forEach(function(data, i){ %>
+                                                <tr>
+                                                    <td>
+                                                        <%= i + 1 %>
+                                                    </td>
+                                                    <td> <img class=" img-fluid" width="60" height="60"
+                                                            src="../uploads/<%=data.image %>" alt="image"> <span
+                                                            class="m-3">
+                                                            <%=data.name %>
+                                                        </span></td>
+                                                    <td class="text-center">
+                                                        <% var x=data.serviceType.split(',') %>
+                                                            <% x.forEach(function(y, i){ %>
+                                                                <span class="badge badge-dark m-1">
+                                                                    <%= y %>
+                                                                </span>
+                                                                <% }) %>
+                                                    </td>
+                                                    <td class="<%= ismulty ? '': 'd-none' %>">
+                                                        <%=data.store %>
+                                                    </td>
+                                                    <td>
+                                                        <%if( data.status==0){ %>
+                                                            <span class="badge light badge-success ">Active</span>
+                                                            <% }else{ %>
+                                                                <span class="badge light badge-warning">Deactive</span>
+                                                                <% } %>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="tbl-action-group">
+                                                            <a href="/services/updateService/<%= data.id %>"
+                                                                class="btn-tbl-action btn-tbl-edit <%= accessdata.roll.service.includes('edit') ?'':'d-none' %>"
+                                                                title="<%= language.Edit || 'Edit' %>">
+                                                                <i class="fas fa-pencil-alt"></i></a>
+
+                                                            <a href="/services/deletservices/<%= data.id %>"
+                                                                class="btn-tbl-action btn-tbl-delete <%= accessdata.roll.service.includes('delete') ?'':'d-none' %>"
+                                                                id="delete"
+                                                                title="<%= language.Delete || 'Delete' %>">
+                                                                <i class="fa fa-trash"></i></a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+
+
+                                        </tbody>
+                                    </table>
+                                </div>
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!--********** Content body end **********-->
+
+
+        </div>
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <%- include('templet/footer')-%>
+
+            <!--**********************************
+            Footer end
+        ***********************************-->
+
+            </div>
+
+            <!--********** Main wrapper end **********-->
+            <%- include('templet/script')-%>
+
+</body>
+
+
+</html>
