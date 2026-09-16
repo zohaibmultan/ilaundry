@@ -123,8 +123,7 @@ const data1 = await DataInsert(
 );
 
 if (data1 == -1) {
-  req.flash('error', process.env.dataerror);
-  return res.redirect("/validate");
+  req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
 }
 
 
@@ -179,8 +178,7 @@ router.post("/updatecategorytype/:id", auth, async (req, res) => {
 
 
       if (data == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
 
@@ -229,8 +227,7 @@ router.get("/deletcategorytype/:id", auth, async (req, res) => {
 
 
       if (data == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       
@@ -395,8 +392,7 @@ const data2 = await DataInsert(
 );
 
 if (data2 == -1) {
-  req.flash('error', process.env.dataerror);
-  return res.redirect("/validate");
+  req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
 }
 
 
@@ -454,8 +450,7 @@ router.post("/updateexpcat/:id", auth, async (req, res) => {
         req.hostname,req.protocol);
 
       if(data == -1){
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
 
@@ -504,8 +499,7 @@ const data = await DataUpdate(
         req.hostname,req.protocol);
 
       if (data == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
 
@@ -690,8 +684,7 @@ router.post("/addexpense", auth, async (req, res) => {
          req.hostname,req.protocol);
 
       if (data == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       // var newentry =
@@ -708,8 +701,7 @@ router.post("/addexpense", auth, async (req, res) => {
         )
 
          if ((newentry) == -1) {
-         req.flash("errors", process.env.dataerror);
-         return res.redirect("/validate");
+         req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
         }
 
 
@@ -748,8 +740,7 @@ const data3 = await DataInsert(
 );
 
 if (data3 == -1) {
-  req.flash('error', process.env.dataerror);
-  return res.redirect("/validate");
+  req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
 }
 
 
@@ -830,8 +821,7 @@ router.post("/updateexp/:id", auth, async (req, res) => {
         `balance='${balance}'`,
         `id=${payment_update}`,
         req.hostname,req.protocol) == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
         // await DataFind(`UPDATE tbl_transections SET transec_detail='${notes_update}',debit_amount=${amount_update},
@@ -843,8 +833,7 @@ router.post("/updateexp/:id", auth, async (req, res) => {
                 `transec_detail='${notes_update}',debit_amount=${amount_update},balance_amount=${balance},date='${date_update}'`,
                 `id=${expense[0].transection_id}`,
                 req.hostname,req.protocol) == -1) {
-                req.flash("errors", process.env.dataerror);
-                return res.redirect("/validate");
+                req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
               }
 
 
@@ -868,8 +857,7 @@ router.post("/updateexp/:id", auth, async (req, res) => {
                 `balance='${oldaccbalance}'`,
                 `id=${transection[0].account_id}`,
                 req.hostname,req.protocol) == -1) {
-                req.flash("errors", process.env.dataerror);
-                return res.redirect("/validate");
+                req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
               }
 
 
@@ -895,8 +883,7 @@ router.post("/updateexp/:id", auth, async (req, res) => {
                 `balance='${newaccbalance}'`,
                 `id=${payment_update}`,
                 req.hostname,req.protocol) == -1) {
-                req.flash("errors", process.env.dataerror);
-                return res.redirect("/validate");
+                req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
               }
 
 
@@ -912,8 +899,7 @@ router.post("/updateexp/:id", auth, async (req, res) => {
                 debit_amount=${amount_update}, balance_amount=${newaccbalance}, date='${date_update}'`,
                 `id=${expense[0].transection_id}`,
                 req.hostname,req.protocol) == -1) {
-                req.flash("errors", process.env.dataerror);
-                return res.redirect("/validate");
+                req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
               }
 
 
@@ -929,8 +915,7 @@ router.post("/updateexp/:id", auth, async (req, res) => {
                 taxInclud='${tax}',payment_mode='${payment_update}',category='${expense_category}', taxpercent=${tax_percent}`,
                 `id=${dataid}`,
                 req.hostname,req.protocol) == -1) {
-                req.flash("errors", process.env.dataerror);
-                return res.redirect("/validate");
+                req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
               }
 
 
@@ -975,8 +960,7 @@ if(await DataUpdate(
                 `delet_flage=1'`,
                 `id=${dataid}`,
                 req.hostname,req.protocol) == -1) {
-                req.flash("errors", process.env.dataerror);
-                return res.redirect("/validate");
+                req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
               }
 
 

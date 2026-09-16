@@ -251,33 +251,7 @@
    })
 
 
-   $(document).ready(function () {
-      $(document).on('click', '#sub_activate', function () {
-         var code = $('#inputCode').val();
-         $.ajax({
-            type: 'post',
-            url: location.protocol + '//verify.kmsteams.com/lan_verify.php',
-            data:
-            {
-               sname: $(location).attr('hostname'),
-               purchase_code: code,
 
-            },
-            success: function (data) {
-               var newData = JSON.parse(JSON.stringify(data));
-               if (newData.Result == false) {
-                  $('#getmsg').html('<div class="alert alert-danger">' + newData.ResponseMsg + '</div>');
-                  setTimeout(function () { window.location.href = "/validate"; }, 3000);
-               }
-               else {
-                  $('#getmsg').html('<div class="alert alert-success">' + newData.ResponseMsg + '</div>');
-                  setTimeout(function () { window.location.href = "/"; }, 3000);
-               }
-            }
-         });
-         return false;
-      });
-   });
 
    $(document).on('click', '#updaterollmaster', function () {
 

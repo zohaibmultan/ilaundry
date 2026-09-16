@@ -263,8 +263,8 @@ router.get("/delete/:id", auth, async (req, res) => {
     // Delete the order itself
     const deleteResult = await DataDelete(`tbl_order`, `id = '${order.id}'`, req.hostname, req.protocol);
     if (deleteResult == -1) {
-      req.flash("error", process.env.dataerror || "Error deleting order");
-      return res.redirect("/validate");
+      req.flash("error", "Error deleting order, please try again");
+      return res.redirect("/order/list");
     }
 
     req.flash("success", `Order #${order.order_id} deleted successfully`);
@@ -376,8 +376,8 @@ router.get("/changestatus/:id", auth, async (req, res) => {
          `id=${orderid}`,req.hostname,req.protocol);
 
           if (orderupdate == -1) {
-           req.flash("errors", process.env.dataerror);
-           return res.redirect("/validate");
+           req.flash("error", "Failed to update order status, please try again");
+           return res.redirect("back");
           }
 
 
@@ -647,8 +647,8 @@ router.post("/addpayment", auth, async (req, res) => {
          `id=${orderid}`,req.hostname,req.protocol);
 
          if (orderupdate == -1) {
-           req.flash("errors", process.env.dataerror);
-           return res.redirect("/validate");
+           req.flash("error", "Failed to record payment, please check input and try again");
+           return res.redirect("back");
          }
 
 
@@ -678,8 +678,8 @@ router.post("/addpayment", auth, async (req, res) => {
          `id=${payment} AND delet_flage != '1'`,req.hostname,req.protocol);
 
           if (data == -1) {
-           req.flash("errors", process.env.dataerror);
-           return res.redirect("/validate");
+           req.flash("error", "Failed to update account balance, please try again");
+           return res.redirect("back");
           }
 
         // await DataFind(`INSERT into tbl_transections (account_id,store_ID,transec_detail,transec_type,debit_amount,credit_amount,balance_amount, customer_id) 

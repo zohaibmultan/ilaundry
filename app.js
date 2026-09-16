@@ -37,21 +37,10 @@ conn.query("SELECT timezone FROM tbl_master_shop where id=1", (err, row) => {
 });
 
   app.use((req, res, next) => {
-  const defaultScripts = `<script src="/vendor/global/global.min.js"></script>\n<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>\n<script src="/Changes/jquery-ui.min.js"></script>`;
-  conn.query("SELECT data FROM tbl_validate", (err, results) => {
-    if (err || !results || results.length === 0 || !results[0].data) {
-      if (err) console.error("Error executing tbl_validate query:", err.message);
-      res.locals.scriptFile = defaultScripts;
-      return next();
-    }
-    let scriptFile = results[0].data;
-    if (!scriptFile || !scriptFile.includes("global.min.js")) {
-      scriptFile = defaultScripts;
-    }
-    res.locals.scriptFile = scriptFile;
+    res.locals.scriptFile = `<script src="/vendor/global/global.min.js"></script>\n<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>\n<script src="/Changes/jquery-ui.min.js"></script>`;
     next();
   });
- });
+
 
 // set express static
 app.use(nocache());

@@ -122,8 +122,7 @@ router.post("/register", async (req, res) => {
           req.protocol
         )) == -1
       ) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        return res.status(500).json({ status: "error", ResponseCode: "500", message: "Registration failed, please check input." });
       }
     } else {
       // var qury = "INSERT INTO tbl_customer (name,number,email,address,taxnumber,username,password) VALUE ('"+name+"','"+number+"','"+email+"','"+address+"','"+taxnumber+"','"+username+"','"+password+"')"
@@ -136,8 +135,7 @@ router.post("/register", async (req, res) => {
           req.protocol
         )) == -1
       ) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        return res.status(500).json({ status: "error", ResponseCode: "500", message: "Registration failed, please check input." });
       }
     }
     // const data = await DataFind(qury);

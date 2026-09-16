@@ -14,80 +14,69 @@ var {DataDelete,DataUpdate,DataInsert,DataFind} = require("../middelwer/database
 
 
 router.get("/", async (req, res) => {
-  const masterstore = await DataFind(
-    "SELECT * FROM tbl_master_shop where id=1"
-  );
-
-  data = await DataFind("SELECT id FROM tbl_admin WHERE delet_flage=0");
-
-  if (data.length == 0) {
-    // const newroll = await DataFind(
-    //   `INSERT INTO tbl_admin (name,number,email,username,password,store_ID,roll_id,approved,is_staff) VALUE ('${"admin"}','${"12344556"}','${"admin@mail.com"}','${"admin"}','${"$2b$10$oxlEhLqJE80Z5L/4EsSRp.09xT6qs.qPbY9RyGyePryrBiyftHgRe"}','${" "}','${""}','${"active"}','0')`
-    // );
-
-    const newroll = await DataInsert(
-  `tbl_admin`,
-  `name,number,email,username,password,store_ID,roll_id,approved,is_staff`,
-  `'admin','12344556','admin@mail.com','admin','$2b$10$oxlEhLqJE80Z5L/4EsSRp.09xT6qs.qPbY9RyGyePryrBiyftHgRe',' ','','active','0'`,
-  req.hostname,
-  req.protocol
-);
-
-if (newroll == -1) {
-  req.flash('error', process.env.dataerror);
-  return res.redirect("/validate");
-}
-
-
-    rollFind = await DataFind(
-      `SELECT * FROM tbl_roll WHERE rollType = 'master' `
+  try {
+    const masterstore = await DataFind(
+      "SELECT * FROM tbl_master_shop where id=1"
     );
 
-    // const RollAdd =
-    //   await DataFind(`INSERT INTO tbl_staff_roll (customers, orders, expense, service, reports, tools, mail,
-    //                                  master, sms, staff, pos, rollaccess, account, coupon,
-    //                                  branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id,is_staff) VALUES ('${rollFind[0].customer}', '${rollFind[0].orders}', '${rollFind[0].expense}', '${rollFind[0].service}', '${rollFind[0].reports}', '${rollFind[0].tools}', '${rollFind[0].mail}',
-    //                                  '${rollFind[0].master}', '${rollFind[0].sms}', '${rollFind[0].staff}', '${rollFind[0].pos}', '${rollFind[0].rollaccess}', '${rollFind[0].account}', '${rollFind[0].coupon}',
-    //                                  '${rollFind[0].branch_n_store}', '${rollFind[0].master_setting}', '${rollFind[0].Pay_Out}','${rollFind[0].id}','${newroll.insertId}','0')`);
+    let data = await DataFind("SELECT id FROM tbl_admin WHERE delet_flage=0");
 
-    const RollAdd = await DataInsert(
-  `tbl_staff_roll`,
-  `customers, orders, expense, service, reports, tools, mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id, is_staff`,
-  `'${rollFind[0].customer}', '${rollFind[0].orders}', '${rollFind[0].expense}', '${rollFind[0].service}', '${rollFind[0].reports}', '${rollFind[0].tools}', '${rollFind[0].mail}', 
-    '${rollFind[0].master}', '${rollFind[0].sms}', '${rollFind[0].staff}', '${rollFind[0].pos}', '${rollFind[0].rollaccess}', '${rollFind[0].account}', '${rollFind[0].coupon}', 
-    '${rollFind[0].branch_n_store}', '${rollFind[0].master_setting}', '${rollFind[0].Pay_Out}', '${rollFind[0].id}', '${newroll.insertId}', '0'`,
-  req.hostname,
-  req.protocol
-);
+    if (!data || data.length == 0) {
+      try {
+        const newroll = await DataInsert(
+          `tbl_admin`,
+          `name,number,email,username,password,store_ID,roll_id,approved,is_staff`,
+          `'admin','12344556','admin@mail.com','admin','$2b$10$oxlEhLqJE80Z5L/4EsSRp.09xT6qs.qPbY9RyGyePryrBiyftHgRe',' ','','active','0'`,
+          req.hostname,
+          req.protocol
+        );
 
-if (RollAdd == -1) {
-  req.flash('error', process.env.dataerror);
-  return res.redirect("/validate");
-}
+        if (newroll && newroll != -1) {
+          const rollFind = await DataFind(
+            `SELECT * FROM tbl_roll WHERE rollType = 'master' `
+          );
 
+          if (rollFind && rollFind.length > 0) {
+            const RollAdd = await DataInsert(
+              `tbl_staff_roll`,
+              `customers, orders, expense, service, reports, tools, mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id, is_staff`,
+              `'${rollFind[0].customer}', '${rollFind[0].orders}', '${rollFind[0].expense}', '${rollFind[0].service}', '${rollFind[0].reports}', '${rollFind[0].tools}', '${rollFind[0].mail}', 
+              '${rollFind[0].master}', '${rollFind[0].sms}', '${rollFind[0].staff}', '${rollFind[0].pos}', '${rollFind[0].rollaccess}', '${rollFind[0].account}', '${rollFind[0].coupon}', 
+              '${rollFind[0].branch_n_store}', '${rollFind[0].master_setting}', '${rollFind[0].Pay_Out}', '${rollFind[0].id}', '${newroll.insertId}', '0'`,
+              req.hostname,
+              req.protocol
+            );
 
-    const updateRoll = await DataFind(`
-           UPDATE tbl_admin 
-           SET roll_id = '${RollAdd.insertId}' 
-           WHERE id = '${newroll.insertId}'
-         `);
+            if (RollAdd && RollAdd != -1) {
+              await DataFind(`
+                UPDATE tbl_admin 
+                SET roll_id = '${RollAdd.insertId}' 
+                WHERE id = '${newroll.insertId}'
+              `);
+            }
+          }
+        }
+      } catch (seedErr) {
+        console.warn("Auto-seeding default admin non-fatal error:", seedErr.message);
+      }
+    }
+
+    let rollverify = await DataFind(`SELECT * FROM tbl_roll`);
+
+    res.render("login", { 
+      data: (masterstore && masterstore.length > 0) ? masterstore[0] : {}, 
+      rollverify: rollverify || [] 
+    });
+  } catch (err) {
+    console.error("Root / route error:", err);
+    res.render("login", { data: {}, rollverify: [] });
   }
-
-rollverify = await DataFind(
-      `SELECT * FROM tbl_roll `
-    );
-console.log(rollverify);
-
-  res.render("login", { data: masterstore[0] , rollverify });
 });
 
 router.get("/validate", async (req, res) => {
-  const masterstore = await DataFind(
-    "SELECT * FROM tbl_master_shop where id=1"
-  );
-
-  res.render("validate", { data: (masterstore && masterstore.length > 0) ? masterstore[0] : {} });
+  return res.redirect("/");
 });
+
 
 // <<<<<<<<<<<<<<<<<<<< Forgot Password & Reset Password Routes >>>>>>>>>>>>>>>>>>>>
 router.get("/forgot-password", async (req, res) => {
@@ -605,8 +594,8 @@ router.post("/register", async (req, res) => {
 );
 
 if (customerInsert == -1) {
-  req.flash('error', process.env.dataerror);
-  return res.redirect("/validate");
+  req.flash('error', "Registration failed, please check input and try again");
+  return res.redirect("back");
 }
 
     } else {
@@ -640,8 +629,8 @@ const customerInsert = await DataInsert(
 );
 
 if (customerInsert == -1) {
-  req.flash('error', process.env.dataerror);
-  return res.redirect("/validate");
+  req.flash('error', "Registration failed, please check input and try again");
+  return res.redirect("back");
 }
 
 
@@ -739,8 +728,8 @@ const admindata = await DataInsert(
 );
 
 if (admindata == -1) {
-  req.flash('error', process.env.dataerror);
-  return res.redirect("/validate");
+  req.flash('error', "Failed to create shop admin, please check input and try again");
+  return res.redirect("back");
 }
 
 
@@ -764,8 +753,8 @@ const storedata = await DataInsert(
 );
 
 if (storedata == -1) {
-  req.flash('error', process.env.dataerror);
-  return res.redirect("/validate");
+  req.flash('error', "Failed to create store record, please check input and try again");
+  return res.redirect("back");
 }
 
 
@@ -800,8 +789,8 @@ const walkInInsert = await DataInsert(
 );
 
 if (walkInInsert == -1) {
-  req.flash('error', process.env.dataerror);
-  return res.redirect("/validate");
+  req.flash('error', "Failed to create walk-in customer, please check input and try again");
+  return res.redirect("back");
 }
 
     
@@ -1128,8 +1117,8 @@ router.post("/updatecustompro", auth, async (req, res) => {
 
 
       if (data == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
 
@@ -1203,8 +1192,8 @@ router.post("/updatestaff", auth, upload.single("image"), async (req, res) => {
         `id=${id}`,req.hostname,req.protocol);
 
          if (data == -1) {
-           req.flash("errors", process.env.dataerror);
-           return res.redirect("/validate");
+           req.flash("error", "Action failed, please check input and try again");
+           return res.redirect("back");
          }
 
     } else {
@@ -1218,8 +1207,8 @@ const data = await DataUpdate(`tbl_admin`,`name='${name}',number='${number}',ema
         `id=${id}`,req.hostname,req.protocol);
 
          if (data == -1) {
-           req.flash("errors", process.env.dataerror);
-           return res.redirect("/validate");
+           req.flash("error", "Action failed, please check input and try again");
+           return res.redirect("back");
          }
 
     }
@@ -1251,9 +1240,5 @@ router.get("/lang/:id", async (req, res) => {
     console.log(error);
   }
 });
-
-router.get("/validate",(req,res)=>{
-  res.render("valid_license")
-})
 
 module.exports = router;

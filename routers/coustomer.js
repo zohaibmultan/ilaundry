@@ -142,8 +142,8 @@ const data = await DataUpdate(
 
 
       if (data == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Failed to update customer, please check input and try again");
+        return res.redirect("back");
       }
 
     req.flash("success", "Your Data is UPDATE Success Fully");
@@ -257,8 +257,8 @@ router.post("/register", auth, async (req, res) => {
 );
 
 if (data == -1) {
-  req.flash('error', process.env.dataerror);
-  return res.redirect("/validate");
+  req.flash('error', "Failed to save customer, please check input and try again");
+  return res.redirect("back");
 }
 
       req.flash(
@@ -320,8 +320,8 @@ const transection_list = await DataUpdate(
 
 
       if (transection_list == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Failed to delete customer, please try again");
+        return res.redirect("back");
       }
 
   req.flash("success", "Customer Deleted Successfully");

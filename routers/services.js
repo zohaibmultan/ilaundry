@@ -195,8 +195,7 @@ router.post("/addservice", auth, upload.single("image"), async (req, res) => {
       );
 
       if (newservtype == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "New Services Type Added!");
@@ -228,8 +227,7 @@ router.get("/deletservices/:id", auth, async (req, res) => {
       // );
 
  if(await DataDelete(`tbl_services`, `id = '${dataid}'`, req.hostname, req.protocol) == -1) {
-            req.flash('error', process.env.dataerror);
-            return res.redirect("/validate");
+            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
           }
 
       req.flash("success", "Services Deleted");
@@ -332,8 +330,7 @@ const updateServiceImage = await DataUpdate(
 );
 
 if (updateServiceImage === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/validate");
+  req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
 }
 
         }
@@ -368,8 +365,7 @@ if (updateServiceImage === -1) {
           );
           
           if (newservtype === -1) {
-            req.flash("errors", process.env.dataerror);
-            return res.redirect("/validate");
+            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
           }
 
         req.flash("success", "Services Updated");
@@ -519,8 +515,7 @@ router.post("/addtype", auth, async (req, res) => {
       );
 
       if (newservtype == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "New Services Type Added!");
@@ -563,8 +558,7 @@ router.get("/deletservicestype/:id", auth, async (req, res) => {
       // );
 
  if(await DataDelete(`tbl_services_type`, `id = '${dataid}'`, req.hostname, req.protocol) == -1) {
-            req.flash('error', process.env.dataerror);
-            return res.redirect("/validate");
+            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
           }
 
       req.flash("success", "Services Type Deleted");
@@ -624,8 +618,7 @@ router.post("/updateservicestype/:id", auth, async (req, res) => {
 );
 
 if (updateServiceType === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/validate");
+  req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
 }
 
 
@@ -835,8 +828,7 @@ router.post("/addaddon", auth, async (req, res) => {
       );
 
       if (newaddons == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "New ADDONS Added!");
@@ -879,8 +871,7 @@ router.get("/deletaddon/:id", auth, async (req, res) => {
       // );
 
       if(await DataDelete(`tbl_addons`, `id = '${dataid}'`, req.hostname, req.protocol) == -1) {
-            req.flash('error', process.env.dataerror);
-            return res.redirect("/validate");
+            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
           }
 
       req.flash("success", "Addons Deleted");
@@ -941,8 +932,7 @@ const newaddons = await DataUpdate(
 );
 
 if (newaddons === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/validate");
+  req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
 }
 
 
@@ -1086,8 +1076,7 @@ router.post(
                 );
 
                 if (data == -1) {
-                  req.flash("errors", process.env.dataerror);
-                  return res.redirect("/validate");
+                  req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
                 }
               }
 
@@ -1139,8 +1128,7 @@ router.post(
                 );
 
                 if (data == -1) {
-                  req.flash("errors", process.env.dataerror);
-                  return res.redirect("/validate");
+                  req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
                 }
               }
 

@@ -140,8 +140,8 @@ const coupondata = await DataInsert(
 );
 
 if (coupondata == -1) {
-  req.flash('error', process.env.dataerror);
-  return res.redirect("/validate");
+  req.flash('error', "Failed to add coupon, please check input and try again");
+  return res.redirect("back");
 }
 
 
@@ -183,8 +183,8 @@ router.get("/delete/:id", auth, async (req, res) => {
       // var qury = ` DELETE FROM  tbl_coupon WHERE id = ${dataid}`;
 
     if(await DataDelete(`tbl_coupon`, `id = '${dataid}'`, req.hostname, req.protocol) == -1) {
-            req.flash('error', process.env.dataerror);
-            return res.redirect("/validate");
+            req.flash('error', "Failed to delete coupon, please try again");
+            return res.redirect("back");
         }
       
       // var coupondata = await DataFind(qury);
@@ -253,8 +253,8 @@ router.post("/update/:id", auth, async (req, res) => {
         req.protocol
       );
       if (coupondata == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Failed to update coupon, please check input and try again");
+        return res.redirect("back");
       }
 
       req.flash("success", "Coupon Update !!");

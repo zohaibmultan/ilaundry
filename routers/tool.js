@@ -294,8 +294,7 @@ router.post("/addroll", auth, async (req, res) => {
       );
 
       if (newroll == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "New Roll Added !");
@@ -346,8 +345,7 @@ router.get("/deletroll/:id", auth, async (req, res) => {
           req.protocol
         )) == -1
       ) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "Roll Deleted  !!!");
@@ -528,8 +526,7 @@ router.post("/updateroll/:id", auth, async (req, res) => {
       );
 
       if (newroll === -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "Roll Updated!");
@@ -654,8 +651,7 @@ router.post(
           );
 
           if (logoUpdate === -1) {
-            req.flash("errors", process.env.dataerror);
-            return res.redirect("/validate");
+            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
           }
         }
 
@@ -704,8 +700,7 @@ router.post(
         );
 
         if (storeUpdate === -1) {
-          req.flash("errors", process.env.dataerror);
-          return res.redirect("/validate");
+          req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
         }
 
         if (walkincustome.length > 0) {
@@ -724,8 +719,7 @@ router.post(
           );
 
           if (customerUpdate === -1) {
-            req.flash("errors", process.env.dataerror);
-            return res.redirect("/validate");
+            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
           }
         }
 
@@ -742,8 +736,7 @@ router.post(
         );
 
         if (adminUpdate === -1) {
-          req.flash("errors", process.env.dataerror);
-          return res.redirect("/validate");
+          req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
         }
 
         req.flash("success", "Store Details Updated!");
@@ -927,8 +920,7 @@ router.post(
           req.protocol
         );
         if (storeUpdate === -1) {
-          req.flash("errors", process.env.dataerror);
-          return res.redirect("/validate");
+          req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
         }
 
         const adminid = await DataFind(
@@ -948,8 +940,7 @@ router.post(
         );
 
         if (adminUpdate === -1) {
-          req.flash("errors", process.env.dataerror);
-          return res.redirect("/validate");
+          req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
         }
 
         if (status == 1) {
@@ -972,8 +963,7 @@ router.post(
           );
 
           if (adminDataUpdate1 === -1) {
-            req.flash("errors", process.env.dataerror);
-            return res.redirect("/validate");
+            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
           }
         } else if (status == 2) {
           // const admndata = await DataFind(
@@ -995,8 +985,7 @@ router.post(
           );
 
           if (adminDataUpdate2 === -1) {
-            req.flash("errors", process.env.dataerror);
-            return res.redirect("/validate");
+            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
           }
         }
 
@@ -1149,8 +1138,7 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
       );
 
       if (admindata == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       var newid = admindata.insertId;
@@ -1171,8 +1159,7 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
       );
 
       if (newstore == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       const RollFind = await DataFind(
@@ -1196,8 +1183,7 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
       );
 
       if (RollAdd == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       if (status == 1) {
@@ -1218,8 +1204,7 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
         );
 
         if (adminUpdate1 === -1) {
-          req.flash("errors", process.env.dataerror);
-          return res.redirect("/validate");
+          req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
         }
       } else if (status == 2) {
         // const admndata = await DataFind(
@@ -1241,8 +1226,7 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
         );
 
         if (adminUpdate2 === -1) {
-          req.flash("errors", process.env.dataerror);
-          return res.redirect("/validate");
+          req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
         }
       }
 
@@ -1276,8 +1260,7 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
       );
 
       if (walkinCustomerInsert == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "New Shop Resiter success fully !!!!");
@@ -1433,8 +1416,7 @@ router.get("/deletstaff/:id", auth, async (req, res) => {
       );
 
       if (newroll === -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "Staff Deleted  !!!");
@@ -1497,8 +1479,7 @@ router.post("/addstaff", auth, async (req, res) => {
       );
 
       if (newroll == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       //   const RollAdd =
@@ -1520,8 +1501,7 @@ router.post("/addstaff", auth, async (req, res) => {
       );
 
       if (RollAdd == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       //  const updateRoll = await DataFind(`
@@ -1539,8 +1519,7 @@ router.post("/addstaff", auth, async (req, res) => {
       );
 
       if (updateRoll === -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "New Staff Added !!!");
@@ -1616,8 +1595,7 @@ router.post("/updatestaff/:id", auth, async (req, res) => {
       );
 
       if (newroll === -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "Staff Updated !!!");
@@ -1802,8 +1780,7 @@ router.post(
           );
 
           if (faviconUpdate === -1) {
-            req.flash("errors", process.env.dataerror);
-            return res.redirect("/validate");
+            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
           }
         }
 
@@ -1823,8 +1800,7 @@ router.post(
           );
 
           if (logoUpdate === -1) {
-            req.flash("errors", process.env.dataerror);
-            return res.redirect("/validate");
+            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
           }
         }
         let isvalidmulty = await DataFind(`SELECT * FROM tbl_master_shop `);
@@ -1868,8 +1844,7 @@ router.post(
         );
 
         if (settingsUpdate === -1) {
-          req.flash("errors", process.env.dataerror);
-          return res.redirect("/validate");
+          req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
         }
 
         console.log("isvalidmulty", isvalidmulty[0].type);
@@ -1908,8 +1883,7 @@ router.post(
             );
 
             if (updateApprovedAdmins === -1) {
-              req.flash("errors", process.env.dataerror);
-              return res.redirect("/validate");
+              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
             }
 
             const updateApprovedAdminsstaff = await DataUpdate(
@@ -1921,8 +1895,7 @@ router.post(
             );
 
             if (updateApprovedAdminsstaff === -1) {
-              req.flash("errors", process.env.dataerror);
-              return res.redirect("/validate");
+              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
             }
 
             const updateCustomerRef = await DataUpdate(
@@ -1934,8 +1907,7 @@ router.post(
             );
 
             if (updateCustomerRef === -1) {
-              req.flash("errors", process.env.dataerror);
-              return res.redirect("/validate");
+              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
             }
 
             const setAdminStaff1 = await DataUpdate(
@@ -1947,8 +1919,7 @@ router.post(
             );
 
             if (setAdminStaff1 === -1) {
-              req.flash("errors", process.env.dataerror);
-              return res.redirect("/validate");
+              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
             }
 
             const setAdminStaff0 = await DataUpdate(
@@ -1960,8 +1931,7 @@ router.post(
             );
 
             if (setAdminStaff0 === -1) {
-              req.flash("errors", process.env.dataerror);
-              return res.redirect("/validate");
+              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
             }
 
             const clearAdminStoreId = await DataUpdate(
@@ -1973,8 +1943,7 @@ router.post(
             );
 
             if (clearAdminStoreId === -1) {
-              req.flash("errors", process.env.dataerror);
-              return res.redirect("/validate");
+              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
             }
 
             const assignStoreToAdmin = await DataUpdate(
@@ -1986,8 +1955,7 @@ router.post(
             );
 
             if (assignStoreToAdmin === -1) {
-              req.flash("errors", process.env.dataerror);
-              return res.redirect("/validate");
+              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
             }
           } else {
             // var admintable = await DataFind(
@@ -2014,8 +1982,7 @@ router.post(
               req.protocol
             );
             if (updateApprovedAdmins === -1) {
-              req.flash("errors", process.env.dataerror);
-              return res.redirect("/validate");
+              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
             }
 
             const updateCustomerStore = await DataUpdate(
@@ -2026,8 +1993,7 @@ router.post(
               req.protocol
             );
             if (updateCustomerStore === -1) {
-              req.flash("errors", process.env.dataerror);
-              return res.redirect("/validate");
+              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
             }
 
             const setAdmin1Staff0 = await DataUpdate(
@@ -2038,8 +2004,7 @@ router.post(
               req.protocol
             );
             if (setAdmin1Staff0 === -1) {
-              req.flash("errors", process.env.dataerror);
-              return res.redirect("/validate");
+              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
             }
 
             const setAdmin2Staff1 = await DataUpdate(
@@ -2050,8 +2015,7 @@ router.post(
               req.protocol
             );
             if (setAdmin2Staff1 === -1) {
-              req.flash("errors", process.env.dataerror);
-              return res.redirect("/validate");
+              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
             }
 
             const setStoreIdForAdmin = await DataUpdate(
@@ -2062,8 +2026,7 @@ router.post(
               req.protocol
             );
             if (setStoreIdForAdmin === -1) {
-              req.flash("errors", process.env.dataerror);
-              return res.redirect("/validate");
+              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
             }
           }
         } else if (
@@ -2080,8 +2043,7 @@ router.post(
           console.log("updateCustomerStore",updateCustomerStore);
           
           if (updateCustomerStore === -1) {
-            req.flash("errors", process.env.dataerror);
-            return res.redirect("/validate");
+            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
           }
 
           const updateadminStore = await DataUpdate(
@@ -2094,8 +2056,7 @@ router.post(
           console.log("updateadminStore",updateadminStore);
           
           if (updateadminStore === -1) {
-            req.flash("errors", process.env.dataerror);
-            return res.redirect("/validate");
+            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
           }
         }
 
@@ -2411,8 +2372,7 @@ router.post("/mailsetting", auth, async (req, res) => {
       );
 
       if (updateEmailSettings === -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
     } else {
       // await DataFind(
@@ -2428,8 +2388,7 @@ router.post("/mailsetting", auth, async (req, res) => {
       );
 
       if (email == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
     }
 
@@ -2464,8 +2423,7 @@ router.post("/rollstatus/:id", auth, async (req, res) => {
   );
 
   if (updateRollStatus === -1) {
-    req.flash("errors", process.env.dataerror);
-    return res.redirect("/validate");
+    req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
   }
 });
 
@@ -2496,8 +2454,7 @@ router.post("/storestatus/:id", auth, async (req, res) => {
   );
 
   if (updateAdmin === -1) {
-    req.flash("errors", process.env.dataerror);
-    return res.redirect("/validate");
+    req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
   }
 
   const updateStore = await DataUpdate(
@@ -2509,8 +2466,7 @@ router.post("/storestatus/:id", auth, async (req, res) => {
   );
 
   if (updateStore === -1) {
-    req.flash("errors", process.env.dataerror);
-    return res.redirect("/validate");
+    req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
   }
 });
 
@@ -2678,8 +2634,7 @@ if (process.env.DISABLE_DB_WRITE === 'true') {
       );
 
       if (newroll === -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "Your Roll Updated !");
@@ -2710,8 +2665,7 @@ if (process.env.DISABLE_DB_WRITE === 'true') {
       );
 
       if (newroll == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       // const insertdata = await DataFind(
@@ -2727,8 +2681,7 @@ if (process.env.DISABLE_DB_WRITE === 'true') {
       );
 
       if (updateRollId === -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "New Roll Added !");
@@ -2795,8 +2748,7 @@ router.post("/staffroll/:id", auth, async (req, res) => {
     );
 
     if (updateAdminStatus === -1) {
-      req.flash("errors", process.env.dataerror);
-      return res.redirect("/validate");
+      req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
     }
   } catch (error) {
     console.log(error);

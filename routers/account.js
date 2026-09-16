@@ -240,8 +240,7 @@ router.post("/addaccount", auth, async (req, res) => {
       );
 
       if (newaccount == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
      
@@ -256,8 +255,7 @@ router.post("/addaccount", auth, async (req, res) => {
           req.protocol
         )) == -1
       ) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "New Account Added !!!!");
@@ -283,8 +281,7 @@ router.post("/addaccount", auth, async (req, res) => {
       );
 
       if (newaccount == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       
@@ -297,8 +294,7 @@ router.post("/addaccount", auth, async (req, res) => {
           req.protocol
         )) == -1
       ) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "New Account Added !!!!");
@@ -349,8 +345,7 @@ router.post("/updateaccount/:id", auth, async (req, res) => {
         req.protocol
       );
       if (rollList == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "Account Update success Fully !!!!");
@@ -400,8 +395,7 @@ router.get("/deletaccount/:id", auth, async (req, res) => {
         req.protocol
       );
       if (rollList == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "Account Delete success Fully !!!!");
@@ -930,8 +924,7 @@ router.post("/comission", auth, async (req, res) => {
           req.protocol
         )) == -1
       ) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       // <<<< to Account update >>>>>>>>>>
@@ -950,8 +943,7 @@ router.post("/comission", auth, async (req, res) => {
         req.protocol
       );
       if (data == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
     
@@ -965,8 +957,7 @@ router.post("/comission", auth, async (req, res) => {
           req.protocol
         )) == -1
       ) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       //  <<<<<<  FROM Account update >>>>>>>>>>
@@ -986,8 +977,7 @@ router.post("/comission", auth, async (req, res) => {
         req.protocol
       );
       if (data2 == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       
@@ -1002,8 +992,7 @@ router.post("/comission", auth, async (req, res) => {
           req.protocol
         )) == -1
       ) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/validate");
+        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
       }
 
       req.flash("success", "Payment Success Full !!!!");
