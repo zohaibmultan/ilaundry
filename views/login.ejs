@@ -189,20 +189,31 @@
                     </div>
                     <div class="auth-demo-pills">
                         <button type="button" class="auth-demo-pill" id="demo_master_admin"
-                            title="Login as Master Admin">
-                            <i class="fas fa-crown text-primary me-1"></i> Admin
+                            title="Super Admin: admin / 123456">
+                            <i class="fas fa-crown text-warning me-1"></i> Admin
                         </button>
-                        <button type="button" class="auth-demo-pill" id="demo_sub_admin" title="Login as Store Manager">
+                        <button type="button" class="auth-demo-pill" id="demo_store_manager"
+                            title="Store Manager: metro / 123456">
                             <i class="fas fa-user-tie text-info me-1"></i> Manager
                         </button>
-                        <button type="button" class="auth-demo-pill" id="demo_store" title="Login as Store Branch">
-                            <i class="fas fa-store text-success me-1"></i> Store
+                        <button type="button" class="auth-demo-pill" id="demo_order_delete"
+                            title="Order Delete Supervisor: lead_metro / 123456">
+                            <i class="fas fa-shield-alt text-danger me-1"></i> Order Delete
                         </button>
-                        <button type="button" class="auth-demo-pill" id="demo_customer" title="Login as Customer">
-                            <i class="fas fa-user text-secondary me-1"></i> Customer
+                        <button type="button" class="auth-demo-pill" id="demo_cashier"
+                            title="POS / Cashier Staff: staff_metro / 123456">
+                            <i class="fas fa-cash-register text-success me-1"></i> Cashier
+                        </button>
+                        <button type="button" class="auth-demo-pill" id="demo_customer"
+                            title="Customer: emma.w_metro / 123456">
+                            <i class="fas fa-user text-primary me-1"></i> Customer
                         </button>
                     </div>
+                    <div class="auth-demo-hint">
+                        <i class="fas fa-key fs-10 text-muted opacity-75"></i> Default Password: <code class="auth-demo-code">123456</code>
+                    </div>
                 </div>
+
 
 
                 <!-- Registration Links -->
@@ -306,26 +317,32 @@
             // Quick Demo Credential buttons
             $('#demo_master_admin').on('click', function () {
                 $('input[name=username]').val('admin');
-                $('#login_password').val('1234');
-                toastr.info('Filled credentials for Master Admin', { timeOut: 2000 });
+                $('#login_password').val('123456');
+                toastr.info('Loaded credentials for <b>Super Admin</b> (admin)', { timeOut: 2500, escapeHtml: false });
             });
 
-            $('#demo_sub_admin').on('click', function () {
-                $('input[name=username]').val('meera');
-                $('#login_password').val('123');
-                toastr.info('Filled credentials for Store Manager', { timeOut: 2000 });
+            $('#demo_store_manager').on('click', function () {
+                $('input[name=username]').val('metro');
+                $('#login_password').val('123456');
+                toastr.info('Loaded credentials for <b>Store Manager</b> (metro)', { timeOut: 2500, escapeHtml: false });
             });
 
-            $('#demo_store').on('click', function () {
-                $('input[name=username]').val('trinity');
-                $('#login_password').val('123');
-                toastr.info('Filled credentials for Store Branch', { timeOut: 2000 });
+            $('#demo_order_delete').on('click', function () {
+                $('input[name=username]').val('lead_metro');
+                $('#login_password').val('123456');
+                toastr.info('Loaded credentials for <b>Order Delete Supervisor</b> (lead_metro)', { timeOut: 2500, escapeHtml: false });
+            });
+
+            $('#demo_cashier').on('click', function () {
+                $('input[name=username]').val('staff_metro');
+                $('#login_password').val('123456');
+                toastr.info('Loaded credentials for <b>Cashier / Operator</b> (staff_metro)', { timeOut: 2500, escapeHtml: false });
             });
 
             $('#demo_customer').on('click', function () {
-                $('input[name=username]').val('watson');
-                $('#login_password').val('123');
-                toastr.info('Filled credentials for Customer', { timeOut: 2000 });
+                $('input[name=username]').val('emma.w_metro');
+                $('#login_password').val('123456');
+                toastr.info('Loaded credentials for <b>Customer</b> (emma.w_metro)', { timeOut: 2500, escapeHtml: false });
             });
         });
     </script>
