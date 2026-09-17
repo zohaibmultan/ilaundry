@@ -34,47 +34,53 @@
                             <div class="card-body">
                                 <div class="server-dt-toolbar">
                                     <div class="server-dt-search">
-                                        <i class="fa fa-search"></i>
                                         <input type="text" class="form-control" id="order_search_input"
                                             placeholder="<%= language.Search || 'Search by Order ID, Customer, Phone, Store, Ref...' %>">
                                     </div>
                                     <div class="server-dt-filters">
                                         <div class="server-dt-filter-item">
                                             <select class="form-select form-control" id="order_status_filter">
-                                                <option value="" selected><%= language.All_Orders || 'All Statuses' %></option>
+                                                <option value="" selected>
+                                                    <%= language.All_Orders || 'All Statuses' %>
+                                                </option>
                                                 <% Ordersatus.forEach(function (data){ %>
                                                     <option value="<%= data.id %>">
                                                         <%= data.status %>
                                                     </option>
-                                                <% }) %>
+                                                    <% }) %>
                                             </select>
                                         </div>
-                                        <% if (login === 'master' && typeof storeList !== 'undefined' && storeList.length > 0) { %>
-                                        <div class="server-dt-filter-item">
-                                            <select class="form-select form-control" id="order_store_filter">
-                                                <option value="" selected><%= language.All_Stores || 'All Stores' %></option>
-                                                <% storeList.forEach(function (st){ %>
-                                                    <option value="<%= st.id %>">
-                                                        <%= st.name %>
+                                        <% if (login==='master' && typeof storeList !=='undefined' && storeList.length>
+                                            0) { %>
+                                            <div class="server-dt-filter-item">
+                                                <select class="form-select form-control" id="order_store_filter">
+                                                    <option value="" selected>
+                                                        <%= language.All_Stores || 'All Stores' %>
                                                     </option>
-                                                <% }) %>
-                                            </select>
-                                        </div>
-                                        <% } %>
-                                        <div class="server-dt-filter-item" style="max-width: 140px;">
-                                            <input type="date" class="form-control" id="order_start_date" title="Start Date">
-                                        </div>
-                                        <div class="server-dt-filter-item" style="max-width: 140px;">
-                                            <input type="date" class="form-control" id="order_end_date" title="End Date">
-                                        </div>
-                                        <div class="server-dt-filter-item" style="max-width: 110px;">
-                                            <select class="form-select form-control" id="order_page_length">
-                                                <option value="10" selected>10 / page</option>
-                                                <option value="25">25 / page</option>
-                                                <option value="50">50 / page</option>
-                                                <option value="100">100 / page</option>
-                                            </select>
-                                        </div>
+                                                    <% storeList.forEach(function (st){ %>
+                                                        <option value="<%= st.id %>">
+                                                            <%= st.name %>
+                                                        </option>
+                                                        <% }) %>
+                                                </select>
+                                            </div>
+                                            <% } %>
+                                                <div class="server-dt-filter-item" style="max-width: 140px;">
+                                                    <input type="date" class="form-control" id="order_start_date"
+                                                        title="Start Date">
+                                                </div>
+                                                <div class="server-dt-filter-item" style="max-width: 140px;">
+                                                    <input type="date" class="form-control" id="order_end_date"
+                                                        title="End Date">
+                                                </div>
+                                                <div class="server-dt-filter-item" style="max-width: 110px;">
+                                                    <select class="form-select form-control" id="order_page_length">
+                                                        <option value="10" selected>10 / page</option>
+                                                        <option value="25">25 / page</option>
+                                                        <option value="50">50 / page</option>
+                                                        <option value="100">100 / page</option>
+                                                    </select>
+                                                </div>
                                     </div>
                                 </div>
 
@@ -83,12 +89,23 @@
                                         <table id="server_order_table" class="table display w-100">
                                             <thead>
                                                 <tr>
-                                                    <th><%= language.Order_Info || 'Order Info' %></th>
-                                                    <th><%= language.Customer || 'Customer' %></th>
-                                                    <th><%= language.Order_Amount || 'Order Amount' %></th>
-                                                    <th><%= language.Status || 'Status' %></th>
-                                                    <th><%= language.Payment || 'Payment' %></th>
-                                                    <th class="<%= ((typeof isStaff !== 'undefined' && isStaff) || login !== 'master') ? 'd-none' : '' %>">
+                                                    <th>
+                                                        <%= language.Order_Info || 'Order Info' %>
+                                                    </th>
+                                                    <th>
+                                                        <%= language.Customer || 'Customer' %>
+                                                    </th>
+                                                    <th>
+                                                        <%= language.Order_Amount || 'Order Amount' %>
+                                                    </th>
+                                                    <th>
+                                                        <%= language.Status || 'Status' %>
+                                                    </th>
+                                                    <th>
+                                                        <%= language.Payment || 'Payment' %>
+                                                    </th>
+                                                    <th
+                                                        class="<%= ((typeof isStaff !== 'undefined' && isStaff) || login !== 'master') ? 'd-none' : '' %>">
                                                         <%= language.Store_Name || 'Store Name' %>
                                                     </th>
                                                     <th class="text-center" style="width: 170px;">
@@ -256,18 +273,30 @@
                 <div class="modal-content text-center p-3" style="border-radius: 16px;">
                     <div class="modal-body pt-4">
                         <div class="mb-3">
-                            <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; justify-content: center; color: #ef4444; font-size: 28px;">
+                            <div
+                                style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; justify-content: center; color: #ef4444; font-size: 28px;">
                                 <i class="fa fa-exclamation-triangle"></i>
                             </div>
                         </div>
-                        <h4 class="mb-2 fw-bold text-dark"><%= language.Delete_Order || 'Delete Order' %></h4>
-                        <p class="text-muted mb-1"><%= language.Are_you_sure_delete || 'Are you sure you want to delete this order?' %></p>
+                        <h4 class="mb-2 fw-bold text-dark">
+                            <%= language.Delete_Order || 'Delete Order' %>
+                        </h4>
+                        <p class="text-muted mb-1">
+                            <%= language.Are_you_sure_delete || 'Are you sure you want to delete this order?' %>
+                        </p>
                         <p class="fw-bold text-danger fs-5 mb-3" id="deleteOrderModalCode"></p>
-                        <p class="text-xs text-muted mb-4"><%= language.Action_cannot_be_undone || 'This action will remove the order, related payments, and ledger transactions permanently.' %></p>
+                        <p class="text-xs text-muted mb-4">
+                            <%= language.Action_cannot_be_undone
+                                || 'This action will remove the order, related payments, and ledger transactions permanently.'
+                                %>
+                        </p>
                         <div class="d-flex gap-2 justify-content-center">
-                            <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal"><%= language.Cancel || 'Cancel' %></button>
+                            <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal">
+                                <%= language.Cancel || 'Cancel' %>
+                            </button>
                             <a href="#" id="deleteOrderConfirmBtn" class="btn btn-danger px-4 py-2">
-                                <i class="fa fa-trash me-1"></i> <%= language.Delete || 'Yes, Delete' %>
+                                <i class="fa fa-trash me-1"></i>
+                                <%= language.Delete || 'Yes, Delete' %>
                             </a>
                         </div>
                     </div>
@@ -289,7 +318,7 @@
             <!--********** Main wrapper end **********-->
             <%- include('templet/script')-%>
                 <script>
-                    $(document).ready(function() {
+                    $(document).ready(function () {
                         var isMaster = '<%= login %>' === 'master';
                         var isStaff = <%= (typeof isStaff !== 'undefined' && isStaff) ? 'true' : 'false' %>;
 
@@ -298,7 +327,7 @@
                             searchInput: '#order_search_input',
                             pageLengthSelect: '#order_page_length',
                             filterInputs: '#order_status_filter, #order_store_filter, #order_start_date, #order_end_date',
-                            getFilters: function() {
+                            getFilters: function () {
                                 return {
                                     status_filter: $('#order_status_filter').val() || '',
                                     store_filter: $('#order_store_filter').length ? ($('#order_store_filter').val() || '') : '',
@@ -309,46 +338,46 @@
                             columns: [
                                 {
                                     data: 'order_id',
-                                    render: function(data, type, row) {
+                                    render: function (data, type, row) {
                                         return '<div class="server-dt-primary-text mb-1">' +
-                                               '<span class="me-1 fw-bold text-primary">' + (data || '') + '</span>' +
-                                               '</div>' +
-                                               '<div class="server-dt-secondary-text mb-0">' +
-                                               '<span class="me-1 opacity-75"><%= language.Order_Date || "Order Date" %>:</span>' +
-                                               '<span>' + (row.formattedOrderDate || '') + '</span>' +
-                                               '</div>' +
-                                               '<div class="server-dt-secondary-text mb-0">' +
-                                               '<span class="me-1 opacity-75"><%= language.Delivery_Date || "Delivery Date" %>:</span>' +
-                                               '<span>' + (row.formattedDeliveryDate || '') + '</span>' +
-                                               '</div>';
+                                            '<span class="me-1 fw-bold text-primary">' + (data || '') + '</span>' +
+                                            '</div>' +
+                                            '<div class="server-dt-secondary-text mb-0">' +
+                                            '<span class="me-1 opacity-75"><%= language.Order_Date || "Order Date" %>:</span>' +
+                                            '<span>' + (row.formattedOrderDate || '') + '</span>' +
+                                            '</div>' +
+                                            '<div class="server-dt-secondary-text mb-0">' +
+                                            '<span class="me-1 opacity-75"><%= language.Delivery_Date || "Delivery Date" %>:</span>' +
+                                            '<span>' + (row.formattedDeliveryDate || '') + '</span>' +
+                                            '</div>';
                                     }
                                 },
                                 {
                                     data: 'customer_name',
-                                    render: function(data, type, row) {
+                                    render: function (data, type, row) {
                                         return '<div class="server-dt-primary-text">' + (data || 'Walk In Customer') + '</div>' +
-                                               (row.customer_number ? '<div class="server-dt-secondary-text"><i class="fa fa-phone me-1 opacity-50"></i>' + row.customer_number + '</div>' : '');
+                                            (row.customer_number ? '<div class="server-dt-secondary-text"><i class="fa fa-phone me-1 opacity-50"></i>' + row.customer_number + '</div>' : '');
                                     }
                                 },
                                 {
                                     data: 'gross_total',
                                     className: 'symbol font-w600',
-                                    render: function(data) {
+                                    render: function (data) {
                                         return parseFloat(data || 0).toFixed(2);
                                     }
                                 },
                                 {
                                     data: 'orderStatusName',
-                                    render: function(data, type, row) {
+                                    render: function (data, type, row) {
                                         return '<span class="badge-status-pill ' + row.statusClass + '">' +
-                                               (data || 'Pending') +
-                                               '</span>';
+                                            (data || 'Pending') +
+                                            '</span>';
                                     }
                                 },
                                 {
                                     data: 'gross_total',
                                     orderable: false,
-                                    render: function(data, type, row) {
+                                    render: function (data, type, row) {
                                         var gross = parseFloat(row.gross_total || 0).toFixed(2);
                                         var paid = parseFloat(row.paid_amount || 0).toFixed(2);
                                         var balance = parseFloat(row.balance_amount || 0);
@@ -359,51 +388,51 @@
                                                 paymentBtn = '<span class="badge badge-warning light btn-xxs"><%= language.Pending || "Pending" %></span>';
                                             } else {
                                                 paymentBtn = '<button type="button" onclick="open_patment_model(\'' + row.id + '\')" class="btn btn-xs btn-outline-success py-1 px-2">' +
-                                                             '<i class="fa fa-plus-circle me-1"></i> <%= language.Add_Payment || "Add Payment" %>' +
-                                                             '</button>';
+                                                    '<i class="fa fa-plus-circle me-1"></i> <%= language.Add_Payment || "Add Payment" %>' +
+                                                    '</button>';
                                             }
                                         } else {
                                             paymentBtn = '<span class="badge badge-dark light btn-xxs"><%= language.Fully_Paid || "Fully Paid" %></span>';
                                         }
 
                                         return '<div class="server-dt-secondary-text mb-1">' +
-                                               '<span class="me-1">Total:</span><span class="symbol fw-bold">' + gross + '</span>' +
-                                               ' | <span class="me-1">Paid:</span><span class="symbol text-success">' + paid + '</span>' +
-                                               '</div>' +
-                                               '<div>' + paymentBtn + '</div>';
+                                            '<span class="me-1">Total:</span><span class="symbol fw-bold">' + gross + '</span>' +
+                                            ' | <span class="me-1">Paid:</span><span class="symbol text-success">' + paid + '</span>' +
+                                            '</div>' +
+                                            '<div>' + paymentBtn + '</div>';
                                     }
                                 },
                                 {
                                     data: 'storeName',
                                     visible: isMaster && !isStaff,
-                                    render: function(data) {
-                                        return '<span class="badge badge-light text-dark fw-bold text-uppercase">' + (data || '') + '</span>';
+                                    render: function (data) {
+                                        return data;
                                     }
                                 },
                                 {
                                     data: 'id',
                                     orderable: false,
                                     className: 'text-center',
-                                    render: function(data, type, row) {
+                                    render: function (data, type, row) {
                                         var actions = '<div class="server-dt-actions justify-content-center">';
 
                                         if (row.order_status != 6 && row.canEdit) {
                                             actions += '<a href="/admin/edit/' + data + '" class="btn-dt-action btn-edit" title="<%= language.Edit || "Edit" %>">' +
-                                                       '<i class="fa fa-pencil"></i></a>';
+                                                '<i class="fas fa-pencil-alt"></i></a>';
                                         }
 
                                         actions += '<a href="/order/view/' + data + '" class="btn-dt-action btn-view" title="<%= language.View || "View" %>">' +
-                                                   '<i class="fa fa-eye"></i></a>';
+                                            '<i class="fa fa-eye"></i></a>';
 
                                         actions += '<button type="button" class="btn-dt-action btn-print" id="print_barcode" data-bs-toggle="modal" data-bs-target="#exampleModalLong" data-id="' + data + '" title="<%= language.Barcode || "Barcode" %>">' +
-                                                   '<i class="fa fa-barcode"></i></button>';
+                                            '<i class="fa fa-barcode"></i></button>';
 
                                         actions += '<a href="/order/pos_invoice/' + data + '" class="btn-dt-action btn-print" target="_blank" title="POS Thermal Invoice">' +
-                                                   '<i class="fa fa-receipt"></i></a>';
+                                            '<i class="fa fa-receipt"></i></a>';
 
                                         if (row.canDelete) {
                                             actions += '<button type="button" class="btn-dt-action btn-delete" data-bs-toggle="modal" data-bs-target="#deleteOrderModal" data-id="' + data + '" data-orderid="' + row.order_id + '" title="<%= language.Delete || "Delete" %>">' +
-                                                       '<i class="fa fa-trash"></i></button>';
+                                                '<i class="fa fa-trash"></i></button>';
                                         }
 
                                         actions += '</div>';
@@ -423,7 +452,7 @@
                         });
                     });
 
-                    $(document).on('click', '.btn-dt-action.btn-delete[data-bs-target="#deleteOrderModal"]', function() {
+                    $(document).on('click', '.btn-dt-action.btn-delete[data-bs-target="#deleteOrderModal"]', function () {
                         const orderId = $(this).attr('data-id');
                         const orderCode = $(this).attr('data-orderid');
                         $('#deleteOrderModalCode').text(orderCode || ('#' + orderId));

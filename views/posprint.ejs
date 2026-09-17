@@ -840,13 +840,13 @@
     const openDrawer = <%= (master && master.printer_open_cash_drawer == 1) ? 'true' : 'false' %>;
     const copies = <%= (master && master.printer_copies) ? master.printer_copies : 1 %>;
 
-    const cartServices = <% - JSON.stringify(cartservice || []) %>;
-    const orderData = <% - JSON.stringify(order || {}) %>;
-    const customerData = <% - JSON.stringify((Array.isArray(customer) && customer.length > 0) ? customer[0] : (customer || {})) %>;
+    const cartServices = <%- JSON.stringify(cartservice || []) %>;
+    const orderData = <%- JSON.stringify(order || {}) %>;
+    const customerData = <%- JSON.stringify((Array.isArray(customer) && customer.length > 0) ? customer[0] : (customer || {})) %>;
     const storeName = "<%= (shope && shope.name) ? shope.name : (accessdata && accessdata.masterstore ? accessdata.masterstore.app_name : '') %>";
     const deliveryDate = "<%= ddate %>";
 
-    const posClient = new POSPrintClient({ baseUrl: serverUrl, timeout: 5000 });
+    const posClient = new POSPrintClient({ baseUrl: serverUrl, timeout: 4000 });
     let isServerOnline = false;
     let serverVersion = "";
 
@@ -903,7 +903,7 @@
       });
 
       if (totalPieces === 0) {
-        container.innerHTML = '<div class="cloth-tag"><p>No service garments found for cloth tags.</p></div>';
+        container.innerHTML = '<div class="cloth-tag"><p style="padding:10px;text-align:center;">No garment items found for cloth tags.</p></div>';
         return;
       }
 
@@ -971,34 +971,47 @@
       if (btn) btn.disabled = true;
 
       try {
-        if (silentEnabled && isServerOnline) {
-          const receiptEl = document.querySelector(".receipt-container");
-          const styleEl = document.querySelector("style");
-          if (receiptEl) {
-            const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${styleEl ? styleEl.innerHTML : ''}</style></head><body>${receiptEl.outerHTML}</body></html>`;
-            const res = await posClient.printHTML(fullHtml, {
-              printerId: invoicePrinter || null,
-              widthMm: invoiceWidthMm || 80,
-              options: {
-                copies: copies,
-                cut: autoCut,
-                openCashDrawer: openDrawer
-              }
-            });
-
-            if (res && res.success) {
-              showNotification(`<b>Invoice Sent:</b> Receipt dispatched to <b>${invoicePrinter || 'Default Printer'}</b> (Job #${res.jobId || 'OK'})`, "success");
-              return;
+        if (silentEnabled) {
+          // Re-check server availability if not known online
+          let online = isServerOnline;
+          if (!online) {
+            try {
+              online = await posClient.isAvailable();
+              isServerOnline = online;
+            } catch (_) {
+              online = false;
             }
-            console.warn("Silent invoice print error, falling back to native:", res);
+          }
+
+          if (online) {
+            const receiptEl = document.querySelector(".receipt-container");
+            const styleEl = document.querySelector("style");
+            if (receiptEl) {
+              const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${styleEl ? styleEl.innerHTML : ''}</style></head><body>${receiptEl.outerHTML}</body></html>`;
+              const res = await posClient.printHTML(fullHtml, {
+                printerId: invoicePrinter || null,
+                widthMm: invoiceWidthMm || 80,
+                options: {
+                  copies: copies,
+                  cut: autoCut,
+                  openCashDrawer: openDrawer
+                }
+              });
+
+              if (res && res.success) {
+                showNotification(`<b>Invoice Sent:</b> Receipt dispatched to <b>${invoicePrinter || 'Default Printer'}</b> (Job #${res.jobId || 'OK'})`, "success");
+                return;
+              }
+              console.warn("Silent invoice print failed, falling back to native:", res);
+            }
           }
         }
 
-        // Native browser print fallback
+        // Native browser print fallback (shows native Chrome print dialog)
         document.body.classList.remove("printing-tags");
         window.print();
       } catch (err) {
-        console.warn("Invoice print exception, using native print:", err);
+        console.warn("Invoice print error, falling back to native print:", err);
         document.body.classList.remove("printing-tags");
         window.print();
       } finally {
@@ -1016,38 +1029,57 @@
           renderClothTagsDOM();
         }
 
-        if (silentEnabled && isServerOnline) {
-          const styleEl = document.querySelector("style");
-          const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${styleEl ? styleEl.innerHTML : ''}.cloth-tag-container { display: block !important; width: 100% !important; margin: 0 !important; }</style></head><body><div class="cloth-tag-container" style="display:block !important;">${container.innerHTML}</div></body></html>`;
-
-          const res = await posClient.printHTML(fullHtml, {
-            printerId: tagPrinter || null,
-            widthMm: tagWidthMm || 75,
-            options: {
-              copies: 1,
-              cut: autoCut
+        if (silentEnabled) {
+          let online = isServerOnline;
+          if (!online) {
+            try {
+              online = await posClient.isAvailable();
+              isServerOnline = online;
+            } catch (_) {
+              online = false;
             }
-          });
-
-          if (res && res.success) {
-            showNotification(`<b>Cloth Tags Sent:</b> Garment wash tags dispatched to <b>${tagPrinter || 'Tag Printer'}</b> (Job #${res.jobId || 'OK'})`, "info");
-            return;
           }
-          console.warn("Silent cloth tag print failed, falling back to native:", res);
+
+          if (online) {
+            const styleEl = document.querySelector("style");
+            const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${styleEl ? styleEl.innerHTML : ''}.cloth-tag-container { display: block !important; width: 100% !important; margin: 0 !important; }</style></head><body><div class="cloth-tag-container" style="display:block !important;">${container.innerHTML}</div></body></html>`;
+
+            const res = await posClient.printHTML(fullHtml, {
+              printerId: tagPrinter || null,
+              widthMm: tagWidthMm || 75,
+              options: {
+                copies: 1,
+                cut: autoCut
+              }
+            });
+
+            if (res && res.success) {
+              showNotification(`<b>Cloth Tags Sent:</b> Garment wash tags dispatched to <b>${tagPrinter || 'Tag Printer'}</b> (Job #${res.jobId || 'OK'})`, "info");
+              return;
+            }
+            console.warn("Silent cloth tag print failed, falling back to native:", res);
+          }
         }
 
-        // Native print fallback for cloth tags
+        // Native print fallback for cloth tags (shows native Chrome print dialog with cloth tags)
         document.body.classList.add("printing-tags");
-        window.onafterprint = function () {
+        const cleanupTags = () => {
           document.body.classList.remove("printing-tags");
+          window.removeEventListener("afterprint", cleanupTags);
         };
+        window.addEventListener("afterprint", cleanupTags);
+        // Fallback cleanup if afterprint doesn't trigger
+        setTimeout(cleanupTags, 2000);
         window.print();
       } catch (err) {
-        console.warn("Cloth tag print error, using native print:", err);
+        console.warn("Cloth tag print error, falling back to native print:", err);
         document.body.classList.add("printing-tags");
-        window.onafterprint = function () {
+        const cleanupTags = () => {
           document.body.classList.remove("printing-tags");
+          window.removeEventListener("afterprint", cleanupTags);
         };
+        window.addEventListener("afterprint", cleanupTags);
+        setTimeout(cleanupTags, 2000);
         window.print();
       } finally {
         if (btn) btn.disabled = false;

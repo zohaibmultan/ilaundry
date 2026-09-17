@@ -3,339 +3,430 @@
 
 
 <head>
-     <!-- meta and links start -->
-     <%- include('templet/meta')-%> 
-    
+  <!-- meta and links start -->
+  <%- include('templet/meta')-%>
+
 </head>
+
 <body>
 
- 
-    
-    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name })-%> 
-       
-            <!--********** Content body start **********-->
-     
-        <div class="content-body">
-            
-            <div class="container-fluid" style="min-height: 100vh;">
-                <div class="row">
-                    <div class="col-12">
-                       <div class="card ">
-                            <div class="card-header">
-                               <h3 class="card-title"><%= language.Customer_List %> </h3>
-                                <button class="btn btn-rounded btn-sm btn-primary <%= login == "customer" ||  !accessdata?.roll?.customers?.includes('write') ? 'd-none': '' %>" data-bs-toggle="modal" data-bs-target="#addcoustomer" ><i class="fa fa-plus color-info me-2 text-white"></i></span><%= language.Add_Customer %> </button>         
-                            </div>
-                            <div class="card-body">
-                                <!-- Server-side DataTable Toolbar -->
-                                <div class="server-dt-toolbar">
-                                    <div class="server-dt-search">
-                                        <i class="fa fa-search"></i>
-                                        <input type="search" id="dtCustomerSearch" placeholder="<%= language.Search || 'Search customers by name, phone, email, address...' %>">
-                                    </div>
-                                    <div class="server-dt-filters">
-                                        <select class="server-dt-select" id="dtCustomerStatus">
-                                            <option value="all"><%= language.All_Status || 'All Status' %></option>
-                                            <option value="1"><%= language.Approved || 'Approved' %></option>
-                                            <option value="0"><%= language.Pending || 'Pending' %></option>
-                                        </select>
 
-                                        <% if (ismulty && login === "master") { %>
-                                            <select class="server-dt-select" id="dtCustomerStore">
-                                                <option value="all"><%= language.All_Store || 'All Stores' %></option>
-                                                <% storeList.forEach(function(st) { %>
-                                                    <option value="<%= st.id %>"><%= st.name %></option>
-                                                <% }) %>
-                                            </select>
-                                        <% } %>
 
-                                        <select class="server-dt-select" id="dtCustomerPageLength">
-                                            <option value="10">10 <%= language.Entries || 'entries' %></option>
-                                            <option value="25">25 <%= language.Entries || 'entries' %></option>
-                                            <option value="50">50 <%= language.Entries || 'entries' %></option>
-                                            <option value="100">100 <%= language.Entries || 'entries' %></option>
-                                        </select>
-                                    </div>
-                                </div>
+  <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name })-%>
 
-                                <div class="table-responsive">
-                                    <table id="server_customer_table" class="table display server-side-dt" style="width: 100%;">
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 50px;">#</th>
-                                                <th><%= language.Customer_Name %></th>
-                                                <th><%= language.Contect %></th>
-                                                <th><%= language.Address %></th>
-                                                <th class="<%= ismulty && login == 'master' ? '' : 'd-none' %>"><%= language.Store_Name %></th>
-                                                <th style="width: 110px;"><%= language.Status %></th>
-                                                <th class="text-center" style="width: 130px;"><%= language.Action %></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                       </div>
+    <!--********** Content body start **********-->
+
+    <div class="content-body">
+
+      <div class="container-fluid" style="min-height: 100vh;">
+        <div class="row">
+          <div class="col-12">
+            <div class="card ">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <%= language.Customer_List %>
+                </h3>
+                <button class="btn btn-rounded btn-sm btn-primary <%= login == " customer" ||
+                  !accessdata?.roll?.customers?.includes('write') ? 'd-none' : '' %>" data-bs-toggle="modal"
+                  data-bs-target="#addcoustomer" ><i class="fa fa-plus color-info me-2 text-white"></i></span>
+                  <%= language.Add_Customer %>
+                </button>
+              </div>
+              <div class="card-body">
+                <!-- Server-side DataTable Toolbar -->
+
+                <div class="row mb-3 g-3">
+                  <div class=" col-3">
+                    <input class="form-control w-100" type="search" id="dtCustomerSearch"
+                      placeholder="<%= language.Search || 'Search customers by name, phone, email, address...' %>">
+                  </div>
+                  <div class="col-3">
+                    <select class="form-select form-control" id="dtCustomerStatus">
+                      <option value="all">
+                        <%= language.All_Status || 'All Status' %>
+                      </option>
+                      <option value="1">
+                        <%= language.Approved || 'Approved' %>
+                      </option>
+                      <option value="0">
+                        <%= language.Pending || 'Pending' %>
+                      </option>
+                    </select>
+                  </div>
+                  <% if (ismulty && login==="master" ) { %>
+                    <div class="col-3">
+                      <select class="form-select form-control" id="dtCustomerStore">
+                        <option value="all">
+                          <%= language.All_Store || 'All Stores' %>
+                        </option>
+                        <% storeList.forEach(function(st) { %>
+                          <option value="<%= st.id %>">
+                            <%= st.name %>
+                          </option>
+                          <% }) %>
+                      </select>
                     </div>
+                    <% } %>
+                      <div class="col-3">
+                        <select class="form-select form-control" id="dtCustomerPageLength">
+                          <option value="10">10 <%= language.Entries || 'entries' %>
+                          </option>
+                          <option value="25">25 <%= language.Entries || 'entries' %>
+                          </option>
+                          <option value="50">50 <%= language.Entries || 'entries' %>
+                          </option>
+                          <option value="100">100 <%= language.Entries || 'entries' %>
+                          </option>
+                        </select>
+                      </div>
                 </div>
+
+
+                <div class="table-responsive">
+                  <table id="server_customer_table" class="table display server-side-dt" style="width: 100%;">
+                    <thead>
+                      <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>
+                          <%= language.Customer_Name %>
+                        </th>
+                        <th>
+                          <%= language.Contect %>
+                        </th>
+                        <th>
+                          <%= language.Address %>
+                        </th>
+                        <th class="<%= ismulty && login == 'master' ? '' : 'd-none' %>">
+                          <%= language.Store_Name %>
+                        </th>
+                        <th style="width: 110px;">
+                          <%= language.Status %>
+                        </th>
+                        <th class="text-center" style="width: 130px;">
+                          <%= language.Action %>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
             </div>
+          </div>
+        </div>
+      </div>
 
 
-        
-      
-            <!--********** Content body end **********-->
 
-            <!-- Modal update -->
-            <div class="modal fade" id="coustomer">
-                <div class="modal-dialog  modal-dialog-scrollable" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title"><%= language.Customer_Detail %> </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form action="/coustomer/update/" id="coustomer_form" method="post" class="need-validation">
-                                
-                                    <div class="row g-1 align-items-center">
-                                        <div class="col-md-12 mb-1">
-                                            <label class="form-label"><%= language.Customer_Name %> <span class="text-danger">*</span></label>
-                                            <input type="text"  class="form-control" name="name" id="name" value="" required>
-                                        </div>
 
-                                        <div class="col-md-12 mb-1">
-                                            <label class="form-label"><%= language.Phone_Number %>  <span class="text-danger">*</span></label>
-                                            <input type="number" class="form-control" name="number" id="number" value="" required>
-                                        </div>
-                                        <div class="col-md-12 mb-1">
-                                            <label class="form-label"><%= language.Email %> </label>
-                                            <input type="text" class="form-control" name="email" value="" id="email" required>
-                                        </div>
-                                        <div class="col-md-12 mb-1">
-                                            <label class="form-label"><%= language.Tax_Number %> </label>
-                                            <input type="text" class="form-control" name="tax" value="" id="tax" >
-                                                                        </div>
-                                        <div class="col-md-12 mb-3">
-                                            <label class="form-label"><%= language.Address %> </label>
-                                            <input type="text" class="form-control" name="address" value="" id="address" >
-                                        </div>
-                                    
-                                        <div class="col-md-12 mb-1 d-inline-flex justify-content-between <%= login == "customer" ? 'd-none': '' %>">
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="Approved" name="approved" value="1" >
-                                                <label class="form-check-label"
-                                                    for="Approved  "><%= language.Is_Approved %>  ?</label>
-                                            </div>
-                                                 <!-- <div class="form-check form-switch">
+      <!--********** Content body end **********-->
+
+      <!-- Modal update -->
+      <div class="modal fade" id="coustomer">
+        <div class="modal-dialog  modal-dialog-scrollable" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">
+                <%= language.Customer_Detail %>
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <form action="/coustomer/update/" id="coustomer_form" method="post" class="need-validation">
+
+                <div class="row g-1 align-items-center">
+                  <div class="col-md-12 mb-1">
+                    <label class="form-label">
+                      <%= language.Customer_Name %> <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" name="name" id="name" value="" required>
+                  </div>
+
+                  <div class="col-md-12 mb-1">
+                    <label class="form-label">
+                      <%= language.Phone_Number %> <span class="text-danger">*</span>
+                    </label>
+                    <input type="number" class="form-control" name="number" id="number" value="" required>
+                  </div>
+                  <div class="col-md-12 mb-1">
+                    <label class="form-label">
+                      <%= language.Email %>
+                    </label>
+                    <input type="text" class="form-control" name="email" value="" id="email" required>
+                  </div>
+                  <div class="col-md-12 mb-1">
+                    <label class="form-label">
+                      <%= language.Tax_Number %>
+                    </label>
+                    <input type="text" class="form-control" name="tax" value="" id="tax">
+                  </div>
+                  <div class="col-md-12 mb-3">
+                    <label class="form-label">
+                      <%= language.Address %>
+                    </label>
+                    <input type="text" class="form-control" name="address" value="" id="address">
+                  </div>
+
+                  <div class="col-md-12 mb-1 d-inline-flex justify-content-between <%= login == " customer" ? 'd-none'
+                    : '' %>">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="Approved" name="approved" value="1">
+                      <label class="form-check-label" for="Approved  ">
+                        <%= language.Is_Approved %> ?
+                      </label>
+                    </div>
+                    <!-- <div class="form-check form-switch">
                                                 <input class="form-check-input" type="checkbox" id="active" name="active" value="0" >
                                                 <label class="form-check-label"
                                                     for="employee"><%= language.Is_Active %>  ?</label>
                                             </div> -->
-                                        </div>
-                                    </div>
-                        </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-sm btn-secondary"
-                                            data-bs-dismiss="modal"><%= language.Cancel %></button>
-                                        <button type="submit" class="btn btn-sm  btn-primary"><%= language.Save %> </button>
-                                    </div>
-                            </form>
-                    </div>
+                  </div>
                 </div>
             </div>
-
-            <!-- Modal add -->
-            <div class="modal fade" id="addcoustomer">
-                <div class="modal-dialog  modal-dialog-scrollable" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title"><%= language.Customer_Detail %> </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form action="/coustomer/register" method="post" class="need-validation">
-                                
-                                    <div class="row g-1 align-items-center">
-                                        <div class="form-group">
-                                            <label><strong><%= language.Name %> </strong></label>
-                                            <input type="text" class="form-control " name="name" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label><strong><%= language.Phone_Number %> </strong></label>
-                                            <input type="number" class="form-control" name="number"  required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label><strong><%= language.Email %> </strong></label>
-                                            <input type="email" class="form-control" name="email" required>
-                                        </div>
-                                        <% if (typeof is_staff !== 'undefined' && is_staff) { %>
-                                            <div class="col-md-12 mb-3">
-                                                <div class="form-group">
-                                                    <label class="form-label"><strong><%= language.Store_List || 'Assigned Store' %></strong></label>
-                                                    <input type="text" class="form-control" value="<%= (typeof staff_store_name !== 'undefined' && staff_store_name) ? staff_store_name : 'Assigned Store' %>" readonly disabled style="background-color: #e9ecef; cursor: not-allowed;">
-                                                    <input type="hidden" name="storeid" value="<%= staff_store_id %>">
-                                                </div>
-                                            </div>
-                                        <% } else { %>
-                                            <div class="col-md-12 mb-3">
-                                                <div class="form-group">
-                                                    <label class="form-label"><strong> <%= language.Store_List || 'Store' %> </strong><span class="text-danger">*</span></label>
-                                                    <select class="form-control wide mb-3" name="storeid" id="Customer_add" required>
-                                                        <option value="" selected disabled> Select Store </option>
-                                                        <% storeList.forEach(function(x){ %>
-                                                            <option value="<%= x.id %>"><%= x.name %></option>
-                                                        <% }) %>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        <% } %>
-                                        <div class="form-group">
-                                            <label><strong><%= language.Tax_Number %> </strong></label>
-                                            <input type="text" class="form-control"name="taxnumber" >
-                                        </div>
-                                        <div class="form-group">
-                                            <label><strong><%= language.Address %> </strong></label>
-                                            <input type="text" class="form-control" name="address">
-                                        </div>
-
-                                     
-                                        
-                                        <div class="form-group">
-                                            <label><strong><%= language.Username %> </strong></label>
-                                            <input type="text" class="form-control" name="username">
-                                        </div>
-                                        <div class="form-group">
-                                            <label><strong><%= language.Password %> </strong></label>
-                                            <input type="text" class="form-control" name="password">
-                                        </div>
-                                        
-                                    </div>
-                        </div>
-                               
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-sm btn-secondary"
-                                        data-bs-dismiss="modal"><%= language.Cancel %></button>
-                                    <button type="submit" class="btn btn-sm  btn-primary"><%= language.Save %> </button>
-                                </div>
-                            </form>
-
-
-                        
-                    </div>
-                </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                <%= language.Cancel %>
+              </button>
+              <button type="submit" class="btn btn-sm  btn-primary">
+                <%= language.Save %>
+              </button>
             </div>
-            </div>
-
-        <!-- Delete Customer Confirmation Modal -->
-        <div class="modal fade" id="deleteCustomerModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
-                <div class="modal-content text-center p-3" style="border-radius: 16px;">
-                    <div class="modal-body pt-4">
-                        <div class="mb-3">
-                            <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; justify-content: center; color: #ef4444; font-size: 28px;">
-                                <i class="fa fa-user-times"></i>
-                            </div>
-                        </div>
-                        <h4 class="mb-2 fw-bold text-dark"><%= language.Delete_Customer || 'Delete Customer' %></h4>
-                        <p class="text-muted mb-1"><%= language.Are_you_sure_delete || 'Are you sure you want to delete this customer?' %></p>
-                        <p class="fw-bold text-danger fs-5 mb-3" id="deleteCustomerModalName"></p>
-                        <p class="text-xs text-muted mb-4"><%= language.Action_cannot_be_undone || 'This action cannot be undone.' %></p>
-                        <div class="d-flex gap-2 justify-content-center">
-                            <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal"><%= language.Cancel || 'Cancel' %></button>
-                            <a href="#" id="deleteCustomerConfirmBtn" class="btn btn-danger px-4 py-2">
-                                <i class="fa fa-trash me-1"></i> <%= language.Delete || 'Yes, Delete' %>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            </form>
+          </div>
         </div>
+      </div>
 
-        <!--**********************************
+      <!-- Modal add -->
+      <div class="modal fade" id="addcoustomer">
+        <div class="modal-dialog  modal-dialog-scrollable" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">
+                <%= language.Customer_Detail %>
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <form action="/coustomer/register" method="post" class="need-validation">
+
+                <div class="row g-1 align-items-center">
+                  <div class="form-group">
+                    <label><strong>
+                        <%= language.Name %>
+                      </strong></label>
+                    <input type="text" class="form-control " name="name" required>
+                  </div>
+                  <div class="form-group">
+                    <label><strong>
+                        <%= language.Phone_Number %>
+                      </strong></label>
+                    <input type="number" class="form-control" name="number" required>
+                  </div>
+                  <div class="form-group">
+                    <label><strong>
+                        <%= language.Email %>
+                      </strong></label>
+                    <input type="email" class="form-control" name="email" required>
+                  </div>
+                  <% if (typeof is_staff !=='undefined' && is_staff) { %>
+                    <div class="col-md-12 mb-3">
+                      <div class="form-group">
+                        <label class="form-label"><strong>
+                            <%= language.Store_List || 'Assigned Store' %>
+                          </strong></label>
+                        <input type="text" class="form-control"
+                          value="<%= (typeof staff_store_name !== 'undefined' && staff_store_name) ? staff_store_name : 'Assigned Store' %>"
+                          readonly disabled style="background-color: #e9ecef; cursor: not-allowed;">
+                        <input type="hidden" name="storeid" value="<%= staff_store_id %>">
+                      </div>
+                    </div>
+                    <% } else { %>
+                      <div class="col-md-12 mb-3">
+                        <div class="form-group">
+                          <label class="form-label"><strong>
+                              <%= language.Store_List || 'Store' %>
+                            </strong><span class="text-danger">*</span></label>
+                          <select class="form-control wide mb-3" name="storeid" id="Customer_add" required>
+                            <option value="" selected disabled> Select Store </option>
+                            <% storeList.forEach(function(x){ %>
+                              <option value="<%= x.id %>">
+                                <%= x.name %>
+                              </option>
+                              <% }) %>
+                          </select>
+                        </div>
+                      </div>
+                      <% } %>
+                        <div class="form-group">
+                          <label><strong>
+                              <%= language.Tax_Number %>
+                            </strong></label>
+                          <input type="text" class="form-control" name="taxnumber">
+                        </div>
+                        <div class="form-group">
+                          <label><strong>
+                              <%= language.Address %>
+                            </strong></label>
+                          <input type="text" class="form-control" name="address">
+                        </div>
+
+
+
+                        <div class="form-group">
+                          <label><strong>
+                              <%= language.Username %>
+                            </strong></label>
+                          <input type="text" class="form-control" name="username">
+                        </div>
+                        <div class="form-group">
+                          <label><strong>
+                              <%= language.Password %>
+                            </strong></label>
+                          <input type="text" class="form-control" name="password">
+                        </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                <%= language.Cancel %>
+              </button>
+              <button type="submit" class="btn btn-sm  btn-primary">
+                <%= language.Save %>
+              </button>
+            </div>
+            </form>
+
+
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Customer Confirmation Modal -->
+    <div class="modal fade" id="deleteCustomerModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-content text-center p-3" style="border-radius: 16px;">
+          <div class="modal-body pt-4">
+            <div class="mb-3">
+              <div
+                style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; justify-content: center; color: #ef4444; font-size: 28px;">
+                <i class="fa fa-user-times"></i>
+              </div>
+            </div>
+            <h4 class="mb-2 fw-bold text-dark">
+              <%= language.Delete_Customer || 'Delete Customer' %>
+            </h4>
+            <p class="text-muted mb-1">
+              <%= language.Are_you_sure_delete || 'Are you sure you want to delete this customer?' %>
+            </p>
+            <p class="fw-bold text-danger fs-5 mb-3" id="deleteCustomerModalName"></p>
+            <p class="text-xs text-muted mb-4">
+              <%= language.Action_cannot_be_undone || 'This action cannot be undone.' %>
+            </p>
+            <div class="d-flex gap-2 justify-content-center">
+              <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal">
+                <%= language.Cancel || 'Cancel' %>
+              </button>
+              <a href="#" id="deleteCustomerConfirmBtn" class="btn btn-danger px-4 py-2">
+                <i class="fa fa-trash me-1"></i>
+                <%= language.Delete || 'Yes, Delete' %>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!--**********************************
             Footer start
         ***********************************-->
-          <%- include('templet/footer')-%>
+    <%- include('templet/footer')-%>
 
-        <!--**********************************
+      <!--**********************************
             Footer end
         ***********************************-->
 
-    </div>
+      </div>
 
-        <!--********** Main wrapper end **********-->
-        <%- include('templet/script')-%>
-<script>
-  function escapeHtml(str) {
-    if (!str) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
+      <!--********** Main wrapper end **********-->
+      <%- include('templet/script')-%>
+        <script>
+          function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#039;');
+          }
 
-  $(document).ready(function() {
-    const isMasterMultistore = <%= (ismulty && login === 'master') ? 'true' : 'false' %>;
+          $(document).ready(function () {
+            const isMasterMultistore = <%= (ismulty && login === 'master') ? 'true' : 'false' %>;
 
-    const dtColumns = [
-      {
-        data: null,
-        orderable: false,
-        searchable: false,
-        render: function(data, type, row, meta) {
-          return meta.settings._iDisplayStart + meta.row + 1;
-        }
-      },
-      {
-        data: 'name',
-        render: function(data, type, row) {
-          return `<div class="fw-bold text-dark">${escapeHtml(data)}</div>`;
-        }
-      },
-      {
-        data: 'number',
-        render: function(data, type, row) {
-          return `
+            const dtColumns = [
+              {
+                data: null,
+                orderable: false,
+                searchable: false,
+                render: function (data, type, row, meta) {
+                  return meta.settings._iDisplayStart + meta.row + 1;
+                }
+              },
+              {
+                data: 'name',
+                render: function (data, type, row) {
+                  return `<div class="fw-bold text-dark">${escapeHtml(data)}</div>`;
+                }
+              },
+              {
+                data: 'number',
+                render: function (data, type, row) {
+                  return `
             <div class="fw-semibold text-dark"><i class="fa fa-phone-alt text-success me-1"></i>${escapeHtml(row.number || '')}</div>
             ${row.email ? `<div class="text-xs text-muted"><i class="fa fa-envelope text-info me-1"></i>${escapeHtml(row.email)}</div>` : ''}
           `;
-        }
-      },
-      {
-        data: 'address',
-        render: function(data) {
-          return `<span class="text-sm text-secondary">${escapeHtml(data) || '—'}</span>`;
-        }
-      }
-    ];
+                }
+              },
+              {
+                data: 'address',
+                render: function (data) {
+                  return `<span class="text-sm text-secondary">${escapeHtml(data) || '—'}</span>`;
+                }
+              }
+            ];
 
-    if (isMasterMultistore) {
-      dtColumns.push({
-        data: 'store',
-        render: function(data) {
-          return `<span class="badge bg-light text-dark px-2 py-1">${escapeHtml(data) || '—'}</span>`;
-        }
-      });
-    }
+            if (isMasterMultistore) {
+              dtColumns.push({
+                data: 'store',
+                render: function (data) {
+                  return `<span class="badge bg-light text-dark px-2 py-1">${escapeHtml(data) || '—'}</span>`;
+                }
+              });
+            }
 
-    dtColumns.push({
-      data: 'approved',
-      render: function(data) {
-        if (data === 1) {
-          return '<span class="badge-status-pill badge-pill-completed"><i class="fa fa-check-circle"></i> <%= language.Approved || "Approved" %></span>';
-        }
-        return '<span class="badge-status-pill badge-pill-pending"><i class="fa fa-clock"></i> <%= language.Pending || "Pending" %></span>';
-      }
-    });
+            dtColumns.push({
+              data: 'approved',
+              render: function (data) {
+                if (data === 1) {
+                  return '<span class="badge-status-pill badge-pill-completed"><i class="fa fa-check-circle"></i> <%= language.Approved || "Approved" %></span>';
+                }
+                return '<span class="badge-status-pill badge-pill-pending"><i class="fa fa-clock"></i> <%= language.Pending || "Pending" %></span>';
+              }
+            });
 
-    dtColumns.push({
-      data: null,
-      orderable: false,
-      searchable: false,
-      className: 'text-center',
-      render: function(data, type, row) {
-        let html = '<div class="tbl-action-group justify-content-center">';
-        if (row.canEdit) {
-          html += `
+            dtColumns.push({
+              data: null,
+              orderable: false,
+              searchable: false,
+              className: 'text-center',
+              render: function (data, type, row) {
+                let html = '<div class="tbl-action-group justify-content-center">';
+                if (row.canEdit) {
+                  html += `
             <a href="#" class="btn-dt-action btn-edit btn-edit-customer" 
                data-bs-toggle="modal" data-bs-target="#coustomer"
                data-id="${row.id}" 
@@ -350,80 +441,80 @@
                title="<%= language.Edit || 'Edit' %>">
               <i class="fas fa-pencil-alt"></i>
             </a>`;
-        }
-        if (row.transiction > 0) {
-          html += `
+                }
+                if (row.transiction > 0) {
+                  html += `
             <a href="/coustomer/ledger/${row.id}" class="btn-dt-action btn-info" title="<%= language.Ledger || 'Customer Ledger' %>">
               <i class="fas fa-book-open"></i>
             </a>`;
-        }
-        if (row.canDelete) {
-          html += `
+                }
+                if (row.canDelete) {
+                  html += `
             <button type="button" class="btn-dt-action btn-delete btn-delete-customer"
                     data-bs-toggle="modal" data-bs-target="#deleteCustomerModal"
                     data-id="${row.id}" data-name="${escapeHtml(row.name)}"
                     title="<%= language.Delete || 'Delete' %>">
               <i class="fa fa-trash"></i>
             </button>`;
-        }
-        html += '</div>';
-        return html;
-      }
-    });
+                }
+                html += '</div>';
+                return html;
+              }
+            });
 
-    window.customerTable = window.initServerDataTable('#server_customer_table', {
-      ajaxUrl: '/coustomer/list/data',
-      columns: dtColumns,
-      order: [[0, 'desc']],
-      searchInput: '#dtCustomerSearch',
-      pageLengthSelect: '#dtCustomerPageLength',
-      filterElements: {
-        status_filter: '#dtCustomerStatus',
-        store_filter: '#dtCustomerStore'
-      }
-    });
-  });
+            window.customerTable = window.initServerDataTable('#server_customer_table', {
+              ajaxUrl: '/coustomer/list/data',
+              columns: dtColumns,
+              order: [[0, 'desc']],
+              searchInput: '#dtCustomerSearch',
+              pageLengthSelect: '#dtCustomerPageLength',
+              filterElements: {
+                status_filter: '#dtCustomerStatus',
+                store_filter: '#dtCustomerStore'
+              }
+            });
+          });
 
-  $('#addcoustomer').on('shown.bs.modal', function () {
-    $('#Customer_add').select2({
-      dropdownParent: $('#addcoustomer'),
-      placeholder: 'Select Store(s)',
-      width: '100%',
-      allowClear: true
-    });
-  });
+          $('#addcoustomer').on('shown.bs.modal', function () {
+            $('#Customer_add').select2({
+              dropdownParent: $('#addcoustomer'),
+              placeholder: 'Select Store(s)',
+              width: '100%',
+              allowClear: true
+            });
+          });
 
-  $(document).on('click', '.btn-edit-customer', function() {
-    var id = $(this).attr('data-id');
-    var act = "/coustomer/update/" + id;
-    var approved = $(this).attr('data-approved');
-    var active = $(this).attr('data-active');
-    $('#name').val($(this).attr('data-name'));
-    $('#number').val($(this).attr('data-number'));
-    $('#email').val($(this).attr('data-email'));
-    $('#address').val($(this).attr('data-addresh'));
-    $('#tax').val($(this).attr('data-tax'));
-    $("#coustomer_form").attr('action', act);
-    if (approved == 1) {
-      $('#Approved').prop('checked', true);
-    } else {
-      $('#Approved').prop('checked', false);
-    }
-    if (active == 0) {
-      $('#active').prop('checked', true);
-    } else {
-      $('#active').prop('checked', false);
-    }
-    $('#customroll').val($(this).attr('data-roll'));
-  });
+          $(document).on('click', '.btn-edit-customer', function () {
+            var id = $(this).attr('data-id');
+            var act = "/coustomer/update/" + id;
+            var approved = $(this).attr('data-approved');
+            var active = $(this).attr('data-active');
+            $('#name').val($(this).attr('data-name'));
+            $('#number').val($(this).attr('data-number'));
+            $('#email').val($(this).attr('data-email'));
+            $('#address').val($(this).attr('data-addresh'));
+            $('#tax').val($(this).attr('data-tax'));
+            $("#coustomer_form").attr('action', act);
+            if (approved == 1) {
+              $('#Approved').prop('checked', true);
+            } else {
+              $('#Approved').prop('checked', false);
+            }
+            if (active == 0) {
+              $('#active').prop('checked', true);
+            } else {
+              $('#active').prop('checked', false);
+            }
+            $('#customroll').val($(this).attr('data-roll'));
+          });
 
-  $(document).on('click', '.btn-delete-customer', function() {
-    const custId = $(this).attr('data-id');
-    const custName = $(this).attr('data-name');
-    $('#deleteCustomerModalName').text(custName || '');
-    $('#deleteCustomerConfirmBtn').attr('href', '/coustomer/delete/' + custId);
-  });
-</script>
+          $(document).on('click', '.btn-delete-customer', function () {
+            const custId = $(this).attr('data-id');
+            const custName = $(this).attr('data-name');
+            $('#deleteCustomerModalName').text(custName || '');
+            $('#deleteCustomerConfirmBtn').attr('href', '/coustomer/delete/' + custId);
+          });
+        </script>
 </body>
 
 
