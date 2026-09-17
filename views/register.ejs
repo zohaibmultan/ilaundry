@@ -6,7 +6,9 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="author" content="iLaundry">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= data?.app_name || 'iLaundry' %> &bull; Customer Sign Up</title>
+    <title>
+        <%= data?.app_name || '' %> &bull; Customer Sign Up
+    </title>
 
     <!-- Early Theme Loader -->
     <script>
@@ -62,8 +64,11 @@
             <div class="auth-hero-glow-2"></div>
 
             <div class="auth-hero-brand">
-                <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-hero-brand-logo" alt="<%= data?.app_name || 'iLaundry' %> Logo">
-                <h2 class="auth-hero-brand-title"><%= data?.app_name || 'iLaundry' %></h2>
+                <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-hero-brand-logo"
+                    alt="<%= data?.app_name || '' %> Logo">
+                <h2 class="auth-hero-brand-title">
+                    <%= data?.app_name || '' %>
+                </h2>
             </div>
 
             <div class="auth-hero-content">
@@ -74,7 +79,8 @@
                     Effortless Laundry<br>Care At Your Fingertips.
                 </h1>
                 <p class="auth-hero-lead">
-                    Create your customer account to track garment wash stages, view thermal billing receipts, schedule laundry drops, and manage your account ledger in real time.
+                    Create your customer account to track garment wash stages, view thermal billing receipts, schedule
+                    laundry drops, and manage your account ledger in real time.
                 </p>
 
                 <div class="auth-hero-pills">
@@ -110,7 +116,9 @@
             </div>
 
             <div class="auth-hero-footer">
-                <span><%= data?.footer_text || 'Copyright &copy; 2026 iLaundry Inc.' %></span>
+                <span>
+                    <%= data?.footer_text || 'Copyright &copy; 2026 iLaundry Inc.' %>
+                </span>
                 <span><i class="fas fa-shield-alt text-primary me-1 fs-9"></i> Verified Protection</span>
             </div>
         </div>
@@ -120,7 +128,8 @@
             <div class="auth-glass-card auth-card-wide">
                 <div class="auth-card-header">
                     <a href="/">
-                        <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-card-logo" alt="<%= data?.app_name || 'iLaundry' %>">
+                        <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-card-logo"
+                            alt="<%= data?.app_name || '' %>">
                     </a>
                     <h3 class="auth-card-title">Create Your Account</h3>
                     <p class="auth-card-subtitle">
@@ -133,30 +142,35 @@
                     <a href="/register" class="role-segment-btn active">
                         <i class="fas fa-user me-1"></i> Customer Account
                     </a>
-                    <% if (data?.type == '1') { %>
+                    <% if (data?.type=='1' ) { %>
                         <a href="/shopregister" class="role-segment-btn">
                             <i class="fas fa-store me-1"></i> Store / Branch Owner
                         </a>
-                    <% } %>
+                        <% } %>
                 </div>
 
                 <form action="/register" method="POST" class="needs-validation" id="register_form">
                     <div class="row g-3">
                         <!-- Full Name -->
                         <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Full Name</strong> <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="name" placeholder="John Doe" required autofocus>
+                            <label class="form-label mb-1"><strong>Full Name</strong> <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" placeholder="John Doe" required
+                                autofocus>
                         </div>
 
                         <!-- Email Address -->
                         <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Email Address</strong> <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" name="email" placeholder="john@example.com" required>
+                            <label class="form-label mb-1"><strong>Email Address</strong> <span
+                                    class="text-danger">*</span></label>
+                            <input type="email" class="form-control" name="email" placeholder="john@example.com"
+                                required>
                         </div>
 
                         <!-- Phone Number -->
                         <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Phone Number</strong> <span class="text-danger">*</span></label>
+                            <label class="form-label mb-1"><strong>Phone Number</strong> <span
+                                    class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="number" placeholder="+1234567890" required>
                         </div>
 
@@ -168,39 +182,49 @@
 
                         <!-- Address -->
                         <div class="<%= (multiy === false && store && store.length > 0) ? 'col-md-6' : 'col-md-12' %>">
-                            <label class="form-label mb-1"><strong>Physical Address</strong> <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="address" placeholder="Street, Suite, City" required>
+                            <label class="form-label mb-1"><strong>Physical Address</strong> <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="address" placeholder="Street, Suite, City"
+                                required>
                         </div>
 
                         <!-- Store Selector (if multi-store mode enabled) -->
-                        <% if (multiy === false && store && store.length > 0) { %>
+                        <% if (multiy===false && store && store.length> 0) { %>
                             <div class="col-md-6">
-                                <label class="form-label mb-1"><strong>Preferred Store</strong> <span class="text-danger">*</span></label>
+                                <label class="form-label mb-1"><strong>Preferred Store</strong> <span
+                                        class="text-danger">*</span></label>
                                 <select class="form-control form-select" name="store" required>
                                     <option value="" selected disabled>Choose Store Location</option>
                                     <% store.forEach(function(st){ %>
-                                        <option value="<%= st.id %>"><%= st.name %></option>
-                                    <% }); %>
+                                        <option value="<%= st.id %>">
+                                            <%= st.name %>
+                                        </option>
+                                        <% }); %>
                                 </select>
                             </div>
-                        <% } %>
+                            <% } %>
 
-                        <!-- Username -->
-                        <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Username</strong> <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="username" placeholder="Choose username" required>
-                        </div>
+                                <!-- Username -->
+                                <div class="col-md-6">
+                                    <label class="form-label mb-1"><strong>Username</strong> <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="username"
+                                        placeholder="Choose username" required>
+                                </div>
 
-                        <!-- Password -->
-                        <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Password</strong> <span class="text-danger">*</span></label>
-                            <div class="position-relative">
-                                <input type="password" class="form-control pe-5" id="reg_password" name="password" placeholder="Create password" required minlength="4">
-                                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reg_password', this)">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
+                                <!-- Password -->
+                                <div class="col-md-6">
+                                    <label class="form-label mb-1"><strong>Password</strong> <span
+                                            class="text-danger">*</span></label>
+                                    <div class="position-relative">
+                                        <input type="password" class="form-control pe-5" id="reg_password"
+                                            name="password" placeholder="Create password" required minlength="4">
+                                        <button type="button" class="password-toggle-btn"
+                                            onclick="togglePasswordVisibility('reg_password', this)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
                     </div>
 
                     <button type="submit" class="auth-submit-btn mt-4" id="submit_register_btn">
@@ -210,7 +234,7 @@
 
                 <div class="text-center mt-4 pt-2 border-top">
                     <p class="fs-13 text-muted mb-0">
-                        Already have an account? 
+                        Already have an account?
                         <a href="/" class="text-primary fw-bold text-decoration-none ms-1">
                             <i class="fas fa-sign-in-alt me-1"></i> Sign In
                         </a>
@@ -292,7 +316,7 @@
     </script>
 
     <!-- Toastr Notifications -->
-    <% if(typeof success !== 'undefined' && success && success.length > 0){ %>
+    <% if(typeof success !=='undefined' && success && success.length> 0){ %>
         <script>
             toastr.success('<%- success %>', {
                 timeOut: 8000,
@@ -302,17 +326,18 @@
                 escapeHtml: false
             });
         </script>
-    <% } %>
+        <% } %>
 
-    <% if(typeof error !== 'undefined' && error && error.length > 0){ %>
-        <script>
-            toastr.error('<%= error %>', {
-                timeOut: 6000,
-                closeButton: true,
-                progressBar: true,
-                positionClass: "toast-top-right"
-            });
-        </script>
-    <% } %>
+            <% if(typeof error !=='undefined' && error && error.length> 0){ %>
+                <script>
+                    toastr.error('<%= error %>', {
+                        timeOut: 6000,
+                        closeButton: true,
+                        progressBar: true,
+                        positionClass: "toast-top-right"
+                    });
+                </script>
+                <% } %>
 </body>
+
 </html>

@@ -1,19 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Receipt - <%= order.order_id %></title>
+  <title>Receipt - <%= order.order_id %>
+  </title>
   <style>
     @page {
       size: 80mm auto;
       margin: 0;
     }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
+
     body {
       background-color: #eef1f5;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -22,45 +26,66 @@
       color: #000;
       padding: 10px 0;
     }
+
     .receipt-container {
       width: 76mm;
       margin: 0 auto;
       background: #fff;
       padding: 4mm 3mm;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
+
     @media print {
       body {
         background: transparent;
         padding: 0;
       }
+
       .receipt-container {
         width: 100%;
         margin: 0;
         padding: 2mm 1mm;
         box-shadow: none;
       }
+
       .no-print {
         display: none !important;
       }
     }
-    .text-center { text-align: center; }
-    .text-start { text-align: left; }
-    .text-end { text-align: right; }
-    .fw-bold { font-weight: 700; }
-    .text-muted { color: #555; }
-    
+
+    .text-center {
+      text-align: center;
+    }
+
+    .text-start {
+      text-align: left;
+    }
+
+    .text-end {
+      text-align: right;
+    }
+
+    .fw-bold {
+      font-weight: 700;
+    }
+
+    .text-muted {
+      color: #555;
+    }
+
     /* Dividers */
     .border-dashed {
       border: none;
       border-top: 1px dashed #000;
       margin: 3px 0;
     }
+
     .border-solid {
       border: none;
       border-top: 1px solid #000;
       margin: 3px 0;
     }
+
     .border-double {
       border: none;
       border-top: 2px solid #000;
@@ -72,6 +97,7 @@
       text-align: center;
       margin-bottom: 4px;
     }
+
     .store-logo {
       max-height: 32px;
       max-width: 70%;
@@ -79,6 +105,7 @@
       display: block;
       object-fit: contain;
     }
+
     .store-name {
       font-size: 14px;
       font-weight: 800;
@@ -86,6 +113,7 @@
       letter-spacing: 0.5px;
       line-height: 1.15;
     }
+
     .store-info {
       font-size: 10px;
       line-height: 1.2;
@@ -112,6 +140,7 @@
       font-size: 10.5px;
       margin-bottom: 2px;
     }
+
     .meta-table td {
       padding: 1px 0;
       vertical-align: top;
@@ -124,6 +153,7 @@
       font-size: 11px;
       margin-top: 2px;
     }
+
     .items-table th {
       font-size: 10px;
       font-weight: 700;
@@ -132,15 +162,18 @@
       border-bottom: 1px dashed #000;
       letter-spacing: 0.3px;
     }
+
     .items-table td {
       padding: 2px 0;
       vertical-align: top;
     }
+
     .item-name {
       font-weight: 700;
       font-size: 11px;
       line-height: 1.15;
     }
+
     .item-subtext {
       font-size: 9.5px;
       color: #333;
@@ -153,9 +186,11 @@
       font-size: 10.5px;
       margin-top: 2px;
     }
+
     .summary-table td {
       padding: 1px 0;
     }
+
     .grand-total-row td {
       font-size: 12.5px;
       font-weight: 800;
@@ -171,6 +206,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <div class="receipt-container">
@@ -178,18 +214,23 @@
     <div class="store-header">
       <% if (accessdata && accessdata.masterstore && accessdata.masterstore.app_favicon) { %>
         <img src="/uploads/<%= accessdata.masterstore.app_favicon %>" class="store-logo" alt="" />
-      <% } %>
-      <div class="store-name">
-        <%= (shope && shope.name) ? shope.name : (accessdata && accessdata.masterstore ? accessdata.masterstore.app_name : 'iLaundry') %>
-      </div>
-      <div class="store-info">
-        <% if (shope && shope.address) { %>
-          <%= shope.address %><% if (shope.city) { %>, <%= shope.city %><% } %><br />
         <% } %>
-        <% if (shope && shope.mobile_number) { %>
-          Tel: <%= shope.mobile_number %><% if (shope.store_email) { %> | <%= shope.store_email %><% } %>
-        <% } %>
-      </div>
+          <div class="store-name">
+            <%= (shope && shope.name) ? shope.name : (accessdata && accessdata.masterstore ?
+              accessdata.masterstore.app_name : '' ) %>
+          </div>
+          <div class="store-info">
+            <% if (shope && shope.address) { %>
+              <%= shope.address %>
+                <% if (shope.city) { %>, <%= shope.city %>
+                    <% } %><br />
+                      <% } %>
+                        <% if (shope && shope.mobile_number) { %>
+                          Tel: <%= shope.mobile_number %>
+                            <% if (shope.store_email) { %> | <%= shope.store_email %>
+                                <% } %>
+                                  <% } %>
+          </div>
     </div>
 
     <!-- Invoice Banner (Crisp outline, saves 100% black ink) -->
@@ -198,26 +239,35 @@
     <!-- Order & Customer Meta (Tight 2-column key-value) -->
     <table class="meta-table">
       <tr>
-        <td class="text-start"><b>Order #:</b> <%= order.order_id %></td>
-        <td class="text-end"><b>Date:</b> <%= oate %></td>
+        <td class="text-start"><b>Order #:</b>
+          <%= order.order_id %>
+        </td>
+        <td class="text-end"><b>Date:</b>
+          <%= oate %>
+        </td>
       </tr>
       <tr>
-        <td class="text-start"><b>Delivery:</b> <%= ddate %></td>
-        <td class="text-end"><b>Status:</b> <%= order.order_status_name %></td>
+        <td class="text-start"><b>Delivery:</b>
+          <%= ddate %>
+        </td>
+        <td class="text-end"><b>Status:</b>
+          <%= order.order_status_name %>
+        </td>
       </tr>
-      <% 
-        let custObj = (Array.isArray(customer) && customer.length > 0) ? customer[0] : (customer || {});
+      <% let custObj=(Array.isArray(customer) && customer.length> 0) ? customer[0] : (customer || {});
         let custName = custObj.name || '';
         let custNumber = custObj.number || '';
-      %>
-      <% if (custName) { %>
-        <tr>
-          <td class="text-start" colspan="2">
-            <b>Customer:</b> <%= custName %>
-            <% if (custNumber) { %> &bull; <%= custNumber %><% } %>
-          </td>
-        </tr>
-      <% } %>
+        %>
+        <% if (custName) { %>
+          <tr>
+            <td class="text-start" colspan="2">
+              <b>Customer:</b>
+              <%= custName %>
+                <% if (custNumber) { %> &bull; <%= custNumber %>
+                    <% } %>
+            </td>
+          </tr>
+          <% } %>
     </table>
 
     <hr class="border-dashed" />
@@ -233,53 +283,63 @@
         </tr>
       </thead>
       <tbody>
-        <% if (cartservice && cartservice.length > 0) { %>
+        <% if (cartservice && cartservice.length> 0) { %>
           <% cartservice.forEach(function(item) { %>
             <tr>
               <td class="text-start">
-                <span class="item-name"><%= item.service_name %></span>
+                <span class="item-name">
+                  <%= item.service_name %>
+                </span>
                 <% if (item.service_type_name) { %>
                   <span class="item-subtext">[<%= item.service_type_name %>]</span>
-                <% } %>
+                  <% } %>
               </td>
               <td class="text-end">
-                <% if (accessdata.plac == "1") { %>
-                  <%= parseFloat(item.service_type_price).toFixed(2) %><%= accessdata.symbol %>
-                <% } else { %>
-                  <%= accessdata.symbol %><%= parseFloat(item.service_type_price).toFixed(2) %>
-                <% } %>
+                <% if (accessdata.plac=="1" ) { %>
+                  <%= parseFloat(item.service_type_price).toFixed(2) %>
+                    <%= accessdata.symbol %>
+                      <% } else { %>
+                        <%= accessdata.symbol %>
+                          <%= parseFloat(item.service_type_price).toFixed(2) %>
+                            <% } %>
               </td>
-              <td class="text-center"><%= item.service_quntity %></td>
+              <td class="text-center">
+                <%= item.service_quntity %>
+              </td>
               <td class="text-end fw-bold">
-                <% let lineTotal = (parseFloat(item.service_type_price) * parseFloat(item.service_quntity)).toFixed(2); %>
-                <% if (accessdata.plac == "1") { %>
-                  <%= lineTotal %><%= accessdata.symbol %>
-                <% } else { %>
-                  <%= accessdata.symbol %><%= lineTotal %>
-                <% } %>
+                <% let lineTotal=(parseFloat(item.service_type_price) * parseFloat(item.service_quntity)).toFixed(2); %>
+                  <% if (accessdata.plac=="1" ) { %>
+                    <%= lineTotal %>
+                      <%= accessdata.symbol %>
+                        <% } else { %>
+                          <%= accessdata.symbol %>
+                            <%= lineTotal %>
+                              <% } %>
               </td>
             </tr>
-          <% }) %>
-        <% } %>
+            <% }) %>
+              <% } %>
 
-        <% if (addonslist && addonslist.length > 0) { %>
-          <% addonslist.forEach(function(addon) { %>
-            <tr>
-              <td class="text-start" colspan="2">
-                <span class="item-name">+ <%= addon.name %></span>
-                <span class="item-subtext">[Addon]</span>
-              </td>
-              <td class="text-center">1</td>
-              <td class="text-end fw-bold">
-                <% if (accessdata.plac == "1") { %>
-                  <%= parseFloat(addon.price).toFixed(2) %><%= accessdata.symbol %>
-                <% } else { %>
-                  <%= accessdata.symbol %><%= parseFloat(addon.price).toFixed(2) %>
-                <% } %>
-              </td>
-            </tr>
-          <% }) %>
-        <% } %>
+                <% if (addonslist && addonslist.length> 0) { %>
+                  <% addonslist.forEach(function(addon) { %>
+                    <tr>
+                      <td class="text-start" colspan="2">
+                        <span class="item-name">+ <%= addon.name %></span>
+                        <span class="item-subtext">[Addon]</span>
+                      </td>
+                      <td class="text-center">1</td>
+                      <td class="text-end fw-bold">
+                        <% if (accessdata.plac=="1" ) { %>
+                          <%= parseFloat(addon.price).toFixed(2) %>
+                            <%= accessdata.symbol %>
+                              <% } else { %>
+                                <%= accessdata.symbol %>
+                                  <%= parseFloat(addon.price).toFixed(2) %>
+                                    <% } %>
+                      </td>
+                    </tr>
+                    <% }) %>
+                      <% } %>
       </tbody>
     </table>
 
@@ -290,100 +350,125 @@
       <tr>
         <td class="text-start">Sub Total:</td>
         <td class="text-end fw-bold">
-          <% if (accessdata.plac == "1") { %>
-            <%= parseFloat(order.sub_total).toFixed(2) %> <%= accessdata.symbol %>
-          <% } else { %>
-            <%= accessdata.symbol %> <%= parseFloat(order.sub_total).toFixed(2) %>
-          <% } %>
+          <% if (accessdata.plac=="1" ) { %>
+            <%= parseFloat(order.sub_total).toFixed(2) %>
+              <%= accessdata.symbol %>
+                <% } else { %>
+                  <%= accessdata.symbol %>
+                    <%= parseFloat(order.sub_total).toFixed(2) %>
+                      <% } %>
         </td>
       </tr>
 
-      <% if (Number(order.addon_price) > 0) { %>
+      <% if (Number(order.addon_price)> 0) { %>
         <tr>
           <td class="text-start">Addon Total:</td>
           <td class="text-end">
-            <% if (accessdata.plac == "1") { %>
-              <%= parseFloat(order.addon_price).toFixed(2) %> <%= accessdata.symbol %>
-            <% } else { %>
-              <%= accessdata.symbol %> <%= parseFloat(order.addon_price).toFixed(2) %>
-            <% } %>
+            <% if (accessdata.plac=="1" ) { %>
+              <%= parseFloat(order.addon_price).toFixed(2) %>
+                <%= accessdata.symbol %>
+                  <% } else { %>
+                    <%= accessdata.symbol %>
+                      <%= parseFloat(order.addon_price).toFixed(2) %>
+                        <% } %>
           </td>
         </tr>
-      <% } %>
+        <% } %>
 
-      <% if (Number(order.extra_discount) > 0) { %>
-        <tr>
-          <td class="text-start">Discount:</td>
-          <td class="text-end">
-            - <% if (accessdata.plac == "1") { %>
-              <%= parseFloat(order.extra_discount).toFixed(2) %> <%= accessdata.symbol %>
-            <% } else { %>
-              <%= accessdata.symbol %> <%= parseFloat(order.extra_discount).toFixed(2) %>
+          <% if (Number(order.extra_discount)> 0) { %>
+            <tr>
+              <td class="text-start">Discount:</td>
+              <td class="text-end">
+                - <% if (accessdata.plac=="1" ) { %>
+                  <%= parseFloat(order.extra_discount).toFixed(2) %>
+                    <%= accessdata.symbol %>
+                      <% } else { %>
+                        <%= accessdata.symbol %>
+                          <%= parseFloat(order.extra_discount).toFixed(2) %>
+                            <% } %>
+              </td>
+            </tr>
             <% } %>
-          </td>
-        </tr>
-      <% } %>
 
-      <% if (Number(order.coupon_discount) > 0) { %>
-        <tr>
-          <td class="text-start">Coupon Discount:</td>
-          <td class="text-end">
-            - <% if (accessdata.plac == "1") { %>
-              <%= parseFloat(order.coupon_discount).toFixed(2) %> <%= accessdata.symbol %>
-            <% } else { %>
-              <%= accessdata.symbol %> <%= parseFloat(order.coupon_discount).toFixed(2) %>
-            <% } %>
-          </td>
-        </tr>
-      <% } %>
+              <% if (Number(order.coupon_discount)> 0) { %>
+                <tr>
+                  <td class="text-start">Coupon Discount:</td>
+                  <td class="text-end">
+                    - <% if (accessdata.plac=="1" ) { %>
+                      <%= parseFloat(order.coupon_discount).toFixed(2) %>
+                        <%= accessdata.symbol %>
+                          <% } else { %>
+                            <%= accessdata.symbol %>
+                              <%= parseFloat(order.coupon_discount).toFixed(2) %>
+                                <% } %>
+                  </td>
+                </tr>
+                <% } %>
 
-      <% if (Number(order.tax_amount) > 0) { %>
-        <tr>
-          <td class="text-start">Tax (<%= parseFloat(order.tax).toFixed(0) %>%):</td>
-          <td class="text-end">
-            <% if (accessdata.plac == "1") { %>
-              <%= parseFloat(order.tax_amount).toFixed(2) %> <%= accessdata.symbol %>
-            <% } else { %>
-              <%= accessdata.symbol %> <%= parseFloat(order.tax_amount).toFixed(2) %>
-            <% } %>
-          </td>
-        </tr>
-      <% } %>
+                  <% if (Number(order.tax_amount)> 0) { %>
+                    <tr>
+                      <td class="text-start">Tax (<%= parseFloat(order.tax).toFixed(0) %>%):</td>
+                      <td class="text-end">
+                        <% if (accessdata.plac=="1" ) { %>
+                          <%= parseFloat(order.tax_amount).toFixed(2) %>
+                            <%= accessdata.symbol %>
+                              <% } else { %>
+                                <%= accessdata.symbol %>
+                                  <%= parseFloat(order.tax_amount).toFixed(2) %>
+                                    <% } %>
+                      </td>
+                    </tr>
+                    <% } %>
 
-      <tr class="grand-total-row">
-        <td class="text-start" style="border-top: 1px solid #000; padding-top: 2px;">Gross Total:</td>
-        <td class="text-end" style="border-top: 1px solid #000; padding-top: 2px;">
-          <% if (accessdata.plac == "1") { %>
-            <%= parseFloat(order.gross_total).toFixed(2) %> <%= accessdata.symbol %>
-          <% } else { %>
-            <%= accessdata.symbol %> <%= parseFloat(order.gross_total).toFixed(2) %>
-          <% } %>
-        </td>
-      </tr>
+                      <tr class="grand-total-row">
+                        <td class="text-start" style="border-top: 1px solid #000; padding-top: 2px;">Gross Total:</td>
+                        <td class="text-end" style="border-top: 1px solid #000; padding-top: 2px;">
+                          <% if (accessdata.plac=="1" ) { %>
+                            <%= parseFloat(order.gross_total).toFixed(2) %>
+                              <%= accessdata.symbol %>
+                                <% } else { %>
+                                  <%= accessdata.symbol %>
+                                    <%= parseFloat(order.gross_total).toFixed(2) %>
+                                      <% } %>
+                        </td>
+                      </tr>
 
-      <tr>
-        <td class="text-start">Paid Amount:</td>
-        <td class="text-end fw-bold">
-          <% if (accessdata.plac == "1") { %>
-            <%= parseFloat(order.paid_amount).toFixed(2) %> <%= accessdata.symbol %>
-          <% } else { %>
-            <%= accessdata.symbol %> <%= parseFloat(order.paid_amount).toFixed(2) %>
-          <% } %>
-        </td>
-      </tr>
+                      <tr>
+                        <td class="text-start">Paid Amount:</td>
+                        <td class="text-end fw-bold">
+                          <% if (accessdata.plac=="1" ) { %>
+                            <%= parseFloat(order.paid_amount).toFixed(2) %>
+                              <%= accessdata.symbol %>
+                                <% } else { %>
+                                  <%= accessdata.symbol %>
+                                    <%= parseFloat(order.paid_amount).toFixed(2) %>
+                                      <% } %>
+                        </td>
+                      </tr>
 
-      <% if (Number(order.balance_amount) != 0) { %>
-        <tr>
-          <td class="text-start"><b>Due / Balance:</b></td>
-          <td class="text-end fw-bold">
-            <% if (accessdata.plac == "1") { %>
-              <%= parseFloat(order.balance_amount).toFixed(2) %> <%= accessdata.symbol %>
-            <% } else { %>
-              <%= accessdata.symbol %> <%= parseFloat(order.balance_amount).toFixed(2) %>
-            <% } %>
-          </td>
-        </tr>
-      <% } %>
+                      <% if (Number(order.balance_amount) !=0) { %>
+                        <tr>
+                          <td class="text-start"><b>Due / Balance:</b></td>
+                          <td class="text-end fw-bold">
+                            <% if (accessdata.plac=="1" ) { %>
+                              <%= parseFloat(order.balance_amount).toFixed(2) %>
+                                <%= accessdata.symbol %>
+                                  <% } else { %>
+                                    <%= accessdata.symbol %>
+                                      <%= parseFloat(order.balance_amount).toFixed(2) %>
+                                        <% } %>
+                          </td>
+                        </tr>
+                        <% } %>
+
+                          <% if (order.reference_number && order.reference_number.trim()) { %>
+                            <tr>
+                              <td class="text-start">Ref / Txn No:</td>
+                              <td class="text-end fw-bold">
+                                <%= order.reference_number %>
+                              </td>
+                            </tr>
+                            <% } %>
     </table>
 
     <hr class="border-dashed" />
@@ -391,14 +476,17 @@
     <!-- Notes & Footer -->
     <% if (order.note && order.note.trim()) { %>
       <div style="font-size: 10px; font-style: italic; margin: 2px 0;">
-        <b>Note:</b> <%= order.note %>
+        <b>Note:</b>
+        <%= order.note %>
       </div>
-    <% } %>
+      <% } %>
 
-    <div class="receipt-footer">
-      <div>*** Thank You For Your Business! ***</div>
-      <div>Powered By <b><%= (master && master.app_name) ? master.app_name : 'iLaundry' %></b></div>
-    </div>
+        <div class="receipt-footer">
+          <div>*** Thank You For Your Business! ***</div>
+          <div>Powered By <b>
+              <%= (master && master.app_name) ? master.app_name : '' %>
+            </b></div>
+        </div>
   </div>
 
   <script src="/js/pos-print-client.js"></script>
@@ -467,4 +555,5 @@
     };
   </script>
 </body>
+
 </html>

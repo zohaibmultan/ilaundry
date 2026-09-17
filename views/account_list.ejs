@@ -81,9 +81,8 @@
                                     <%= language.Account_List %>
                                 </h3>
                                 <button   
-                                    class="btn btn-rounded btn-primary <%= (accessdata.roll.rollType == 'master') || (accessdata.mutibranch === false  || accessdata?.roll?.account?.includes('write')) ?'':'d-none' %>"
-                                    data-bs-toggle="modal" data-bs-target="#account_add"><span
-                                        class="btn-icon-start text-primary"><i class="fa fa-plus color-info"></i></span>
+                                    class="btn btn-sm btn-rounded btn-primary <%= (accessdata.roll.rollType == 'master') || (accessdata.mutibranch === false  || accessdata?.roll?.account?.includes('write')) ?'':'d-none' %>"
+                                    data-bs-toggle="modal" data-bs-target="#account_add"><i class="fa fa-plus color-info me-2"></i>
                                     <%= language.Add_New_Account %>
                                 </button>
                             </div>

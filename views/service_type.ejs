@@ -41,11 +41,9 @@
                                     <%= language.Service_Type %>
                                 </h3>
                                 <button
-                                    class="btn btn-rounded btn-primary <%= accessdata.roll.service.includes('write') ? '' : 'd-none' %>"
+                                    class="btn btn-sm btn-rounded btn-primary <%= accessdata.roll.service.includes('write') ? '' : 'd-none' %>"
                                     data-bs-toggle="modal" data-bs-target="#service_types">
-                                    <span class="btn-icon-start text-primary">
-                                        <i class="fa fa-plus color-info"></i>
-                                    </span>
+                                    <i class="fa fa-plus color-info me-2"></i>
                                     <%= language.Add_New_Service_Type %>
                                 </button>
                             </div>

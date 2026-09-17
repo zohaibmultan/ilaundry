@@ -33,6 +33,14 @@ async function idfororder() {
   }
 }
 
+async function getStaffScope(userId, loginas) {
+  if (loginas == 0) return { isStaff: false, staffStoreId: null };
+  const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${userId}`);
+  const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+  const staffStoreId = isStaff ? adminData[0].store_ID : null;
+  return { isStaff, staffStoreId };
+}
+
 async function getOrCreateWalkInCustomer(storeId, req) {
   if (!storeId || storeId == "0" || storeId == "") return null;
   let walk = await DataFind(
@@ -419,6 +427,12 @@ router.get("/edit/:id", auth, async (req, res) => {
                                             FROM tbl_order WHERE id = '${req.params.id}'`);
     if (!order_date || order_date.length === 0) {
       req.flash("error", "Order not found");
+      return res.redirect("/order/list");
+    }
+
+    const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
+    if (isStaff && staffStoreId && order_date[0].store_id != staffStoreId) {
+      req.flash("error", "You are not authorized to edit orders from other stores");
       return res.redirect("/order/list");
     }
 
@@ -2608,7 +2622,7 @@ router.post("/edit_order", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
 
-    var { order_id, deliverydate, extradiscount, paid_amount, payment_type, note } = req.body;
+    var { order_id, deliverydate, extradiscount, paid_amount, payment_type, note, reference_number } = req.body;
     paid_amount = parseFloat(paid_amount) || 0;
     extradiscount = parseFloat(extradiscount) || 0;
 
@@ -2641,6 +2655,7 @@ router.post("/edit_order", auth, async (req, res) => {
     }
 
     const orderNotes = note !== undefined ? note : order.note;
+    const refNum = reference_number !== undefined ? reference_number : (order.reference_number || "");
 
     await DataUpdate(
       `tbl_order`,
@@ -2653,7 +2668,8 @@ router.post("/edit_order", auth, async (req, res) => {
         paid_amount = ${total_paid},
         balance_amount = ${balance_amount},
         master_comission = ${master_comission},
-        note = '${orderNotes || ""}'
+        note = '${orderNotes || ""}',
+        reference_number = '${refNum}'
       `,
       `id = '${order_id}'`,
       req.hostname,
@@ -2664,8 +2680,8 @@ router.post("/edit_order", auth, async (req, res) => {
       const pay_date = new Date().toISOString().slice(0, 10);
       await DataInsert(
         `tbl_order_payment`,
-        `order_id, payment_mode, amount, payment_date, store_id`,
-        `'${order_id}', '${payment_type}', ${paid_amount}, '${pay_date}', '${order.store_id}'`,
+        `payment_amount, payment_date, payment_account, order_id, reference_number`,
+        `${paid_amount}, '${pay_date}', '${payment_type}', '${order_id}', '${refNum}'`,
         req.hostname,
         req.protocol
       );
@@ -2773,7 +2789,7 @@ router.post("/order", auth, async (req, res) => {
     const accessdata = await access(req.user);
     var orderid = await idfororder();
 
-    var { deliverydate, extradiscount, paid_amount, note } = req.body;
+    var { deliverydate, extradiscount, paid_amount, note, reference_number } = req.body;
 
     paid_amount ? (paid_amount = paid_amount) : (paid_amount = 0);
     extradiscount ? (extradiscount = extradiscount) : (extradiscount = 0);
@@ -2807,7 +2823,7 @@ router.post("/order", auth, async (req, res) => {
     const order = await DataInsert(
       `tbl_order`,
       `order_id,order_date,delivery_date,order_status,service_list,customer_id,created_by,store_id,addon_data,
-        addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission, commission_status`,
+        addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission, commission_status,reference_number`,
       `'${orderid}',
         '${order_fullDate}','${finalDeliveryDate}',${1},'${cart[0].service_list_id
       }','${cart[0].customer_id}','${cart[0].created_by}','${cart[0].store_id
@@ -2815,7 +2831,7 @@ router.post("/order", auth, async (req, res) => {
         ${cart[0].addon_price},${cart[0].sub_total},'${cart[0].tax}','${cart[0].coupon_id
       }',${cart[0].coupon_discount
       },${extradiscount},${gross},${paid_amount},${balance},
-        '${0}',${cart[0].tax_amount},'${note}',${comi_amount},'1'`,
+        '${0}',${cart[0].tax_amount},'${note}',${comi_amount},'1','${reference_number || ''}'`,
       req.hostname,
       req.protocol
     );
@@ -2869,9 +2885,9 @@ router.post("/order", auth, async (req, res) => {
 
     const paymentdata = await DataInsert(
       `tbl_order_payment`,
-      `payment_amount,payment_date,payment_account,order_id`,
+      `payment_amount,payment_date,payment_account,order_id,reference_number`,
       `${paid_amount},'${order_fullDate}',
-        '${payment_type}','${order.insertId}'`,
+        '${payment_type}','${order.insertId}','${reference_number || ''}'`,
       req.hostname,
       req.protocol
     );
@@ -3214,7 +3230,7 @@ router.post("/posprint", auth, async (req, res) => {
     const accessdata = await access(req.user);
     var orderid = await idfororder();
 
-    var { deliverydate, extradiscount, paid_amount, note } = req.body;
+    var { deliverydate, extradiscount, paid_amount, note, reference_number } = req.body;
 
     paid_amount ? (paid_amount = paid_amount) : (paid_amount = 0);
     extradiscount ? (extradiscount = extradiscount) : (extradiscount = 0);
@@ -3253,7 +3269,7 @@ router.post("/posprint", auth, async (req, res) => {
     const order = await DataInsert(
       `tbl_order`,
       `order_id,order_date,delivery_date,order_status,service_list,customer_id,created_by,store_id,addon_data,
-        addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission,commission_status`,
+        addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission,commission_status,reference_number`,
       `'${orderid}',
         '${order_fullDate}','${finalDeliveryDate}',${1},'${cart[0].service_list_id
       }','${cart[0].customer_id}','${cart[0].created_by}','${cart[0].store_id
@@ -3261,7 +3277,7 @@ router.post("/posprint", auth, async (req, res) => {
         ${cart[0].addon_price},${cart[0].sub_total},'${cart[0].tax}','${cart[0].coupon_id
       }',${cart[0].coupon_discount
       },${extradiscount},${gross},${paid_amount},${balance},
-        '${0}',${cart[0].tax_amount},'${note}',${comi_amount},'1'`,
+        '${0}',${cart[0].tax_amount},'${note}',${comi_amount},'1','${reference_number || ''}'`,
       req.hostname,
       req.protocol
     );
@@ -3314,9 +3330,9 @@ router.post("/posprint", auth, async (req, res) => {
 
     const paymentdata = await DataInsert(
       `tbl_order_payment`,
-      `payment_amount,payment_date,payment_account,order_id`,
+      `payment_amount,payment_date,payment_account,order_id,reference_number`,
       `${paid_amount},'${order_fullDate}',
-            '${payment_type}','${order.insertId}'`,
+            '${payment_type}','${order.insertId}','${reference_number || ''}'`,
       req.hostname,
       req.protocol
     );

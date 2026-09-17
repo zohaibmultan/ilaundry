@@ -9,7 +9,7 @@
 </head>
 
 <body>
-        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
         <!--********** Content body start **********-->
 
         <div class="content-body">
@@ -24,18 +24,18 @@
                                         <%= language.Services %>
                                     </h3>
                                 </div>
-                              <div class="text-end">
-                                    <a href="/services/csv_file" class="btn btn-rounded btn-primary mx-3 mb-2">
+                                <div class="text-end">
+                                    <a href="/services/csv_file" class="btn btn-rounded btn-primary btn-sm mx-3 mb-2">
+                                        <i class="fa fa-upload color-info me-2"></i></span>
                                         <%= language.Bulk_Upload_Services %>
                                     </a>
-                                
+
                                     <a href="/services/addservice"><button
-                                            class="btn btn-rounded btn-primary  <%= accessdata.roll.service.includes('write') ?'':'d-none' %> mb-2"><span
-                                                class="btn-icon-start text-primary"><i
-                                                    class="fa fa-plus color-info"></i></span>
+                                            class="btn btn-sm btn-rounded btn-primary  <%= accessdata.roll.service.includes('write') ?'':'d-none' %> mb-2">
+                                            <i class="fa fa-plus color-info me-2"></i></span>
                                             <%= language.Add_New_Services %>
                                         </button></a>
-                               </div>
+                                </div>
                             </div>
                             <div class="card-body ">
                                 <div class="table-responsive">
@@ -99,8 +99,7 @@
 
                                                             <a href="/services/deletservices/<%= data.id %>"
                                                                 class="btn-tbl-action btn-tbl-delete <%= accessdata.roll.service.includes('delete') ?'':'d-none' %>"
-                                                                id="delete"
-                                                                title="<%= language.Delete || 'Delete' %>">
+                                                                id="delete" title="<%= language.Delete || 'Delete' %>">
                                                                 <i class="fa fa-trash"></i></a>
                                                         </div>
                                                     </td>

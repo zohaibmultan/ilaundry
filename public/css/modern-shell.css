@@ -1356,49 +1356,82 @@ body {
   padding: 0 0.55rem 0.55rem;
 }
 
-.recentOrderTable table {
-  border-collapse: separate;
-  border-spacing: 0 0.55rem;
+.recentOrderTable table,
+.content-body .dataTables_wrapper table.dataTable,
+.content-body table.dataTable,
+.content-body table.display {
+  border-collapse: separate !important;
+  border-spacing: 0 0.55rem !important;
+  border: 0 !important;
 }
 
-.recentOrderTable thead th {
-  border: 0;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #64748b;
+.recentOrderTable thead th,
+.content-body .dataTables_wrapper table.dataTable thead th,
+.content-body table.dataTable thead th,
+.content-body table.display thead th {
+  border: 0 !important;
+  border-bottom: 0 !important;
+  font-size: 0.8rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  color: #64748b !important;
+  font-weight: 700 !important;
+  background-color: transparent !important;
 }
 
-.recentOrderTable tbody tr {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.95));
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.05);
+.recentOrderTable tbody tr,
+.content-body .dataTables_wrapper table.dataTable tbody tr,
+.content-body table.dataTable tbody tr,
+.content-body table.display tbody tr {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.95)) !important;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.05) !important;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.recentOrderTable tbody tr:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+.recentOrderTable tbody tr:hover,
+.content-body .dataTables_wrapper table.dataTable tbody tr:hover,
+.content-body table.dataTable tbody tr:hover,
+.content-body table.display tbody tr:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08) !important;
 }
 
-.recentOrderTable tbody td {
-  border-top: 1px solid rgba(15, 23, 42, 0.05);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.05);
-  padding-top: 0.85rem;
-  padding-bottom: 0.85rem;
+.recentOrderTable tbody td,
+.content-body .dataTables_wrapper table.dataTable tbody td,
+.content-body table.dataTable tbody td,
+.content-body table.display tbody td {
+  border-top: 1px solid rgba(15, 23, 42, 0.05) !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.05) !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  padding-top: 0.85rem !important;
+  padding-bottom: 0.85rem !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+  vertical-align: middle !important;
+  background-color: transparent !important;
 }
 
-.recentOrderTable tbody td:first-child {
-  border-left: 1px solid rgba(15, 23, 42, 0.05);
-  border-top-left-radius: 1rem;
-  border-bottom-left-radius: 1rem;
+.recentOrderTable tbody td:first-child,
+.content-body .dataTables_wrapper table.dataTable tbody td:first-child,
+.content-body table.dataTable tbody td:first-child,
+.content-body table.display tbody td:first-child {
+  border-left: 1px solid rgba(15, 23, 42, 0.05) !important;
+  border-top-left-radius: 1rem !important;
+  border-bottom-left-radius: 1rem !important;
 }
 
-.recentOrderTable tbody td:last-child {
-  border-right: 1px solid rgba(15, 23, 42, 0.05);
-  border-top-right-radius: 1rem;
-  border-bottom-right-radius: 1rem;
+.recentOrderTable tbody td:last-child,
+.content-body .dataTables_wrapper table.dataTable tbody td:last-child,
+.content-body table.dataTable tbody td:last-child,
+.content-body table.display tbody td:last-child {
+  border-right: 1px solid rgba(15, 23, 42, 0.05) !important;
+  border-top-right-radius: 1rem !important;
+  border-bottom-right-radius: 1rem !important;
 }
 
-.recentOrderTable .btn {
+.recentOrderTable .btn,
+.content-body .dataTables_wrapper .btn {
   border-radius: 999px;
 }
 
@@ -4248,6 +4281,125 @@ body.modal-open .modal * {
   opacity: 0.45;
   pointer-events: none;
   box-shadow: none;
+}
+
+/* Remove default stripe and hover row backgrounds in DataTables to preserve card styling */
+.content-body table.dataTable.stripe tbody tr.odd,
+.content-body table.dataTable.display tbody tr.odd,
+.content-body table.dataTable.hover tbody tr:hover,
+.content-body table.dataTable.display tbody tr:hover,
+.content-body table.dataTable.order-column tbody tr > .sorting_1,
+.content-body table.dataTable.order-column tbody tr > .sorting_2,
+.content-body table.dataTable.order-column tbody tr > .sorting_3,
+.content-body table.dataTable.display tbody tr > .sorting_1,
+.content-body table.dataTable.display tbody tr > .sorting_2,
+.content-body table.dataTable.display tbody tr > .sorting_3,
+.content-body table.dataTable.order-column.stripe tbody tr.odd > .sorting_1,
+.content-body table.dataTable.order-column.stripe tbody tr.even > .sorting_1 {
+  background-color: transparent !important;
+}
+
+.content-body table.dataTable.no-footer,
+.content-body .dataTables_wrapper.no-footer .dataTables_scrollBody {
+  border-bottom: 0 !important;
+}
+
+/* Modern Status Badges in tables */
+.content-body .table .badge,
+.content-body table.dataTable .badge {
+  border-radius: 999px !important;
+  font-weight: 600 !important;
+  font-size: 0.78rem !important;
+  padding: 0.35rem 0.85rem !important;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.content-body .table .badge.light.badge-success,
+.content-body table.dataTable .badge.light.badge-success {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #059669 !important;
+  border: 1px solid rgba(16, 185, 129, 0.25) !important;
+}
+
+.content-body .table .badge.light.badge-warning,
+.content-body table.dataTable .badge.light.badge-warning {
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #d97706 !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+}
+
+.content-body .table .badge.light.badge-danger,
+.content-body table.dataTable .badge.light.badge-danger {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #dc2626 !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+
+.content-body .table .badge.light.badge-info,
+.content-body table.dataTable .badge.light.badge-info {
+  background: rgba(14, 165, 233, 0.12) !important;
+  color: #0284c7 !important;
+  border: 1px solid rgba(14, 165, 233, 0.25) !important;
+}
+
+/* Modern Action Buttons in Tables */
+.content-body .tbl-action-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.content-body .tbl-action-group .btn-tbl-action,
+.content-body .tbl-action-group .btn.sharp,
+.content-body .table .btn.sharp {
+  width: 2.15rem !important;
+  height: 2.15rem !important;
+  min-width: 2.15rem !important;
+  min-height: 2.15rem !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  background: #ffffff !important;
+  color: #64748b !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04) !important;
+  padding: 0 !important;
+  font-size: 0.82rem !important;
+  cursor: pointer;
+}
+
+.content-body .tbl-action-group .btn-tbl-action:hover,
+.content-body .tbl-action-group .btn.sharp:hover,
+.content-body .table .btn.sharp:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08) !important;
+}
+
+.content-body .tbl-action-group .btn-tbl-edit:hover,
+.content-body .table .btn-primary.sharp:hover {
+  background: rgba(37, 99, 235, 0.1) !important;
+  color: #2563eb !important;
+  border-color: rgba(37, 99, 235, 0.3) !important;
+}
+
+.content-body .tbl-action-group .btn-tbl-ledger:hover,
+.content-body .table .btn-info.sharp:hover {
+  background: rgba(147, 51, 234, 0.1) !important;
+  color: #9333ea !important;
+  border-color: rgba(147, 51, 234, 0.3) !important;
+}
+
+.content-body .tbl-action-group .btn-tbl-delete:hover,
+.content-body .table .btn-danger.sharp:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
 }
 
 @media (max-width: 991.98px) {

@@ -6,7 +6,9 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="author" content="iLaundry">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= data?.app_name || 'iLaundry' %> &bull; Store / Branch Registration</title>
+    <title>
+        <%= data?.app_name || '' %> &bull; Store / Branch Registration
+    </title>
 
     <!-- Early Theme Loader -->
     <script>
@@ -62,8 +64,11 @@
             <div class="auth-hero-glow-2"></div>
 
             <div class="auth-hero-brand">
-                <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-hero-brand-logo" alt="<%= data?.app_name || 'iLaundry' %> Logo">
-                <h2 class="auth-hero-brand-title"><%= data?.app_name || 'iLaundry' %></h2>
+                <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-hero-brand-logo"
+                    alt="<%= data?.app_name || '' %> Logo">
+                <h2 class="auth-hero-brand-title">
+                    <%= data?.app_name || '' %>
+                </h2>
             </div>
 
             <div class="auth-hero-content">
@@ -74,7 +79,8 @@
                     Scale Your Laundromat<br>Business With Ease.
                 </h1>
                 <p class="auth-hero-lead">
-                    Register your branch or franchise store to unlock our high-speed POS terminal, garment wash barcode tracking, automated cashier roles, and centralized accounting.
+                    Register your branch or franchise store to unlock our high-speed POS terminal, garment wash barcode
+                    tracking, automated cashier roles, and centralized accounting.
                 </p>
 
                 <div class="auth-hero-pills">
@@ -110,7 +116,9 @@
             </div>
 
             <div class="auth-hero-footer">
-                <span><%= data?.footer_text || 'Copyright &copy; 2026 iLaundry Inc.' %></span>
+                <span>
+                    <%= data?.footer_text || 'Copyright &copy; 2026 iLaundry Inc.' %>
+                </span>
                 <span><i class="fas fa-circle text-success me-1 fs-9"></i> Partner Gateway</span>
             </div>
         </div>
@@ -120,7 +128,8 @@
             <div class="auth-glass-card auth-card-wide">
                 <div class="auth-card-header">
                     <a href="/">
-                        <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-card-logo" alt="<%= data?.app_name || 'iLaundry' %>">
+                        <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-card-logo"
+                            alt="<%= data?.app_name || '' %>">
                     </a>
                     <h3 class="auth-card-title">Register Your Laundromat</h3>
                     <p class="auth-card-subtitle">
@@ -138,63 +147,81 @@
                     </a>
                 </div>
 
-                <form action="/shopregister" method="POST" class="needs-validation" enctype="multipart/form-data" id="shop_register_form">
+                <form action="/shopregister" method="POST" class="needs-validation" enctype="multipart/form-data"
+                    id="shop_register_form">
                     <div class="row g-3">
                         <!-- Shop Name -->
                         <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Shop / Branch Name</strong> <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="name" placeholder="e.g. Downtown Laundry Hub" required autofocus>
+                            <label class="form-label mb-1"><strong>Shop / Branch Name</strong> <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" placeholder="e.g. Downtown Laundry Hub"
+                                required autofocus>
                         </div>
 
                         <!-- Store Email -->
                         <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Store Official Email</strong> <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" name="store_email" placeholder="store@laundry.com" required>
+                            <label class="form-label mb-1"><strong>Store Official Email</strong> <span
+                                    class="text-danger">*</span></label>
+                            <input type="email" class="form-control" name="store_email" placeholder="store@laundry.com"
+                                required>
                         </div>
 
                         <!-- Phone Number -->
                         <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Contact Phone Number</strong> <span class="text-danger">*</span></label>
+                            <label class="form-label mb-1"><strong>Contact Phone Number</strong> <span
+                                    class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="number" placeholder="+1234567890" required>
                         </div>
 
                         <!-- Tax Number -->
                         <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Store Tax / Registration No.</strong> <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="tax_number" placeholder="Tax Registration Number" required>
+                            <label class="form-label mb-1"><strong>Store Tax / Registration No.</strong> <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="tax_number"
+                                placeholder="Tax Registration Number" required>
                         </div>
 
                         <!-- State -->
                         <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>State / Province</strong> <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="state" placeholder="State or Province" required>
+                            <label class="form-label mb-1"><strong>State / Province</strong> <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="state" placeholder="State or Province"
+                                required>
                         </div>
 
                         <!-- City -->
                         <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>City</strong> <span class="text-danger">*</span></label>
+                            <label class="form-label mb-1"><strong>City</strong> <span
+                                    class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="city" placeholder="City" required>
                         </div>
 
                         <!-- Store Logo -->
                         <div class="col-md-12">
-                            <label class="form-label mb-1"><strong>Store Logo / Brand Icon</strong> <span class="text-danger">*</span></label>
+                            <label class="form-label mb-1"><strong>Store Logo / Brand Icon</strong> <span
+                                    class="text-danger">*</span></label>
                             <input type="file" class="form-control" name="logo" accept="image/*" required>
-                            <div class="fs-11 text-muted mt-1">Recommended size: 200x200px PNG or JPG image for receipts and badges.</div>
+                            <div class="fs-11 text-muted mt-1">Recommended size: 200x200px PNG or JPG image for receipts
+                                and badges.</div>
                         </div>
 
                         <!-- Username -->
                         <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Manager Username</strong> <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="username" placeholder="Choose manager username" required>
+                            <label class="form-label mb-1"><strong>Manager Username</strong> <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="username"
+                                placeholder="Choose manager username" required>
                         </div>
 
                         <!-- Password -->
                         <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Manager Password</strong> <span class="text-danger">*</span></label>
+                            <label class="form-label mb-1"><strong>Manager Password</strong> <span
+                                    class="text-danger">*</span></label>
                             <div class="position-relative">
-                                <input type="password" class="form-control pe-5" id="store_password" name="password" placeholder="Create password" required minlength="4">
-                                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('store_password', this)">
+                                <input type="password" class="form-control pe-5" id="store_password" name="password"
+                                    placeholder="Create password" required minlength="4">
+                                <button type="button" class="password-toggle-btn"
+                                    onclick="togglePasswordVisibility('store_password', this)">
                                     <i class="fas fa-eye"></i>
                                 </button>
                             </div>
@@ -208,7 +235,7 @@
 
                 <div class="text-center mt-4 pt-2 border-top">
                     <p class="fs-13 text-muted mb-0">
-                        Already have an account? 
+                        Already have an account?
                         <a href="/" class="text-primary fw-bold text-decoration-none ms-1">
                             <i class="fas fa-sign-in-alt me-1"></i> Sign In
                         </a>
@@ -290,7 +317,7 @@
     </script>
 
     <!-- Toastr Notifications -->
-    <% if(typeof success !== 'undefined' && success && success.length > 0){ %>
+    <% if(typeof success !=='undefined' && success && success.length> 0){ %>
         <script>
             toastr.success('<%- success %>', {
                 timeOut: 8000,
@@ -300,17 +327,18 @@
                 escapeHtml: false
             });
         </script>
-    <% } %>
+        <% } %>
 
-    <% if(typeof error !== 'undefined' && error && error.length > 0){ %>
-        <script>
-            toastr.error('<%= error %>', {
-                timeOut: 6000,
-                closeButton: true,
-                progressBar: true,
-                positionClass: "toast-top-right"
-            });
-        </script>
-    <% } %>
+            <% if(typeof error !=='undefined' && error && error.length> 0){ %>
+                <script>
+                    toastr.error('<%= error %>', {
+                        timeOut: 6000,
+                        closeButton: true,
+                        progressBar: true,
+                        positionClass: "toast-top-right"
+                    });
+                </script>
+                <% } %>
 </body>
+
 </html>

@@ -284,44 +284,31 @@
  
 
 <script>
- 
-  function clearCurrency(){
+  window.clearCurrency = function(){
     $('#example3 .symbol').each(function () {
       const text = $(this).text();
       const clean = text.replace(/[^\d.-]/g, ''); 
       $(this).text(clean);
     });
-  }
+  };
 
-  function applyCurrency(){
-   var sym = $('input[name=sym]').val()
+  window.applyCurrency = function(){
+    var sym = $('input[name=sym]').val() || '';
     $('#example3 .symbol').each(function () {
       const value = parseFloat($(this).text());
       if (!isNaN(value)) {
         $(this).text(sym + value.toFixed(2));
       }
     });
-  }
+  };
 
-  function currency(){
-    clearCurrency();
-    applyCurrency();
-  }
-
-  function initDataTableWithCurrency(){
-    if ($.fn.DataTable.isDataTable('#example3')) {
-      $('#example3').DataTable().destroy();
-    }
-
-    $('#example3').DataTable({
-      "drawCallback": function (settings) {
-        currency(); 
-      }
-    });
-  }
+  window.currency = function(){
+    window.clearCurrency();
+    window.applyCurrency();
+  };
 
   $(document).ready(function (){
-    initDataTableWithCurrency();
+    window.currency();
   });
 </script>
 

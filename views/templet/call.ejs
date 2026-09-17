@@ -1901,7 +1901,8 @@
                  $('input[name=extradiscount]').val(initDisc);
                  $('#POS_extra_discount_order').val(initDisc > 0 ? initDisc : '');
                 $('input[name=paid_amount]').val(res.cart.paid_amount)
-               $('input[name=note]').val(res.cart.notes)
+                $('input[name=note]').val(res.cart.notes)
+                $('input[name=reference_number]').val('')
 
 
                $('#payment_grosstotal').html(res.cart.gross_total.toFixed(2))
@@ -1920,7 +1921,6 @@
                $('#POS_payment_model').modal('show');
             }
          })
-      }
    })
 
 
@@ -1965,7 +1965,8 @@
                  $('#edit_POS_extra_discount_order').val(initEditDisc > 0 ? initEditDisc : '');
                  $('#edit_POS_extra_discount_order_hidden').val(initEditDisc);
                 $('input[name=paid_amount]').val(res.order_date.paid_amount)
-               $('input[name=note]').val(res.order_date.notes)
+                $('input[name=note]').val(res.order_date.notes)
+                $('input[name=reference_number]').val(res.order_date.reference_number || '')
 
 
                $('#payment_grosstotal').html(res.order_date.gross_total.toFixed(2))
@@ -2769,126 +2770,84 @@
 
 
 
-   $(document).ready(function () {
-      $("#order_list_serach").on("keyup", function () {
-         var value = $(this).val().toLowerCase();
-         $("#order_list_tbl tr").filter(function () {
-            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-         });
-      });
+   // ==========================================
+   // ORDER LIST: SEARCH, STATUS FILTER & PAGINATION
+   // ==========================================
+   let orderListOffset = 10;
+   let orderSearchTimer = null;
 
+   function renderOrderRowHtml(data, accessdata, language, isStaff, login) {
+      accessdata = accessdata || {};
+      language = language || {};
 
-      $("#orders_list_status").on("change", function () {
+      const formatDate = (rawDate) => {
+         if (!rawDate) return '';
+         const date = new Date(rawDate);
+         if (isNaN(date.getTime())) return '';
+         const dd = String(date.getDate()).padStart(2, '0');
+         const mm = String(date.getMonth() + 1).padStart(2, '0');
+         const yyyy = date.getFullYear();
+         return `${yyyy}-${mm}-${dd}`;
+      };
 
-         var value = $(this).val();
+      const orderDateStr = formatDate(data.order_date);
+      const deliveryDateStr = formatDate(data.delivery_date);
 
-         // $("#order_list_tbl tr").filter(function () {
-         //    $(this).toggle($(this.children[3]).text().indexOf(value) > -1)
-         // });
+      const statusMap = {
+         1: 'dark',
+         2: 'warning',
+         3: 'secondary',
+         4: 'info',
+         5: 'danger',
+         6: 'danger'
+      };
+      const statusClass = statusMap[data.order_status] || 'dark';
+      const statusBtn = `<button type="button" class="btn btn-${statusClass} btn-xxs text-nowrap" disabled>${data.orderStatus || ''}</button>`;
 
-         $.ajax({
-            type: 'get',
-            url: `/order/liststattus/${value}`,
-            success: function (res) {
+      let paymentBtn = '';
+      if (Number(data.balance_amount) > 0) {
+         if (accessdata.logas === 'custmor') {
+            paymentBtn = `<button type="button" class="btn light btn-info btn-xxs mb-2" disabled>${language.Pending || 'Pending'}</button>`;
+         } else {
+            const canEdit = (!accessdata.roll?.orders || accessdata.roll.orders.includes('edit')) ? '' : 'disabled';
+            paymentBtn = `<button onclick="open_patment_model('${data.id}')" type="button" class="btn light btn-success btn-xxs mb-2" ${canEdit}>${language.Add_Payment || 'Add Payment'}</button>`;
+         }
+      } else {
+         paymentBtn = `<button type="button" class="btn light btn-dark btn-xxs mb-2" disabled>${language.Fully_Paid || 'Fully Paid'}</button>`;
+      }
 
+      const editBtn = (data.order_status != 6)
+         ? `<a href="/admin/edit/${data.id}" class="btn-tbl-action btn-tbl-edit" title="${language.Edit || 'Edit'}"><i class="fas fa-pencil-alt"></i></a>`
+         : '';
 
+      const canDeleteOrder = (accessdata.logas !== 'custmor') && (accessdata.topbardata?.is_staff == 0 || (accessdata.roll?.orders && accessdata.roll.orders.includes('delete')));
+      const deleteBtn = canDeleteOrder
+         ? `<button type="button" class="btn-tbl-action btn-tbl-delete" data-bs-toggle="modal" data-bs-target="#deleteOrderModal" data-id="${data.id}" data-orderid="${data.order_id}" title="${language.Delete || 'Delete'}"><i class="fa fa-trash"></i></button>`
+         : '';
 
-               const orderlist = res.orderlist;
-               const accessdata = res.accessdata;
-               const language = res.language;
-               const login = res.login;
+      const hideStore = (isStaff || login !== 'master');
+      const storeCol = hideStore
+         ? `<td class="d-none"></td>`
+         : `<td><p class="text-sm mb-0 text-uppercase">${data.storeName || ''}</p></td>`;
 
-               let html = "";
-
-     
-    
-            
-if (orderlist.length < 9) {
-      $('#loadMoreorder').addClass("d-none")
-      console.log("d-none");
-   }else{
-      $('#loadMoreorder').removeClass("d-none")
-   }
-
-               if (!orderlist || orderlist.length === 0) {
-                  html += `
-      <tr>
-        <td colspan="10" class="text-center text-danger">
-          ${language.No_Order_List_Found}
-        </td>
-      </tr>
-    `;
-               } else {
-                  orderlist.forEach(function (data) {
-
-                     const formatDate = (rawDate) => {
-                        const date = new Date(rawDate);
-                        const dd = String(date.getDate()).padStart(2, '0');
-                        const mm = String(date.getMonth() + 1).padStart(2, '0');
-                        const yyyy = date.getFullYear();
-                        return `${yyyy}-${mm}-${dd}`;
-                     };
-
-                     const orderDateStr = formatDate(data.order_date);
-                     const deliveryDateStr = formatDate(data.delivery_date);
-
-
-                     const statusMap = {
-                        1: 'dark',
-                        2: 'warning',
-                        3: 'secondary',
-                        4: 'info',
-                        5: 'danger',
-                        6: 'danger'
-                     };
-                     const statusClass = statusMap[data.order_status] || 'dark';
-                     const statusBtn = `<button type="button" class="btn btn-${statusClass} btn-xxs text-nowrap" disabled>${data.orderStatus}</button>`;
-
-
-                     let paymentBtn = '';
-                     if (data.balance_amount > 0) {
-                        if (accessdata.logas === 'custmor') {
-                           paymentBtn = `<button type="button" class="btn light  btn-info btn-xxs mb-2" disabled>${language.Pending}</button>`;
-                        } else {
-                           const canEdit = accessdata.roll.orders.includes('edit') ? '' : 'disabled';
-                           paymentBtn = `<button onclick="open_patment_model('${data.id}')" type="button" class="btn light  btn-success btn-xxs mb-2" ${canEdit}>${language.Add_Payment}</button>`;
-                        }
-                     } else {
-                        paymentBtn = `<button type="button" class="btn light  btn-dark btn-xxs mb-2" disabled>${language.Fully_Paid}</button>`;
-                     }
-
-
-                     const editBtn = (data.order_status != 6)
-                        ? `<a href="/admin/edit/${data.id}" class="btn-tbl-action btn-tbl-edit" title="${language.Edit || 'Edit'}"><i class="fas fa-pencil-alt"></i></a>`
-                        : '';
-
-                     const deleteBtn = (accessdata.logas !== 'custmor')
-                        ? `<button type="button" class="btn-tbl-action btn-tbl-delete" data-bs-toggle="modal" data-bs-target="#deleteOrderModal" data-id="${data.id}" data-orderid="${data.order_id}" title="${language.Delete || 'Delete'}"><i class="fa fa-trash"></i></button>`
-                        : '';
-
-                     const storeCol = login === 'master'
-                        ? `<td><p class="text-sm mb-0 text-uppercase">${data.storeName || ''}</p></td>`
-                        : `<td class="d-none"></td>`;
-
-
-                     html += `
+      return `
         <tr class="load_data">
           <td>
-            <p class="text-sm mb-0 text-nowrap"><span class="me-1">${language.Order_ID || 'Order ID'} :</span><span>${data.order_id}</span></p>
+            <p class="text-sm mb-0 text-nowrap"><span class="me-1">${language.Order_ID || 'Order ID'} :</span><span>${data.order_id || ''}</span></p>
             <p class="text-sm mb-0 text-nowrap"><span class="me-1">${language.Order_Date || 'Order Date'} :</span><span>${orderDateStr}</span></p>
             <p class="text-sm mb-0 text-nowrap"><span class="me-1">${language.Delivery_Date || 'Delivery Date'} :</span><span>${deliveryDateStr}</span></p>
           </td>
           <td>
-            <p class="text-sm px-2 mb-0 text-nowrap">${data.name}</p>
-            <p class="text-sm px-2 mb-0">${data.number}</p>
+            <p class="text-sm px-2 mb-0 text-nowrap">${data.name || ''}</p>
+            <p class="text-sm px-2 mb-0">${data.number || ''}</p>
           </td>
           <td>
-            <p class="text-sm px-2 mb-0 text-nowrap symbol">${data.gross_total}</p>
+            <p class="text-sm px-2 mb-0 text-nowrap symbol">${data.gross_total || '0'}</p>
           </td>
           <td>${statusBtn}</td>
           <td>
-            <p class="text-sm mb-0 text-nowrap"><span class="me-2">${language.Total_Amount || 'Total Amount'} :</span><span class="symbol">${data.gross_total}</span></p>
-            <p class="text-sm mb-1 text-nowrap"><span class="me-2">${language.Paid_Amount || 'Paid Amount'} :</span><span class="symbol">${data.paid_amount}</span></p>
+            <p class="text-sm mb-0 text-nowrap"><span class="me-2">${language.Total_Amount || 'Total Amount'} :</span><span class="symbol">${data.gross_total || '0'}</span></p>
+            <p class="text-sm mb-1 text-nowrap"><span class="me-2">${language.Paid_Amount || 'Paid Amount'} :</span><span class="symbol">${data.paid_amount || '0'}</span></p>
             ${paymentBtn}
           </td>
           ${storeCol}
@@ -2906,18 +2865,143 @@ if (orderlist.length < 9) {
           </td>
         </tr>
       `;
-                  });
-               }
+   }
 
-               $("#order_list_tbl").html(html);
+   function fetchFilteredOrders(resetOffset) {
+      if (resetOffset) {
+         orderListOffset = 0;
+      }
+      const status = $("#orders_list_status").val() || "";
+      const search = ($("#order_list_serach").val() || "").trim();
+
+      $.ajax({
+         type: 'GET',
+         url: `/order/liststattus/${encodeURIComponent(status)}`,
+         data: { search: search },
+         success: function (res) {
+            const list = res.orderlist || res.orderlists || [];
+            const accessdata = res.accessdata || {};
+            const language = res.language || {};
+            const login = res.login;
+            const isStaff = res.isStaff;
+
+            let html = "";
+            if (!list || list.length === 0) {
+               html = `
+                  <tr>
+                     <td colspan="7" class="text-center text-danger py-4">
+                        ${language.No_Order_List_Found || 'No Order List Found'}
+                     </td>
+                  </tr>
+               `;
+               $('#loadMoreorder').addClass("d-none");
+            } else {
+               list.forEach(function (order) {
+                  html += renderOrderRowHtml(order, accessdata, language, isStaff, login);
+               });
+
+               if (list.length < 10) {
+                  $('#loadMoreorder').addClass("d-none");
+               } else {
+                  $('#loadMoreorder').removeClass("d-none");
+               }
+            }
+
+            $("#order_list_tbl").html(html);
+            orderListOffset = list.length;
+
+            setTimeout(() => {
+               if (typeof forcurrency === 'function') forcurrency();
+               if (typeof pagetablecurrency === 'function') pagetablecurrency();
+            }, 0);
+         },
+         error: function (err) {
+            console.error("Error fetching filtered orders:", err);
+         }
+      });
+   }
+
+   $(document).ready(function () {
+      if ($("#order_list_tbl").length > 0) {
+         orderListOffset = $("#order_list_tbl .load_data").length;
+         if (orderListOffset < 10) {
+            $("#loadMoreorder").addClass("d-none");
+         } else {
+            $("#loadMoreorder").removeClass("d-none");
+         }
+      }
+
+      // Search input with debounce & instant Enter key
+      $(document).on("input keyup", "#order_list_serach", function (e) {
+         if (e.which === 13) {
+            e.preventDefault();
+            clearTimeout(orderSearchTimer);
+            fetchFilteredOrders(true);
+            return;
+         }
+         clearTimeout(orderSearchTimer);
+         orderSearchTimer = setTimeout(function () {
+            fetchFilteredOrders(true);
+         }, 350);
+      });
+
+      // Status dropdown change
+      $(document).on("change", "#orders_list_status", function () {
+         clearTimeout(orderSearchTimer);
+         fetchFilteredOrders(true);
+      });
+
+      // Load more button
+      $(document).on("click", "#loadMoreorder", function (e) {
+         e.preventDefault();
+         const $btn = $(this);
+         const originalText = $btn.html();
+         $btn.addClass("disabled").html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Loading...');
+
+         const status = $("#orders_list_status").val() || "";
+         const search = ($("#order_list_serach").val() || "").trim();
+
+         $.ajax({
+            type: 'POST',
+            url: '/order/getmore',
+            data: {
+               from: orderListOffset,
+               orderstatus: status,
+               search: search
+            },
+            success: function (res) {
+               $btn.removeClass("disabled").html(originalText);
+               const list = res.orderlists || res.orderlist || [];
+               const accessdata = res.accessdata || {};
+               const language = res.language || {};
+               const login = res.login;
+               const isStaff = res.isStaff;
+
+               if (list && list.length > 0) {
+                  let html = "";
+                  list.forEach(function (order) {
+                     html += renderOrderRowHtml(order, accessdata, language, isStaff, login);
+                  });
+                  $("#order_list_tbl").append(html);
+                  orderListOffset += list.length;
+
+                  if (list.length < 10) {
+                     $("#loadMoreorder").addClass("d-none");
+                  }
+               } else {
+                  $("#loadMoreorder").addClass("d-none");
+               }
 
                setTimeout(() => {
                   if (typeof forcurrency === 'function') forcurrency();
                   if (typeof pagetablecurrency === 'function') pagetablecurrency();
                }, 0);
+            },
+            error: function (err) {
+               $btn.removeClass("disabled").html(originalText);
+               console.error("Error loading more orders:", err);
             }
-
-         })
+         });
       });
    });
 
@@ -3729,153 +3813,6 @@ if (orderlist.length < 9) {
       clearCurrency();
       applyCurrency();
    }
-
-
-   var ordersize = $('.load_data').length;
-   let v = 10;
-   console.log("ordersize", ordersize);
-
-
-   if (ordersize < 9) {
-      $('#loadMoreorder').addClass("d-none")
-      console.log("d-none");
-   }
-
-   $('#loadMoreorder').click(function () {
-
-      // v = (v + 10 <= size_item) ? v + 10 : size_item;
-      // $('.load_data:lt('+v+')').show();
-      // // hide load more button if all items are visible
-      // if($(".load_data:visible").length >= size_item ){ $("#loadMore").hide(); }
-
-      var orderstatus = $("#orders_list_status").val()
-      let from = v
-      v = parseFloat(ordersize) + v
-
-      $.ajax({
-         type: 'POST',
-         url: '/order/getmore',
-         data: { from, orderstatus },
-         success: function (res) {
-            console.log(res);
-
-            if (res.orderlists != "") {
-               const lang = (res && res.language) ? res.language : {};
-               const lblOrderId = lang.Order_ID || 'Order ID';
-               const lblOrderDate = lang.Order_Date || 'Order Date';
-               const lblDeliveryDate = lang.Delivery_Date || 'Delivery Date';
-               const lblTotalAmount = lang.Total_Amount || 'Total Amount';
-               const lblPaidAmount = lang.Paid_Amount || 'Paid Amount';
-               const lblPending = lang.Pending || 'Pending';
-               const lblAddPayment = lang.Add_Payment || 'Add Payment';
-               const lblFullyPaid = lang.Fully_Paid || 'Fully Paid';
-                const lblEdit = lang.Edit || 'Edit';
-                const lblView = lang.View || 'View';
-                const lblPrint = lang.Print || 'Print';
-                const lblDelete = lang.Delete || 'Delete';
-
-                $.each(res.orderlists, function (index, value) {
-
-                   let Order_date = new Date(value.order_date);
-                   let Order_day = (Order_date.getDate() < 10 ? '0' : '') + Order_date.getDate();
-                   let Order_month = ((Order_date.getMonth() + 1) < 10 ? '0' : '') + (Order_date.getMonth() + 1);
-                   let Order_year = Order_date.getFullYear();
-                   let Order_fullDate = `${Order_year}-${Order_month}-${Order_day}`;
-
-                   let Delivery_date = new Date(value.delivery_date);
-                   let Delivery_day = (Delivery_date.getDate() < 10 ? '0' : '') + Delivery_date.getDate();
-                   let Delivery_month = ((Delivery_date.getMonth() + 1) < 10 ? '0' : '') + (Delivery_date.getMonth() + 1);
-                   let Delivery_year = Delivery_date.getFullYear();
-                   let Delivery_fullDate = `${Delivery_year}-${Delivery_month}-${Delivery_day}`;
-
-                   let statusClass = 'dark';
-                   if (value.order_status == 1) statusClass = 'dark';
-                   else if (value.order_status == 2) statusClass = 'warning';
-                   else if (value.order_status == 3) statusClass = 'secondary';
-                   else if (value.order_status == 4) statusClass = 'info';
-                   else if (value.order_status == 5) statusClass = 'danger';
-                   else if (value.order_status == 6) statusClass = 'danger';
-
-                   const statusBadge = `<button type="button" class="btn btn-${statusClass} btn-xxs text-nowrap" disabled>${value.orderStatus || ''}</button>`;
-
-                   let aedit = "";
-                   if (!res.accessdata?.roll?.orders?.includes('edit')) aedit = "disabled";
-
-                   let paymentBtnHtml = '';
-                   if (value.balance_amount > 0) {
-                      if (res.accessdata?.logas == 'custmor') {
-                         paymentBtnHtml = `<button type="button" class="btn light btn-info btn-xxs mb-2" disabled>${lblPending}</button>`;
-                      } else {
-                         paymentBtnHtml = `<button onclick="open_patment_model(${value.id})" type="button" class="btn light btn-success btn-xxs mb-2" ${aedit}>${lblAddPayment}</button>`;
-                      }
-                   } else {
-                      paymentBtnHtml = `<button type="button" class="btn btn-dark btn-xxs mb-2" disabled>${lblFullyPaid}</button>`;
-                   }
-
-                   let loginClass = (res.login !== 'master') ? 'd-none' : '';
-
-                   let editBtnHtml = '';
-                   if (value.order_status != 6) {
-                      editBtnHtml = `<a href="/admin/edit/${value.id}" class="btn-tbl-action btn-tbl-edit" title="${lblEdit}"><i class="fas fa-pencil-alt"></i></a>`;
-                   }
-
-                   let deleteBtnHtml = '';
-                   if (res.accessdata?.logas !== 'custmor') {
-                      deleteBtnHtml = `<button type="button" class="btn-tbl-action btn-tbl-delete" data-bs-toggle="modal" data-bs-target="#deleteOrderModal" data-id="${value.id}" data-orderid="${value.order_id}" title="${lblDelete}"><i class="fa fa-trash"></i></button>`;
-                   }
-
-                   let data = `<tr class="load_data">
-                      <td>
-                        <p class="text-sm mb-0 text-nowrap"><span class="me-1">${lblOrderId} :</span><span>${value.order_id}</span></p>
-                        <p class="text-sm mb-0 text-nowrap"><span class="me-1">${lblOrderDate} :</span><span>${Order_fullDate}</span></p>
-                        <p class="text-sm mb-0 text-nowrap"><span class="me-1">${lblDeliveryDate} :</span><span>${Delivery_fullDate}</span></p>
-                      </td>
-                      <td>
-                        <p class="text-sm px-2 mb-0 text-nowrap">${value.name || ''}</p>
-                        <p class="text-sm px-2 mb-0">${value.number || ''}</p>
-                      </td>
-                      <td>
-                        <p class="text-sm px-2 mb-0 text-nowrap symbol">${value.gross_total}</p>
-                      </td>
-                      <td>${statusBadge}</td>
-                      <td>
-                        <p class="text-sm mb-0 text-nowrap"><span class="me-2">${lblTotalAmount} :</span><span class="symbol">${value.gross_total}</span></p>
-                        <p class="text-sm mb-1 text-nowrap"><span class="me-2">${lblPaidAmount} :</span><span class="symbol">${value.paid_amount}</span></p>
-                        ${paymentBtnHtml}
-                      </td>
-                      <td class="${loginClass}">
-                        <p class="text-sm mb-0 text-uppercase">${value.storeName || ''}</p>
-                      </td>
-                      <td class="text-center">
-                        <div class="tbl-action-group">
-                          ${editBtnHtml}
-                          <a href="/order/view/${value.id}" class="btn-tbl-action btn-tbl-view" title="${lblView}">
-                            <i class="fa fa-eye"></i>
-                          </a>
-                          <button type="button" class="btn-tbl-action btn-tbl-print" id="print_barcode" data-bs-toggle="modal" data-bs-target="#exampleModalLong" data-id="${value.id}" title="${lblPrint}">
-                            <i class="fa fa-print"></i>
-                          </button>
-                          ${deleteBtnHtml}
-                        </div>
-                      </td>
-                   </tr>`;
-
-                  $('#order_list_tbl').append(data);
-               });
-                setTimeout(() => {
-                   if (typeof forcurrency === 'function') forcurrency();
-                   if (typeof pagetablecurrency === 'function') pagetablecurrency();
-                }, 0);
-            } else {
-               $("#orderloadbtn").addClass("d-none")
-            }
-
-         }
-      })
-   })
-
-
-
 
    $(document).on('click', '#rollmanegemaster', function () {
 

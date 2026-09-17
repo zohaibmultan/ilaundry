@@ -43,56 +43,54 @@ let dataSet = [
 (function($) {
     "use strict";
 
+    var commonConfig = {
+        "autoWidth": false,
+        "language": {
+            "search": "",
+            "searchPlaceholder": "Search...",
+            "lengthMenu": "Show _MENU_ entries"
+        },
+        "drawCallback": function(settings) {
+            if (typeof window.currency === 'function') {
+                window.currency();
+            } else {
+                var sym = $('input[name=sym]').val();
+                if (sym) {
+                    $('#example, #example2, #example3, #example4, #example5').find('.symbol').each(function() {
+                        var text = $(this).text();
+                        var clean = text.replace(/[^\d.-]/g, '');
+                        var val = parseFloat(clean);
+                        if (!isNaN(val)) {
+                            $(this).text(sym + val.toFixed(2));
+                        }
+                    });
+                }
+            }
+        }
+    };
+
     // Initialize #example if present
     if ($('#example').length > 0 && !$.fn.DataTable.isDataTable('#example')) {
-        var table1 = $('#example').DataTable({
-            "language": {
-                "search": "",
-                "searchPlaceholder": "Search..."
-            }
-        });
+        $('#example').DataTable(commonConfig);
     }
 
     // Initialize #example2 if present
     if ($('#example2').length > 0 && !$.fn.DataTable.isDataTable('#example2')) {
-        var table2 = $('#example2').DataTable({
-            "language": {
-                "search": "",
-                "searchPlaceholder": "Search..."
-            }
-        });
+        $('#example2').DataTable(commonConfig);
     }
 
-    // Initialize #example3 if present (Used on Customer List, Coupon List, Services, Staff, etc.)
+    // Initialize #example3 if present (Used on Customer List, Customer Ledger, Coupon List, Services, Staff, etc.)
     if ($('#example3').length > 0 && !$.fn.DataTable.isDataTable('#example3')) {
-        var table3 = $('#example3').DataTable({
-            "scrollY": "52vh",
-            "scrollCollapse": true,
-            "scrollX": true,
-            "language": {
-                "search": "",
-                "searchPlaceholder": "Search..."
-            }
-        });
+        $('#example3').DataTable(commonConfig);
     }
 
     // Initialize #example4 and #example5 if present
     if ($('#example4').length > 0 && !$.fn.DataTable.isDataTable('#example4')) {
-        $('#example4').DataTable({
-            "language": {
-                "search": "",
-                "searchPlaceholder": "Search..."
-            }
-        });
+        $('#example4').DataTable(commonConfig);
     }
 
     if ($('#example5').length > 0 && !$.fn.DataTable.isDataTable('#example5')) {
-        $('#example5').DataTable({
-            "language": {
-                "search": "",
-                "searchPlaceholder": "Search..."
-            }
-        });
+        $('#example5').DataTable(commonConfig);
     }
 
 })(jQuery);

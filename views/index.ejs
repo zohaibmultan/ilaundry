@@ -64,30 +64,38 @@
                                 <!-- Right Column: Live Snapshot Card -->
                                 <div class="cc-right">
                                     <div class="cc-snapshot-card">
-                                        <div class="cc-snapshot-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                        <div
+                                            class="cc-snapshot-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                                             <div class="d-flex align-items-center gap-2">
                                                 <span class="cc-snapshot-title">LIVE SNAPSHOT</span>
-                                                <% if (typeof isStaff !== 'undefined' && isStaff) { %>
-                                                    <span class="badge bg-primary text-white" style="font-size: 0.75rem;">
-                                                        <i class="fas fa-store me-1"></i><%= staffStoreName || 'Assigned Store' %>
+                                                <% if (typeof isStaff !=='undefined' && isStaff) { %>
+                                                    <span class="badge bg-primary text-white"
+                                                        style="font-size: 0.75rem;">
+                                                        <i class="fas fa-store me-1"></i>
+                                                        <%= staffStoreName || 'Assigned Store' %>
                                                     </span>
-                                                <% } %>
+                                                    <% } %>
                                             </div>
                                             <div class="d-flex align-items-center gap-2">
-                                                <% if (typeof isStaff !== 'undefined' && !isStaff && typeof storeList !== 'undefined' && storeList.length > 0) { %>
+                                                <% if (typeof isStaff !=='undefined' && !isStaff && typeof storeList
+                                                    !=='undefined' && storeList.length> 0) { %>
                                                     <div class="cc-store-filter-wrap">
-                                                        <select id="dashboard-store-filter" class="form-select form-select-sm py-1 px-2 border-0 shadow-sm" style="font-size: 0.8rem; font-weight: 600; border-radius: 8px; background-color: #f8fafc; color: #1e293b; min-width: 160px;">
+                                                        <select id="dashboard-store-filter"
+                                                            class="form-select form-select-sm py-1 px-2 border-0 shadow-sm"
+                                                            style="font-size: 0.8rem; font-weight: 600; border-radius: 8px; background-color: #f8fafc; color: #1e293b; min-width: 160px;">
                                                             <option value="all" selected>All Stores (Combined)</option>
                                                             <% storeList.forEach(function(st) { %>
-                                                                <option value="<%= st.id %>"><%= st.name %></option>
-                                                            <% }) %>
+                                                                <option value="<%= st.id %>">
+                                                                    <%= st.name %>
+                                                                </option>
+                                                                <% }) %>
                                                         </select>
                                                     </div>
-                                                <% } %>
-                                                <span class="cc-updating-badge">
-                                                    <span class="cc-pulse-dot"></span>
-                                                    <span>updating</span>
-                                                </span>
+                                                    <% } %>
+                                                        <span class="cc-updating-badge">
+                                                            <span class="cc-pulse-dot"></span>
+                                                            <span>updating</span>
+                                                        </span>
                                             </div>
                                         </div>
 
@@ -140,219 +148,255 @@
                         </div>
                     </div>
 
-                    <% if (typeof isStaff !== 'undefined' && !isStaff && typeof storeStatsList !== 'undefined' && storeStatsList.length > 0) { %>
-                    <!-- Per-Store Counters & Performance Breakdown for Admin -->
-                    <div class="col-12 mb-4">
-                        <div class="card shadow-sm border-0" style="border-radius: 16px; overflow: hidden;">
-                            <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center border-bottom flex-wrap gap-2">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                                        <i class="fas fa-store-alt text-primary"></i>
+                    <% if (typeof isStaff !=='undefined' && !isStaff && typeof storeStatsList !=='undefined' &&
+                        storeStatsList.length> 0) { %>
+                        <!-- Per-Store Counters & Performance Breakdown for Admin -->
+                        <div class="col-12 mb-4">
+                            <div class="card shadow-sm border-0" style="border-radius: 16px; overflow: hidden;">
+                                <div
+                                    class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center border-bottom flex-wrap gap-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
+                                            style="width: 36px; height: 36px;">
+                                            <i class="fas fa-store-alt text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="mb-0 font-weight-bold"
+                                                style="color: #0f172a;">Per-Store Counters &
+                                                Performance</h4>
+                                            <small class="text-muted">Live counters breakdown across each individual
+                                                store location</small>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h5 class="mb-0 font-weight-bold" style="color: #0f172a; font-size: 1.05rem;">Per-Store Counters & Performance</h5>
-                                        <small class="text-muted">Live counters breakdown across each individual store location</small>
-                                    </div>
+                                    <span class="badge bg-light text-white font-weight-bold py-2 px-3 fs-14"
+                                        style="border-radius: 20px;">
+                                        <%= storeStatsList.length %> Active Stores
+                                    </span>
                                 </div>
-                                <span class="badge bg-light text-primary font-weight-bold py-2 px-3" style="border-radius: 20px;">
-                                    <%= storeStatsList.length %> Active Stores
-                                </span>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle mb-0" id="table-per-store-stats">
-                                        <thead style="background-color: #f8fafc; color: #475569; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                                            <tr>
-                                                <th class="ps-4 py-3">Store Name</th>
-                                                <th class="py-3 text-end">Sales</th>
-                                                <th class="py-3 text-center">Orders</th>
-                                                <th class="py-3 text-center">Services</th>
-                                                <th class="py-3 text-center">Customers</th>
-                                                <th class="pe-4 py-3 text-end">Quick Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody style="font-size: 0.9rem; color: #1e293b;">
-                                            <% storeStatsList.forEach(function(s) { %>
-                                                <tr id="store-stat-row-<%= s.store_id %>">
-                                                    <td class="ps-4 py-3 font-weight-bold">
-                                                        <div class="d-flex align-items-center gap-2">
-                                                            <span class="badge rounded-pill bg-light text-primary border" style="font-size: 0.75rem;">#<%= s.store_id %></span>
-                                                            <span class="store-name-text"><%= s.store_name %></span>
-                                                        </div>
-                                                    </td>
-                                                    <td class="py-3 text-end font-weight-bold text-success" id="store-sales-<%= s.store_id %>">
-                                                        <%= accessdata?.masterstore?.currency_symbol || '$' %><%= Number(s.tottalsales || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
-                                                    </td>
-                                                    <td class="py-3 text-center" id="store-orders-<%= s.store_id %>">
-                                                        <span class="badge bg-secondary-subtle text-secondary px-3 py-1 font-weight-bold" style="border-radius: 12px; font-size: 0.85rem;">
-                                                            <%= Number(s.totalorder || 0).toLocaleString('en-US') %>
-                                                        </span>
-                                                    </td>
-                                                    <td class="py-3 text-center" id="store-services-<%= s.store_id %>">
-                                                        <span class="badge bg-info-subtle text-info px-3 py-1 font-weight-bold" style="border-radius: 12px; font-size: 0.85rem;">
-                                                            <%= Number(s.totalservices || 0).toLocaleString('en-US') %>
-                                                        </span>
-                                                    </td>
-                                                    <td class="py-3 text-center" id="store-customers-<%= s.store_id %>">
-                                                        <span class="badge bg-success-subtle text-success px-3 py-1 font-weight-bold" style="border-radius: 12px; font-size: 0.85rem;">
-                                                            <%= Number(s.totalcustomer || 0).toLocaleString('en-US') %>
-                                                        </span>
-                                                    </td>
-                                                    <td class="pe-4 py-3 text-end">
-                                                        <button type="button" class="btn btn-outline-primary btn-xs filter-store-btn" data-store-id="<%= s.store_id %>">
-                                                            <i class="fas fa-filter me-1"></i> Snapshot
-                                                        </button>
-                                                    </td>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0" id="table-per-store-stats">
+                                            <thead
+                                                style="background-color: #f8fafc; color: #475569; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                                <tr>
+                                                    <th class="ps-4 py-3">Store Name</th>
+                                                    <th class="py-3 text-end">Sales</th>
+                                                    <th class="py-3 text-center">Orders</th>
+                                                    <th class="py-3 text-center">Services</th>
+                                                    <th class="py-3 text-center">Customers</th>
+                                                    <th class="pe-4 py-3 text-end">Quick Action</th>
                                                 </tr>
-                                            <% }) %>
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody style="font-size: 0.9rem; color: #1e293b;">
+                                                <% storeStatsList.forEach(function(s) { %>
+                                                    <tr id="store-stat-row-<%= s.store_id %>">
+                                                        <td class="ps-4 py-3 font-weight-bold">
+                                                            <div class="d-flex align-items-center gap-2">
+                                                                <span
+                                                                    class="badge rounded-pill bg-light text-primary border"
+                                                                    style="font-size: 0.75rem;">#<%= s.store_id %>
+                                                                        </span>
+                                                                <span class="store-name-text">
+                                                                    <%= s.store_name %>
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td class="py-3 text-end font-weight-bold text-success"
+                                                            id="store-sales-<%= s.store_id %>">
+                                                            <%= accessdata?.masterstore?.currency_symbol || '$' %>
+                                                                <%= Number(s.tottalsales || 0).toLocaleString('en-US', {
+                                                                    minimumFractionDigits: 2, maximumFractionDigits: 2
+                                                                    }) %>
+                                                        </td>
+                                                        <td class="py-3 text-center"
+                                                            id="store-orders-<%= s.store_id %>">
+                                                            <span
+                                                                class="badge bg-secondary-subtle text-secondary px-3 py-1 font-weight-bold"
+                                                                style="border-radius: 12px; font-size: 0.85rem;">
+                                                                <%= Number(s.totalorder || 0).toLocaleString('en-US') %>
+                                                            </span>
+                                                        </td>
+                                                        <td class="py-3 text-center"
+                                                            id="store-services-<%= s.store_id %>">
+                                                            <span
+                                                                class="badge bg-info-subtle text-info px-3 py-1 font-weight-bold"
+                                                                style="border-radius: 12px; font-size: 0.85rem;">
+                                                                <%= Number(s.totalservices || 0).toLocaleString('en-US')
+                                                                    %>
+                                                            </span>
+                                                        </td>
+                                                        <td class="py-3 text-center"
+                                                            id="store-customers-<%= s.store_id %>">
+                                                            <span
+                                                                class="badge bg-success-subtle text-success px-3 py-1 font-weight-bold"
+                                                                style="border-radius: 12px; font-size: 0.85rem;">
+                                                                <%= Number(s.totalcustomer || 0).toLocaleString('en-US')
+                                                                    %>
+                                                            </span>
+                                                        </td>
+                                                        <td class="pe-4 py-3 text-end">
+                                                            <button type="button"
+                                                                class="btn btn-outline-primary btn-xs filter-store-btn"
+                                                                data-store-id="<%= s.store_id %>">
+                                                                <i class="fas fa-filter me-1"></i> Snapshot
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    <% }) %>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <% } %>
+                        <% } %>
 
-                    <div class="col-xl-12 col-lg-12 col-xxl-12 col-sm-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h4 class="card-title">
-                                    <%= language.Recent_Order %> (Top 10)
-                                </h4>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive recentOrderTable">
-                                    <table class="table verticle-middle table-responsive-md">
-                                        <thead>
-                                            <tr>
-                                                <th scope="col">
-                                                    <%= language.Order_Info %>
-                                                </th>
-                                                <th scope="col">
-                                                    <%= language.Customers %>
-                                                </th>
-                                                <th scope="col">
-                                                    <%= language.Order_Amount %>
-                                                </th>
-                                                <th scope="col">
-                                                    <%= language.Status %>
-                                                </th>
-                                                <th scope="col">
-                                                    <%= language.Payment_Amount %>
-                                                </th>
-                                                <% if (typeof isStaff === 'undefined' || !isStaff || accessdata.mutibranch===true) { %>
-                                                    <th scope="col">
-                                                        <%= language.Store_Name || 'Store Name' %>
-                                                    </th>
-                                                <% } %>
-                                                        <th scope="col" class="text-center" style="width: 50px;">
-                                                            <%= language.Action || language.View || 'Action' %>
+                            <div class="col-xl-12 col-lg-12 col-xxl-12 col-sm-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="card-title">
+                                            <%= language.Recent_Order %> (Top 10)
+                                        </h4>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive recentOrderTable">
+                                            <table class="table verticle-middle table-responsive-md">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col">
+                                                            <%= language.Order_Info %>
                                                         </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <% recentOrder.forEach(function (data){ %>
-                                                <tr>
-                                                    <td>
-                                                        <%= data.order_id %>
-                                                    </td>
-                                                    <td>
-                                                        <%= data.customer %>
-                                                    </td>
-                                                    <td class="symbol">
-                                                        <%= data.gross_total %>
-                                                    </td>
-                                                    <td>
-                                                        <% if(data.order_status==1){ %>
-                                                            <button type="button"
-                                                                class="btn btn-dark btn-xxs text-nowrap" disabled>
-                                                                <%=data.status %>
-                                                            </button>
-                                                            <% }else if(data.order_status==2){ %>
-                                                                <button type="button"
-                                                                    class="btn btn-warning btn-xxs text-nowrap"
-                                                                    disabled>
-                                                                    <%=data.status %>
-                                                                </button>
-                                                                <% }else if(data.order_status==3){ %>
+                                                        <th scope="col">
+                                                            <%= language.Customers %>
+                                                        </th>
+                                                        <th scope="col">
+                                                            <%= language.Order_Amount %>
+                                                        </th>
+                                                        <th scope="col">
+                                                            <%= language.Status %>
+                                                        </th>
+                                                        <th scope="col">
+                                                            <%= language.Payment_Amount %>
+                                                        </th>
+                                                        <% if (typeof isStaff==='undefined' || !isStaff ||
+                                                            accessdata.mutibranch===true) { %>
+                                                            <th scope="col">
+                                                                <%= language.Store_Name || 'Store Name' %>
+                                                            </th>
+                                                            <% } %>
+                                                                <th scope="col" class="text-center"
+                                                                    style="width: 50px;">
+                                                                    <%= language.Action || language.View || 'Action' %>
+                                                                </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <% recentOrder.forEach(function (data){ %>
+                                                        <tr>
+                                                            <td>
+                                                                <%= data.order_id %>
+                                                            </td>
+                                                            <td>
+                                                                <%= data.customer %>
+                                                            </td>
+                                                            <td class="symbol">
+                                                                <%= data.gross_total %>
+                                                            </td>
+                                                            <td>
+                                                                <% if(data.order_status==1){ %>
                                                                     <button type="button"
-                                                                        class="btn btn-secondary btn-xxs text-nowrap"
+                                                                        class="btn btn-dark btn-xxs text-nowrap"
                                                                         disabled>
                                                                         <%=data.status %>
                                                                     </button>
-                                                                    <% }else if(data.order_status==4){ %>
+                                                                    <% }else if(data.order_status==2){ %>
                                                                         <button type="button"
-                                                                            class="btn btn-info btn-xxs text-nowrap"
+                                                                            class="btn btn-warning btn-xxs text-nowrap"
                                                                             disabled>
                                                                             <%=data.status %>
                                                                         </button>
-                                                                        <% }else if(data.order_status==5){ %>
+                                                                        <% }else if(data.order_status==3){ %>
                                                                             <button type="button"
-                                                                                class="btn btn-danger btn-xxs text-nowrap"
+                                                                                class="btn btn-secondary btn-xxs text-nowrap"
                                                                                 disabled>
                                                                                 <%=data.status %>
                                                                             </button>
-                                                                            <% }else if(data.order_status==6){ %>
+                                                                            <% }else if(data.order_status==4){ %>
                                                                                 <button type="button"
-                                                                                    class="btn btn-danger btn-xxs text-nowrap"
+                                                                                    class="btn btn-info btn-xxs text-nowrap"
                                                                                     disabled>
                                                                                     <%=data.status %>
                                                                                 </button>
-                                                                                <% } %>
-                                                    </td>
-                                                    <td class="symbol">
-                                                        <%= data.paid_amount %>
-                                                    </td>
-                                                    <% if (typeof isStaff === 'undefined' || !isStaff || accessdata.mutibranch===true) { %>
-                                                        <td>
-                                                            <span class="badge bg-light text-white font-weight-bold">
-                                                                <%= data.store || '-' %>
-                                                            </span>
-                                                        </td>
-                                                    <% } %>
-                                                            <td class="text-center">
-                                                                <div class="tbl-action-group">
-                                                                    <a href="/order/view/<%=data.id %>"
-                                                                        class="btn-tbl-action btn-tbl-view"
-                                                                        title="<%= language.View || 'View' %>">
-                                                                        <i class="fa fa-eye"></i>
-                                                                    </a>
-                                                                </div>
+                                                                                <% }else if(data.order_status==5){ %>
+                                                                                    <button type="button"
+                                                                                        class="btn btn-danger btn-xxs text-nowrap"
+                                                                                        disabled>
+                                                                                        <%=data.status %>
+                                                                                    </button>
+                                                                                    <% }else if(data.order_status==6){
+                                                                                        %>
+                                                                                        <button type="button"
+                                                                                            class="btn btn-danger btn-xxs text-nowrap"
+                                                                                            disabled>
+                                                                                            <%=data.status %>
+                                                                                        </button>
+                                                                                        <% } %>
                                                             </td>
-                                                </tr>
-                                                <% }) %>
+                                                            <td class="symbol">
+                                                                <%= data.paid_amount %>
+                                                            </td>
+                                                            <% if (typeof isStaff==='undefined' || !isStaff ||
+                                                                accessdata.mutibranch===true) { %>
+                                                                <td>
+                                                                    <span
+                                                                        class="badge bg-light text-white font-weight-bold">
+                                                                        <%= data.store || '-' %>
+                                                                    </span>
+                                                                </td>
+                                                                <% } %>
+                                                                    <td class="text-center">
+                                                                        <div class="tbl-action-group">
+                                                                            <a href="/order/view/<%=data.id %>"
+                                                                                class="btn-tbl-action btn-tbl-view"
+                                                                                title="<%= language.View || 'View' %>">
+                                                                                <i class="fa fa-eye"></i>
+                                                                            </a>
+                                                                        </div>
+                                                                    </td>
+                                                        </tr>
+                                                        <% }) %>
 
 
-                                        </tbody>
-                                    </table>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <div class="col-xl-6 col-lg-12 col-sm-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h4 class="card-title">Total Order Chart</h4>
+                            <div class="col-xl-6 col-lg-12 col-sm-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="card-title">Total Order Chart</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="barChart_2"></canvas>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <canvas id="barChart_2"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <input type="hidden" id="indextotorder" value="<%=countorder%>">
+                            <input type="hidden" id="indextotorder" value="<%=countorder%>">
 
-                    <div class="col-xl-6 col-lg-12 col-sm-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h4 class="card-title">Total Sales Chart ( <span class="symbol">)</span></h4>
+                            <div class="col-xl-6 col-lg-12 col-sm-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="card-title">Total Sales Chart ( <span class="symbol">)</span></h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="areaChart_2"></canvas>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <canvas id="areaChart_2"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <input type="hidden" id="indextosales" value="<%=countsales%>">
+                            <input type="hidden" id="indextosales" value="<%=countsales%>">
 
                 </div>
             </div>

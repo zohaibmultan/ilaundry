@@ -20,10 +20,12 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="card ">
-                            <div class="card-header justify-content-end">
-                                <a href="/tool/addshop" class="btn btn-rounded btn-primary"><span
-                                        class="btn-icon-start text-primary">
-                                        <i class="fa fa-plus color-info"></i></span>
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <%= language.Shop_List_Table %>
+                                </h3>
+                                <a href="/tool/addshop" class="btn btn-sm btn-rounded btn-primary">
+                                        <i class="fa fa-plus me-2 color-info"></i>
                                     <%= language.Add_New_Store %>
                                 </a>
                             </div>
@@ -33,10 +35,6 @@
                                 <!----- shop table ----->
 
                                 <div class="shop_table">
-
-                                    <h3>
-                                        <%= language.Shop_List_Table %>
-                                    </h3>
 
                                     <div class="table-responsive">
                                         <table id="example2" class="table display table-responsive-md" style="width: 100%;">

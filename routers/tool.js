@@ -115,10 +115,10 @@ router.get("/roll", auth, async (req, res) => {
 
 router.post("/addroll", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === 'true') {
+      req.flash('error', 'For demo purpose we disabled crud operations!!');
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store, loginas } = req.user;
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
@@ -310,10 +310,10 @@ router.post("/addroll", auth, async (req, res) => {
 
 router.get("/deletroll/:id", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === 'true') {
+      req.flash('error', 'For demo purpose we disabled crud operations!!');
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store, loginas } = req.user;
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
@@ -373,10 +373,10 @@ router.get("/rolldetails/:id", auth, async (req, res) => {
 
 router.post("/updateroll/:id", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === 'true') {
+      req.flash('error', 'For demo purpose we disabled crud operations!!');
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store, loginas } = req.user;
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
@@ -578,7 +578,7 @@ router.get("/storesetting", auth, async (req, res) => {
         LEFT JOIN tbl_customer ON tbl_customer.store_id = tbl_store.id
         WHERE tbl_store.id = ${targetStoreId} AND tbl_store.status = 1 LIMIT 1
       `);
-      
+
       const hasEditPermission = rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("edit");
       update = (rolldetail.length > 0 && rolldetail[0].rollType === "master" && accessdata.mutibranch === false) || hasEditPermission;
     } else if (rolldetail.length > 0 && rolldetail[0].rollType === "master") {
@@ -609,7 +609,7 @@ router.get("/storesetting", auth, async (req, res) => {
       language: req.language_data,
       language_name: req.language_name,
     });
-  } catch (error) {}
+  } catch (error) { }
 });
 
 // branch update by store admin
@@ -619,10 +619,10 @@ router.post(
   upload.single("logo"),
   async (req, res) => {
     try {
-        if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+      if (process.env.DISABLE_DB_WRITE === 'true') {
+        req.flash('error', 'For demo purpose we disabled crud operations!!');
+        return res.redirect(req.get("Referrer") || "/");
+      }
       const { id, roll, store, loginas } = req.user;
       if (loginas == 0) {
         req.flash("error", "Your Are Not Authorized For this");
@@ -801,7 +801,7 @@ router.get("/storelist", auth, async (req, res) => {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
-  } catch (error) {}
+  } catch (error) { }
 });
 
 //  branch store data render page master only
@@ -858,10 +858,10 @@ router.post(
   upload.single("logo"),
   async (req, res) => {
     try {
-        if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+      if (process.env.DISABLE_DB_WRITE === 'true') {
+        req.flash('error', 'For demo purpose we disabled crud operations!!');
+        return res.redirect(req.get("Referrer") || "/");
+      }
       const { id, roll, store, loginas } = req.user;
       if (loginas == 0) {
         req.flash("error", "Your Are Not Authorized For this");
@@ -1263,10 +1263,8 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
       const walkinCustomerInsert = await DataInsert(
         `tbl_customer`,
         `name, number, email, address, taxnumber,username, password, store_ID, reffstore, approved, delet_flage`,
-        `'${
-          walkincustome.length > 0 ? walkincustome : "Walk In Customer"
-        }', NULL, NULL, NULL, NULL, NULL, NULL, ${newstore.insertId}, ${
-          newstore.insertId
+        `'${walkincustome.length > 0 ? walkincustome : "Walk In Customer"
+        }', NULL, NULL, NULL, NULL, NULL, NULL, ${newstore.insertId}, ${newstore.insertId
         }, "1", 0`,
         req.hostname,
         req.protocol
@@ -1375,10 +1373,10 @@ router.get("/staff", auth, async (req, res) => {
 
 router.get("/deletstaff/:id", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === 'true') {
+      req.flash('error', 'For demo purpose we disabled crud operations!!');
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store, loginas } = req.user;
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
@@ -1428,10 +1426,10 @@ router.get("/deletstaff/:id", auth, async (req, res) => {
 
 router.post("/addstaff", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === 'true') {
+      req.flash('error', 'For demo purpose we disabled crud operations!!');
+      return res.redirect(req.get("Referrer") || "/");
+    }
     let { id, roll, store, loginas } = req.user;
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
@@ -1532,10 +1530,10 @@ router.post("/addstaff", auth, async (req, res) => {
 
 router.post("/updatestaff/:id", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === 'true') {
+      req.flash('error', 'For demo purpose we disabled crud operations!!');
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store, loginas } = req.user;
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
@@ -1687,10 +1685,10 @@ router.post(
   ]),
   async (req, res) => {
     try {
-        if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+      if (process.env.DISABLE_DB_WRITE === 'true') {
+        req.flash('error', 'For demo purpose we disabled crud operations!!');
+        return res.redirect(req.get("Referrer") || "/");
+      }
       const { id, roll, store, loginas } = req.user;
 
       if (loginas == 0) {
@@ -2041,8 +2039,8 @@ router.post(
             req.hostname,
             req.protocol
           );
-          console.log("updateCustomerStore",updateCustomerStore);
-          
+          console.log("updateCustomerStore", updateCustomerStore);
+
           if (updateCustomerStore === -1) {
             req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
           }
@@ -2054,8 +2052,8 @@ router.post(
             req.hostname,
             req.protocol
           );
-          console.log("updateadminStore",updateadminStore);
-          
+          console.log("updateadminStore", updateadminStore);
+
           if (updateadminStore === -1) {
             req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
           }
@@ -2083,15 +2081,15 @@ router.get("/test-print-invoice", auth, async (req, res) => {
     const symbol = ms.currency_symbol || "$";
 
     const formatName = format === 0 ? "A4 Full Sheet" : format === 2 ? "58mm Thermal POS" : "80mm Thermal POS";
-    const widthStyle = format === 0 ? "max-width: 780px; margin: 20px auto; padding: 30px; font-family: 'Segoe UI', Tahoma, sans-serif;" 
-                     : format === 2 ? "width: 54mm; margin: 0 auto; padding: 8px 4px; font-family: monospace; font-size: 11px;" 
-                     : "width: 76mm; margin: 0 auto; padding: 12px 6px; font-family: monospace; font-size: 12px;";
+    const widthStyle = format === 0 ? "max-width: 780px; margin: 20px auto; padding: 30px; font-family: 'Segoe UI', Tahoma, sans-serif;"
+      : format === 2 ? "width: 54mm; margin: 0 auto; padding: 8px 4px; font-family: monospace; font-size: 11px;"
+        : "width: 76mm; margin: 0 auto; padding: 12px 6px; font-family: monospace; font-size: 12px;";
 
     const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Test Invoice Print - ${ms.app_name || 'iLaundry'}</title>
+  <title>Test Invoice Print - ${ms.app_name || ''}</title>
   <style>
     @page { margin: 2mm; size: ${format === 0 ? 'A4' : 'auto'}; }
     body { margin: 0; padding: 0; background: #f8fafc; color: #0f172a; }
@@ -2124,7 +2122,7 @@ router.get("/test-print-invoice", auth, async (req, res) => {
 
   <div class="print-sheet">
     <div class="center border-b">
-      <h2 style="margin: 4px 0;">${ms.app_name || 'iLaundry'}</h2>
+      <h2 style="margin: 4px 0;">${ms.app_name || ''}</h2>
       <div style="font-size: 0.9em;">Premium Garment Care & Laundry</div>
       <div style="font-size: 0.85em; color: #64748b;">123 Main Commercial Ave &bull; Tel: (555) 019-2834</div>
     </div>
@@ -2177,7 +2175,7 @@ router.get("/test-print-invoice", auth, async (req, res) => {
     <div class="center border-t" style="margin-top: 14px; font-size: 0.85em; color: #475569;">
       <div>*** SUCCESSFUL TEST RECEIPT ***</div>
       <div>Invoice Printer: ${formatName}</div>
-      <div style="margin-top: 6px;">Thank you for choosing ${ms.app_name || 'iLaundry'}!</div>
+      <div style="margin-top: 6px;">Thank you for choosing ${ms.app_name || ''}!</div>
     </div>
   </div>
 
@@ -2205,20 +2203,20 @@ router.get("/test-print-tag", auth, async (req, res) => {
     const printerName = req.query.printer || ms.tag_printer_name || "Default Tag Printer";
 
     const formatName = format === 0 ? '2" × 1" (50×25mm) Barcode Label'
-                     : format === 1 ? '3" × 2" (75×50mm) Garment Cloth Tag'
-                     : format === 2 ? '80mm Continuous Tag Roll'
-                     : 'A4 Sheet Multi-Stickers';
+      : format === 1 ? '3" × 2" (75×50mm) Garment Cloth Tag'
+        : format === 2 ? '80mm Continuous Tag Roll'
+          : 'A4 Sheet Multi-Stickers';
 
     const widthStyle = format === 0 ? "width: 50mm; height: 25mm; padding: 2mm 3mm; font-size: 9px;"
-                     : format === 1 ? "width: 75mm; height: 50mm; padding: 4mm 5mm; font-size: 11px;"
-                     : format === 2 ? "width: 76mm; padding: 6mm 4mm; font-size: 11px;"
-                     : "width: 100%; max-width: 750px; padding: 20px; font-size: 12px;";
+      : format === 1 ? "width: 75mm; height: 50mm; padding: 4mm 5mm; font-size: 11px;"
+        : format === 2 ? "width: 76mm; padding: 6mm 4mm; font-size: 11px;"
+          : "width: 100%; max-width: 750px; padding: 20px; font-size: 12px;";
 
     const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Test Tag Print - ${ms.app_name || 'iLaundry'}</title>
+  <title>Test Tag Print - ${ms.app_name || ''}</title>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <style>
     @page { margin: 1mm; size: ${format === 3 ? 'A4' : 'auto'}; }
@@ -2251,7 +2249,7 @@ router.get("/test-print-tag", auth, async (req, res) => {
   <div class="tag-container">
     <div class="garment-tag">
       <div class="tag-header">
-        <span>${ms.app_name || 'iLaundry'}</span>
+        <span>${ms.app_name || ''}</span>
         <span>#ORD0392 [1/2]</span>
       </div>
       <div class="tag-body">
@@ -2267,7 +2265,7 @@ router.get("/test-print-tag", auth, async (req, res) => {
     ${format === 2 ? `
     <div class="garment-tag">
       <div class="tag-header">
-        <span>${ms.app_name || 'iLaundry'}</span>
+        <span>${ms.app_name || ''}</span>
         <span>#ORD0392 [2/2]</span>
       </div>
       <div class="tag-body">
@@ -2348,10 +2346,10 @@ router.get("/mail", auth, async (req, res) => {
 
 router.post("/mailsetting", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === 'true') {
+      req.flash('error', 'For demo purpose we disabled crud operations!!');
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store, loginas } = req.user;
     const { host, port, username, password, frommail, status } = req.body;
 
@@ -2401,10 +2399,10 @@ router.post("/mailsetting", auth, async (req, res) => {
 });
 
 router.post("/rollstatus/:id", auth, async (req, res) => {
-    if (process.env.DISABLE_DB_WRITE === 'true') {
+  if (process.env.DISABLE_DB_WRITE === 'true') {
     req.flash('error', 'For demo purpose we disabled crud operations!!');
     return res.redirect(req.get("Referrer") || "/");
-}
+  }
   console.log("req.body", req.body.status);
   console.log("req.params.id", req.params.id);
 
@@ -2429,10 +2427,10 @@ router.post("/rollstatus/:id", auth, async (req, res) => {
 });
 
 router.post("/storestatus/:id", auth, async (req, res) => {
-    if (process.env.DISABLE_DB_WRITE === 'true') {
+  if (process.env.DISABLE_DB_WRITE === 'true') {
     req.flash('error', 'For demo purpose we disabled crud operations!!');
     return res.redirect(req.get("Referrer") || "/");
-}
+  }
   console.log("req.body", req.body.status);
   console.log("req.params.id", req.params.id);
 
@@ -2474,10 +2472,10 @@ router.post("/storestatus/:id", auth, async (req, res) => {
 router.post("/rollUp/:id", async (req, res) => {
   try {
     console.log("body", req.body);
-if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === 'true') {
+      req.flash('error', 'For demo purpose we disabled crud operations!!');
+      return res.redirect(req.get("Referrer") || "/");
+    }
     var {
       rollType,
       orders,

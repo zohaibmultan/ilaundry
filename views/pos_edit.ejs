@@ -413,11 +413,13 @@
                                 <div class="row g-2 align-items-center">
 
                                     <div class="col-12">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-6 mb-1">
-                                                <label class="form-label">
-                                                    <%= language.Delivery_Date %>
-                                                </label>
+                                        <div class="row g-3 align-items-start">
+                                            <div class="col-6 mb-2">
+                                                <div class="pos-modal-field-header">
+                                                    <label class="form-label" for="deliverydate">
+                                                        <%= language.Delivery_Date %>
+                                                    </label>
+                                                </div>
                                                 <input type="date" class="form-control" name="deliverydate"
                                                     id="deliverydate">
 
@@ -426,21 +428,21 @@
                                                 <input type="hidden" id="POS_gross_order" value="" name="gross">
                                                 <input type="hidden" id="POS_subtotal_order" value="" name="sub">
                                             </div>
-                                            <div class="col-md-6 mb-1">
-                                                <div class="d-flex align-items-center justify-content-between mb-1">
-                                                    <label class="form-label mb-0" for="edit_POS_extra_discount_order">
+                                            <div class="col-6 mb-2">
+                                                <div class="pos-modal-field-header">
+                                                    <label class="form-label" for="edit_POS_extra_discount_order">
                                                         <%= language.Extra_Discount %>
                                                     </label>
                                                     <div class="pos-discount-type-group" role="group" aria-label="Discount Type">
                                                         <input type="radio" class="btn-check" name="edit_discount_type" id="edit_pos_disc_type_fixed" value="fixed" checked autocomplete="off">
-                                                        <label class="pos-disc-btn active" for="edit_pos_disc_type_fixed" id="edit_pos_disc_btn_fixed" title="Fixed Amount">Fix ($)</label>
+                                                        <label class="pos-disc-btn active" for="edit_pos_disc_type_fixed" id="edit_pos_disc_btn_fixed" title="Fixed Amount">Fix (<%= accessdata?.symbol || '$' %>)</label>
 
                                                         <input type="radio" class="btn-check" name="edit_discount_type" id="edit_pos_disc_type_percent" value="percent" autocomplete="off">
                                                         <label class="pos-disc-btn" for="edit_pos_disc_type_percent" id="edit_pos_disc_btn_percent" title="Percentage">% Percent</label>
                                                     </div>
                                                 </div>
                                                 <div class="input-group pos-discount-input-group">
-                                                    <span class="input-group-text pos-discount-prefix" id="edit_pos_discount_prefix">$</span>
+                                                    <span class="input-group-text pos-discount-prefix" id="edit_pos_discount_prefix"><%= accessdata?.symbol || '$' %></span>
                                                     <input type="number" id="edit_POS_extra_discount_order"
                                                         class="form-control" placeholder="0.00" min="0" step="any" autocomplete="off">
                                                 </div>
@@ -526,6 +528,15 @@
                                                 </select>
                                             </div>
 
+                                        </div>
+                                        <div class="row align-items-center mt-2">
+                                            <div class="col-md-12 mb-1">
+                                                <label class="form-label" for="edit_POS_reference_number">
+                                                    <%= language.Reference_Number || 'Reference / Transaction No.' %> <span class="text-muted font-weight-normal text-xs">(<%= language.Optional || 'Optional' %>)</span>
+                                                </label>
+                                                <input type="text" class="form-control" placeholder="Enter Reference / Transaction No. (Optional)"
+                                                    name="reference_number" id="edit_POS_reference_number">
+                                            </div>
                                         </div>
                                         <span id="POS_worning_paid" class="text-center text-danger "></span>
                                         <hr>

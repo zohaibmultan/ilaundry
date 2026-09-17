@@ -8,7 +8,7 @@
 </head>
 
 <body>
-        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
         <!--********** Content body start **********-->
 
         <div class="content-body">
@@ -21,31 +21,32 @@
                                 <h3 class="card-title">
                                     <%= language.Order_Reports %>
                                 </h3>
-                                <div
-                                    class="form-group m-0 col-5 <%= accessdata.logas == 'master' && accessdata.mutibranch  ? '' :'d-none' %>">
-                                    <label class="form-label">
-                                        <%= language.Store_Name %>
-                                    </label>
-                                    <select class="default-select form-control wide " name="storeid"
-                                        id="order_report_store">
-                                        <% storeList.forEach(function(x){ %>
-                                            <option value="<%= x.id %>" <%=x.id==store ? 'selected' :'' %> ><%= x.name
-                                                    %>
-                                            </option>
-                                            <% }) %>
-                                    </select>
 
-                                </div>
-                            </div>
-                            <div class="d-none">
-                                <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
-                                <input type="hiden" name="pls" value="<%= accessdata.plac %>">
-                                <input type="hiden" name="thousands_separator"
-                                    value="<%= accessdata.thousands_separator %>">
                             </div>
                             <div class="card-body">
-                                <div class="row">
-                                    <div class="col-sm-4 col-12 mt-2">
+                                <div class="d-none">
+                                    <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
+                                    <input type="hiden" name="pls" value="<%= accessdata.plac %>">
+                                    <input type="hiden" name="thousands_separator"
+                                        value="<%= accessdata.thousands_separator %>">
+                                </div>
+                                <div class="row g-3">
+                                    <div
+                                        class="form-group col-lg-3 col-md-6 col-sm-12 <%= accessdata.logas == 'master' && accessdata.mutibranch  ? '' :'d-none' %>">
+                                        <label class="form-label">
+                                            <%= language.Store_Name %>
+                                        </label>
+                                        <select class="default-select form-control wide " name="storeid"
+                                            id="order_report_store">
+                                            <% storeList.forEach(function(x){ %>
+                                                <option value="<%= x.id %>" <%=x.id==store ? 'selected' :'' %> ><%=
+                                                        x.name %>
+                                                </option>
+                                                <% }) %>
+                                        </select>
+
+                                    </div>
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
                                         <label class="form-label">
                                             <%= language.Start_Date %>
                                         </label>
@@ -53,7 +54,7 @@
                                             id="order_report_start_date">
                                     </div>
 
-                                    <div class="col-sm-4 col-12 mt-2">
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
                                         <label class="form-label">
                                             <%= language.End_Date %>
                                         </label>
@@ -61,7 +62,7 @@
                                             id="order_report_end_date">
                                     </div>
 
-                                    <div class="col-sm-4 col-12 mt-2">
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
                                         <label class="form-label">
                                             <%= language.Status %>
                                         </label>
@@ -188,17 +189,18 @@
                                                 class="symbol invosymbol text-nowrap">0</span></strong>
                                     </div>
                                     <div class="col">
-   <div class="d-flex mt-2">
-                                        <button type="submit" class="btn btn-success me-2 text-nowrap" onclick="downloadreport()"
-                                            id="Download_order_report">
-                                            <%= language.Download_Report %>
-                                        </button>
+                                        <div class="d-flex mt-2">
+                                            <button type="submit" class="btn btn-success me-2 text-nowrap"
+                                                onclick="downloadreport()" id="Download_order_report">
+                                                <%= language.Download_Report %>
+                                            </button>
 
 
-                                        <button type="submit" id="order_report_print" class="btn btn-warning mb-0 text-nowrap">
-                                            <%= language.Print_Report %>
-                                        </button>
-</div>
+                                            <button type="submit" id="order_report_print"
+                                                class="btn btn-warning mb-0 text-nowrap">
+                                                <%= language.Print_Report %>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

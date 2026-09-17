@@ -23,10 +23,9 @@
                                     <%= language.Service_Addons %>
                                 </h3>
                                 <button
-                                    class="btn btn-rounded btn-primary <%= accessdata.roll.service.includes('write') ?'':'d-none' %>"
-                                    data-bs-toggle="modal" data-bs-target="#service_addons"><span
-                                        class="btn-icon-start text-primary "><i
-                                            class="fa fa-plus color-info"></i></span>
+                                    class="btn btn-sm btn-rounded btn-primary <%= accessdata.roll.service.includes('write') ?'':'d-none' %>"
+                                    data-bs-toggle="modal" data-bs-target="#service_addons">
+                                    <i class="fa fa-plus color-info me-2"></i>
                                     <%= language.Add_New_Addons %>
                                 </button>
                             </div>
@@ -80,7 +79,7 @@
                                                             <span class="badge light badge-secondary ">Active</span>
                                                             <% }else{ %>
                                                                 <span class="badge light badge-warning">Deactive</span>
-                                                            <% } %>
+                                                                <% } %>
                                                     </td>
                                                     <td class="text-center">
                                                         <div class="tbl-action-group">
@@ -96,8 +95,7 @@
 
                                                             <a href="/services/deletaddon/<%= data.id %>"
                                                                 class="btn-tbl-action btn-tbl-delete <%= accessdata.roll.service.includes('delete') ?'':'d-none' %>"
-                                                                id="delete"
-                                                                title="<%= language.Delete || 'Delete' %>">
+                                                                id="delete" title="<%= language.Delete || 'Delete' %>">
                                                                 <i class="fa fa-trash"></i></a>
                                                         </div>
                                                     </td>
@@ -164,15 +162,15 @@
                             </div>
                     </div>
 
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-                                    <%= language.Cancel %>
-                                </button>
-                                <button type="submit" class="btn btn-sm  btn-primary">
-                                    <%= language.Save %>
-                                </button>
-                            </div>
-                        </form>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                            <%= language.Cancel %>
+                        </button>
+                        <button type="submit" class="btn btn-sm  btn-primary">
+                            <%= language.Save %>
+                        </button>
+                    </div>
+                    </form>
 
 
 
@@ -191,7 +189,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                    <form action="/services/addaddon" method="post" class="need-validation">
+                        <form action="/services/addaddon" method="post" class="need-validation">
 
                             <div class="row g-1 align-items-center">
                                 <div class="form-group">
@@ -237,7 +235,7 @@
                                 </div>
                             </div>
                     </div>
-               
+
                     <div class="modal-footer">
                         <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
                             <%= language.Cancel %>
@@ -249,7 +247,7 @@
 
                     </form>
 
- </div>
+                </div>
 
             </div>
         </div>

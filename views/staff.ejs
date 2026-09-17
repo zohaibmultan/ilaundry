@@ -24,9 +24,8 @@
                                     <%= language.Staff %>
                                 </h3>
                                 <button
-                                    class="btn btn-rounded btn-primary <%= accessdata.roll.staff.includes('write') ?'':'d-none' %>"
-                                    data-bs-toggle="modal" data-bs-target="#staff_add"><span
-                                        class="btn-icon-start text-primary"><i class="fa fa-plus color-info"></i></span>
+                                    class="btn btn-sm btn-rounded btn-primary <%= accessdata.roll.staff.includes('write') ?'':'d-none' %>"
+                                    data-bs-toggle="modal" data-bs-target="#staff_add"><i class="fa fa-plus color-info me-2"></i>
                                     <%= language.Add_New_Staff %>
                                 </button>
                             </div>
@@ -460,7 +459,7 @@
 
                                                                 <% if(rolldata[0]?.orders?.includes('delete')){ %>
 
-                                                                    <div class="form-check col-2 ms-2 invisible">
+                                                                    <div class="form-check col-2 ms-2">
                                                                         <input class="form-check-input" type="checkbox"
                                                                             id="update_orders_delete" name="orders"
                                                                             value="delete">
@@ -1322,12 +1321,12 @@
 
                                                                 <% if(rolldata[0]?.orders?.includes('delete')){ %>
 
-                                                                    <div class="form-check col-2 ms-2 invisible">
+                                                                    <div class="form-check col-2 ms-2">
                                                                         <input class="form-check-input" type="checkbox"
                                                                             id="updatestore_orders_delete" name="orders"
                                                                             value="delete">
                                                                         <label class="form-check-label"
-                                                                            for="update_orders_delete">
+                                                                            for="updatestore_orders_delete">
                                                                             <%= language.Delete %>
                                                                         </label>
                                                                     </div>

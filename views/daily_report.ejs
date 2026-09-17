@@ -22,15 +22,15 @@
                                     <%= language.Daily_Report %>
                                 </h3>
                             </div>
-                            <div class="d-none">
-                                <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
-                                <input type="hiden" name="pls" value="<%= accessdata.plac %>">
-                                <input type="hiden" name="thousands_separator"
-                                    value="<%= accessdata.thousands_separator %>">
-                            </div>
                             <div class="card-body">
-                                <div class="row d-flex justify-content-between">
-                                    <div class="col-md-5 col-12 mt-2">
+                                <div class="d-none">
+                                    <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
+                                    <input type="hiden" name="pls" value="<%= accessdata.plac %>">
+                                    <input type="hiden" name="thousands_separator"
+                                        value="<%= accessdata.thousands_separator %>">
+                                </div>
+                                <div class="row">
+                                    <div class="col-lg-4 col-md-6 col-sm-12">
                                         <label class="form-label">
                                             <%= language.Date %>
                                         </label>
@@ -45,7 +45,7 @@
                                                                 id="daily_report_date" value="<%= fullDate %>">
                                     </div>
                                     <div
-                                        class="form-group col-md-5 col-12 mt-2 <%= accessdata.logas == 'master' && accessdata.mutibranch  ? '' :'d-none' %>">
+                                        class="form-group col-lg-4 col-md-6 col-sm-12  <%= accessdata.logas == 'master' && accessdata.mutibranch  ? '' :'d-none' %>">
                                         <label class="form-label">
                                             <%= language.Store_Name %>
                                         </label>
@@ -61,7 +61,7 @@
                                     </div>
                                 </div>
 
-                                <div class="row mt-4">
+                                <div class="row">
 
                                     <div class="table-responsive">
                                         <table class="table">

@@ -157,7 +157,7 @@ router.post("/forgot-password", async (req, res) => {
         await transporter.sendMail({
           from: mailConfig[0].frommail,
           to: user[0].email,
-          subject: "Password Reset Request - iLaundry",
+          subject: "Password Reset Request",
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 580px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 12px;">
               <h2 style="color: #0081EE; margin-bottom: 12px;">Password Reset Request</h2>

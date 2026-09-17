@@ -23,15 +23,15 @@
                                 </h3>
 
                             </div>
-                            <div class="d-none">
-                                <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
-                                <input type="hiden" name="pls" value="<%= accessdata.plac %>">
-                                <input type="hiden" name="thousands_separator"
-                                    value="<%= accessdata.thousands_separator %>">
-                            </div>
                             <div class="card-body">
-                                <div class="row">
-                                    <div  class="col-sm-4 col-12 mt-2">
+                                <div class="d-none">
+                                    <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
+                                    <input type="hiden" name="pls" value="<%= accessdata.plac %>">
+                                    <input type="hiden" name="thousands_separator"
+                                        value="<%= accessdata.thousands_separator %>">
+                                </div>
+                                <div class="row g-3">
+                                    <div  class="col-lg-4 col-md-6 col-sm-12">
                                         <label class="form-label">
                                             <%= language.Start_Date %>
                                         </label>
@@ -39,7 +39,7 @@
                                             id="Expence_report_start_date">
                                     </div>
 
-                                    <div  class="col-sm-4 col-12 mt-2">
+                                    <div  class="col-lg-4 col-md-6 col-sm-12">
                                         <label class="form-label">
                                             <%= language.End_Date %>
                                         </label>
@@ -47,7 +47,7 @@
                                             id="Expence_report_end_date">
                                     </div>
                                     <div
-                                        class="form-group m-0 col-sm-4 col-12 mt-2 <%= accessdata.logas == 'master' && accessdata.mutibranch  ? '' :'d-none' %>">
+                                        class="col-lg-4 col-md-6 col-sm-12 <%= accessdata.logas == 'master' && accessdata.mutibranch  ? '' :'d-none' %>">
                                         <label class="form-label">
                                             <%= language.Store_Name %>
                                         </label>
