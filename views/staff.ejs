@@ -43,9 +43,9 @@
                                                 <th>
                                                     <%= language.Contact %>
                                                 </th>
-                                                <!-- <th class="<%= ismulty ? '': 'd-none' %>">
-                                                    <%= language.Shop_Name %>
-                                                </th> -->
+                                                <th>
+                                                    <%= language.Shop_Name || language.Store || 'Assigned Store' %>
+                                                </th>
                                                 <th>
                                                     <%= language.Status %>
                                                 </th>
@@ -73,9 +73,9 @@
                                                             <%=data.email %>
                                                         </div>
                                                     </td>
-                                                    <!-- <td class="<%= ismulty ? '': 'd-none' %>">
-                                                        <%=data.store %>
-                                                    </td> -->
+                                                    <td>
+                                                        <span class="badge badge-sm badge-info"><%= data.store || 'Not Assigned' %></span>
+                                                    </td>
                                                     <td>
                                                         <div class="form-check form-switch">
                                                             <input class="form-check-input" type="checkbox"
@@ -95,6 +95,7 @@
                                                                 data-email="<%=data.email %>"
                                                                 data-username="<%=data.username %>"
                                                                 data-password="<%=data.password %>"
+                                                                data-store-id="<%= data.store_ID %>"
                                                                 data-approved="<%=data.approved %>"
                                                                 title="<%= language.Edit || 'Edit' %>">
                                                                 <i class="fas fa-pencil-alt"></i></a>
@@ -177,12 +178,26 @@
                                         placeholder="Enter User Name" required>
                                 </div>
 
-                                <div class="form-group">
+                                 <div class="form-group">
                                     <label><strong>
                                             <%= language.Password %>
-                                        </strong><span class="text-danger">*</span></label>
+                                        </strong></label>
                                     <input type="text" class="form-control" name="password_update" id="password_update"
-                                        placeholder="Update Password" required>
+                                        placeholder="Update Password (leave blank to keep current)">
+                                </div>
+
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Store || language.Shop_Name || 'Assigned Store' %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <select class="form-control" name="store_update" id="store_update" required>
+                                        <option value="" disabled selected>Select Assigned Store</option>
+                                        <% if (typeof storeList !== 'undefined' && storeList.length > 0) { %>
+                                            <% storeList.forEach(function(s){ %>
+                                                <option value="<%= s.id %>"><%= s.name %></option>
+                                            <% }) %>
+                                        <% } %>
+                                    </select>
                                 </div>
 
                                 <div class="form-group">
@@ -264,12 +279,26 @@
                                         placeholder="Enter User Name" required>
                                 </div>
 
-                                <div class="form-group">
+                                 <div class="form-group">
                                     <label><strong>
                                             <%= language.Password %>
                                         </strong><span class="text-danger">*</span></label>
                                     <input type="password" class="form-control " name="password" id="password"
                                         placeholder="Enter Password" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label><strong>
+                                            <%= language.Store || language.Shop_Name || 'Assigned Store' %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <select class="form-control" name="store_id" id="store_id" required>
+                                        <option value="" disabled selected>Select Assigned Store</option>
+                                        <% if (typeof storeList !== 'undefined' && storeList.length > 0) { %>
+                                            <% storeList.forEach(function(s){ %>
+                                                <option value="<%= s.id %>"><%= s.name %></option>
+                                            <% }) %>
+                                        <% } %>
+                                    </select>
                                 </div>
 
                                 <div class="form-group">
@@ -2117,6 +2146,13 @@
                             }
                         });
                     }
+
+                    $(document).on('click', '#update_staff', function () {
+                        const storeId = $(this).attr('data-store-id');
+                        if (storeId) {
+                            $('#store_update').val(storeId);
+                        }
+                    });
                 </script>
 
 </body>

@@ -7,11 +7,13 @@
    1. UNIVERSAL 10% FONT SIZE REDUCTION
    -------------------------------------------------------------------------- */
 html {
-  font-size: 90% !important; /* 16px default scaled to 14.4px base (-10%) */
+  font-size: 90% !important;
+  /* 16px default scaled to 14.4px base (-10%) */
 }
 
 :root {
-  --bs-body-font-size: 0.7875rem !important; /* Standard 0.875rem scaled by 10% */
+  --bs-body-font-size: 0.7875rem !important;
+  /* Standard 0.875rem scaled by 10% */
   --lg-glass-blur: 16px;
   --lg-glass-saturate: 180%;
   --lg-glass-radius: 14px;
@@ -22,26 +24,84 @@ body {
 }
 
 /* Proportional scaling for utility classes across pages */
-.fs-10 { font-size: 9px !important; }
-.fs-11 { font-size: 10px !important; }
-.fs-12 { font-size: 11px !important; }
-.fs-13 { font-size: 11.5px !important; }
-.fs-14 { font-size: 12.5px !important; }
-.fs-15 { font-size: 13.5px !important; }
-.fs-16 { font-size: 14.5px !important; }
-.fs-18 { font-size: 16px !important; }
-.fs-20 { font-size: 18px !important; }
-.fs-24 { font-size: 21.5px !important; }
-.fs-28 { font-size: 25px !important; }
-.fs-32 { font-size: 28.5px !important; }
+.fs-10 {
+  font-size: 9px !important;
+}
+
+.fs-11 {
+  font-size: 10px !important;
+}
+
+.fs-12 {
+  font-size: 11px !important;
+}
+
+.fs-13 {
+  font-size: 11.5px !important;
+}
+
+.fs-14 {
+  font-size: 12.5px !important;
+}
+
+.fs-15 {
+  font-size: 13.5px !important;
+}
+
+.fs-16 {
+  font-size: 14.5px !important;
+}
+
+.fs-18 {
+  font-size: 16px !important;
+}
+
+.fs-20 {
+  font-size: 18px !important;
+}
+
+.fs-24 {
+  font-size: 21.5px !important;
+}
+
+.fs-28 {
+  font-size: 25px !important;
+}
+
+.fs-32 {
+  font-size: 28.5px !important;
+}
 
 /* Headings scale */
-h1, .h1 { font-size: 1.85rem !important; }
-h2, .h2 { font-size: 1.55rem !important; }
-h3, .h3 { font-size: 1.35rem !important; }
-h4, .h4 { font-size: 1.15rem !important; }
-h5, .h5 { font-size: 0.95rem !important; }
-h6, .h6 { font-size: 0.82rem !important; }
+h1,
+.h1 {
+  font-size: 1.85rem !important;
+}
+
+h2,
+.h2 {
+  font-size: 1.55rem !important;
+}
+
+h3,
+.h3 {
+  font-size: 1.35rem !important;
+}
+
+h4,
+.h4 {
+  font-size: 1.15rem !important;
+}
+
+h5,
+.h5 {
+  font-size: 0.95rem !important;
+}
+
+h6,
+.h6 {
+  font-size: 0.82rem !important;
+}
 
 /* --------------------------------------------------------------------------
    2. LIQUID GLASS BACKGROUND & CANVAS
@@ -49,7 +109,7 @@ h6, .h6 { font-size: 0.82rem !important; }
 /* Light Mode Canvas */
 body {
   background-color: #f1f5f9 !important;
-  background-image: 
+  background-image:
     radial-gradient(at 8% 8%, rgba(224, 242, 254, 0.7) 0px, transparent 48%),
     radial-gradient(at 92% 12%, rgba(236, 253, 245, 0.7) 0px, transparent 48%),
     radial-gradient(at 50% 92%, rgba(243, 232, 255, 0.5) 0px, transparent 55%),
@@ -62,7 +122,7 @@ body {
 /* Dark Mode Canvas */
 [data-theme-version="dark"] body {
   background-color: #0b1120 !important;
-  background-image: 
+  background-image:
     radial-gradient(at 8% 8%, rgba(30, 58, 138, 0.35) 0px, transparent 48%),
     radial-gradient(at 92% 12%, rgba(6, 78, 59, 0.28) 0px, transparent 48%),
     radial-gradient(at 50% 92%, rgba(88, 28, 135, 0.25) 0px, transparent 55%),
@@ -75,7 +135,7 @@ body {
    3. LIQUID GLASS CARDS & PANELS
    -------------------------------------------------------------------------- */
 /* Light Mode Cards */
-.card, 
+.card,
 .content-body .card,
 .widget-stat.card {
   background: rgba(255, 255, 255, 0.8) !important;
@@ -107,7 +167,7 @@ body {
 }
 
 /* Dark Mode Cards */
-[data-theme-version="dark"] .card, 
+[data-theme-version="dark"] .card,
 [data-theme-version="dark"] .content-body .card,
 [data-theme-version="dark"] .widget-stat.card {
   background: rgba(18, 26, 44, 0.78) !important;
@@ -180,19 +240,19 @@ body {
   box-shadow: 4px 0 24px rgba(15, 23, 42, 0.03) !important;
 }
 
-.deznav .metismenu > li > a {
+.deznav .metismenu>li>a {
   border-radius: 10px !important;
   margin: 2px 10px !important;
   padding: 10px 14px !important;
   transition: all 0.2s ease !important;
 }
 
-.deznav .metismenu > li:hover > a {
+.deznav .metismenu>li:hover>a {
   background: rgba(0, 129, 238, 0.08) !important;
   color: #0081EE !important;
 }
 
-.deznav .metismenu > li.mm-active > a {
+.deznav .metismenu>li.mm-active>a {
   background: linear-gradient(135deg, rgba(0, 129, 238, 0.15) 0%, rgba(37, 99, 235, 0.08) 100%) !important;
   border: 1px solid rgba(0, 129, 238, 0.25) !important;
   color: #0081EE !important;
@@ -207,16 +267,16 @@ body {
   box-shadow: 6px 0 30px rgba(0, 0, 0, 0.5) !important;
 }
 
-[data-theme-version="dark"] .deznav .metismenu > li > a {
+[data-theme-version="dark"] .deznav .metismenu>li>a {
   color: #94a3b8 !important;
 }
 
-[data-theme-version="dark"] .deznav .metismenu > li:hover > a {
+[data-theme-version="dark"] .deznav .metismenu>li:hover>a {
   background: rgba(56, 189, 248, 0.1) !important;
   color: #38bdf8 !important;
 }
 
-[data-theme-version="dark"] .deznav .metismenu > li.mm-active > a {
+[data-theme-version="dark"] .deznav .metismenu>li.mm-active>a {
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.18) 0%, rgba(14, 165, 233, 0.08) 100%) !important;
   border: 1px solid rgba(56, 189, 248, 0.3) !important;
   color: #38bdf8 !important;
@@ -272,8 +332,8 @@ body {
 /* Form Field Labels (Semibold 12px) */
 .form-label,
 label:not(.form-check-label):not(.btn):not(.custom-control-label) {
-  font-size: 12px !important;
-  font-weight: 600 !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
   letter-spacing: 0.015em !important;
   margin-bottom: 5px !important;
   display: inline-block !important;
@@ -291,8 +351,8 @@ label:not(.form-check-label):not(.btn):not(.custom-control-label) {
 .form-select,
 select.form-control,
 .select2-container--default .select2-selection--single,
-.bootstrap-select.form-control > .dropdown-toggle,
-.bootstrap-select > .dropdown-toggle {
+.bootstrap-select.form-control>.dropdown-toggle,
+.bootstrap-select>.dropdown-toggle {
   height: 38px !important;
   min-height: 38px !important;
   max-height: 38px !important;
@@ -324,8 +384,8 @@ select.form-control,
 .form-select:focus,
 select.form-control:focus,
 .select2-container--default.select2-container--open .select2-selection--single,
-.bootstrap-select.form-control > .dropdown-toggle:focus,
-.bootstrap-select > .dropdown-toggle:focus {
+.bootstrap-select.form-control>.dropdown-toggle:focus,
+.bootstrap-select>.dropdown-toggle:focus {
   background: #ffffff !important;
   border-color: #0081EE !important;
   outline: none !important;
@@ -338,8 +398,8 @@ select.form-control:focus,
 [data-theme-version="dark"] .form-select,
 [data-theme-version="dark"] select.form-control,
 [data-theme-version="dark"] .select2-container--default .select2-selection--single,
-[data-theme-version="dark"] .bootstrap-select.form-control > .dropdown-toggle,
-[data-theme-version="dark"] .bootstrap-select > .dropdown-toggle {
+[data-theme-version="dark"] .bootstrap-select.form-control>.dropdown-toggle,
+[data-theme-version="dark"] .bootstrap-select>.dropdown-toggle {
   background: rgba(15, 23, 42, 0.75) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   color: #f1f5f9 !important;
@@ -350,8 +410,8 @@ select.form-control:focus,
 [data-theme-version="dark"] .form-select:focus,
 [data-theme-version="dark"] select.form-control:focus,
 [data-theme-version="dark"] .select2-container--default.select2-container--open .select2-selection--single,
-[data-theme-version="dark"] .bootstrap-select.form-control > .dropdown-toggle:focus,
-[data-theme-version="dark"] .bootstrap-select > .dropdown-toggle:focus {
+[data-theme-version="dark"] .bootstrap-select.form-control>.dropdown-toggle:focus,
+[data-theme-version="dark"] .bootstrap-select>.dropdown-toggle:focus {
   background: rgba(15, 23, 42, 0.95) !important;
   border-color: #38bdf8 !important;
   outline: none !important;
@@ -422,7 +482,7 @@ textarea.form-control:focus {
   box-shadow: none !important;
 }
 
-.bootstrap-select > .dropdown-toggle {
+.bootstrap-select>.dropdown-toggle {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -464,7 +524,7 @@ textarea.form-control:focus {
   text-overflow: ellipsis !important;
 }
 
-.bootstrap-select > .dropdown-toggle::after,
+.bootstrap-select>.dropdown-toggle::after,
 .bootstrap-select .dropdown-toggle .caret {
   position: static !important;
   display: inline-block !important;
@@ -478,7 +538,7 @@ textarea.form-control:focus {
   align-self: center !important;
 }
 
-.bootstrap-select > .dropdown-menu {
+.bootstrap-select>.dropdown-menu {
   background: rgba(255, 255, 255, 0.95) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
@@ -489,7 +549,7 @@ textarea.form-control:focus {
   overflow: hidden !important;
 }
 
-[data-theme-version="dark"] .bootstrap-select > .dropdown-menu {
+[data-theme-version="dark"] .bootstrap-select>.dropdown-menu {
   background: rgba(18, 26, 44, 0.95) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   box-shadow: 0 12px 35px rgba(0, 0, 0, 0.65) !important;
@@ -656,12 +716,12 @@ textarea.form-control:focus {
   color: #94a3b8 !important;
 }
 
-.input-group > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
+.input-group> :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
   border-top-left-radius: 0 !important;
   border-bottom-left-radius: 0 !important;
 }
 
-.input-group > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu) {
+.input-group> :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu) {
   border-top-right-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
 }
@@ -710,8 +770,8 @@ input[type="file"].form-control:hover::-webkit-file-upload-button {
 /* Liquid Glow Switches (Universal: Inside & Outside Tables) */
 .form-check.form-switch,
 .form-switch,
-:not(.table):not(table) > .form-check.form-switch,
-.card-body > .row .form-check.form-switch,
+:not(.table):not(table)>.form-check.form-switch,
+.card-body>.row .form-check.form-switch,
 .shop_form .form-check.form-switch,
 .modal-body .form-check.form-switch {
   display: inline-flex !important;
@@ -734,8 +794,8 @@ table .form-check.form-switch,
 
 .form-check.form-switch .form-check-input,
 .form-switch .form-check-input,
-:not(.table):not(table) > .form-check.form-switch .form-check-input,
-.card-body > .row .form-check.form-switch .form-check-input,
+:not(.table):not(table)>.form-check.form-switch .form-check-input,
+.card-body>.row .form-check.form-switch .form-check-input,
 .shop_form .form-check.form-switch .form-check-input,
 .modal-body .form-check.form-switch .form-check-input {
   width: 38px !important;
@@ -758,8 +818,8 @@ table .form-check.form-switch,
 
 .form-check.form-switch .form-check-input:checked,
 .form-switch .form-check-input:checked,
-:not(.table):not(table) > .form-check.form-switch .form-check-input:checked,
-.card-body > .row .form-check.form-switch .form-check-input:checked,
+:not(.table):not(table)>.form-check.form-switch .form-check-input:checked,
+.card-body>.row .form-check.form-switch .form-check-input:checked,
 .shop_form .form-check.form-switch .form-check-input:checked,
 .modal-body .form-check.form-switch .form-check-input:checked {
   background-color: #0081EE !important;
@@ -772,8 +832,8 @@ table .form-check.form-switch,
 /* Dark Mode Switches (Universal) */
 [data-theme-version="dark"] .form-check.form-switch .form-check-input,
 [data-theme-version="dark"] .form-switch .form-check-input,
-[data-theme-version="dark"] :not(.table):not(table) > .form-check.form-switch .form-check-input,
-[data-theme-version="dark"] .card-body > .row .form-check.form-switch .form-check-input,
+[data-theme-version="dark"] :not(.table):not(table)>.form-check.form-switch .form-check-input,
+[data-theme-version="dark"] .card-body>.row .form-check.form-switch .form-check-input,
 [data-theme-version="dark"] .shop_form .form-check.form-switch .form-check-input,
 [data-theme-version="dark"] .modal-body .form-check.form-switch .form-check-input {
   background-color: rgba(30, 41, 59, 0.85) !important;
@@ -784,8 +844,8 @@ table .form-check.form-switch,
 
 [data-theme-version="dark"] .form-check.form-switch .form-check-input:checked,
 [data-theme-version="dark"] .form-switch .form-check-input:checked,
-[data-theme-version="dark"] :not(.table):not(table) > .form-check.form-switch .form-check-input:checked,
-[data-theme-version="dark"] .card-body > .row .form-check.form-switch .form-check-input:checked,
+[data-theme-version="dark"] :not(.table):not(table)>.form-check.form-switch .form-check-input:checked,
+[data-theme-version="dark"] .card-body>.row .form-check.form-switch .form-check-input:checked,
 [data-theme-version="dark"] .shop_form .form-check.form-switch .form-check-input:checked,
 [data-theme-version="dark"] .modal-body .form-check.form-switch .form-check-input:checked {
   background-color: #0284c7 !important;
@@ -1146,12 +1206,12 @@ table.dataTable tbody td,
   background: transparent !important;
 }
 
-table tbody tr:hover > td,
-.table tbody tr:hover > td,
-table.dataTable tbody tr:hover > td,
-#example tbody tr:hover > td,
-#example2 tbody tr:hover > td,
-#example3 tbody tr:hover > td {
+table tbody tr:hover>td,
+.table tbody tr:hover>td,
+table.dataTable tbody tr:hover>td,
+#example tbody tr:hover>td,
+#example2 tbody tr:hover>td,
+#example3 tbody tr:hover>td {
   background: rgba(0, 129, 238, 0.04) !important;
   transition: background 0.15s ease !important;
 }
@@ -1188,12 +1248,12 @@ table.dataTable tbody tr:hover > td,
   background: transparent !important;
 }
 
-[data-theme-version="dark"] table tbody tr:hover > td,
-[data-theme-version="dark"] .table tbody tr:hover > td,
-[data-theme-version="dark"] table.dataTable tbody tr:hover > td,
-[data-theme-version="dark"] #example tbody tr:hover > td,
-[data-theme-version="dark"] #example2 tbody tr:hover > td,
-[data-theme-version="dark"] #example3 tbody tr:hover > td {
+[data-theme-version="dark"] table tbody tr:hover>td,
+[data-theme-version="dark"] .table tbody tr:hover>td,
+[data-theme-version="dark"] table.dataTable tbody tr:hover>td,
+[data-theme-version="dark"] #example tbody tr:hover>td,
+[data-theme-version="dark"] #example2 tbody tr:hover>td,
+[data-theme-version="dark"] #example3 tbody tr:hover>td {
   background: rgba(56, 189, 248, 0.06) !important;
   transition: background 0.15s ease !important;
 }
@@ -1307,6 +1367,7 @@ table.dataTable .btn.sharp i {
   color: #0081EE !important;
   border: 1px solid rgba(0, 129, 238, 0.28) !important;
 }
+
 .btn-tbl-edit:hover,
 .table .btn-primary.sharp:hover {
   background: #0081EE !important;
@@ -1320,6 +1381,7 @@ table.dataTable .btn.sharp i {
   color: #10b981 !important;
   border: 1px solid rgba(16, 185, 129, 0.28) !important;
 }
+
 .btn-tbl-view:hover,
 .table .btn-info.sharp:hover {
   background: #10b981 !important;
@@ -1333,6 +1395,7 @@ table.dataTable .btn.sharp i {
   color: #f59e0b !important;
   border: 1px solid rgba(245, 158, 11, 0.28) !important;
 }
+
 .btn-tbl-print:hover,
 .table .btn-warning.sharp:hover {
   background: #f59e0b !important;
@@ -1346,6 +1409,7 @@ table.dataTable .btn.sharp i {
   color: #ef4444 !important;
   border: 1px solid rgba(239, 68, 68, 0.28) !important;
 }
+
 .btn-tbl-delete:hover,
 .table .btn-danger.sharp:hover {
   background: #ef4444 !important;
@@ -1359,6 +1423,7 @@ table.dataTable .btn.sharp i {
   color: #a855f7 !important;
   border: 1px solid rgba(168, 85, 247, 0.28) !important;
 }
+
 .btn-tbl-ledger:hover,
 .table .btn-success.sharp:hover {
   background: #a855f7 !important;
@@ -1371,6 +1436,7 @@ table.dataTable .btn.sharp i {
   color: #6366f1 !important;
   border: 1px solid rgba(99, 102, 241, 0.28) !important;
 }
+
 .btn-tbl-manage:hover {
   background: #6366f1 !important;
   color: #ffffff !important;
@@ -1384,6 +1450,7 @@ table.dataTable .btn.sharp i {
   color: #38bdf8 !important;
   border: 1px solid rgba(56, 189, 248, 0.3) !important;
 }
+
 [data-theme-version="dark"] .btn-tbl-edit:hover,
 [data-theme-version="dark"] .table .btn-primary.sharp:hover {
   background: #0284c7 !important;
@@ -1397,6 +1464,7 @@ table.dataTable .btn.sharp i {
   color: #34d399 !important;
   border: 1px solid rgba(52, 211, 153, 0.3) !important;
 }
+
 [data-theme-version="dark"] .btn-tbl-view:hover,
 [data-theme-version="dark"] .table .btn-info.sharp:hover {
   background: #059669 !important;
@@ -1410,6 +1478,7 @@ table.dataTable .btn.sharp i {
   color: #fbbf24 !important;
   border: 1px solid rgba(251, 191, 36, 0.3) !important;
 }
+
 [data-theme-version="dark"] .btn-tbl-print:hover,
 [data-theme-version="dark"] .table .btn-warning.sharp:hover {
   background: #d97706 !important;
@@ -1423,6 +1492,7 @@ table.dataTable .btn.sharp i {
   color: #f87171 !important;
   border: 1px solid rgba(248, 113, 113, 0.3) !important;
 }
+
 [data-theme-version="dark"] .btn-tbl-delete:hover,
 [data-theme-version="dark"] .table .btn-danger.sharp:hover {
   background: #dc2626 !important;
@@ -1436,6 +1506,7 @@ table.dataTable .btn.sharp i {
   color: #c084fc !important;
   border: 1px solid rgba(192, 132, 252, 0.3) !important;
 }
+
 [data-theme-version="dark"] .btn-tbl-ledger:hover,
 [data-theme-version="dark"] .table .btn-success.sharp:hover {
   background: #9333ea !important;
@@ -1448,6 +1519,7 @@ table.dataTable .btn.sharp i {
   color: #818cf8 !important;
   border: 1px solid rgba(129, 140, 248, 0.3) !important;
 }
+
 [data-theme-version="dark"] .btn-tbl-manage:hover {
   background: #4f46e5 !important;
   color: #ffffff !important;
@@ -1855,8 +1927,13 @@ table.dataTable td.text-center {
 }
 
 @keyframes floatOrb {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(40px, 30px) scale(1.1); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  100% {
+    transform: translate(40px, 30px) scale(1.1);
+  }
 }
 
 .auth-hero-brand {
@@ -1868,19 +1945,19 @@ table.dataTable td.text-center {
 }
 
 .auth-hero-brand-logo {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
+  height: 80px;
+  /* border-radius: 14px;
   object-fit: contain;
   background: rgba(255, 255, 255, 0.9);
   padding: 6px;
   box-shadow: 0 8px 24px rgba(0, 129, 238, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.8); */
 }
 
 [data-theme-version="dark"] .auth-hero-brand-logo {
-  background: rgba(30, 41, 59, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  height: 80px;
+  /* background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15); */
 }
 
 .auth-hero-brand-title {
@@ -2112,11 +2189,11 @@ table.dataTable td.text-center {
 }
 
 .auth-card-logo {
-  width: 58px;
-  height: 58px;
+  height: 80px;
+  margin-bottom: 16px;
+  /* width: 58px;
   object-fit: contain;
-  margin-bottom: 12px;
-  filter: drop-shadow(0 4px 12px rgba(0, 129, 238, 0.15));
+  filter: drop-shadow(0 4px 12px rgba(0, 129, 238, 0.15)); */
 }
 
 .auth-card-title {
@@ -2132,7 +2209,7 @@ table.dataTable td.text-center {
 }
 
 .auth-card-subtitle {
-  font-size: 13px;
+  font-size: 14px;
   color: #64748b;
   margin-bottom: 0;
   line-height: 1.5;
@@ -2336,10 +2413,12 @@ table.dataTable td.text-center {
   .auth-hero-canvas {
     display: none;
   }
+
   .auth-form-canvas {
     flex: 1 1 100%;
     padding: 30px 16px;
   }
+
   .auth-top-controls {
     top: 16px;
     right: 16px;
@@ -2579,13 +2658,13 @@ table.dataTable td.text-center {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
-[data-theme-version="dark"] #pl_orders_table.table-striped > tbody > tr:nth-of-type(odd) > *,
-[data-theme-version="dark"] #pl_expenses_table.table-striped > tbody > tr:nth-of-type(odd) > * {
+[data-theme-version="dark"] #pl_orders_table.table-striped>tbody>tr:nth-of-type(odd)>*,
+[data-theme-version="dark"] #pl_expenses_table.table-striped>tbody>tr:nth-of-type(odd)>* {
   background-color: rgba(255, 255, 255, 0.02) !important;
 }
 
-[data-theme-version="dark"] #pl_orders_table.table-hover > tbody > tr:hover > *,
-[data-theme-version="dark"] #pl_expenses_table.table-hover > tbody > tr:hover > * {
+[data-theme-version="dark"] #pl_orders_table.table-hover>tbody>tr:hover>*,
+[data-theme-version="dark"] #pl_expenses_table.table-hover>tbody>tr:hover>* {
   background-color: rgba(56, 189, 248, 0.08) !important;
 }
 

@@ -6,7 +6,9 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="author" content="iLaundry">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= data?.app_name || 'iLaundry' %> &bull; Sign In</title>
+    <title>
+        <%= data?.app_name || '' %> - Sign In
+    </title>
 
     <!-- Early Theme Loader (Prevents FOUC) -->
     <script>
@@ -61,8 +63,11 @@
             <div class="auth-hero-glow-2"></div>
 
             <div class="auth-hero-brand">
-                <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-hero-brand-logo" alt="<%= data?.app_name || 'iLaundry' %> Logo">
-                <h2 class="auth-hero-brand-title"><%= data?.app_name || 'iLaundry' %></h2>
+                <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-hero-brand-logo"
+                    alt="<%= data?.app_name || 'iLaundry' %> Logo">
+                <h2 class="auth-hero-brand-title">
+                    <%= data?.app_name || '' %>
+                </h2>
             </div>
 
             <div class="auth-hero-content">
@@ -73,7 +78,8 @@
                     Streamline Your Laundry Operations & POS Billing.
                 </h1>
                 <p class="auth-hero-lead">
-                    Enterprise multi-store management, high-density POS checkout, garment wash barcode tags, customer ledgers, and financial reporting — unified in one executive console.
+                    Enterprise multi-store management, high-density POS checkout, garment wash barcode tags, customer
+                    ledgers, and financial reporting — unified in one executive console.
                 </p>
 
                 <div class="auth-hero-pills">
@@ -109,8 +115,9 @@
             </div>
 
             <div class="auth-hero-footer">
-                <span><%= data?.footer_text || 'Copyright &copy; 2026 iLaundry Inc. All rights reserved.' %></span>
-                <span><i class="fas fa-circle text-success me-1 fs-9"></i> Live POS Network</span>
+                <span>
+                    Copyright &copy; 2026 <%= data?.app_name || '' %> All rights reserved.
+                </span>
             </div>
         </div>
 
@@ -119,35 +126,42 @@
             <div class="auth-glass-card">
                 <div class="auth-card-header">
                     <a href="/">
-                        <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-card-logo" alt="<%= data?.app_name || 'iLaundry' %>">
+                        <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-card-logo"
+                            alt="<%= data?.app_name || '' %>">
                     </a>
                     <h3 class="auth-card-title">Sign In to Your Account</h3>
                     <p class="auth-card-subtitle">
-                        Welcome back! Please enter your credentials to access the system.
+                        Welcome back!
                     </p>
                 </div>
 
                 <form action="/login" method="POST" class="need-validation" id="login_form">
                     <!-- Username / Email / Number -->
                     <div class="mb-3">
-                        <label class="form-label mb-1"><strong>Username, Email or Phone</strong> <span class="text-danger">*</span></label>
+                        <label class="form-label mb-1"><strong>Username, Email or Phone</strong> <span
+                                class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-user text-muted"></i></span>
-                            <input type="text" class="form-control" name="username" placeholder="e.g. admin or 9896959793" required autofocus>
+                            <input type="text" class="form-control" name="username" placeholder="Enter your username"
+                                required autofocus>
                         </div>
                     </div>
 
                     <!-- Password with Eye Toggle -->
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label class="form-label mb-0"><strong>Password</strong> <span class="text-danger">*</span></label>
-                            <a href="/forgot-password" class="fs-12 text-primary fw-semibold text-decoration-none" title="Reset your password">
+                            <label class="form-label mb-0"><strong>Password</strong> <span
+                                    class="text-danger">*</span></label>
+                            <a href="/forgot-password" class="fs-12 text-primary fw-semibold text-decoration-none"
+                                title="Reset your password">
                                 Forgot Password?
                             </a>
                         </div>
                         <div class="position-relative">
-                            <input type="password" class="form-control pe-5" id="login_password" name="password" placeholder="Enter your password" required>
-                            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('login_password', this)">
+                            <input type="password" class="form-control pe-5" id="login_password" name="password"
+                                placeholder="Enter your password" required>
+                            <button type="button" class="password-toggle-btn"
+                                onclick="togglePasswordVisibility('login_password', this)">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
@@ -157,13 +171,14 @@
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="form-check custom-checkbox mb-0">
                             <input type="checkbox" class="form-check-input" id="basic_checkbox_1">
-                            <label class="form-check-label fs-12 text-muted" for="basic_checkbox_1">Remember my preference</label>
+                            <label class="form-check-label fs-12 text-muted" for="basic_checkbox_1">Remember my
+                                preference</label>
                         </div>
                     </div>
 
                     <!-- Sign In Submit -->
                     <button type="submit" class="auth-submit-btn" id="login_submit_btn">
-                        <i class="fas fa-sign-in-alt me-1"></i> Sign In to Console
+                        <i class="fas fa-sign-in-alt me-1"></i> Sign In
                     </button>
                 </form>
 
@@ -173,7 +188,8 @@
                         <i class="fas fa-bolt text-warning me-1"></i> One-Click Demo Logins
                     </div>
                     <div class="auth-demo-pills">
-                        <button type="button" class="auth-demo-pill" id="demo_master_admin" title="Login as Master Admin">
+                        <button type="button" class="auth-demo-pill" id="demo_master_admin"
+                            title="Login as Master Admin">
                             <i class="fas fa-crown text-primary me-1"></i> Admin
                         </button>
                         <button type="button" class="auth-demo-pill" id="demo_sub_admin" title="Login as Store Manager">
@@ -188,29 +204,32 @@
                     </div>
                 </div>
 
-                <!-- Registration Links -->
-                <% 
-                   const customer = (typeof rollverify !== 'undefined' && rollverify) ? rollverify.find(r => r.rollType === 'customer') : null;
-                   const store = (typeof rollverify !== 'undefined' && rollverify) ? rollverify.find(r => r.rollType === 'store') : null;
-                   let showstore = data?.type == '1' && store && store.roll_status == 'active';
-                   let showcustomer = customer && customer.roll_status == 'active';
-                %>
 
-                <div class="text-center mt-4 pt-2 border-top">
-                    <p class="fs-13 text-muted mb-2">
-                        Don't have an account yet?
-                    </p>
-                    <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
-                        <a href="/register" class="btn btn-sm btn-outline-primary fw-semibold px-3 py-1 fs-12">
-                            <i class="fas fa-user-plus me-1"></i> Customer Sign Up
-                        </a>
-                        <% if (data?.type == '1') { %>
-                            <a href="/shopregister" class="btn btn-sm btn-outline-secondary fw-semibold px-3 py-1 fs-12">
-                                <i class="fas fa-store me-1"></i> Store Sign Up
+                <!-- Registration Links -->
+                <% const customer=(typeof rollverify !=='undefined' && rollverify) ? rollverify.find(r=> r.rollType ===
+                    'customer') : null;
+                    const store = (typeof rollverify !== 'undefined' && rollverify) ? rollverify.find(r => r.rollType
+                    === 'store') : null;
+                    let showstore = data?.type == '1' && store && store.roll_status == 'active';
+                    let showcustomer = customer && customer.roll_status == 'active';
+                    %>
+
+                    <div class="text-center mt-4 pt-2 border-top">
+                        <p class="fs-14 text-muted mb-2">
+                            Don't have an account yet?
+                        </p>
+                        <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+                            <a href="/register" class="btn btn-sm btn-outline-primary fw-semibold px-3 py-2 fs-14">
+                                <i class="fas fa-user-plus me-1"></i> Customer Sign Up
                             </a>
-                        <% } %>
+                            <% if (data?.type=='1' ) { %>
+                                <a href="/shopregister"
+                                    class="btn btn-sm btn-outline-secondary fw-semibold px-3 py-2 fs-14">
+                                    <i class="fas fa-store me-1"></i> Store Sign Up
+                                </a>
+                                <% } %>
+                        </div>
                     </div>
-                </div>
             </div>
         </div>
     </div>
@@ -312,7 +331,7 @@
     </script>
 
     <!-- Toastr Notifications -->
-    <% if(typeof success !== 'undefined' && success && success.length > 0){ %>
+    <% if(typeof success !=='undefined' && success && success.length> 0){ %>
         <script>
             toastr.success('<%- success %>', {
                 timeOut: 8000,
@@ -322,17 +341,18 @@
                 escapeHtml: false
             });
         </script>
-    <% } %>
+        <% } %>
 
-    <% if(typeof error !== 'undefined' && error && error.length > 0){ %>
-        <script>
-            toastr.error('<%= error %>', {
-                timeOut: 6000,
-                closeButton: true,
-                progressBar: true,
-                positionClass: "toast-top-right"
-            });
-        </script>
-    <% } %>
+            <% if(typeof error !=='undefined' && error && error.length> 0){ %>
+                <script>
+                    toastr.error('<%= error %>', {
+                        timeOut: 6000,
+                        closeButton: true,
+                        progressBar: true,
+                        positionClass: "toast-top-right"
+                    });
+                </script>
+                <% } %>
 </body>
+
 </html>

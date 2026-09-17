@@ -733,8 +733,11 @@
       $('#number_update').attr('value', contect)
       $('#email_update').attr('value', $(this).attr('data-email'))
       $('#username_update').attr('value', $(this).attr('data-username'))
-      // $('#password_update').attr('value', $(this).attr('data-password'))
       $('#roll_list_update').attr('value', $(this).attr('data-roll_id'))
+      var storeId = $(this).attr('data-store-id')
+      if (storeId) {
+         $('#store_update').val(storeId)
+      }
 
 
       $('#active_update').prop('checked', status == 1)

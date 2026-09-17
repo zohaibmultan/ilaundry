@@ -13585,8 +13585,8 @@ textarea.form-control {
 
 .nav-header .brand-logo {
   display: flex;
-  height: 100%;
-  width: 100%;
+  height: 80px;
+  /* width: 100%; */
   justify-content: flex-start;
   align-items: center;
   font-size: 1.125rem;

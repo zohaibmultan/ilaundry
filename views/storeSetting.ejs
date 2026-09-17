@@ -26,6 +26,12 @@
 
                                 <div class="shop_form">
                                     <% storedata.forEach(function(data){ %>
+                                        <% if (!update) { %>
+                                            <div class="alert alert-info py-2 px-3 mb-4 d-flex align-items-center">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                <span>You are viewing details of your assigned store: <strong><%= data.name %></strong> (View Only).</span>
+                                            </div>
+                                        <% } %>
                                         <form class="row g-4 align-items-center"
                                             action="/tool/updatesetting/<%=data.id %>" method="post"
                                             enctype="multipart/form-data">
@@ -45,7 +51,7 @@
                                                             </label>
                                                             <input type="text" placeholder="Enter Application Name"
                                                                 class="form-control" name="name"
-                                                                value="<%=data.name %>">
+                                                                value="<%=data.name %>" <%= update ? '' : 'readonly' %>>
                                                             <input type="hidden" name="adminid"
                                                                 value="<%=data.admin_id %>">
                                                         </div>
@@ -57,7 +63,7 @@
                                                             </label>
                                                             <input type="text" class="form-control"
                                                                 placeholder="Enter Phone Number" name="number"
-                                                                value="<%=data.mobile_number %>">
+                                                                value="<%=data.mobile_number %>" <%= update ? '' : 'readonly' %>>
                                                         </div>
                                                     </div>
 
@@ -69,9 +75,10 @@
                                                             </label>
                                                             <input type="text" class="form-control"
                                                                 placeholder="Enter Username" name="username"
-                                                                value="<%= data.username %>">
+                                                                value="<%= data.username %>" <%= update ? '' : 'readonly' %>>
                                                         </div>
 
+                                                        <% if (update) { %>
                                                         <div class="col-md-6">
                                                             <label class="form-label">
                                                                 <%= language.Password %> <span
@@ -81,6 +88,7 @@
                                                                 placeholder="Update Password" name="password"
                                                                 value="">
                                                         </div>
+                                                        <% } %>
                                                     </div>
 
                                                     <div class="row mt-4">
@@ -91,7 +99,7 @@
                                                             </label>
                                                             <input type="text" class="form-control"
                                                                 placeholder="Enter  Walk in Customer"
-                                                                name="walkincustome" value="<%= data.customer_name %>">
+                                                                name="walkincustome" value="<%= data.customer_name %>" <%= update ? '' : 'readonly' %>>
                                                         </div>
                                                     </div>
 
@@ -106,12 +114,14 @@
                                                                     src="../uploads/<%=data.logo %>" alt="image">
                                                             </div>
 
+                                                            <% if (update) { %>
                                                             <input class="d-none" type="file" id="file-1" name="logo"
                                                                 accept="image/*" onchange="showPreview(event);">
 
                                                             <label class="btn btn-primary w-100" for="file-1">
                                                                 <%= language.Upload_App_Logo %>
                                                             </label>
+                                                            <% } %>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -143,7 +153,7 @@
                                                     <%= language.Tax_Percentage %>
                                                 </label>
                                                 <input type="text" class="form-control" name="taxpercent"
-                                                    value="<%=data.tax_percent %>">
+                                                    value="<%=data.tax_percent %>" <%= update ? '' : 'readonly' %>>
                                             </div>
 
                                             <hr>
@@ -159,23 +169,7 @@
                                                     <%= language.Country %>
                                                 </label>
                                                 <input type="text" class="form-control" placeholder="Enter Country Name"
-                                                    name="country" value="<%=data.country %>">
-                                                <!-- <select class="default-select form-control wide mb-3" name="country"     >
-                                                    
-                                                    <option value="AR" <%= data.country == "AR"? 'selected': '' %> >Argentina [AR]</option>
-                                                    <option value="AU" <%= data.country == "AU"? 'selected': '' %>>Australia [AU]</option>
-                                                    <option value="BE" <%= data.country == "BE"? 'selected': '' %>>Belgium [BE]</option>
-                                                    <option value="BR" <%= data.country == "BR"? 'selected': '' %>>Brazil [BR]</option>
-                                                    <option value="CA" <%= data.country == "CA"? 'selected': '' %>>Canada [CA]</option>
-                                                    <option value="CN" <%= data.country == "CN"? 'selected': '' %>>China [CN]</option>
-                                                    <option value="DK" <%= data.country == "DK"? 'selected': '' %>>Denmark [DK]</option>
-                                                    <option value="IN" <%= data.country == "IN"? 'selected': '' %>>India [IN]</option>
-                                                    <option value="EG" <%= data.country == "EG"? 'selected': '' %>>Egypt [EG]</option>
-                                                    <option value="FR" <%= data.country == "FR"? 'selected': '' %>>France [FR]</option>
-                                                    <option value="DE" <%= data.country == "DE"? 'selected': '' %>>Germany [DE]</option>
-                                                    <option value="JP" <%= data.country == "JP"? 'selected': '' %>>Japan [JP]</option>
-        
-                                                </select> -->
+                                                    name="country" value="<%=data.country %>" <%= update ? '' : 'readonly' %>>
                                             </div>
 
                                             <div class="col-md-3">
@@ -183,7 +177,7 @@
                                                     <%= language.State %>
                                                 </label>
                                                 <input type="text" class="form-control" placeholder="Enter State Name"
-                                                    name="state" value="<%=data.state %>">
+                                                    name="state" value="<%=data.state %>" <%= update ? '' : 'readonly' %>>
                                             </div>
 
                                             <div class="col-md-3">
@@ -191,7 +185,7 @@
                                                     <%= language.City %>
                                                 </label>
                                                 <input type="text" class="form-control" placeholder="Enter City Name"
-                                                    name="city" value="<%=data.city %>">
+                                                    name="city" value="<%=data.city %>" <%= update ? '' : 'readonly' %>>
                                             </div>
 
                                             <div class="col-md-3">
@@ -200,7 +194,7 @@
                                                 </label>
                                                 <input type="text" class="form-control"
                                                     placeholder="Enter District Name" name="district"
-                                                    value="<%=data.district %>">
+                                                    value="<%=data.district %>" <%= update ? '' : 'readonly' %>>
                                             </div>
 
                                             <div class="col-md-3">
@@ -208,7 +202,7 @@
                                                     <%= language.Zip_Code %>
                                                 </label>
                                                 <input type="text" class="form-control" placeholder="Enter Zip Code"
-                                                    name="zip_code" value="<%=data.zipcode %>">
+                                                    name="zip_code" value="<%=data.zipcode %>" <%= update ? '' : 'readonly' %>>
                                             </div>
 
                                             <div class="col-md-3">
@@ -216,7 +210,7 @@
                                                     <%= language.Store_Email %>
                                                 </label>
                                                 <input type="email" class="form-control" placeholder="Enter Store Email"
-                                                    name="store_email" value="<%=data.store_email %>">
+                                                    name="store_email" value="<%=data.store_email %>" <%= update ? '' : 'readonly' %>>
                                             </div>
 
                                             <div class="col-md-3">
@@ -225,7 +219,7 @@
                                                 </label>
                                                 <input type="text" class="form-control"
                                                     placeholder="Enter Store Tax Number" name="tax_number"
-                                                    value="<%=data.store_tax_number %>">
+                                                    value="<%=data.store_tax_number %>" <%= update ? '' : 'readonly' %>>
                                             </div>
 
                                             <div class="col-12 mb-3">
@@ -233,7 +227,7 @@
                                                     <%= language.Address %>
                                                 </label>
                                                 <input type="text" class="form-control" placeholder="Enter Address"
-                                                    name="address" value="<%=data.address %>">
+                                                    name="address" value="<%=data.address %>" <%= update ? '' : 'readonly' %>>
                                             </div>
 
                                             <hr>

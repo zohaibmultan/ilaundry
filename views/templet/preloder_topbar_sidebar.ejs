@@ -630,15 +630,15 @@
                                                   showMasterSetting=(accessdata.logas==='master' &&
                                                   accessdata.roll?.master_setting?.includes('read')); const
                                                   showStoreSetting=( (accessdata.logas==='master' &&
-                                                  accessdata.mutibranch===false) || (accessdata.logas==='store' &&
+                                                  accessdata.mutibranch===false) || (accessdata.topbardata?.store_ID &&
+                                                  accessdata.topbardata.store_ID != '') || (accessdata.logas==='store' &&
                                                   accessdata.roll?.master?.includes('read')) ); const
                                                   showPayOut=(accessdata.logas==='master' &&
                                                   accessdata.mutibranch===true &&
                                                   accessdata.roll?.Pay_Out?.includes('read')); const
                                                   showStaff=accessdata.roll?.staff?.includes('read'); const
                                                   showTools=accessdata?.logas !=='custmor' &&
-                                                  accessdata?.roll?.service?.includes('read') && (showMail || showRoll
-                                                  || showMasterSetting || showStoreSetting || showPayOut || showStaff);
+                                                  (showMail || showRoll || showMasterSetting || showStoreSetting || showPayOut || showStaff);
                                                   %>
                                                   <% if(showTools){ %>
                                                     <li class="has-menu"><a class="has-arrow ai-icon"
@@ -690,6 +690,8 @@
                                                                   <% } %>
                                                                     <% if((accessdata.logas=='master' &&
                                                                       accessdata.mutibranch==false)||
+                                                                      (accessdata.topbardata?.store_ID &&
+                                                                      accessdata.topbardata.store_ID != '')||
                                                                       (accessdata.roll.master.includes('read') &&
                                                                       accessdata.logas=='store' )){ %>
                                                                       <li><a href="/tool/storesetting">

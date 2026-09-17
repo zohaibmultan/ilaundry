@@ -558,7 +558,30 @@ router.get("/storesetting", auth, async (req, res) => {
   WHERE sr.id = ${roll}
 `);
 
-    if (rolldetail[0].rollType === "master") {
+    let targetStoreId = store;
+    if (!targetStoreId || targetStoreId === ' ' || targetStoreId === '') {
+      const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+      if (adminData.length > 0 && adminData[0].store_ID) {
+        targetStoreId = adminData[0].store_ID;
+      }
+    }
+
+    let storedata = [];
+    let update = false;
+
+    if (targetStoreId && targetStoreId !== ' ' && targetStoreId != 0) {
+      storedata = await DataFind(`
+        SELECT 
+        tbl_store.*, 
+        tbl_customer.name AS customer_name
+        FROM tbl_store
+        LEFT JOIN tbl_customer ON tbl_customer.store_id = tbl_store.id
+        WHERE tbl_store.id = ${targetStoreId} AND tbl_store.status = 1 LIMIT 1
+      `);
+      
+      const hasEditPermission = rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("edit");
+      update = (rolldetail.length > 0 && rolldetail[0].rollType === "master" && accessdata.mutibranch === false) || hasEditPermission;
+    } else if (rolldetail.length > 0 && rolldetail[0].rollType === "master") {
       const multiy = await DataFind("SELECT type FROM tbl_master_shop");
       if (multiy[0].type == 1) {
         req.flash("error", "You Can Access This Data From Store List");
@@ -574,26 +597,6 @@ router.get("/storesetting", auth, async (req, res) => {
         update = true;
         console.log("storedata1", storedata);
       }
-    } else if (
-      rolldetail[0].rollType === "store" &&
-      rolldetail[0].master.includes("read")
-    ) {
-      //   storedata = await DataFind(
-      //     "SELECT * FROM tbl_store WHERE id=" + store + " AND status=1 "
-      //   );
-      console.log("store", store);
-
-      storedata = await DataFind(`
-                               SELECT 
-                               tbl_store.*, 
-                               tbl_customer.name AS customer_name
-                               FROM tbl_store
-                               LEFT JOIN tbl_customer ON tbl_customer.store_id = tbl_store.id
-                               WHERE tbl_store.id = ${store} AND tbl_store.status = 1 LIMIT 1
-                            `);
-      console.log("storedata2", storedata);
-
-      update = rolldetail[0].master.includes("edit");
     } else {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
@@ -634,7 +637,17 @@ router.post(
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-      if (rolldetail[0].master.includes("edit")) {
+      let userStore = store;
+      if (!userStore || userStore === ' ' || userStore === '') {
+        const adminData = await DataFind(`SELECT store_ID FROM tbl_admin WHERE id = ${id}`);
+        if (adminData.length > 0) userStore = adminData[0].store_ID;
+      }
+
+      const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === 'master';
+      const hasEdit = rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("edit");
+      const isStoreAuthorized = isMaster || (userStore == req.params.id && hasEdit);
+
+      if (isStoreAuthorized) {
         const dataid = req.params.id;
         if (req.file) {
           const logo = req.file.filename;
@@ -1298,75 +1311,58 @@ router.get("/staff", auth, async (req, res) => {
 
     //  console.log(rolldetail);
 
+    let storeList = [];
     if (
       rolldetail[0].rollType === "master" &&
       rolldetail[0].staff.includes("read")
     ) {
-      const multiy = await DataFind("SELECT type FROM tbl_master_shop");
-      if (multiy[0].type == 1) {
-        var ismulty = true;
+      var ismulty = true;
+      storeList = await DataFind(
+        "SELECT id, name FROM tbl_store WHERE status = 1 AND delete_flage = 0 ORDER BY name ASC"
+      );
+      var staffdata = await DataFind(`
+        SELECT tbl_admin.*, tbl_store.name as store, tbl_roll.roll, tbl_roll.rollType, tbl_staff_roll.main_roll_id
+        FROM tbl_admin
+        LEFT JOIN tbl_store ON tbl_admin.store_ID = tbl_store.id
+        LEFT JOIN tbl_staff_roll ON tbl_admin.roll_id = tbl_staff_roll.id
+        LEFT JOIN tbl_roll ON tbl_staff_roll.main_roll_id = tbl_roll.id
+        WHERE tbl_admin.is_staff != '0' AND tbl_admin.delet_flage = 0
+        ORDER BY tbl_admin.id DESC
+      `);
 
-        // var staffdata = await DataFind(
-        //   "SELECT tbl_admin.*, tbl_roll.roll, tbl_roll.rollType FROM tbl_admin JOIN tbl_roll ON tbl_admin.roll_id = tbl_roll.id WHERE tbl_admin.is_staff = 1 AND tbl_roll.rollType = 'master'"
-        // );
-
-        var staffdata =
-          await DataFind(`SELECT tbl_admin.*, tbl_staff_roll.*,tbl_roll.rollType , tbl_admin.id
-                                         FROM tbl_roll
-                                         JOIN tbl_staff_roll ON tbl_staff_roll.main_roll_id = tbl_roll.id AND is_staff = '1' 
-                                         JOIN tbl_admin ON tbl_staff_roll.id = tbl_admin.roll_id AND tbl_admin.is_staff = '1'
-                                         WHERE tbl_roll.rollType = 'master'`);
-
-        console.log("staffdata1", staffdata);
-
-        var rolldata = await DataFind(
-          "SELECT tbl_roll.* FROM tbl_roll  WHERE delet_flage=0 AND roll_status ='active' AND  tbl_roll.rollType ='master' "
-        );
-      } else {
-        var ismulty = false;
-        var staffFind = await DataFind(
-          `SELECT * FROM tbl_admin WHERE id='${id}' `
-        );
-        var staffdata = await DataFind(
-          "SELECT tbl_admin.*, tbl_store.name as store, tbl_roll.roll, tbl_roll.rollType , tbl_admin.id FROM tbl_admin JOIN tbl_store ON tbl_admin.store_ID=tbl_store.id JOIN tbl_roll ON tbl_admin.roll_id=tbl_roll.id WHERE tbl_admin.store_ID=" +
-            staffFind[0].store_ID +
-            " AND is_staff=1"
-        );
-        console.log("staffdata", staffdata);
-        var rolldata = await DataFind(
-          "SELECT tbl_roll.*  FROM tbl_roll  WHERE delet_flage=0 AND roll_status ='active' AND rollType ='store' "
-        );
-      }
+      var rolldata = await DataFind(
+        "SELECT tbl_roll.* FROM tbl_roll WHERE delet_flage=0 AND roll_status ='active'"
+      );
     } else if (
       rolldetail[0].rollType === "store" &&
       rolldetail[0].staff.includes("read")
     ) {
       var ismulty = false;
-
-      // var staffdata = await DataFind(`SELECT tbl_admin.*, tbl_store.name AS store, tbl_roll.roll , tbl_roll.rollType FROM tbl_admin
-      //                                  JOIN tbl_store ON tbl_admin.store_ID = tbl_store.id
-      //                                  JOIN tbl_roll ON tbl_admin.roll_id=tbl_roll.id
-      //                                  WHERE tbl_admin.store_ID= ${store} AND tbl_admin.delet_flage=0 AND is_staff=1`);
-
-      var staffdata = await DataFind(
-        `SELECT tbl_admin.* , sr.* , r.roll , r.rollType , tbl_admin.id  FROM tbl_admin JOIN tbl_staff_roll AS sr ON tbl_admin.id = sr.staff_id JOIN tbl_roll AS r ON sr.main_roll_id = r.id  WHERE tbl_admin.store_ID= '${store}' AND tbl_admin.is_staff != '0' `
+      storeList = await DataFind(
+        `SELECT id, name FROM tbl_store WHERE id = '${store}' AND status = 1 AND delete_flage = 0`
       );
+      var staffdata = await DataFind(`
+        SELECT tbl_admin.*, tbl_store.name as store, r.roll, r.rollType, sr.main_roll_id
+        FROM tbl_admin
+        LEFT JOIN tbl_store ON tbl_admin.store_ID = tbl_store.id
+        LEFT JOIN tbl_staff_roll AS sr ON tbl_admin.roll_id = sr.id
+        LEFT JOIN tbl_roll AS r ON sr.main_roll_id = r.id
+        WHERE tbl_admin.store_ID = '${store}' AND tbl_admin.is_staff != '0' AND tbl_admin.delet_flage = 0
+        ORDER BY tbl_admin.id DESC
+      `);
 
       var rolldata = await DataFind(
-        "SELECT  *  FROM tbl_roll  WHERE delet_flage=0 AND roll_status ='active' AND rollType ='store' "
+        "SELECT * FROM tbl_roll WHERE delet_flage=0 AND roll_status ='active' AND rollType ='store'"
       );
     } else {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
 
-    console.log("rolldata", rolldata);
-    console.log("staffdata", staffdata);
-    console.log("store", store);
-
     res.render("staff", {
       rolldata,
       staffdata,
+      storeList,
       ismulty,
       accessdata,
       language: req.language_data,
@@ -1452,28 +1448,29 @@ router.post("/addstaff", auth, async (req, res) => {
 `);
 
     if (rolldetail[0].staff.includes("write")) {
-      var { name, number, email, username, password, roll_list, active } =
+      var { name, number, email, username, password, roll_list, active, store_id } =
         req.body;
       active ? (active = 1) : (active = 0);
 
+      const assignedStore = (store_id !== undefined && store_id !== null && store_id !== '') ? store_id : (store || "");
+
+      let roleTemplateId = roll_list;
+      if (!roleTemplateId) {
+        const defaultRoll = await DataFind("SELECT id FROM tbl_roll WHERE delet_flage=0 AND roll_status='active' ORDER BY id ASC LIMIT 1");
+        roleTemplateId = defaultRoll[0]?.id;
+      }
+
       const RollFind = await DataFind(
-        `SELECT * FROM tbl_roll WHERE id = ${roll_list}`
+        `SELECT * FROM tbl_roll WHERE id = ${roleTemplateId}`
       );
 
-      if (RollFind[0].rollType === "master") {
-        store = " ";
-      }
       const salt = bcrypt.genSaltSync(10);
       const hashpass = bcrypt.hashSync(password, salt);
-
-      // const newroll = await DataFind(
-      //   `INSERT INTO tbl_admin (name,number,email,username,password,store_ID,roll_id,approved,is_staff) VALUE ('${name}','${number}','${email}','${username}','${hashpass}','${store}','${""}',${active},'1')`
-      // );
 
       const newroll = await DataInsert(
         `tbl_admin`,
         `name,number,email,username,password,store_ID,roll_id,approved,is_staff`,
-        `'${name}','${number}','${email}','${username}','${hashpass}','${store}','${""}',${active},'1'`,
+        `'${name}','${number}','${email}','${username}','${hashpass}','${assignedStore}','${""}',${active},'1'`,
         req.hostname,
         req.protocol
       );
@@ -1564,6 +1561,7 @@ router.post("/updatestaff/:id", auth, async (req, res) => {
         password_update,
         roll_list_update,
         active_update,
+        store_update,
       } = req.body;
 
       console.log(req.body);
@@ -1575,20 +1573,23 @@ router.post("/updatestaff/:id", auth, async (req, res) => {
       );
       let haspass = "";
 
-      if (password_update.length > 0) {
+      if (password_update && password_update.length > 0) {
         const salt = bcrypt.genSaltSync(10);
         haspass = bcrypt.hashSync(password_update, salt);
       } else {
         haspass = OldData[0].password;
       }
 
-      // const newroll = await DataFind(`UPDATE tbl_admin SET name='${name_update}',number='${number_update}',email='${email_update}',username='${username_update}',
-      //           password='${haspass}',roll_id='${roll_list_update}',approved='${active_update}' WHERE id=${dataid}`);
+      const assignedStore = (store_update !== undefined && store_update !== null && store_update !== '')
+        ? store_update
+        : (OldData[0].store_ID || "");
+
+      const rollIdVal = (roll_list_update && roll_list_update !== '') ? roll_list_update : OldData[0].roll_id;
 
       const newroll = await DataUpdate(
         "tbl_admin",
         `name='${name_update}', number='${number_update}', email='${email_update}', username='${username_update}',
-   password='${haspass}', roll_id='${roll_list_update}', approved='${active_update}'`,
+    password='${haspass}', roll_id='${rollIdVal}', store_ID='${assignedStore}', approved='${active_update}'`,
         `id=${dataid}`,
         req.hostname,
         req.protocol
