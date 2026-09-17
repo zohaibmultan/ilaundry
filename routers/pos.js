@@ -932,43 +932,42 @@ router.get("/removeservicelist/:id", auth, async (req, res) => {
 router.get("/getservicetype/:id", auth, async (req, res) => {
   try {
     const accessdata = await access(req.user);
-    var ServiceType = await DataFind(
-      "SELECT id,services_type_id,services_type_price,name,image FROM tbl_services WHERE id = " +
-      req.params.id +
-      ""
+    const serviceId = parseInt(req.params.id);
+    if (!serviceId) {
+      return res.status(200).json({ data: [], serviceid: "", accessdata });
+    }
+    const ServiceType = await DataFind(
+      "SELECT id, services_type_id, services_type_price, name, image FROM tbl_services WHERE id = " + serviceId
     );
-    console.log("1st ServiceType", ServiceType);
-    const price = ServiceType[0].services_type_price.split(",");
-    const type = ServiceType[0].services_type_id.split(",");
-    const service =
-      ServiceType[0].id +
-      "," +
-      ServiceType[0].name +
-      "," +
-      ServiceType[0].image;
+    if (!ServiceType || ServiceType.length === 0) {
+      return res.status(200).json({ data: [], serviceid: "", accessdata });
+    }
 
-    console.log("price", price);
-    console.log("type", type);
-    console.log("service", service);
-    const typlist = await Promise.all(
-      type.map(async (data, i) => {
-        console.log("data", data);
-        var ServiceType = await DataFind(
-          "SELECT services_type FROM tbl_services_type WHERE id =" + data + ""
-        );
-        console.log("ServiceType", ServiceType[0].services_type);
-        console.log("price", price[i]);
-        return {
-          id: data,
-          servicetype: ServiceType[0].services_type,
-          price: price[i],
-        };
-      })
-    );
+    const s = ServiceType[0];
+    const prices = (s.services_type_price || "").toString().split(",").map(p => p.trim());
+    const types = (s.services_type_id || "").toString().split(",").map(t => t.trim()).filter(t => t.length > 0);
+    const service = s.id + "," + (s.name || "") + "," + (s.image || "default.png");
 
-    res.status(200).json({ data: typlist, serviceid: service, accessdata });
+    const typlist = [];
+    for (let i = 0; i < types.length; i++) {
+      const typeId = types[i];
+      if (!typeId) continue;
+      const stResult = await DataFind(
+        "SELECT services_type FROM tbl_services_type WHERE id = " + typeId
+      );
+      if (stResult && stResult.length > 0) {
+        typlist.push({
+          id: typeId,
+          servicetype: stResult[0].services_type,
+          price: prices[i] !== undefined ? prices[i] : "0.00",
+        });
+      }
+    }
+
+    return res.status(200).json({ data: typlist, serviceid: service, accessdata });
   } catch (error) {
-    console.log(error);
+    console.error("Error in /getservicetype/:id:", error);
+    return res.status(500).json({ error: error.message, data: [], serviceid: "" });
   }
 });
 

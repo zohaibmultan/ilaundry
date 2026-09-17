@@ -303,15 +303,15 @@
    ========================================================================== */
 
 .pos-cart-card,
-.col-xl-5 > .pos-card {
+.col-xl-5>.pos-card {
   display: flex !important;
   flex-direction: column !important;
   height: calc(100vh - 98px) !important;
   min-height: 580px !important;
 }
 
-.pos-cart-card > .pos-card-body,
-.col-xl-5 > .pos-card > .pos-card-body {
+.pos-cart-card>.pos-card-body,
+.col-xl-5>.pos-card>.pos-card-body {
   display: flex !important;
   flex-direction: column !important;
   height: 100% !important;
@@ -445,11 +445,11 @@
 }
 
 .pos-table-input-price {
-  width: 58px !important;
+  width: 100% !important;
 }
 
 .pos-table-input-qty {
-  width: 45px !important;
+  width: 100% !important;
 }
 
 /* Delete Button */
@@ -788,9 +788,20 @@
 }
 
 @keyframes printerPulse {
-  0% { transform: scale(0.9); opacity: 0.6; }
-  50% { transform: scale(1.15); opacity: 1; }
-  100% { transform: scale(0.9); opacity: 0.6; }
+  0% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
 }
 
 [data-theme-version="dark"] .pos-printer-badge-btn {
@@ -863,7 +874,7 @@
   background: rgba(0, 0, 0, 0.04);
 }
 
-.btn-check:checked + .pos-disc-btn,
+.btn-check:checked+.pos-disc-btn,
 .pos-disc-btn.active {
   background-color: #3b82f6 !important;
   color: #ffffff !important;
@@ -1027,7 +1038,7 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
-[data-theme-version="dark"] .btn-check:checked + .pos-disc-btn,
+[data-theme-version="dark"] .btn-check:checked+.pos-disc-btn,
 [data-theme-version="dark"] .pos-disc-btn.active {
   background-color: #3b82f6 !important;
   color: #ffffff !important;
@@ -1070,5 +1081,43 @@
 
 [data-theme-version="dark"] .select2-container--default .select2-results__option[aria-selected="true"] {
   background-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+/* Service Type Selection Modal Items */
+.pos-service-type-row {
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  background-color: #f8fafc !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.pos-service-type-row:hover {
+  background-color: #f1f5f9 !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.08);
+}
+
+.pos-service-type-row:has(input[type="radio"]:checked) {
+  border-color: #3b82f6 !important;
+  background-color: #eff6ff !important;
+}
+
+[data-theme-version="dark"] .pos-service-type-row {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme-version="dark"] .pos-service-type-row:hover {
+  background-color: #334155 !important;
+  border-color: #60a5fa !important;
+}
+
+[data-theme-version="dark"] .pos-service-type-row:has(input[type="radio"]:checked) {
+  border-color: #3b82f6 !important;
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+[data-theme-version="dark"] .pos-service-type-row span.text-dark {
   color: #f8fafc !important;
 }

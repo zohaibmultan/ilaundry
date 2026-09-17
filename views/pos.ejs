@@ -125,7 +125,7 @@
                                                     <a href="#" class="pos-service-item services"
                                                         data-name="<%= (data.name || '').toLowerCase() %>"
                                                         data-bs-toggle="modal" data-bs-target="#service_type_model"
-                                                        id="POS_service" data-id="<%= data.id %>">
+                                                        data-id="<%= data.id %>">
                                                         <div class="pos-service-tile">
                                                             <div class="pos-service-icon-box">
                                                                 <img src="../../uploads/<%= data.image %>"
@@ -156,10 +156,12 @@
                                     <div
                                         class="col-6 <%= (ismulty && login == 'master') || (ismulty && accessdata.logas != 'store' && accessdata.masterstore.customer_selection =='1' || accessdata.topbardata.store =='' ) || (typeof isStaff !== 'undefined' && isStaff) ? '': 'd-none' %>">
                                         <div class="pos-date-group">
-                                            <label class="pos-field-label">Select Store <span class="text-danger">*</span></label>
+                                            <label class="pos-field-label">Select Store <span
+                                                    class="text-danger">*</span></label>
                                             <% if (typeof isStaff !=='undefined' && isStaff) { %>
                                                 <select class="default-select wide w-100" name="store" id="pos_store_id"
-                                                    disabled style="background-color: #e9ecef; cursor: not-allowed;" required>
+                                                    disabled style="background-color: #e9ecef; cursor: not-allowed;"
+                                                    required>
                                                     <option value="<%= staffStoreId %>" selected>
                                                         <%= staffStoreName || 'Assigned Store' %>
                                                     </option>
@@ -169,51 +171,73 @@
                                                 <% } else { %>
                                                     <select class="default-select wide w-100" name="store"
                                                         id="pos_store_id" data-live-search="true" required>
-                                                        <option value="0" <%= (!cart.store_id || cart.store_id == 0) ? 'selected' : '' %> disabled>Select Store *</option>
+                                                        <option value="0" <%=(!cart.store_id || cart.store_id==0)
+                                                            ? 'selected' : '' %> disabled>Select Store *</option>
                                                         <% storeList.forEach(function(x){ %>
-                                                            <option value="<%= x.id %>" <%= (cart.store_id == x.id) ? 'selected' : '' %>><%= x.name %></option>
-                                                        <% }) %>
+                                                            <option value="<%= x.id %>" <%=(cart.store_id==x.id)
+                                                                ? 'selected' : '' %>><%= x.name %>
+                                                            </option>
+                                                            <% }) %>
                                                     </select>
-                                                <% } %>
+                                                    <% } %>
                                         </div>
                                     </div>
 
                                     <div class="col-6 <%= login === 'customer'? 'd-none': '' %>">
                                         <div class="pos-date-group">
-                                            <label class="pos-field-label">Select Customer <span class="text-danger">*</span></label>
-                                             <div class="d-flex justify-content-between align-items-center">
+                                            <label class="pos-field-label">Select Customer <span
+                                                    class="text-danger">*</span></label>
+                                            <div class="d-flex justify-content-between align-items-center">
                                                 <% if (accessdata.logas==='custmor' ) { %>
                                                     <input type="hidden" id="single-select" name="customer"
                                                         value="<%= customerList[0]?.id || 0 %>">
-                                                <% } else { %>
-                                                    <select id="single-select" name="customer"
-                                                        class="default-select wide w-100" data-live-search="true" required
-                                                        <%= (!isStaff && (!cart.store_id || cart.store_id == 0)) ? 'disabled' : '' %>>
-                                                        <option value="0" disabled <%= (!cart.customer_id || cart.customer_id == 0) ? 'selected' : '' %>>
-                                                            <%= (!isStaff && (!cart.store_id || cart.store_id == 0)) ? 'Select Store First *' : 'Select Customer *' %>
-                                                        </option>
-                                                        <% customerList.forEach(function(x) { %>
-                                                            <% let showExtra="" ; %>
-                                                            <% if ((x.username=='' || x.username==null) &&
-                                                                (x.email==null || x.email=='' ) &&
-                                                                (x.number==null || x.number=='' ) ) { %>
-                                                                <% if (accessdata.logas !='store' ) {
-                                                                    showExtra=x.store_name; } %>
-                                                            <% } else { %>
-                                                                <% showExtra=x.number; %>
-                                                            <% } %>
-                                                            <% let selected = (cart.customer_id == x.id || (isStaff && (!cart.customer_id || cart.customer_id == 0) && (x.username == '' || x.username == null || (x.name && x.name.toLowerCase().includes('walk in'))))) ? 'selected' : ''; %>
-                                                            <option value="<%= x.id %>" <%= selected %>>
-                                                                <%= x.name %><% if (showExtra) { %> (<%= showExtra %>)<% } %>
+                                                    <% } else { %>
+                                                        <select id="single-select" name="customer"
+                                                            class="default-select wide w-100" data-live-search="true"
+                                                            required <%=(!isStaff && (!cart.store_id ||
+                                                            cart.store_id==0)) ? 'disabled' : '' %>>
+                                                            <option value="0" disabled <%=(!cart.customer_id ||
+                                                                cart.customer_id==0) ? 'selected' : '' %>>
+                                                                <%= (!isStaff && (!cart.store_id || cart.store_id==0))
+                                                                    ? 'Select Store First *' : 'Select Customer *' %>
                                                             </option>
-                                                        <% }); %>
-                                                    </select>
-                                                    <button type="button"
-                                                        class="btn btn-primary ms-2 pos-btn-add-customer"
-                                                        data-bs-toggle="modal" data-bs-target="#addcustomer">
-                                                        <i class="fa fa-plus"></i>
-                                                    </button>
-                                                <% } %>
+                                                            <% customerList.forEach(function(x) { %>
+                                                                <% let showExtra="" ; %>
+                                                                    <% if ((x.username=='' || x.username==null) &&
+                                                                        (x.email==null || x.email=='' ) &&
+                                                                        (x.number==null || x.number=='' ) ) { %>
+                                                                        <% if (accessdata.logas !='store' ) {
+                                                                            showExtra=x.store_name; } %>
+                                                                            <% } else { %>
+                                                                                <% showExtra=x.number; %>
+                                                                                    <% } %>
+                                                                                        <% let
+                                                                                            selected=(cart.customer_id==x.id
+                                                                                            || (isStaff &&
+                                                                                            (!cart.customer_id ||
+                                                                                            cart.customer_id==0) &&
+                                                                                            (x.username=='' ||
+                                                                                            x.username==null || (x.name
+                                                                                            &&
+                                                                                            x.name.toLowerCase().includes('walk
+                                                                                            in'))))) ? 'selected' : '' ;
+                                                                                            %>
+                                                                                            <option value="<%= x.id %>"
+                                                                                                <%=selected %>>
+                                                                                                <%= x.name %>
+                                                                                                    <% if (showExtra) {
+                                                                                                        %> (<%=
+                                                                                                            showExtra %>
+                                                                                                            )<% } %>
+                                                                                            </option>
+                                                                                            <% }); %>
+                                                        </select>
+                                                        <button type="button"
+                                                            class="btn btn-primary ms-2 pos-btn-add-customer"
+                                                            data-bs-toggle="modal" data-bs-target="#addcustomer">
+                                                            <i class="fa fa-plus"></i>
+                                                        </button>
+                                                        <% } %>
                                             </div>
                                         </div>
                                     </div>
@@ -277,20 +301,19 @@
                                     <table class="pos-cart-table table-bordered verticle-middle text-center">
                                         <thead>
                                             <tr>
-                                                <th
-                                                    style="width: 100%; text-align: left; padding-left: 8px !important;">
+                                                <th style="text-align: left; padding-left: 8px !important;">
                                                     <%= language.Service %>
                                                 </th>
-                                                <th style="width: 80px; text-align: center;">
+                                                <th style="width: 80px !important; text-align: center;">
                                                     <%= language.Color %>
                                                 </th>
-                                                <th style="width: 100px;text-align: center;">
+                                                <th style="width: 80px !important;text-align: center;">
                                                     <%= language.Rate %>
                                                 </th>
-                                                <th style="width: 80px;text-align: center;">
+                                                <th style="width: 80px !important;text-align: center;">
                                                     <%= language.Qty %>
                                                 </th>
-                                                <th style="width: 50px;text-align: center;"></th>
+                                                <th style="width: 50px !important;text-align: center;"></th>
                                             </tr>
                                         </thead>
                                         <tbody id="POS_service_added_list">
@@ -313,7 +336,7 @@
                                                     </td>
                                                     <td class="text-center">
                                                         <input type="number"
-                                                            class="form-control pos-table-input pos-table-input-price"
+                                                            class="form-control pos-table-input pos-table-input-price w-100"
                                                             value="<%= x.service_type_price %>"
                                                             name="service_type_price" id="POSservice_type_price"
                                                             data-id="<%= x.id %>" <%=login=='master' || login=='store'
@@ -321,7 +344,7 @@
                                                     </td>
                                                     <td class="text-center">
                                                         <input type="number"
-                                                            class="form-control pos-table-input pos-table-input-qty"
+                                                            class="form-control pos-table-input pos-table-input-qty w-100"
                                                             id="POSservice_type_quntity"
                                                             value="<%= x.service_quntity %>" min="1"
                                                             data-id="<%= x.id %>">
