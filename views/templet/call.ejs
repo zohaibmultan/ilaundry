@@ -867,21 +867,28 @@
          dataType: 'json',
          success: function (res) {
             if (res.customerList.length < 1) {
-               $('#single-select').html('<option value="0" selected disabled >No Any Customer Register Yet</option>')
+               $('#single-select').html('<option value="0" selected disabled >No Any Customer Register Yet</option>');
             } else {
-               $('#single-select').html('<option value="0" selected disabled >Select Customer </option>')
-               // window.location.reload();
+               $('#single-select').html('<option value="0" disabled >Select Customer </option>');
             }
             $.each(res.customerList, function (index, value) {
-               // $('#single-select').append('<option value=' + value.id + ' ' + (value.name == 'Walk in customer' ? 'selected' : '') + '>' + value.name + '</option>')
+               var isDefault = (res.defaultCustomerId && value.id == res.defaultCustomerId) || 
+                               (!res.defaultCustomerId && (value.username === '' || value.username === null || (value.name && value.name.toLowerCase().includes('walk in'))));
+               var extra = (value.username === '' || value.username === null ? (value.store_name || '') : (value.number || ''));
+               var extraText = extra ? ' (' + extra + ')' : '';
                $('#single-select').append(
-                  '<option value="' + value.id + '">' +
-                  value.name + ' (' +
-                  (value.username === '' || value.username === null ? value.store_name : value.number) +
-                  ')</option>'
+                  '<option value="' + value.id + '" ' + (isDefault ? 'selected' : '') + '>' +
+                  value.name + extraText +
+                  '</option>'
                );
-
-            })
+            });
+            if (res.defaultCustomerId) {
+               $('#single-select').val(res.defaultCustomerId);
+            }
+            if ($.fn.selectpicker) {
+               $('#single-select').selectpicker('refresh');
+            }
+            $('#coupon_storlist_update').val(storeid);
          }
       })
 

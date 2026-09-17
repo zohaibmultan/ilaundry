@@ -179,18 +179,27 @@
                                             <label><strong><%= language.Email %> </strong></label>
                                             <input type="email" class="form-control" name="email" required>
                                         </div>
-                                           <div class="col-md-12 mb-3 <%= ismulty && login == "master" ? '': 'd-none' %>">
-                                            <div class="form-group">
-                                                <label class="form-label"><strong> <%= language.Store_List %> </strong><span class="text-danger">*</span></label>
-                                                <select class=" form-control wide mb-3" name="storeid"
-                                                    id="Customer_add" >
-                                                    <option value="" selected  > Select Store </option>
-                                                    <% storeList.forEach(function(x){ %>
-                                                        <option value="<%= x.id %>"><%= x.name %></option>
-                                                    <% }) %>
-                                                </select>
+                                        <% if (typeof is_staff !== 'undefined' && is_staff) { %>
+                                            <div class="col-md-12 mb-3">
+                                                <div class="form-group">
+                                                    <label class="form-label"><strong><%= language.Store_List || 'Assigned Store' %></strong></label>
+                                                    <input type="text" class="form-control" value="<%= (typeof staff_store_name !== 'undefined' && staff_store_name) ? staff_store_name : 'Assigned Store' %>" readonly disabled style="background-color: #e9ecef; cursor: not-allowed;">
+                                                    <input type="hidden" name="storeid" value="<%= staff_store_id %>">
+                                                </div>
                                             </div>
-                                        </div>
+                                        <% } else { %>
+                                            <div class="col-md-12 mb-3">
+                                                <div class="form-group">
+                                                    <label class="form-label"><strong> <%= language.Store_List || 'Store' %> </strong><span class="text-danger">*</span></label>
+                                                    <select class="form-control wide mb-3" name="storeid" id="Customer_add" required>
+                                                        <option value="" selected disabled> Select Store </option>
+                                                        <% storeList.forEach(function(x){ %>
+                                                            <option value="<%= x.id %>"><%= x.name %></option>
+                                                        <% }) %>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        <% } %>
                                         <div class="form-group">
                                             <label><strong><%= language.Tax_Number %> </strong></label>
                                             <input type="text" class="form-control"name="taxnumber" >

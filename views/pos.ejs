@@ -129,17 +129,24 @@
                             <div class="pos-card-body">
                                 <div class="row g-2 mb-3">
                                     <div
-                                        class="col-6 <%= (ismulty && login == 'master') || (ismulty && accessdata.logas != 'store' && accessdata.masterstore.customer_selection =='1' || accessdata.topbardata.store =='' ) ? '': 'd-none' %>">
+                                        class="col-6 <%= (ismulty && login == 'master') || (ismulty && accessdata.logas != 'store' && accessdata.masterstore.customer_selection =='1' || accessdata.topbardata.store =='' ) || (typeof isStaff !== 'undefined' && isStaff) ? '': 'd-none' %>">
                                         <div class="pos-date-group">
                                             <label class="pos-field-label">Select Store</label>
-                                            <select class="default-select wide w-100" name="store" id="pos_store_id" data-live-search="true">
-                                                <option value="0" selected disabled>Select Store</option>
-                                                <% storeList.forEach(function(x){ %>
-                                                    <option value="<%= x.id %>" <%=cart.store_id==x.id ? 'selected' : ''
-                                                        %>><%= x.name %>
-                                                    </option>
-                                                    <% }) %>
-                                            </select>
+                                            <% if (typeof isStaff !== 'undefined' && isStaff) { %>
+                                                <select class="default-select wide w-100" name="store" id="pos_store_id" disabled style="background-color: #e9ecef; cursor: not-allowed;">
+                                                    <option value="<%= staffStoreId %>" selected><%= staffStoreName || 'Assigned Store' %></option>
+                                                </select>
+                                                <input type="hidden" id="pos_staff_store_id" value="<%= staffStoreId %>">
+                                            <% } else { %>
+                                                <select class="default-select wide w-100" name="store" id="pos_store_id" data-live-search="true">
+                                                    <option value="0" disabled>Select Store</option>
+                                                    <% storeList.forEach(function(x){ %>
+                                                        <option value="<%= x.id %>" <%=cart.store_id==x.id ? 'selected' : ''
+                                                            %>><%= x.name %>
+                                                        </option>
+                                                        <% }) %>
+                                                </select>
+                                            <% } %>
                                         </div>
                                     </div>
 
@@ -150,33 +157,33 @@
                                                 <% if (accessdata.logas==='custmor' ) { %>
                                                     <input type="hidden" id="single-select" name="customer"
                                                         value="<%= customerList[0]?.id || 0 %>">
-                                                    <% } else { %>
-                                                        <select id="single-select" name="customer"
-                                                            class="default-select wide w-100" data-live-search="true">
-                                                            <option value="0" selected disabled>Select Customer</option>
-                                                            <% customerList.forEach(function(x) { %>
-                                                                <% let showExtra="" ; %>
-                                                                    <% if ((x.username=='' || x.username==null) &&
-                                                                        (x.email==null || x.email=='' ) &&
-                                                                        (x.number==null || x.number=='' ) ) { %>
-                                                                        <% if (accessdata.logas !='store' ) {
-                                                                            showExtra=x.store_name; } %>
-                                                                            <% } else { %>
-                                                                                <% showExtra=x.number; %>
-                                                                                    <% } %>
-                                                                                        <% let
-                                                                                            selected=(cart.customer_id==x.id)
-                                                                                            ? 'selected' : '' ; %>
-                                                                                            <option value="<%= x.id %>"
-                                                                                                <%=selected %>>
-                                                                                                <%= x.name %>
-                                                                                                    <% if (showExtra) {
-                                                                                                        %>(
-                                                                                                        <%= showExtra %>
-                                                                                                            )<% } %>
-                                                                                            </option>
-                                                                                            <% }); %>
-                                                        </select>
+                                                <% } else { %>
+                                                    <select id="single-select" name="customer"
+                                                        class="default-select wide w-100" data-live-search="true">
+                                                        <option value="0" disabled <%= (!cart.customer_id || cart.customer_id == 0) ? 'selected' : '' %>>Select Customer</option>
+                                                        <% customerList.forEach(function(x) { %>
+                                                            <% let showExtra="" ; %>
+                                                            <% if ((x.username=='' || x.username==null) &&
+                                                                (x.email==null || x.email=='' ) &&
+                                                                (x.number==null || x.number=='' ) ) { %>
+                                                                <% if (accessdata.logas !='store' ) {
+                                                                    showExtra=x.store_name; } %>
+                                                                    <% } else { %>
+                                                                        <% showExtra=x.number; %>
+                                                                            <% } %>
+                                                                                <% let
+                                                                                    selected=(cart.customer_id==x.id || (!cart.customer_id && (x.username=='' || x.username==null || (x.name && x.name.toLowerCase().includes('walk in')))))
+                                                                                    ? 'selected' : '' ; %>
+                                                                                    <option value="<%= x.id %>"
+                                                                                        <%=selected %>>
+                                                                                        <%= x.name %>
+                                                                                            <% if (showExtra) {
+                                                                                                %>(
+                                                                                                <%= showExtra %>
+                                                                                                    )<% } %>
+                                                                                    </option>
+                                                                                    <% }); %>
+                                                    </select>
                                                         <button type="button"
                                                             class="btn btn-primary ms-2 pos-btn-add-customer"
                                                             data-bs-toggle="modal" data-bs-target="#addcustomer">
@@ -619,24 +626,32 @@
                                         <input type="text" class="form-control" name="address">
                                     </div>
 
-                                    <div
-                                        class="col-md-12 mb-3 <%= ismulty && login == 'master' && accessdata.masterstore.customer_selection =='0' ? '': 'd-none' %>">
-                                        <div class="form-group">
-                                            <label class="form-label"><strong>
-                                                    <%= language.Store_List %>
-                                                </strong><span class="text-danger">*</span></label>
-                                            <select class="form-control wide mb-3" name="storeid"
-                                                id="coupon_storlist_update">
-                                                <option value="" selected disabled> Select Store </option>
-                                                <% storeList.forEach(function(x){ %>
-                                                    <option value="<%= x.id %>">
-                                                        <%= x.name %>
-                                                    </option>
-                                                    <% }) %>
-                                            </select>
-
+                                    <% if (typeof isStaff !== 'undefined' && isStaff) { %>
+                                        <div class="col-md-12 mb-3">
+                                            <div class="form-group">
+                                                <label class="form-label"><strong><%= language.Store_List || 'Assigned Store' %></strong></label>
+                                                <input type="text" class="form-control" value="<%= (typeof staffStoreName !== 'undefined' && staffStoreName) ? staffStoreName : 'Assigned Store' %>" readonly disabled style="background-color: #e9ecef; cursor: not-allowed;">
+                                                <input type="hidden" name="storeid" value="<%= staffStoreId %>">
+                                            </div>
                                         </div>
-                                    </div>
+                                    <% } else { %>
+                                        <div class="col-md-12 mb-3">
+                                            <div class="form-group">
+                                                <label class="form-label"><strong>
+                                                        <%= language.Store_List || 'Store' %>
+                                                    </strong><span class="text-danger">*</span></label>
+                                                <select class="form-control wide mb-3" name="storeid"
+                                                    id="coupon_storlist_update" required>
+                                                    <option value="" disabled <%= (!cart.store_id || cart.store_id == 0) ? 'selected' : '' %>> Select Store </option>
+                                                    <% storeList.forEach(function(x){ %>
+                                                        <option value="<%= x.id %>" <%= (cart.store_id == x.id) ? 'selected' : '' %>>
+                                                            <%= x.name %>
+                                                        </option>
+                                                    <% }) %>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    <% } %>
 
                                     <div class="form-group">
                                         <label><strong>

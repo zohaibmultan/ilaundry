@@ -33,6 +33,50 @@ async function idfororder() {
   }
 }
 
+async function getOrCreateWalkInCustomer(storeId, req) {
+  if (!storeId || storeId == "0" || storeId == "") return null;
+  let walk = await DataFind(
+    `SELECT * FROM tbl_customer WHERE store_ID = '${storeId}' AND approved = 1 AND delet_flage = 0 AND (username IS NULL OR username = '' OR name LIKE '%Walk%in%') ORDER BY id ASC LIMIT 1`
+  );
+  if (walk && walk.length > 0) {
+    return walk[0];
+  }
+  // Create walk-in customer for this store
+  await DataInsert(
+    `tbl_customer`,
+    `name, store_ID, reffstore, approved, delet_flage`,
+    `'Walk in customer', '${storeId}', '${storeId}', 1, 0`,
+    req ? req.hostname : "",
+    req ? req.protocol : ""
+  );
+  walk = await DataFind(
+    `SELECT * FROM tbl_customer WHERE store_ID = '${storeId}' AND approved = 1 AND delet_flage = 0 AND (username IS NULL OR username = '' OR name LIKE '%Walk%in%') ORDER BY id ASC LIMIT 1`
+  );
+  return walk && walk.length > 0 ? walk[0] : null;
+}
+
+async function getStoreScopedCustomers(storeId) {
+  if (!storeId || storeId == "0" || storeId == "") return [];
+  return await DataFind(`
+    SELECT 
+      tbl_customer.id, 
+      tbl_customer.name, 
+      tbl_customer.number, 
+      tbl_customer.email, 
+      tbl_customer.username, 
+      tbl_store.name AS store_name
+    FROM 
+      tbl_customer
+    LEFT JOIN 
+      tbl_store ON tbl_customer.store_ID = tbl_store.id
+    WHERE 
+      tbl_customer.approved = 1 
+      AND tbl_customer.delet_flage = 0 
+      AND tbl_customer.store_ID = '${storeId}'
+    ORDER BY (CASE WHEN tbl_customer.username IS NULL OR tbl_customer.username = '' OR tbl_customer.name LIKE '%Walk%in%' THEN 0 ELSE 1 END), tbl_customer.name ASC
+  `);
+}
+
 router.get("/pos", auth, async (req, res) => {
   try {
     const customer = await DataFind(
@@ -89,13 +133,12 @@ router.get("/pos", auth, async (req, res) => {
 
       if (cartdata.length > 0) {
         service_list = await DataFind(`SELECT * FROM tbl_services 
-                                      WHERE status = 0 AND ${
-                                        store && cartdata.length > 0
-                                          ? `store_ID = '${store}'`
-                                          : `'${cartdata[0].store_id}'`
-                                          ? `store_ID='${cartdata[0].store_id}'`
-                                          : 'store_ID=" "  '
-                                      }`);
+                                      WHERE status = 0 AND ${store && cartdata.length > 0
+            ? `store_ID = '${store}'`
+            : `'${cartdata[0].store_id}'`
+              ? `store_ID='${cartdata[0].store_id}'`
+              : 'store_ID=" "  '
+          }`);
       }
       customerList = await DataFind(
         "SELECT id,name,number,email FROM tbl_customer WHERE id=" + id
@@ -194,8 +237,8 @@ router.get("/pos", auth, async (req, res) => {
 
         cartservice = await DataFind(
           "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-            cart[0].service_list_id +
-            "')"
+          cart[0].service_list_id +
+          "')"
         );
       } else {
         // await DataFind(
@@ -233,7 +276,16 @@ router.get("/pos", auth, async (req, res) => {
         );
       }
     } else {
-      // admin login
+      // admin or staff login
+      const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+      const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+      const staffStoreId = isStaff ? adminData[0].store_ID : null;
+      let staffStoreName = "";
+      if (staffStoreId) {
+        const sName = await DataFind(`SELECT name FROM tbl_store WHERE id = '${staffStoreId}'`);
+        if (sName.length > 0) staffStoreName = sName[0].name;
+      }
+
       const rolldetail = await DataFind(`
                                         SELECT
                                           sr.*, 
@@ -244,830 +296,78 @@ router.get("/pos", auth, async (req, res) => {
                                         WHERE sr.id = ${roll}
                                       `);
 
-      console.log("rolldetail", rolldetail);
-
-      if (
-        rolldetail[0].rollType === "master" &&
-        rolldetail[0].pos.includes("read")
-      ) {
-        const multiy = await DataFind(
-          "SELECT type, customer_selection FROM tbl_master_shop"
-        );
-        console.log("multiy", multiy);
-
-        if (multiy[0].type == 1) {
-          storeList = await DataFind(
-            "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0"
-          );
-          customerList = [];
-          ismulty = true;
-
-          const cartdata = await DataFind(
-            "SELECT * FROM tbl_cart WHERE created_by='" +
-              loginas +
-              "," +
-              id +
-              "'"
-          );
-          if (cartdata.length > 0) {
-            // await DataFind(
-            //   "UPDATE tbl_cart SET order_id='" +
-            //     orderid +
-            //     "' WHERE created_by='" +
-            //     loginas +
-            //     "," +
-            //     id +
-            //     "'"
-            // );
-
-            let data = await DataUpdate(
-              `tbl_cart`,
-              `order_id='${orderid}'`,
-              `created_by='${loginas},${id}'`,
-              req.hostname,
-              req.protocol
-            );
-
-            if (data == -1) {
-              req.flash("errors", process.env.dataerror);
-              return res.redirect("/valid_license");
-            }
-
-            const cart_data = await DataFind(
-              "SELECT * FROM tbl_cart WHERE created_by='" +
-                loginas +
-                "," +
-                id +
-                "'"
-            );
-
-            if (cart_data[0].username == null) {
-              const customer_data = await DataFind(
-                `SELECT * FROM tbl_customer WHERE store_ID = '${cart_data[0].store_id}' AND username IS null`
-              );
-
-              addonlist = await DataFind(
-                `SELECT * FROM tbl_addons WHERE status=0 AND store_ID='${cart_data[0].store_id}'`
-              );
-              console.log("customer_data", customer_data);
-
-              console.log("addonlist1cusmert0", addonlist);
-
-              if (customer_data && customer_data.length > 0) {
-                // await DataFind(
-                //   "UPDATE tbl_cart SET customer_id = '" +
-                //     customer_data[0].id +
-                //     "' WHERE created_by='" +
-                //     loginas +
-                //     "," +
-                //     id +
-                //     "'"
-                // );
-
-                let data = await DataUpdate(
-                  `tbl_cart`,
-                  `customer_id='${customer_data[0].id}'`,
-                  `created_by='${loginas},${id}'`,
-                  req.hostname,
-                  req.protocol
-                );
-
-                if (data == -1) {
-                  req.flash("errors", process.env.dataerror);
-                  return res.redirect("/valid_license");
-                }
-              }
-            }
-            cart = await DataFind(
-              "SELECT * FROM tbl_cart WHERE created_by='" +
-                loginas +
-                "," +
-                id +
-                "'"
-            );
-            service_list = await DataFind(
-              "SELECT * FROM tbl_services WHERE status=0 AND store_ID=" +
-                cart[0].store_id
-            );
-            cartservice = await DataFind(
-              "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-                cart[0].service_list_id +
-                "')"
-            );
-
-            if (multiy[0].customer_selection == "1") {
-              //  customerList = await DataFind(
-              //               "SELECT id,name,number FROM tbl_customer WHERE approved=1 AND delet_flage=0 AND store_ID=" +
-              //                 cart[0].store_id
-              //             );
-
-
-              // customerList = await DataFind(
-              //   `SELECT tbl_customer.id, tbl_customer.name, tbl_customer.number, tbl_customer.username, tbl_store.name AS store_name FROM tbl_customer LEFT JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id WHERE tbl_customer.approved=1 AND tbl_customer.delet_flage=0 AND NOT ((tbl_customer.store_ID != '${cart[0].store_id}'))`
-              // );
-
-            const storeid = cart[0].store_id;
-
- customerList = await DataFind(`
-  SELECT 
-    tbl_customer.id, 
-    tbl_customer.name, 
-    tbl_customer.number, 
-    tbl_customer.email, 
-    tbl_customer.username, 
-    CASE 
-      WHEN tbl_customer.email = '' AND tbl_customer.number = '' THEN tbl_store.name 
-      ELSE NULL 
-    END AS store_name
-  FROM 
-    tbl_customer
-  LEFT JOIN 
-    tbl_store ON tbl_customer.store_ID = tbl_store.id
-  WHERE 
-    tbl_customer.approved = 1 
-    AND tbl_customer.delet_flage = 0 
-    AND (
-      (tbl_customer.email != '' OR tbl_customer.number != '')
-      OR (
-        tbl_customer.email = '' 
-        AND tbl_customer.number = '' 
-        AND tbl_customer.store_ID = '${storeid}'
-      )
-    )
-`);
-
-
-
-                                              
-              console.log("customerList1", customerList);
-            } else {
-              customerList = await DataFind(
-                "SELECT tbl_customer.id,tbl_customer.name,tbl_customer.number , tbl_customer.email, tbl_customer.username, tbl_store.name AS store_name FROM tbl_customer JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id WHERE tbl_customer.approved=1 AND tbl_customer.delet_flage=0 AND tbl_customer.store_ID=" +
-                  cart[0].store_id
-              );
-              console.log("customerList2", customerList);
-            }
-          } else {
-            // await DataFind(
-            //   "INSERT INTO tbl_cart (created_by,order_id) VALUE('" +
-            //     loginas +
-            //     "," +
-            //     id +
-            //     "','" +
-            //     orderid +
-            //     "')"
-            // );
-
-            const insertCart = await DataInsert(
-              `tbl_cart`,
-              `created_by, order_id`,
-              `'${loginas},${id}', '${orderid}'`,
-              req.hostname,
-              req.protocol
-            );
-
-            if (insertCart == -1) {
-              req.flash("errors", process.env.dataerror);
-              return res.redirect("/some_error_page");
-            }
-
-            cartservice = [];
-            const cart_data = await DataFind(
-              "SELECT * FROM tbl_cart WHERE created_by='" +
-                loginas +
-                "," +
-                id +
-                "'"
-            );
-            if (cart_data[0].customer_id == "0") {
-              const customer_data = await DataFind(
-                `SELECT * FROM tbl_customer WHERE store_ID = '${cart_data[0].store_id}' AND username IS null`
-              );
-
-              addonlist = await DataFind(
-                `SELECT * FROM tbl_addons WHERE status=0 AND store_ID='${cart_data[0].store_id}'`
-              );
-
-              if (customer_data && customer_data.length > 0) {
-                // await DataFind(
-                //   "UPDATE tbl_cart SET customer_id = '" +
-                //     customer_data[0].id +
-                //     "' WHERE created_by='" +
-                //     loginas +
-                //     "," +
-                //     id +
-                //     "'"
-                // );
-
-
-                let data = await DataUpdate(
-                  `tbl_cart`,
-                  `customer_id='${customer_data[0].id}'`,
-                  `created_by='${loginas},${id}'`,
-                  req.hostname,
-                  req.protocol
-                );
-
-                if (data == -1) {
-                  req.flash("errors", process.env.dataerror);
-                  return res.redirect("/valid_license");
-                }
-
-
-
-
-              }
-            }
-            cart = await DataFind(
-              "SELECT * FROM tbl_cart WHERE created_by='" +
-                loginas +
-                "," +
-                id +
-                "'"
-            );
-            service_list = [];
-          }
-        } else {
-          var findRoll = await DataFind(`SELECT ad.* FROM tbl_staff_roll sr 
-                                          JOIN tbl_roll r ON sr.main_roll_id = r.id
-                                          JOIN tbl_admin ad ON sr.staff_id = ad.id
-                                          WHERE r.rollType ='master' AND sr.is_staff='0'`);
-          var adminId = await DataFind(
-            `SELECT ad.*, '${findRoll[0].store_ID}' as store_ID FROM tbl_admin ad WHERE id='${id}'`
-          );
-
-          service_list = await DataFind(
-            `SELECT * FROM tbl_services WHERE status=0 AND store_ID='${adminId[0].store_ID}'`
-          );
-          console.log("service_list", service_list);
-
-          storeList = [];
-          ismulty = false;
-          customerList = await DataFind(`
-                                       SELECT c.id, c.name , c.number , c.username, c.email,    s.name AS store_name
-                                       FROM tbl_customer c
-                                       JOIN tbl_admin a ON a.store_ID = c.store_ID
-                                       JOIN tbl_store s ON s.id = c.store_ID
-                                       WHERE a.id = ${id}
-                                       AND c.approved = 1 
-                                       AND c.delet_flage = 0 AND NOT (c.email = '' AND c.store_ID != c.reffstore)`);
-
-          console.log("customerList", customerList);
-
-          const tax = await DataFind(
-            `SELECT tax_percent FROM tbl_store WHERE id='${adminId[0].store_ID}'`
-          );
-          console.log(tax);
-
-          const couponlist = await DataFind(
-            "select * from tbl_coupon where start_date <=date(now()) AND end_date >=date(now()) AND status=0 AND find_in_set('" +
-              adminId[0].store_ID +
-              "',store_list_id)"
-          );
-
-          addonlist = await DataFind(
-            `SELECT * FROM tbl_addons WHERE status=0 AND store_ID='${adminId[0].store_ID}'`
-          );
-
-          const datacart = await DataFind(
-            "SELECT * FROM tbl_cart WHERE created_by='" +
-              loginas +
-              "," +
-              id +
-              "'"
-          );
-
-          if (datacart.length > 0) {
-            // await DataFind(
-            //   "UPDATE tbl_cart SET order_id='" +
-            //     orderid +
-            //     "',store_id='" +
-            //     adminId[0].store_ID +
-            //     "', tax=" +
-            //     tax[0].tax_percent +
-            //     " WHERE created_by='" +
-            //     loginas +
-            //     "," +
-            //     id +
-            //     "'"
-            // );
-
- let data = await DataUpdate(
-  `tbl_cart`,
-  `order_id='${orderid}', store_id='${adminId[0].store_ID}', tax=${tax[0].tax_percent}`,
-  `created_by='${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
-
-                if (data == -1) {
-                  req.flash("errors", process.env.dataerror);
-                  return res.redirect("/valid_license");
-                }
-
-            const cart_data = await DataFind(
-              "SELECT * FROM tbl_cart WHERE created_by='" +
-                loginas +
-                "," +
-                id +
-                "'"
-            );
-
-            if (cart_data[0].customer_id == "0") {
-              const customer_data = await DataFind(
-                `SELECT * FROM tbl_customer WHERE store_ID = '${cart_data[0].store_id}' AND username IS null`
-              );
-              if (customer_data && customer_data.length > 0) {
-                // await DataFind(
-                //   "UPDATE tbl_cart SET customer_id = '" +
-                //     customer_data[0].id +
-                //     "' WHERE created_by='" +
-                //     loginas +
-                //     "," +
-                //     id +
-                //     "'"
-                // );
-
-
- let data = await DataUpdate(
-  `tbl_cart`,
-  `customer_id='${customer_data[0].id}'`,
-  `created_by='${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
-
-                if (data == -1) {
-                  req.flash("errors", process.env.dataerror);
-                  return res.redirect("/valid_license");
-                }
-
-
-              } else {
-                const customers = await DataFind(
-                  `SELECT * FROM tbl_customer WHERE username IS null LIMIT 1`
-                );
-                if (customers && customers.length > 0) {
-                  // await DataFind(
-                  //   "UPDATE tbl_cart SET customer_id = '" +
-                  //     customers[0].id +
-                  //     "' WHERE created_by='" +
-                  //     loginas +
-                  //     "," +
-                  //     id +
-                  //     "'"
-                  // );
-
-
- let data = await DataUpdate(
-  `tbl_cart`,
-  `customer_id='${customers[0].id}'`,
-  `created_by='${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
-
-                if (data == -1) {
-                  req.flash("errors", process.env.dataerror);
-                  return res.redirect("/valid_license");
-                } 
-
-
-                }
-              }
-            }
-            cart = await DataFind(
-              "SELECT * FROM tbl_cart WHERE created_by='" +
-                loginas +
-                "," +
-                id +
-                "'"
-            );
-            cartservice = await DataFind(
-              "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-                cart[0].service_list_id +
-                "')"
-            );
-          } else {
-            // await DataFind(
-            //   "INSERT INTO tbl_cart (created_by,store_id,order_id,tax) VALUE('" +
-            //     loginas +
-            //     "," +
-            //     id +
-            //     "'," +
-            //     adminId[0].store_ID +
-            //     ",'" +
-            //     orderid +
-            //     "'," +
-            //     tax[0].tax_percent +
-            //     ")"
-            // );
-
-            if (
-              (await DataInsert(
-                `tbl_cart`,
-                `created_by, store_id, order_id, tax`,
-                `'${loginas},${id}', ${adminId[0].store_ID}, '${orderid}', ${tax[0].tax_percent}`,
-                req.hostname,
-                req.protocol
-              )) == -1
-            ) {
-              req.flash("errors", process.env.dataerror);
-              return res.redirect("/valid_license");
-            }
-
-            cartservice = [];
-            const cart_data = await DataFind(
-              "SELECT * FROM tbl_cart WHERE created_by='" +
-                loginas +
-                "," +
-                id +
-                "'"
-            );
-            if (cart_data[0].customer_id == "0") {
-              const customer_data = await DataFind(
-                `SELECT * FROM tbl_customer WHERE store_ID = '${cart_data[0].store_id}' AND username IS null`
-              );
-              if (customer_data && customer_data.length > 0) {
-                // await DataFind(
-                //   "UPDATE tbl_cart SET customer_id = '" +
-                //     customer_data[0].id +
-                //     "' WHERE created_by='" +
-                //     loginas +
-                //     "," +
-                //     id +
-                //     "'"
-                // );
-
-
-                  let data = await DataUpdate(
-                   `tbl_cart`,
-                   `customer_id='${customer_data[0].id}'`,
-                   `created_by='${loginas},${id}'`,
-                   req.hostname,
-                   req.protocol
-                 );
-
-                if (data == -1) {
-                  req.flash("errors", process.env.dataerror);
-                  return res.redirect("/valid_license");
-                } 
-
-
-
-              } else {
-                const customers = await DataFind(
-                  `SELECT * FROM tbl_customer WHERE username IS null LIMIT 1`
-                );
-                if (customers && customers.length > 0) {
-                  // await DataFind(
-                  //   "UPDATE tbl_cart SET customer_id = '" +
-                  //     customers[0].id +
-                  //     "' WHERE created_by='" +
-                  //     loginas +
-                  //     "," +
-                  //     id +
-                  //     "'"
-                  // );
-                  
-                 let data = await DataUpdate(
-                   `tbl_cart`,
-                   `customer_id='${customers[0].id}'`,
-                   `created_by='${loginas},${id}'`,
-                   req.hostname,
-                   req.protocol
-                 );
-
-                if (data == -1) {
-                  req.flash("errors", process.env.dataerror);
-                  return res.redirect("/valid_license");
-                }
-                
-                }
-              }
-            }
-            cart = await DataFind(
-              "SELECT * FROM tbl_cart WHERE created_by='" +
-                loginas +
-                "," +
-                id +
-                "'"
-            );
-          }
-        }
-        login = "master";
-      } else if (
-        rolldetail[0].rollType === "store" &&
-        rolldetail[0].pos.includes("read")
-      ) {
-        // store login
-        service_list = await DataFind(
-          "SELECT * FROM tbl_services WHERE status=0 AND store_ID=" + store
-        );
-
-        // customerList = await DataFind(`SELECT tbl_customer.id, tbl_customer.name, tbl_customer.number, tbl_customer.username, tbl_store.name AS store_name FROM tbl_customer JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id WHERE tbl_customer.approved=1 AND tbl_customer.delet_flage=0 AND NOT (tbl_customer.username = '' AND  (tbl_customer.store_ID != '${cart[0].store_id}'))`);
-
-        const multiy = await DataFind(
-          "SELECT type, customer_selection FROM tbl_master_shop"
-        );
-
-        if (multiy[0].customer_selection == "1") {
-          //  customerList = await DataFind(
-          //               "SELECT id,name,number FROM tbl_customer WHERE approved=1 AND delet_flage=0 AND store_ID=" +
-          //                 cart[0].store_id
-          //             );
-          // customerList = await DataFind(
-          //   `SELECT tbl_customer.id, tbl_customer.name, tbl_customer.number,  tbl_customer.email, tbl_customer.username, tbl_store.name AS store_name FROM tbl_customer JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id WHERE tbl_customer.approved=1 AND tbl_customer.delet_flage=0 AND NOT (tbl_customer.username = '' AND  (tbl_customer.store_ID != '${store}'))`
-          // );
-
-           customerList = await DataFind(`
-  SELECT 
-    tbl_customer.id, 
-    tbl_customer.name, 
-    tbl_customer.number, 
-    tbl_customer.email, 
-    tbl_customer.username, 
-    CASE 
-      WHEN tbl_customer.email = '' AND tbl_customer.number = '' THEN tbl_store.name 
-      ELSE NULL 
-    END AS store_name
-  FROM 
-    tbl_customer
-  LEFT JOIN 
-    tbl_store ON tbl_customer.store_ID = tbl_store.id
-  WHERE 
-    tbl_customer.approved = 1 
-    AND tbl_customer.delet_flage = 0 
-    AND (
-      (tbl_customer.email != '' OR tbl_customer.number != '')
-      OR (
-        tbl_customer.email = '' 
-        AND tbl_customer.number = '' 
-        AND tbl_customer.store_ID = '${store}'
-      )
-    )
-`);
-
-          console.log("customerList144", customerList);
-        } else {
-          customerList = await DataFind(
-            `SELECT tbl_customer.id, tbl_customer.name, tbl_customer.number, tbl_customer.email, tbl_customer.username, tbl_store.name AS store_name 
-   FROM tbl_customer 
-   JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id 
-   WHERE tbl_customer.approved = 1 
-     AND tbl_customer.delet_flage = 0 
-     AND tbl_customer.store_ID = '${store}'`
-          );
-          console.log("customerList2", customerList);
-        }
-
-        addonlist = await DataFind(
-          `SELECT * FROM tbl_addons WHERE status=0 AND store_ID='${store}'`
-        );
-
-        login = "store";
-        storeList = [];
-        ismulty = false;
-        const tax = await DataFind(
-          "SELECT tax_percent FROM tbl_store WHERE id=" + store
-        );
-
-        const datacart = await DataFind(
-          "SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'"
-        );
-        if (datacart.length > 0) {
-          // await DataFind(
-          //   "UPDATE tbl_cart SET order_id='" +
-          //     orderid +
-          //     "', tax=" +
-          //     tax[0].tax_percent +
-          //     " WHERE created_by='" +
-          //     loginas +
-          //     "," +
-          //     id +
-          //     "'"
-          // );
-
-
-let data = await DataUpdate(
-  `tbl_cart`,
-  `order_id='${orderid}', tax=${tax[0].tax_percent}`,
-  `created_by='${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
-
-                if (data == -1) {
-                  req.flash("errors", process.env.dataerror);
-                  return res.redirect("/valid_license");
-                }
-
-          const cart_data = await DataFind(
-            "SELECT * FROM tbl_cart WHERE created_by='" +
-              loginas +
-              "," +
-              id +
-              "'"
-          );
-          if (cart_data[0].customer_id == "0") {
-            const customer_data = await DataFind(
-              `SELECT * FROM tbl_customer WHERE store_ID = '${cart_data[0].store_id}' AND username IS null`
-            );
-            if (customer_data && customer_data.length > 0) {
-
-              // await DataFind(
-              //   "UPDATE tbl_cart SET customer_id = '" +
-              //     customer_data[0].id +
-              //     "' WHERE created_by='" +
-              //     loginas +
-              //     "," +
-              //     id +
-              //     "'"
-              // );
-
-              let data = await DataUpdate(
-                                            `tbl_cart`,
-                                            `customer_id='${customer_data[0].id}'`,
-                                            `created_by='${loginas},${id}'`,
-                                            req.hostname,
-                                            req.protocol
-                                          );
-                                          
-                                          if (data == -1) {
-                                            req.flash("errors", process.env.dataerror);
-                                            return res.redirect("/valid_license");
-                                          }
-
-
-            } else {
-              const customers = await DataFind(
-                `SELECT * FROM tbl_customer WHERE username IS null LIMIT 1`
-              );
-              if (customers && customers.length > 0) {
-                // await DataFind(
-                //   "UPDATE tbl_cart SET customer_id = '" +
-                //     customers[0].id +
-                //     "' WHERE created_by='" +
-                //     loginas +
-                //     "," +
-                //     id +
-                //     "'"
-                // );
-
-let data = await DataUpdate(
-  `tbl_cart`,
-  `customer_id='${customers[0].id}'`,
-  `created_by='${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
-
-if (data == -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
-
-              }
-            }
-          }
-          cart = await DataFind(
-            "SELECT * FROM tbl_cart WHERE created_by='" +
-              loginas +
-              "," +
-              id +
-              "'"
-          );
-          cartservice = await DataFind(
-            "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-              cart[0].service_list_id +
-              "')"
-          );
-        } else {
-          // await DataFind(
-          //   "INSERT INTO tbl_cart (created_by,store_id,order_id,tax) VALUE('" +
-          //     loginas +
-          //     "," +
-          //     id +
-          //     "'," +
-          //     store +
-          //     ",'" +
-          //     orderid +
-          //     "'," +
-          //     tax[0].tax_percent +
-          //     ")"
-          // );
-
-          if (
-            (await DataInsert(
-              `tbl_cart`,
-              `created_by, store_id, order_id, tax`,
-              `'${loginas},${id}', ${store}, '${orderid}', ${tax[0].tax_percent}`,
-              req.hostname,
-              req.protocol
-            )) == -1
-          ) {
-            req.flash("errors", process.env.dataerror);
-            return res.redirect("/valid_license");
-          }
-
-          cartservice = [];
-          const cart_data = await DataFind(
-            "SELECT * FROM tbl_cart WHERE created_by='" +
-              loginas +
-              "," +
-              id +
-              "'"
-          );
-          if (cart_data[0].customer_id == "0") {
-            const customer_data = await DataFind(
-              `SELECT * FROM tbl_customer WHERE store_ID = '${cart_data[0].store_id}' AND username IS null`
-            );
-            if (customer_data && customer_data.length > 0) {
-              // await DataFind(
-              //   "UPDATE tbl_cart SET customer_id = '" +
-              //     customer_data[0].id +
-              //     "' WHERE created_by='" +
-              //     loginas +
-              //     "," +
-              //     id +
-              //     "'"
-              // );
-
-let data = await DataUpdate(
-  `tbl_cart`,
-  `customer_id='${customer_data[0].id}'`,
-  `created_by='${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
-
-if (data == -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
-
-
-            } else {
-              const customers = await DataFind(
-                `SELECT * FROM tbl_customer WHERE username IS null LIMIT 1`
-              );
-              if (customers && customers.length > 0) {
-                // await DataFind(
-                //   "UPDATE tbl_cart SET customer_id = '" +
-                //     customers[0].id +
-                //     "' WHERE created_by='" +
-                //     loginas +
-                //     "," +
-                //     id +
-                //     "'"
-                // );
-
-let data = await DataUpdate(
-  `tbl_cart`,
-  `customer_id='${customers[0].id}'`,
-  `created_by='${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
-
-if (data == -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
-
-
-              }
-            }
-          }
-          cart = await DataFind(
-            "SELECT * FROM tbl_cart WHERE created_by='" +
-              loginas +
-              "," +
-              id +
-              "'"
-          );
-        }
-      } else {
+      if (!rolldetail || rolldetail.length === 0 || !rolldetail[0].pos || !rolldetail[0].pos.includes("read")) {
         req.flash("error", "You Are Not Authorized For this");
         return res.redirect(req.get("Referrer") || "/");
       }
-    }
 
-    // if (!customerList || customerList.length === 0) {
-    //   customerList = await DataFind(
-    //     "SELECT id,name FROM tbl_customer WHERE approved=1 AND delet_flage=0 AND name = 'Walk in customer' LIMIT 1"
-    //   );
-    // } else {
-    //   let cchake = customerList.filter(
-    //     (c) => c.name == "Walk in customer"
-    //   ).length;
-    //   if (cchake === 0) {
-    //     const walk_cus = await DataFind(
-    //       "SELECT id,name FROM tbl_customer WHERE approved=1 AND delet_flage=0 AND name = 'Walk in customer' LIMIT 1"
-    //     );
-    //     customerList = customerList.concat(walk_cus);
-    //   }
-    // }
+      const multiy = await DataFind("SELECT type, customer_selection FROM tbl_master_shop");
+      storeList = await DataFind("SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0");
+      ismulty = (multiy[0].type == 1);
+
+      let targetStoreId;
+      if (isStaff && staffStoreId) {
+        targetStoreId = staffStoreId;
+        login = rolldetail[0].rollType === "master" ? "master" : "store";
+      } else if (rolldetail[0].rollType === "master") {
+        login = "master";
+        const existingCart = await DataFind("SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'");
+        if (existingCart.length > 0 && existingCart[0].store_id && existingCart[0].store_id != '0') {
+          targetStoreId = existingCart[0].store_id;
+        } else {
+          targetStoreId = storeList.length > 0 ? storeList[0].id : 1;
+        }
+      } else {
+        login = "store";
+        targetStoreId = store && store != '0' ? store : (storeList.length > 0 ? storeList[0].id : 1);
+      }
+
+      const taxData = await DataFind("SELECT tax_percent FROM tbl_store WHERE id=" + targetStoreId);
+      const taxVal = taxData.length > 0 ? taxData[0].tax_percent : 0;
+
+      const cartdata = await DataFind("SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'");
+      if (cartdata.length > 0) {
+        await DataUpdate(
+          `tbl_cart`,
+          `order_id='${orderid}', store_id='${targetStoreId}', tax=${taxVal}`,
+          `created_by='${loginas},${id}'`,
+          req.hostname,
+          req.protocol
+        );
+      } else {
+        await DataInsert(
+          `tbl_cart`,
+          `created_by, order_id, store_id, tax`,
+          `'${loginas},${id}', '${orderid}', '${targetStoreId}', ${taxVal}`,
+          req.hostname,
+          req.protocol
+        );
+      }
+
+      // Ensure Walk-in customer exists for targetStoreId
+      const walkinCustomer = await getOrCreateWalkInCustomer(targetStoreId, req);
+
+      cart = await DataFind("SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'");
+
+      // For staff, OR if cart customer is missing/zero, auto-assign the Walk-in customer of targetStoreId
+      if (isStaff || !cart[0].customer_id || cart[0].customer_id == "0") {
+        if (walkinCustomer) {
+          await DataUpdate(
+            `tbl_cart`,
+            `customer_id='${walkinCustomer.id}'`,
+            `created_by='${loginas},${id}'`,
+            req.hostname,
+            req.protocol
+          );
+          cart[0].customer_id = walkinCustomer.id;
+        }
+      }
+
+      customerList = await getStoreScopedCustomers(targetStoreId);
+      service_list = await DataFind("SELECT * FROM tbl_services WHERE status=0 AND store_ID=" + targetStoreId);
+      addonlist = await DataFind("SELECT * FROM tbl_addons WHERE status=0 AND store_ID=" + targetStoreId);
+      cartservice = await DataFind("SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" + cart[0].service_list_id + "')");
+    }
 
     if (!cart || cart.length === 0) {
       return res.status(400).send("Cart not found");
@@ -1088,6 +388,9 @@ if (data == -1) {
       cartservice,
       cart: cart[0],
       accessdata,
+      isStaff: typeof isStaff !== 'undefined' ? isStaff : false,
+      staffStoreId: typeof staffStoreId !== 'undefined' ? staffStoreId : null,
+      staffStoreName: typeof staffStoreName !== 'undefined' ? staffStoreName : "",
       language: req.language_data,
       language_name: req.language_name,
       splite_id,
@@ -1125,8 +428,8 @@ router.get("/edit/:id", auth, async (req, res) => {
     if (order_date[0].service_list && order_date[0].service_list.trim().length > 0) {
       cartservice = await DataFind(
         "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-          order_date[0].service_list +
-          "')"
+        order_date[0].service_list +
+        "')"
       );
     }
 
@@ -1158,21 +461,34 @@ router.get("/edit/:id", auth, async (req, res) => {
 router.get("/servicelist/:id", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
+    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
 
     var storeid = req.params.id;
+    if (isStaff && adminData[0].store_ID) {
+      storeid = adminData[0].store_ID;
+    }
     var service_list = await DataFind(
       " SELECT * FROM tbl_services WHERE status=0 AND store_ID=" + storeid + ""
     );
     res.status(200).json({ service_list });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 // get Addon on store change and store id in cart
 router.get("/addonlist/:id", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
+    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+
     var storeid = req.params.id;
+    if (isStaff && adminData[0].store_ID) {
+      storeid = adminData[0].store_ID;
+    }
 
     var addon_list = await DataFind(
       " SELECT * FROM tbl_addons WHERE status=0 AND store_ID=" + storeid + ""
@@ -1181,32 +497,18 @@ router.get("/addonlist/:id", auth, async (req, res) => {
     var tax = await DataFind(
       "SELECT tax_percent FROM tbl_store WHERE id=" + storeid + ""
     );
+    const taxVal = tax.length > 0 ? tax[0].tax_percent : 0;
 
-    // var updatecart = await DataFind(
-    //   "UPDATE tbl_cart SET store_id=" +
-    //     storeid +
-    //     ", tax=" +
-    //     tax[0].tax_percent +
-    //     " WHERE created_by='" +
-    //     loginas +
-    //     "," +
-    //     id +
-    //     "'"
-    // );
+    const walkinCustomer = await getOrCreateWalkInCustomer(storeid, req);
+    const defaultCustSql = walkinCustomer ? `, customer_id='${walkinCustomer.id}'` : "";
 
-let updatecart = await DataUpdate(
-  `tbl_cart`,
-  `store_id=${storeid}, tax=${tax[0].tax_percent}`,
-  `created_by='${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
-
-if (updatecart == -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
-
+    await DataUpdate(
+      `tbl_cart`,
+      `store_id=${storeid}, tax=${taxVal}${defaultCustSql}`,
+      `created_by='${loginas},${id}'`,
+      req.hostname,
+      req.protocol
+    );
 
     var cart = await DataFind(
       " SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'"
@@ -1215,6 +517,7 @@ if (updatecart == -1) {
     res.status(200).json({ addon_list, cart: cart[0] });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -1222,87 +525,35 @@ if (updatecart == -1) {
 router.get("/customerlist/:id", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
+    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+
     var storeid = req.params.id;
-    console.log("req.params.id", req.params.id);
-
-    storeid !== "null" ? storeid : (storeid = store);
-    const multiy = await DataFind(
-      "SELECT type,customer_selection FROM tbl_master_shop"
-    );
-
-    console.log("multiy", multiy);
-
-    var customerList = [];
-    if (multiy[0].customer_selection == "0") {
-      customerList = await DataFind(
-        "SELECT tbl_customer.id, tbl_customer.name, tbl_customer.number,tbl_customer.username,  tbl_customer.email, tbl_store.name AS store_name FROM tbl_customer JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id WHERE tbl_customer.approved=1 AND tbl_customer.delet_flage=0 AND tbl_customer.store_ID=" +
-          storeid +
-          ""
-      );
-
-    } else {
-      // customerList =
-      //   await DataFind(`SELECT tbl_customer.id, tbl_customer.name, tbl_customer.number,tbl_customer.username , tbl_store.name  AS store_name FROM tbl_customer LEFT JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id  WHERE tbl_customer.approved = 1 AND tbl_customer.delet_flage = 0 AND ( NOT (tbl_customer.email ='' AND tbl_customer.number = '' AND  tbl_customer.store_ID !=  '${storeid}'))`);
-
- customerList = await DataFind(`
-  SELECT 
-    tbl_customer.id, 
-    tbl_customer.name, 
-    tbl_customer.number, 
-    tbl_customer.email, 
-    tbl_customer.username, 
-    CASE 
-      WHEN tbl_customer.email = '' AND tbl_customer.number = '' THEN tbl_store.name 
-      ELSE NULL 
-    END AS store_name
-  FROM 
-    tbl_customer
-  LEFT JOIN 
-    tbl_store ON tbl_customer.store_ID = tbl_store.id
-  WHERE 
-    tbl_customer.approved = 1 
-    AND tbl_customer.delet_flage = 0 
-    AND (
-      (tbl_customer.email != '' OR tbl_customer.number != '')
-      OR (
-        tbl_customer.email = '' 
-        AND tbl_customer.number = '' 
-        AND tbl_customer.store_ID = '${storeid}'
-      )
-    )
-`);
-
-        console.log("customerList54554", customerList);
-
+    if (isStaff && adminData[0].store_ID) {
+      storeid = adminData[0].store_ID;
     }
-    console.log("storeid", storeid);
-    console.log("customerList54554", customerList);
+    if (!storeid || storeid === "null" || storeid === "0") {
+      storeid = store;
+    }
 
-    // if (customerList == "") {
-    //   customerList = await DataFind(
-    //     `SELECT id,name FROM tbl_customer WHERE approved=1 AND delet_flage=0 AND name = '${storeid}' LIMIT 1`
-    //   );
-    // } else {
-    //   let ctot = customerList.length,
-    //     cchake = 0;
-    //   for (let i = 0; i < ctot; ) {
-    //     if (customerList[i].name == "Walk in customer") {
-    //       cchake++;
-    //     }
-    //     i++;
-    //   }
+    const walkinCustomer = await getOrCreateWalkInCustomer(storeid, req);
+    const customerList = await getStoreScopedCustomers(storeid);
+    const defaultCustomerId = walkinCustomer ? walkinCustomer.id : (customerList.length > 0 ? customerList[0].id : 0);
 
-    //   if (cchake == "0") {
-    //     let walk_cus = await DataFind(
-    //       "SELECT id,name FROM tbl_customer WHERE approved=1 AND delet_flage=0 AND name = 'Walk in customer' LIMIT 1"
-    //     );
-    //     customerList = walk_cus.concat(customerList);
-    //   }
-    // }
+    if (defaultCustomerId) {
+      await DataUpdate(
+        `tbl_cart`,
+        `customer_id='${defaultCustomerId}', store_id='${storeid}'`,
+        `created_by='${loginas},${id}'`,
+        req.hostname,
+        req.protocol
+      );
+    }
 
-    res.status(200).json({ customerList });
+    res.status(200).json({ customerList, defaultCustomerId });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -1348,24 +599,24 @@ router.post("/addservicelist", auth, async (req, res) => {
     // );
 
 
-const cartupdate = await DataUpdate(
-  `tbl_cart`,
-  `
+    const cartupdate = await DataUpdate(
+      `tbl_cart`,
+      `
     service_list_id = CONCAT(service_list_id, ',${servicelist.insertId}'),
     sub_total = ROUND(sub_total + ${servicetypeprice}, 2),
     tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount) * (tax / 100), 2),
     gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
     balance = ROUND(gross_total - paid_amount, 2)
   `,
-  `created_by='${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
+      `created_by='${loginas},${id}'`,
+      req.hostname,
+      req.protocol
+    );
 
-if (cartupdate == -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (cartupdate == -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
 
@@ -1374,8 +625,8 @@ if (cartupdate == -1) {
     );
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        cart[0].service_list_id +
-        "')"
+      cart[0].service_list_id +
+      "')"
     );
     console.log("cartservice", cartservice);
 
@@ -1433,13 +684,13 @@ router.post("/editservicelist", auth, async (req, res) => {
     //     "'"
     // );
 
-let currentList = (old_order_date[0].service_list || '').toString().split(',').map(s => s.trim()).filter(Boolean);
-currentList.push(servicelist.insertId.toString());
-const updatedListStr = currentList.join(',');
+    let currentList = (old_order_date[0].service_list || '').toString().split(',').map(s => s.trim()).filter(Boolean);
+    currentList.push(servicelist.insertId.toString());
+    const updatedListStr = currentList.join(',');
 
-let updateOrder = await DataUpdate(
-  `tbl_order`,
-  `
+    let updateOrder = await DataUpdate(
+      `tbl_order`,
+      `
     service_list = '${updatedListStr}',
     sub_total = ROUND(sub_total + ${servicetypeprice}, 2),
     tax_amount = ROUND((sub_total + addon_price - coupon_discount) * (tax / 100), 2),
@@ -1447,18 +698,18 @@ let updateOrder = await DataUpdate(
     balance_amount = ROUND(gross_total - paid_amount, 2),
     master_comission = ROUND((gross_total * ${store_data[0].shop_commission}) / 100, 2)
   `,
-  `id='${old_order_date[0].id}'`,
-  req.hostname,
-  req.protocol
-);
+      `id='${old_order_date[0].id}'`,
+      req.hostname,
+      req.protocol
+    );
 
-if (updateOrder == -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (updateOrder == -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
-    
+
     // const cartupdate = await DataFind("UPDATE tbl_cart SET service_list_id=CONCAT(service_list_id,',"+servicelist.insertId+"'),sub_total= ROUND(sub_total + "+servicetypeprice+",2), tax_amount =ROUND((sub_total + addon_price - coupon_discount - extra_discount) * (tax/ 100),2), gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2), balance = ROUND(gross_total - paid_amount,2)  WHERE created_by='"+loginas+','+id+"'");
 
     const order_date = await DataFind(
@@ -1467,8 +718,8 @@ if (updateOrder == -1) {
     // var cart = await DataFind(" SELECT * FROM tbl_cart WHERE created_by='"+loginas+','+id+"'");
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        order_date[0].service_list +
-        "')"
+      order_date[0].service_list +
+      "')"
     );
     console.log("cartservice", cartservice);
 
@@ -1556,10 +807,10 @@ router.post("/edit_removeservicelist", auth, async (req, res) => {
     //   "DELETE FROM tbl_cart_servicelist WHERE id=" + req.body.service_id + ""
     // );
 
-     if(await DataDelete(`tbl_cart_servicelist`, `id = '${req.body.service_id}'`, req.hostname, req.protocol) == -1) {
-            req.flash('error', process.env.dataerror);
-            return res.redirect("/valid_license");
-          }
+    if (await DataDelete(`tbl_cart_servicelist`, `id = '${req.body.service_id}'`, req.hostname, req.protocol) == -1) {
+      req.flash('error', process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
     const order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`
@@ -1567,8 +818,8 @@ router.post("/edit_removeservicelist", auth, async (req, res) => {
     // var cart = await DataFind(" SELECT * FROM tbl_cart WHERE created_by='"+loginas+','+id+"'");
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        order_date[0].service_list +
-        "')"
+      order_date[0].service_list +
+      "')"
     );
 
     console.log(1111, "order_date", order_date);
@@ -1604,9 +855,9 @@ router.get("/removeservicelist/:id", auth, async (req, res) => {
     //     "'"
     // );
 
-const cartupdate = await DataUpdate(
-  `tbl_cart`,
-  `
+    const cartupdate = await DataUpdate(
+      `tbl_cart`,
+      `
     coupon_id = '0',
     coupon_discount = '0',
     service_list_id = REPLACE(service_list_id, ',${serviceid}', ''),
@@ -1615,15 +866,15 @@ const cartupdate = await DataUpdate(
     gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
     balance = ROUND(gross_total - paid_amount, 2)
   `,
-  `created_by='${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
+      `created_by='${loginas},${id}'`,
+      req.hostname,
+      req.protocol
+    );
 
-if (cartupdate == -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (cartupdate == -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
 
@@ -1632,18 +883,18 @@ if (cartupdate == -1) {
     //   "DELETE FROM tbl_cart_servicelist WHERE id=" + serviceid + ""
     // );
 
-     if(await DataDelete(`tbl_cart_servicelist`, `id = '${serviceid}'`, req.hostname, req.protocol) == -1) {
-            req.flash('error', process.env.dataerror);
-            return res.redirect("/valid_license");
-        }
+    if (await DataDelete(`tbl_cart_servicelist`, `id = '${serviceid}'`, req.hostname, req.protocol) == -1) {
+      req.flash('error', process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
     var cart = await DataFind(
       " SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'"
     );
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        cart[0].service_list_id +
-        "')"
+      cart[0].service_list_id +
+      "')"
     );
 
     res.status(200).json({ cart: cart[0], cartservice, loginas });
@@ -1658,8 +909,8 @@ router.get("/getservicetype/:id", auth, async (req, res) => {
     const accessdata = await access(req.user);
     var ServiceType = await DataFind(
       "SELECT id,services_type_id,services_type_price,name,image FROM tbl_services WHERE id = " +
-        req.params.id +
-        ""
+      req.params.id +
+      ""
     );
     console.log("1st ServiceType", ServiceType);
     const price = ServiceType[0].services_type_price.split(",");
@@ -1714,18 +965,18 @@ router.get("/newcustomerid/:id", auth, async (req, res) => {
     // );
 
 
-let cart = await DataUpdate(
-  `tbl_cart`,
-  `customer_id=${customerid}`,
-  `created_by='${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
+    let cart = await DataUpdate(
+      `tbl_cart`,
+      `customer_id=${customerid}`,
+      `created_by='${loginas},${id}'`,
+      req.hostname,
+      req.protocol
+    );
 
-if (cart == -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (cart == -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
     res.status(200).json({ status: 200 });
@@ -1747,18 +998,18 @@ router.post("/color", auth, async (req, res) => {
     //     ""
     // );
 
-let cart = await DataUpdate(
-  `tbl_cart_servicelist`,
-  `service_color='${color}'`,
-  `id=${id}`,
-  req.hostname,
-  req.protocol
-);
+    let cart = await DataUpdate(
+      `tbl_cart_servicelist`,
+      `service_color='${color}'`,
+      `id=${id}`,
+      req.hostname,
+      req.protocol
+    );
 
-if (cart == -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (cart == -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
     res.status(200).json({ status: 200 });
@@ -1924,10 +1175,10 @@ router.get("/clearcart", auth, async (req, res) => {
           // );
 
 
-  if(await DataDelete(`tbl_cart_servicelist`, `id = '${data}'`, req.hostname, req.protocol) == -1) {
+          if (await DataDelete(`tbl_cart_servicelist`, `id = '${data}'`, req.hostname, req.protocol) == -1) {
             req.flash('error', process.env.dataerror);
             return res.redirect("/valid_license");
-        }
+          }
 
         })
       );
@@ -1936,9 +1187,9 @@ router.get("/clearcart", auth, async (req, res) => {
       //                       balance=0,notes='', tax=${tax[0].tax_percent} WHERE created_by='${loginas},${id}'`);
 
 
-let cartReset = await DataUpdate(
-  `tbl_cart`,
-  `
+      let cartReset = await DataUpdate(
+        `tbl_cart`,
+        `
     order_date = CURRENT_TIMESTAMP,
     service_list_id = 0,
     order_id = '${orderid}',
@@ -1957,15 +1208,15 @@ let cartReset = await DataUpdate(
     notes = '',
     tax = ${tax[0].tax_percent}
   `,
-  `created_by='${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
+        `created_by='${loginas},${id}'`,
+        req.hostname,
+        req.protocol
+      );
 
-if (cartReset == -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+      if (cartReset == -1) {
+        req.flash("errors", process.env.dataerror);
+        return res.redirect("/valid_license");
+      }
 
 
 
@@ -1974,8 +1225,8 @@ if (cartReset == -1) {
       );
       var cartservice = await DataFind(
         "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-          cart[0].service_list_id +
-          "')"
+        cart[0].service_list_id +
+        "')"
       );
 
       res.status(200).json({ cart: cartdata[0], cartservice, loginas });
@@ -1999,7 +1250,7 @@ router.post("/changeamount", auth, async (req, res) => {
     const amount_diff =
       parseFloat(price) * parseFloat(service[0].service_quntity) -
       parseFloat(service[0].service_type_price) *
-        parseFloat(service[0].service_quntity);
+      parseFloat(service[0].service_quntity);
     // const updateservice = await DataFind(
     //   "UPDATE tbl_cart_servicelist SET service_type_price=" +
     //     price +
@@ -2018,23 +1269,23 @@ router.post("/changeamount", auth, async (req, res) => {
     // );
 
 
-                     let updateservice = await DataUpdate(
-                       `tbl_cart_servicelist`,
-                       `service_type_price=${price}`,
-                       `id=${serviceid}`,
-                       req.hostname,
-                       req.protocol
-                     );
-                     
-                     if (updateservice == -1) {
-                       req.flash("errors", process.env.dataerror);
-                       return res.redirect("/valid_license");
-                     }
-                        
-                     
-                     let cartupdate = await DataUpdate(
-                       `tbl_cart`,
-                       `
+    let updateservice = await DataUpdate(
+      `tbl_cart_servicelist`,
+      `service_type_price=${price}`,
+      `id=${serviceid}`,
+      req.hostname,
+      req.protocol
+    );
+
+    if (updateservice == -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
+
+
+    let cartupdate = await DataUpdate(
+      `tbl_cart`,
+      `
                          coupon_id='0',
                          coupon_discount='0',
                          sub_total = ROUND(sub_total + ${amount_diff}, 2),
@@ -2042,15 +1293,15 @@ router.post("/changeamount", auth, async (req, res) => {
                          gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
                          balance = ROUND(gross_total - paid_amount, 2)
                        `,
-                       `created_by='${loginas},${id}'`,
-                       req.hostname,
-                       req.protocol
-                     );
-                     
-                     if (cartupdate == -1) {
-                       req.flash("errors", process.env.dataerror);
-                       return res.redirect("/valid_license");
-                     }
+      `created_by='${loginas},${id}'`,
+      req.hostname,
+      req.protocol
+    );
+
+    if (cartupdate == -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
     var cart = await DataFind(
@@ -2058,8 +1309,8 @@ router.post("/changeamount", auth, async (req, res) => {
     );
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        cart[0].service_list_id +
-        "')"
+      cart[0].service_list_id +
+      "')"
     );
 
     res.status(200).json({ cart: cart[0], cartservice, loginas });
@@ -2083,7 +1334,7 @@ router.post("/edit_changeamount", auth, async (req, res) => {
     const amount_diff =
       parseFloat(price) * parseFloat(service[0].service_quntity) -
       parseFloat(service[0].service_type_price) *
-        parseFloat(service[0].service_quntity);
+      parseFloat(service[0].service_quntity);
 
     const old_order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`
@@ -2119,18 +1370,18 @@ router.post("/edit_changeamount", auth, async (req, res) => {
     //     ""
     // );
 
-const updateservice = await DataUpdate(
-  `tbl_cart_servicelist`,
-  `service_type_price = ${price}`,
-  `id = ${serviceid}`,
-  req.hostname,
-  req.protocol
-);
+    const updateservice = await DataUpdate(
+      `tbl_cart_servicelist`,
+      `service_type_price = ${price}`,
+      `id = ${serviceid}`,
+      req.hostname,
+      req.protocol
+    );
 
-if (updateservice === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (updateservice === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
     const store_data = await DataFind(
@@ -2146,9 +1397,9 @@ if (updateservice === -1) {
     //     "'"
     // );
 
-        const updateOrder = await DataUpdate(
-          `tbl_order`,
-          ` coupon_id = '0',
+    const updateOrder = await DataUpdate(
+      `tbl_order`,
+      ` coupon_id = '0',
             coupon_discount = '0',
             sub_total = ROUND(sub_total + ${amount_diff}, 2),
             tax_amount = ROUND((sub_total + addon_price - coupon_discount) * tax / 100, 2),
@@ -2156,15 +1407,15 @@ if (updateservice === -1) {
             balance_amount = ROUND(gross_total - paid_amount, 2),
             master_comission = ROUND((gross_total * ${store_data[0].shop_commission}) / 100, 2)
           `,
-          `id = '${order_id}'`,
-          req.hostname,
-          req.protocol
-        );
-        
-        if (updateOrder === -1) {
-          req.flash("errors", process.env.dataerror);
-          return res.redirect("/valid_license");
-        }
+      `id = '${order_id}'`,
+      req.hostname,
+      req.protocol
+    );
+
+    if (updateOrder === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
 
@@ -2176,8 +1427,8 @@ if (updateservice === -1) {
     console.log("order_date", order_date);
     const cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        order_date[0].service_list +
-        "')"
+      order_date[0].service_list +
+      "')"
     );
 
     res.status(200).json({ order_date: order_date[0], cartservice, loginas });
@@ -2199,7 +1450,7 @@ router.post("/edit_changequntity", auth, async (req, res) => {
     const amount_diff =
       parseFloat(service[0].service_type_price) * parseFloat(qty) -
       parseFloat(service[0].service_type_price) *
-        parseFloat(service[0].service_quntity);
+      parseFloat(service[0].service_quntity);
 
     const old_order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`
@@ -2236,18 +1487,18 @@ router.post("/edit_changequntity", auth, async (req, res) => {
     // );
 
 
-const updateServiceQty = await DataUpdate(
-  `tbl_cart_servicelist`,
-  `service_quntity = ${qty}`,
-  `id = ${serviceid}`,
-  req.hostname,
-  req.protocol
-);
+    const updateServiceQty = await DataUpdate(
+      `tbl_cart_servicelist`,
+      `service_quntity = ${qty}`,
+      `id = ${serviceid}`,
+      req.hostname,
+      req.protocol
+    );
 
-if (updateServiceQty === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (updateServiceQty === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
     const store_data = await DataFind(
@@ -2268,9 +1519,9 @@ if (updateServiceQty === -1) {
     //     "'"
     // );
 
-const updateOrder = await DataUpdate(
-  `tbl_order`,
-  `
+    const updateOrder = await DataUpdate(
+      `tbl_order`,
+      `
     coupon_id = '0',
     coupon_discount = '0',
     sub_total = ROUND(sub_total + ${amount_diff}, 2),
@@ -2279,15 +1530,15 @@ const updateOrder = await DataUpdate(
     balance_amount = ROUND(gross_total - paid_amount, 2),
     master_comission = ROUND((gross_total * ${store_data[0].shop_commission}) / 100, 2)
   `,
-  `id = '${order_id}'`,
-  req.hostname,
-  req.protocol
-);
+      `id = '${order_id}'`,
+      req.hostname,
+      req.protocol
+    );
 
-if (updateOrder === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (updateOrder === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
 
@@ -2298,8 +1549,8 @@ if (updateOrder === -1) {
     );
     const cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        order_date[0].service_list +
-        "')"
+      order_date[0].service_list +
+      "')"
     );
 
     res.status(200).json({ order_date: order_date[0], cartservice, loginas });
@@ -2321,9 +1572,9 @@ router.post("/changequntity", auth, async (req, res) => {
     const amount_diff =
       parseFloat(service[0].service_type_price) * parseFloat(qty) -
       parseFloat(service[0].service_type_price) *
-        parseFloat(service[0].service_quntity);
+      parseFloat(service[0].service_quntity);
 
-        
+
     // const updateservice = await DataFind(
     //   "UPDATE tbl_cart_servicelist SET service_quntity=" +
     //     qty +
@@ -2332,18 +1583,18 @@ router.post("/changequntity", auth, async (req, res) => {
     //     ""
     // );
 
-const updateservice = await DataUpdate(
-  "tbl_cart_servicelist",
-  `service_quntity = ${qty}`,
-  `id = ${serviceid}`,
-  req.hostname,
-  req.protocol
-);
+    const updateservice = await DataUpdate(
+      "tbl_cart_servicelist",
+      `service_quntity = ${qty}`,
+      `id = ${serviceid}`,
+      req.hostname,
+      req.protocol
+    );
 
-if (updateservice === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (updateservice === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
     // const cartupdate = await DataFind(
     //   "UPDATE tbl_cart SET  coupon_id='0', coupon_discount='0',sub_total= ROUND(sub_total + " +
@@ -2355,23 +1606,23 @@ if (updateservice === -1) {
     //     "'"
     // );
 
-     const cartupdate = await DataUpdate(
-       "tbl_cart",
-       `coupon_id = '0', 
+    const cartupdate = await DataUpdate(
+      "tbl_cart",
+      `coupon_id = '0', 
         coupon_discount = '0',
         sub_total = ROUND(sub_total + ${amount_diff}, 2),
         tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount) * (tax / 100), 2),
         gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
         balance = ROUND(gross_total - paid_amount, 2)`,
-       `created_by = '${loginas},${id}'`,
-       req.hostname,
-       req.protocol
-     );
-     
-     if (cartupdate === -1) {
-       req.flash("errors", process.env.dataerror);
-       return res.redirect("/valid_license");
-     }
+      `created_by = '${loginas},${id}'`,
+      req.hostname,
+      req.protocol
+    );
+
+    if (cartupdate === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
     var cart = await DataFind(
@@ -2379,8 +1630,8 @@ if (updateservice === -1) {
     );
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        cart[0].service_list_id +
-        "')"
+      cart[0].service_list_id +
+      "')"
     );
 
     res.status(200).json({ cart: cart[0], cartservice, loginas });
@@ -2428,30 +1679,30 @@ router.post("/addonsadd", auth, async (req, res) => {
     //     "'"
     // );
 
-const cartupdate = await DataUpdate(
-  "tbl_cart",
-  `addon_id = '${addon}',
+    const cartupdate = await DataUpdate(
+      "tbl_cart",
+      `addon_id = '${addon}',
    addon_price = ${price},
    tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount) * tax / 100, 2),
    gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
    balance = ROUND(gross_total - paid_amount, 2)`,
-  `created_by = '${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
+      `created_by = '${loginas},${id}'`,
+      req.hostname,
+      req.protocol
+    );
 
-if (cartupdate === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (cartupdate === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
     var cart = await DataFind(
       " SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'"
     );
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        cart[0].service_list_id +
-        "')"
+      cart[0].service_list_id +
+      "')"
     );
 
     res.status(200).json({ cart: cart[0], cartservice, loginas });
@@ -2537,23 +1788,23 @@ router.post("/edit_onsadd", auth, async (req, res) => {
     //     "'"
     // );
 
-const updateOrder = await DataUpdate(
-  "tbl_order",
-  `addon_data = '${addon}',
+    const updateOrder = await DataUpdate(
+      "tbl_order",
+      `addon_data = '${addon}',
    addon_price = ${price},
    tax_amount = ROUND((sub_total + addon_price - coupon_discount) * tax / 100, 2),
    gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
    balance_amount = ROUND(gross_total - paid_amount, 2),
    master_comission = ROUND((gross_total * '${store_data[0].shop_commission}') / 100, 2)`,
-  `id = '${req.body.order_id}'`,
-  req.hostname,
-  req.protocol
-);
+      `id = '${req.body.order_id}'`,
+      req.hostname,
+      req.protocol
+    );
 
-if (updateOrder === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (updateOrder === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
     // const cartupdate = await DataFind("UPDATE tbl_cart SET addon_id='"+addon+"', addon_price="+price+", tax_amount =ROUND((sub_total + addon_price - coupon_discount - extra_discount)*tax / 100,2), gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2), balance = ROUND(gross_total - paid_amount,2)  WHERE created_by='"+loginas+','+id+"'");
 
@@ -2564,8 +1815,8 @@ if (updateOrder === -1) {
     // var cart = await DataFind(" SELECT * FROM tbl_cart WHERE created_by='"+loginas+','+id+"'");
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        order_date[0].service_list +
-        "')"
+      order_date[0].service_list +
+      "')"
     );
 
     res.status(200).json({ order_date: order_date[0], cartservice, loginas });
@@ -2595,7 +1846,7 @@ router.get("/couponlist/:id", auth, async (req, res) => {
     );
 
     console.log("customer_order", customer_order);
-    
+
 
     if (customer_order.length > 0) {
       if (
@@ -2604,14 +1855,14 @@ router.get("/couponlist/:id", auth, async (req, res) => {
       ) {
         var coupons = await DataFind(
           "select * from tbl_coupon where start_date <= date(now()) AND end_date >= date(now()) AND status = 0 AND find_in_set('" +
-            cart[0].store_id +
-            "',store_list_id) AND coupon_type = 1"
+          cart[0].store_id +
+          "',store_list_id) AND coupon_type = 1"
         );
       } else {
         var coupons = await DataFind(
           "select * from tbl_coupon where start_date <= date(now()) AND end_date >= date(now()) AND status = 0 AND find_in_set('" +
-            customer[0].store_ID +
-            "',store_list_id) AND coupon_type = 1"
+          customer[0].store_ID +
+          "',store_list_id) AND coupon_type = 1"
         );
       }
 
@@ -2631,14 +1882,14 @@ router.get("/couponlist/:id", auth, async (req, res) => {
       ) {
         var couponlist = await DataFind(
           "select * from tbl_coupon where start_date <=date(now()) AND end_date >=date(now()) AND status=0 AND find_in_set('" +
-            cart[0].store_id +
-            "',store_list_id)"
+          cart[0].store_id +
+          "',store_list_id)"
         );
       } else {
         var couponlist = await DataFind(
           "select * from tbl_coupon where start_date <=date(now()) AND end_date >=date(now()) AND status=0 AND find_in_set('" +
-            customer[0].store_ID +
-            "',store_list_id)"
+          customer[0].store_ID +
+          "',store_list_id)"
         );
       }
 
@@ -2665,7 +1916,7 @@ router.post("/edit_couponlist", auth, async (req, res) => {
     const couid = req.body.customer;
     console.log("couid", couid);
 
-const accessdata = await access(req.user);
+    const accessdata = await access(req.user);
 
     const customer = await DataFind(
       "SELECT store_ID From tbl_customer WHERE id=" + couid + ""
@@ -2676,60 +1927,60 @@ const accessdata = await access(req.user);
     );
 
 
-  const order_date = await DataFind(
+    const order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`
     );
 
 
-console.log("order_date",order_date);
+    console.log("order_date", order_date);
 
     console.log("customer_order", customer_order);
     if (customer_order.length > 0) {
 
-    if(customer[0].store_ID == '' ||  accessdata.masterstore.customer_selection == "1" ){
+      if (customer[0].store_ID == '' || accessdata.masterstore.customer_selection == "1") {
 
-       var couponlist = await DataFind(
-        "select * from tbl_coupon where start_date <=date(now()) AND end_date >=date(now()) AND status=0 AND find_in_set('" +
+        var couponlist = await DataFind(
+          "select * from tbl_coupon where start_date <=date(now()) AND end_date >=date(now()) AND status=0 AND find_in_set('" +
           order_date[0].store_id +
           "',store_list_id) AND coupon_type=1"
-      );
-      console.log("couponlist1", couponlist);
+        );
+        console.log("couponlist1", couponlist);
 
-    }else{
+      } else {
 
-      var couponlist = await DataFind(
-        "select * from tbl_coupon where start_date <=date(now()) AND end_date >=date(now()) AND status=0 AND find_in_set('" +
+        var couponlist = await DataFind(
+          "select * from tbl_coupon where start_date <=date(now()) AND end_date >=date(now()) AND status=0 AND find_in_set('" +
           customer[0].store_ID +
           "',store_list_id) AND coupon_type=1"
-      );
+        );
 
-    }
+      }
 
-     
+
 
       var usedcoupon = customer_order.map((data) => data.coupon_id);
 
       console.log("usedcoupon", usedcoupon);
       console.log("couponlist", couponlist);
-      
+
     } else {
 
- if(customer[0].store_ID == '' ||  accessdata.masterstore.customer_selection == "1" ){
-    var couponlist = await DataFind(
-        "select * from tbl_coupon where start_date <=date(now()) AND end_date >=date(now()) AND status=0 AND find_in_set('" +
+      if (customer[0].store_ID == '' || accessdata.masterstore.customer_selection == "1") {
+        var couponlist = await DataFind(
+          "select * from tbl_coupon where start_date <=date(now()) AND end_date >=date(now()) AND status=0 AND find_in_set('" +
           order_date[0].store_id +
           "',store_list_id)"
-      );
- }else{
-    var couponlist = await DataFind(
-        "select * from tbl_coupon where start_date <=date(now()) AND end_date >=date(now()) AND status=0 AND find_in_set('" +
+        );
+      } else {
+        var couponlist = await DataFind(
+          "select * from tbl_coupon where start_date <=date(now()) AND end_date >=date(now()) AND status=0 AND find_in_set('" +
           customer[0].store_ID +
           "',store_list_id)"
-      );
- }
+        );
+      }
     }
 
-  
+
 
     console.log("couponlist", couponlist);
     console.log("order_date", order_date);
@@ -2764,22 +2015,22 @@ router.get("/couponadd/:id", auth, async (req, res) => {
     //     "'"
     // );
 
-const updateCart = await DataUpdate(
-  "tbl_cart",
-  `coupon_id = '${couponid}',
+    const updateCart = await DataUpdate(
+      "tbl_cart",
+      `coupon_id = '${couponid}',
    coupon_discount = ${coupon[0].discount},
    tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount) * tax / 100, 2),
    gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
    balance = ROUND(gross_total - paid_amount, 2)`,
-  `created_by = '${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
+      `created_by = '${loginas},${id}'`,
+      req.hostname,
+      req.protocol
+    );
 
-if (updateCart === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (updateCart === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
 
@@ -2788,8 +2039,8 @@ if (updateCart === -1) {
     );
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        cart[0].service_list_id +
-        "')"
+      cart[0].service_list_id +
+      "')"
     );
 
     res.status(200).json({ cart: cart[0], cartservice, loginas });
@@ -2810,34 +2061,34 @@ router.get("/removecoupon/:id", auth, async (req, res) => {
     //   "select * from tbl_coupon where id=" + couponid + ""
     // );
 
-//     const cartupdate = await DataFind(`
-//   UPDATE tbl_cart 
-//   SET 
-//     coupon_id = '${"0"}',
-//     coupon_discount = ${"0"},
-//     tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount) * tax / 100, 2),
-//     gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
-//     balance = ROUND(gross_total - paid_amount, 2) 
-//   WHERE 
-//     created_by = '${loginas},${id}'
-// `);
+    //     const cartupdate = await DataFind(`
+    //   UPDATE tbl_cart 
+    //   SET 
+    //     coupon_id = '${"0"}',
+    //     coupon_discount = ${"0"},
+    //     tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount) * tax / 100, 2),
+    //     gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
+    //     balance = ROUND(gross_total - paid_amount, 2) 
+    //   WHERE 
+    //     created_by = '${loginas},${id}'
+    // `);
 
-const cartupdate = await DataUpdate(
-  "tbl_cart",
-  `coupon_id = '0',
+    const cartupdate = await DataUpdate(
+      "tbl_cart",
+      `coupon_id = '0',
    coupon_discount = 0,
    tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount) * tax / 100, 2),
    gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
    balance = ROUND(gross_total - paid_amount, 2)`,
-  `created_by = '${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
+      `created_by = '${loginas},${id}'`,
+      req.hostname,
+      req.protocol
+    );
 
-if (cartupdate === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (cartupdate === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
 
@@ -2846,8 +2097,8 @@ if (cartupdate === -1) {
     );
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        cart[0].service_list_id +
-        "')"
+      cart[0].service_list_id +
+      "')"
     );
 
     res.status(200).json({ cart: cart[0], cartservice, loginas });
@@ -2916,21 +2167,21 @@ router.post("/edit_couponadd", auth, async (req, res) => {
 
 
     const orderUpdate = await DataUpdate(
-    "tbl_order",
-    `coupon_id = '${couponid}',
+      "tbl_order",
+      `coupon_id = '${couponid}',
      coupon_discount = ${coupon[0].discount},
      tax_amount = ROUND((sub_total + addon_price - coupon_discount) * tax / 100, 2),
      gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
      balance_amount = ROUND(gross_total - paid_amount, 2),
      master_comission = ROUND((gross_total * ${store_data[0].shop_commission}) / 100, 2)`,
-    `id = '${req.body.order_id}'`,
-    req.hostname,
-    req.protocol
+      `id = '${req.body.order_id}'`,
+      req.hostname,
+      req.protocol
     );
 
     if (orderUpdate === -1) {
-    req.flash("errors", process.env.dataerror);
-    return res.redirect("/valid_license");
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
     }
 
 
@@ -2943,8 +2194,8 @@ router.post("/edit_couponadd", auth, async (req, res) => {
     );
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        order_date[0].service_list +
-        "')"
+      order_date[0].service_list +
+      "')"
     );
 
     res.status(200).json({ order_date: order_date[0], cartservice, loginas });
@@ -3006,22 +2257,22 @@ router.post("/edit_couponremove/", auth, async (req, res) => {
     // );
 
     const orderUpdate = await DataUpdate(
-  "tbl_order",
-  `coupon_id = '0',
+      "tbl_order",
+      `coupon_id = '0',
    coupon_discount = 0,
    tax_amount = ROUND((sub_total + addon_price - coupon_discount) * tax / 100, 2),
    gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
    balance_amount = ROUND(gross_total - paid_amount, 2),
    master_comission = ROUND((gross_total * ${store_data[0].shop_commission}) / 100, 2)`,
-  `id = '${req.body.order_id}'`,
-  req.hostname,
-  req.protocol
-);
+      `id = '${req.body.order_id}'`,
+      req.hostname,
+      req.protocol
+    );
 
-if (orderUpdate === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (orderUpdate === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
     // const cartupdate = await DataFind("UPDATE tbl_cart SET coupon_id='"+couponid+"', coupon_discount="+coupon[0].discount+", tax_amount =ROUND((sub_total + addon_price - coupon_discount - extra_discount)*tax / 100,2), gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2), balance = ROUND(gross_total - paid_amount ,2) WHERE created_by='"+loginas+','+id+"'");
 
@@ -3031,8 +2282,8 @@ if (orderUpdate === -1) {
     );
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        order_date[0].service_list +
-        "')"
+      order_date[0].service_list +
+      "')"
     );
 
     res.status(200).json({ order_date: order_date[0], cartservice, loginas });
@@ -3106,22 +2357,22 @@ router.get("/manualcoupon/:id", auth, async (req, res) => {
     //     "'"
     // );
 
-const cartupdate = await DataUpdate(
-  "tbl_cart",
-  `coupon_id = '${coupon[0].id}',
+    const cartupdate = await DataUpdate(
+      "tbl_cart",
+      `coupon_id = '${coupon[0].id}',
    coupon_discount = ${coupon[0].discount},
    tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount) * tax / 100, 2),
    gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
    balance = ROUND(gross_total - paid_amount, 2)`,
-  `created_by = '${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
+      `created_by = '${loginas},${id}'`,
+      req.hostname,
+      req.protocol
+    );
 
-if (cartupdate === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (cartupdate === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
 
@@ -3130,8 +2381,8 @@ if (cartupdate === -1) {
     );
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        cart[0].service_list_id +
-        "')"
+      cart[0].service_list_id +
+      "')"
     );
 
     res.status(200).json({ cart: cart[0], cartservice, loginas });
@@ -3190,8 +2441,8 @@ router.post("/edit_manualcoupon", auth, async (req, res) => {
     } else {
       var customer_order = await DataFind(
         "SELECT * From tbl_order WHERE customer_id=" +
-          old_order_date[0].customer_id +
-          ""
+        old_order_date[0].customer_id +
+        ""
       );
 
       if (coupon[0].coupon_type == 2 && customer_order.length > 0) {
@@ -3243,23 +2494,23 @@ router.post("/edit_manualcoupon", auth, async (req, res) => {
     // );
 
 
-      const orderUpdate = await DataUpdate(
-        "tbl_order",
-        `coupon_id = '${coupon[0].id}',
+    const orderUpdate = await DataUpdate(
+      "tbl_order",
+      `coupon_id = '${coupon[0].id}',
          coupon_discount = ${coupon[0].discount},
          tax_amount = ROUND((sub_total + addon_price - coupon_discount) * tax / 100, 2),
          gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
          balance_amount = ROUND(gross_total - paid_amount, 2),
          master_comission = ROUND((gross_total * ${store_data[0].shop_commission}) / 100, 2)`,
-        `id = '${req.body.order_id}'`,
-        req.hostname,
-        req.protocol
-      );
-      
-      if (orderUpdate === -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/valid_license");
-      }
+      `id = '${req.body.order_id}'`,
+      req.hostname,
+      req.protocol
+    );
+
+    if (orderUpdate === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
 
@@ -3271,8 +2522,8 @@ router.post("/edit_manualcoupon", auth, async (req, res) => {
     // var cart = await DataFind(" SELECT * FROM tbl_cart WHERE created_by='"+loginas+','+id+"'");
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        order_date[0].service_list +
-        "')"
+      order_date[0].service_list +
+      "')"
     );
 
     res.status(200).json({ order_date: order_date[0], cartservice, loginas });
@@ -3293,8 +2544,8 @@ router.get("/paymentdata", auth, async (req, res) => {
 
     var payment = await DataFind(
       "SELECT id, ac_name From tbl_account WHERE store_ID=" +
-        cart[0].store_id +
-        " AND delet_flage != '1'  "
+      cart[0].store_id +
+      " AND delet_flage != '1'  "
     );
     console.log("payment", payment);
 
@@ -3316,8 +2567,8 @@ router.post("/edit_paymentdata", auth, async (req, res) => {
     // var cart = await DataFind(" SELECT * FROM tbl_cart WHERE created_by='"+loginas+','+id+"'");
     var payment = await DataFind(
       "SELECT id, ac_name From tbl_account WHERE store_ID=" +
-        order_date[0].store_id +
-        " AND delet_flage != '1'  "
+      order_date[0].store_id +
+      " AND delet_flage != '1'  "
     );
     console.log("payment", payment);
 
@@ -3350,7 +2601,7 @@ router.post("/edit_order", auth, async (req, res) => {
 
     const tax_amount = parseFloat(((sub_total + addon_price - coupon_discount) * (tax_rate / 100)).toFixed(2));
     const gross_total = parseFloat((sub_total + tax_amount + addon_price - coupon_discount - extradiscount).toFixed(2));
-    
+
     const previous_paid = parseFloat(order.paid_amount) || 0;
     const total_paid = parseFloat((previous_paid + paid_amount).toFixed(2));
     const balance_amount = parseFloat((gross_total - total_paid).toFixed(2));
@@ -3534,15 +2785,11 @@ router.post("/order", auth, async (req, res) => {
       `order_id,order_date,delivery_date,order_status,service_list,customer_id,created_by,store_id,addon_data,
         addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission, commission_status`,
       `'${orderid}',
-        '${order_fullDate}','${finalDeliveryDate}',${1},'${
-        cart[0].service_list_id
-      }','${cart[0].customer_id}','${cart[0].created_by}','${
-        cart[0].store_id
+        '${order_fullDate}','${finalDeliveryDate}',${1},'${cart[0].service_list_id
+      }','${cart[0].customer_id}','${cart[0].created_by}','${cart[0].store_id
       }','${cart[0].addon_id}',
-        ${cart[0].addon_price},${cart[0].sub_total},'${cart[0].tax}','${
-        cart[0].coupon_id
-      }',${
-        cart[0].coupon_discount
+        ${cart[0].addon_price},${cart[0].sub_total},'${cart[0].tax}','${cart[0].coupon_id
+      }',${cart[0].coupon_discount
       },${extradiscount},${gross},${paid_amount},${balance},
         '${0}',${cart[0].tax_amount},'${note}',${comi_amount},'1'`,
       req.hostname,
@@ -3615,17 +2862,17 @@ router.post("/order", auth, async (req, res) => {
     // );
 
     const updateorder = await DataUpdate(
-  "tbl_order",
-  `payment_data = '${paymentdata.insertId}'`,
-  `id = '${order.insertId}'`,
-  req.hostname,
-  req.protocol
-);
+      "tbl_order",
+      `payment_data = '${paymentdata.insertId}'`,
+      `id = '${order.insertId}'`,
+      req.hostname,
+      req.protocol
+    );
 
-if (updateorder === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (updateorder === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
     const customer_data = await DataFind(
@@ -3646,18 +2893,18 @@ if (updateorder === -1) {
       //     " "
       // );
 
-const updateAccount = await DataUpdate(
-  "tbl_account",
-  `balance = '${balance}'`,
-  `id = '${payment_type}'`,
-  req.hostname,
-  req.protocol
-);
+      const updateAccount = await DataUpdate(
+        "tbl_account",
+        `balance = '${balance}'`,
+        `id = '${payment_type}'`,
+        req.hostname,
+        req.protocol
+      );
 
-if (updateAccount === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+      if (updateAccount === -1) {
+        req.flash("errors", process.env.dataerror);
+        return res.redirect("/valid_license");
+      }
 
 
 
@@ -3694,9 +2941,9 @@ if (updateAccount === -1) {
     //     balance=0,notes='', tax=${tax[0].tax_percent} WHERE created_by='${loginas},${id}'`);
 
 
-const updateCart = await DataUpdate(
-  "tbl_cart",
-  `order_date = CURRENT_TIMESTAMP,
+    const updateCart = await DataUpdate(
+      "tbl_cart",
+      `order_date = CURRENT_TIMESTAMP,
    service_list_id = 0,
    addon_id = 0,
    addon_price = 0,
@@ -3714,15 +2961,15 @@ const updateCart = await DataUpdate(
    balance = 0,
    notes = '',
    tax = ${tax[0].tax_percent}`,
-  `created_by = '${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
+      `created_by = '${loginas},${id}'`,
+      req.hostname,
+      req.protocol
+    );
 
-if (updateCart === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (updateCart === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
 
@@ -3730,8 +2977,8 @@ if (updateCart === -1) {
     // data for invoice
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        cart[0].service_list_id +
-        "')"
+      cart[0].service_list_id +
+      "')"
     );
     var shope = await DataFind(
       "SELECT * FROM tbl_store WHERE id=" + cart[0].store_id + ""
@@ -3984,15 +3231,11 @@ router.post("/posprint", auth, async (req, res) => {
       `order_id,order_date,delivery_date,order_status,service_list,customer_id,created_by,store_id,addon_data,
         addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission,commission_status`,
       `'${orderid}',
-        '${order_fullDate}','${finalDeliveryDate}',${1},'${
-        cart[0].service_list_id
-      }','${cart[0].customer_id}','${cart[0].created_by}','${
-        cart[0].store_id
+        '${order_fullDate}','${finalDeliveryDate}',${1},'${cart[0].service_list_id
+      }','${cart[0].customer_id}','${cart[0].created_by}','${cart[0].store_id
       }','${cart[0].addon_id}',
-        ${cart[0].addon_price},${cart[0].sub_total},'${cart[0].tax}','${
-        cart[0].coupon_id
-      }',${
-        cart[0].coupon_discount
+        ${cart[0].addon_price},${cart[0].sub_total},'${cart[0].tax}','${cart[0].coupon_id
+      }',${cart[0].coupon_discount
       },${extradiscount},${gross},${paid_amount},${balance},
         '${0}',${cart[0].tax_amount},'${note}',${comi_amount},'1'`,
       req.hostname,
@@ -4063,18 +3306,18 @@ router.post("/posprint", auth, async (req, res) => {
     // );
 
 
-const updateOrder = await DataUpdate(
-  "tbl_order",
-  `payment_data = '${paymentdata.insertId}'`,
-  `id = '${order.insertId}'`,
-  req.hostname,
-  req.protocol
-);
+    const updateOrder = await DataUpdate(
+      "tbl_order",
+      `payment_data = '${paymentdata.insertId}'`,
+      `id = '${order.insertId}'`,
+      req.hostname,
+      req.protocol
+    );
 
-if (updateOrder === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (updateOrder === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
     const customer_data = await DataFind(
@@ -4096,18 +3339,18 @@ if (updateOrder === -1) {
       //     " "
       // );
 
-const updateAccount = await DataUpdate(
-  "tbl_account",
-  `balance = ${balance}`,
-  `id = ${payment_type}`,
-  req.hostname,
-  req.protocol
-);
+      const updateAccount = await DataUpdate(
+        "tbl_account",
+        `balance = ${balance}`,
+        `id = ${payment_type}`,
+        req.hostname,
+        req.protocol
+      );
 
-if (updateAccount === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+      if (updateAccount === -1) {
+        req.flash("errors", process.env.dataerror);
+        return res.redirect("/valid_license");
+      }
 
       // const abc =
       //   await DataFind(`insert into tbl_transections (account_id,store_ID,transec_detail,transec_type,debit_amount,
@@ -4140,9 +3383,9 @@ if (updateAccount === -1) {
     //     balance=0,notes='', tax=${tax[0].tax_percent} WHERE created_by='${loginas},${id}'`);
 
 
-const updateCart = await DataUpdate(
-  "tbl_cart",
-  `order_date = CURRENT_TIMESTAMP,
+    const updateCart = await DataUpdate(
+      "tbl_cart",
+      `order_date = CURRENT_TIMESTAMP,
    service_list_id = 0,
    addon_id = 0,
    addon_price = 0,
@@ -4160,23 +3403,23 @@ const updateCart = await DataUpdate(
    balance = 0,
    notes = '',
    tax = ${tax[0].tax_percent}`,
-  `created_by = '${loginas},${id}'`,
-  req.hostname,
-  req.protocol
-);
+      `created_by = '${loginas},${id}'`,
+      req.hostname,
+      req.protocol
+    );
 
-if (updateCart === -1) {
-  req.flash("errors", process.env.dataerror);
-  return res.redirect("/valid_license");
-}
+    if (updateCart === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
 
 
 
     // data for invoice
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        cart[0].service_list_id +
-        "')"
+      cart[0].service_list_id +
+      "')"
     );
     var shope = await DataFind(
       "SELECT * FROM tbl_store WHERE id=" + cart[0].store_id + ""
@@ -4265,9 +3508,8 @@ if (updateCart === -1) {
           subject: "Email From " + shope[0].name,
           html: `
     <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
-    <h2 style="color: #4CAF50;">Thank you for your order, ${
-      coust[0].name || "Customer"
-    }!</h2>
+    <h2 style="color: #4CAF50;">Thank you for your order, ${coust[0].name || "Customer"
+            }!</h2>
     <p>Your order has been received. Below are your order details:</p>
     <table style="width: 100%; border-collapse: collapse;">
       <tr>
@@ -4277,9 +3519,8 @@ if (updateCart === -1) {
         <td><strong>Order Date: </strong> ${order_fullDate}</td>
       </tr>
       <tr>
-        <td><strong>Total Amount: </strong> <span class="symbol">${
-          accessdata.masterstore.currency_symbol
-        }${gross}</span></td>
+        <td><strong>Total Amount: </strong> <span class="symbol">${accessdata.masterstore.currency_symbol
+            }${gross}</span></td>
       </tr>
     </table>
     <br>

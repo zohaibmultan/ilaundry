@@ -21,6 +21,15 @@ router.get("/list", auth, async (req, res) => {
     var ismulty = false;
   }
 
+  const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+  const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+  const staffStoreId = isStaff ? adminData[0].store_ID : null;
+  let staffStoreName = "";
+  if (staffStoreId) {
+    const sName = await DataFind(`SELECT name FROM tbl_store WHERE id = '${staffStoreId}'`);
+    if (sName.length > 0) staffStoreName = sName[0].name;
+  }
+
   if (loginas == 0) {
     var ismulty = false;
     var qury = `  SELECT 
@@ -50,7 +59,15 @@ router.get("/list", auth, async (req, res) => {
                                      `);
     console.log("rolldetail", rolldetail);
 
-    if (
+    if (isStaff && staffStoreId) {
+      var login = rolldetail[0].rollType === "master" ? "master" : "store";
+      var qury = `SELECT tbl_customer.*, COALESCE(tbl_store.name, '') AS store, (
+        SELECT COUNT(*) 
+        FROM tbl_transections 
+        JOIN tbl_account ON tbl_transections.account_id = tbl_account.id
+        WHERE tbl_transections.customer_id = tbl_customer.id
+      ) AS transiction FROM tbl_customer LEFT JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id WHERE tbl_customer.delet_flage = 0 AND tbl_customer.store_ID = '${staffStoreId}' AND (tbl_customer.username != '' OR tbl_customer.number != '' OR tbl_customer.email != '')`;
+    } else if (
       rolldetail[0].rollType === "master" &&
       rolldetail[0].customers.includes("read")
     ) {
@@ -110,6 +127,9 @@ router.get("/list", auth, async (req, res) => {
     ismulty,
     storeList,
     accessdata,
+    is_staff: isStaff,
+    staff_store_id: staffStoreId,
+    staff_store_name: staffStoreName,
     language: req.language_data,
     language_name: req.language_name,
   });
@@ -162,9 +182,19 @@ router.post("/register", auth, async (req, res) => {
     } else {
       const { name, number, email, taxnumber, address, username, password } =
         req.body;
-      var storeid = req.body.storeid;
-      var verfiyStore = await DataFind(`SELECT * FROM tbl_admin WHERE id=${id}`)
-      storeid ? storeid : (storeid = verfiyStore[0].store_ID);
+      const verfiyStore = await DataFind(`SELECT * FROM tbl_admin WHERE id=${id}`);
+      const isStaff = verfiyStore.length > 0 && verfiyStore[0].is_staff != 0;
+
+      let storeid = req.body.storeid;
+      if (isStaff) {
+        // Staff member can ONLY create customers for their assigned store
+        storeid = verfiyStore[0].store_ID;
+      }
+
+      if (!storeid || storeid.toString().trim() === "" || storeid === "0") {
+        req.flash("error", "Please select a store for this customer!");
+        return res.redirect(req.get("Referrer") || "/");
+      }
           
       const check_number = await DataFind(
         "SELECT * FROM tbl_customer WHERE number='" + number + "'"
@@ -226,35 +256,13 @@ router.post("/register", auth, async (req, res) => {
        hashpass = bcrypt.hashSync(password,salt)
       console.log("hashpass",hashpass);
       }
-      // var qury =
-      //   "INSERT INTO tbl_customer (name,number,email,address,taxnumber,username,password,store_ID,main_roll_id,approved) VALUE ('" +
-      //   name +
-      //   "','" +
-      //   number +
-      //   "','" +
-      //   email +
-      //   "','" +
-      //   address +
-      //   "','" +
-      //   taxnumber +
-      //   "','" +
-      //   username +
-      //   "','" +
-      //   hashpass +
-      //   "','" +
-      //   storeid +
-      //   "'," +
-      //   main_roll[0].id +
-      //   ", 1 )";
-
-      // const data = await DataFind(qury);
       const data = await DataInsert(
-  `tbl_customer`,
-  `name,number,email,address,taxnumber,username,password,store_ID,main_roll_id,approved`,
-  `'${name}','${number}','${email}','${address}','${taxnumber}','${username}','${hashpass}','${storeid}',${main_roll[0].id},1`,
-  req.hostname,
-  req.protocol
-);
+        `tbl_customer`,
+        `name,number,email,address,taxnumber,username,password,store_ID,reffstore,main_roll_id,approved`,
+        `'${name}','${number}','${email}','${address}','${taxnumber}','${username}','${hashpass}','${storeid}','${storeid}',${main_roll[0].id},1`,
+        req.hostname,
+        req.protocol
+      );
 
 if (data == -1) {
   req.flash('error', "Failed to save customer, please check input and try again");
