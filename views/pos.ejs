@@ -36,46 +36,71 @@
                                             <i class="fa fa-times"></i>
                                         </span>
                                     </div>
-                                    
+
                                     <!-- Printing Server Live Status Badge -->
                                     <div class="dropdown pos-printer-dropdown">
-                                        <button class="btn btn-sm pos-printer-badge-btn dropdown-toggle d-flex align-items-center gap-1" type="button" id="posPrinterStatusBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Printing Server Status">
+                                        <button
+                                            class="btn btn-sm pos-printer-badge-btn dropdown-toggle d-flex align-items-center gap-1"
+                                            type="button" id="posPrinterStatusBtn" data-bs-toggle="dropdown"
+                                            aria-expanded="false" title="Printing Server Status">
                                             <span class="pos-printer-dot dot-checking" id="posPrinterStatusDot"></span>
-                                            <span class="pos-printer-label" id="posPrinterStatusText">Checking Printer...</span>
-                                            <i class="fas fa-chevron-down ms-1" style="font-size: 9px; opacity: 0.7;"></i>
+                                            <span class="pos-printer-label" id="posPrinterStatusText">Checking
+                                                Printer...</span>
+                                            <i class="fas fa-chevron-down ms-1"
+                                                style="font-size: 9px; opacity: 0.7;"></i>
                                         </button>
-                                        <div class="dropdown-menu dropdown-menu-end pos-printer-popover p-3 shadow-lg" aria-labelledby="posPrinterStatusBtn" style="min-width: 290px; border-radius: 12px; z-index: 1060;">
-                                            <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
-                                                <strong style="font-size: 13px;"><i class="fas fa-print me-1 text-primary"></i> Silent Printing Service</strong>
+                                        <div class="dropdown-menu dropdown-menu-end pos-printer-popover p-3 shadow-lg"
+                                            aria-labelledby="posPrinterStatusBtn"
+                                            style="min-width: 290px; border-radius: 12px; z-index: 1060;">
+                                            <div
+                                                class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
+                                                <strong style="font-size: 13px;"><i
+                                                        class="fas fa-print me-1 text-primary"></i> Silent Printing
+                                                    Service</strong>
                                                 <span class="badge" id="posPopoverStatusBadge">Checking</span>
                                             </div>
                                             <div class="small mb-2">
                                                 <div class="d-flex justify-content-between text-muted mb-1">
                                                     <span>Server URL:</span>
-                                                    <span class="fw-semibold text-dark" id="posPopoverServerUrl"><%= accessdata?.masterstore?.printing_server_url || 'http://127.0.0.1:4321' %></span>
+                                                    <span class="fw-semibold text-dark" id="posPopoverServerUrl">
+                                                        <%= accessdata?.masterstore?.printing_server_url
+                                                            || 'http://127.0.0.1:4321' %>
+                                                    </span>
                                                 </div>
                                                 <div class="d-flex justify-content-between text-muted mb-1">
                                                     <span>Active Printer:</span>
-                                                    <span class="fw-semibold text-dark text-truncate" style="max-width: 150px;" id="posPopoverPrinterName"><%= accessdata?.masterstore?.invoice_printer_name || 'System Default' %></span>
+                                                    <span class="fw-semibold text-dark text-truncate"
+                                                        style="max-width: 150px;" id="posPopoverPrinterName">
+                                                        <%= accessdata?.masterstore?.invoice_printer_name
+                                                            || 'System Default' %>
+                                                    </span>
                                                 </div>
                                                 <div class="d-flex justify-content-between text-muted mb-1">
                                                     <span>Format:</span>
-                                                    <span class="fw-semibold text-dark"><%= accessdata?.masterstore?.invoice_printer_format == 2 ? '58mm Roll' : (accessdata?.masterstore?.invoice_printer_format == 0 ? 'A4 Sheet' : '80mm Thermal') %></span>
+                                                    <span class="fw-semibold text-dark">
+                                                        <%= accessdata?.masterstore?.invoice_printer_format==2
+                                                            ? '58mm Roll' :
+                                                            (accessdata?.masterstore?.invoice_printer_format==0
+                                                            ? 'A4 Sheet' : '80mm Thermal' ) %>
+                                                    </span>
                                                 </div>
                                                 <div class="d-flex justify-content-between text-muted">
                                                     <span>Mode:</span>
-                                                    <span class="fw-semibold" id="posPopoverModeText">Auto-detecting...</span>
+                                                    <span class="fw-semibold"
+                                                        id="posPopoverModeText">Auto-detecting...</span>
                                                 </div>
                                             </div>
                                             <div class="d-grid gap-2 pt-2 border-top">
-                                                <button type="button" class="btn btn-outline-primary btn-xs w-100" onclick="pingPosPrintingServer(true)">
+                                                <button type="button" class="btn btn-outline-primary btn-xs w-100"
+                                                    onclick="pingPosPrintingServer(true)">
                                                     <i class="fas fa-sync-alt me-1"></i> Check Connection Now
                                                 </button>
-                                                <% if (login === 'master') { %>
-                                                <a href="/tool/setting" class="btn btn-light btn-xs text-center text-muted w-100">
-                                                    <i class="fas fa-cog me-1"></i> Hardware Settings
-                                                </a>
-                                                <% } %>
+                                                <% if (login==='master' ) { %>
+                                                    <a href="/tool/setting"
+                                                        class="btn btn-light btn-xs text-center text-muted w-100">
+                                                        <i class="fas fa-cog me-1"></i> Hardware Settings
+                                                    </a>
+                                                    <% } %>
                                             </div>
                                         </div>
                                     </div>
@@ -131,36 +156,42 @@
                                     <div
                                         class="col-6 <%= (ismulty && login == 'master') || (ismulty && accessdata.logas != 'store' && accessdata.masterstore.customer_selection =='1' || accessdata.topbardata.store =='' ) || (typeof isStaff !== 'undefined' && isStaff) ? '': 'd-none' %>">
                                         <div class="pos-date-group">
-                                            <label class="pos-field-label">Select Store</label>
-                                            <% if (typeof isStaff !== 'undefined' && isStaff) { %>
-                                                <select class="default-select wide w-100" name="store" id="pos_store_id" disabled style="background-color: #e9ecef; cursor: not-allowed;">
-                                                    <option value="<%= staffStoreId %>" selected><%= staffStoreName || 'Assigned Store' %></option>
+                                            <label class="pos-field-label">Select Store <span class="text-danger">*</span></label>
+                                            <% if (typeof isStaff !=='undefined' && isStaff) { %>
+                                                <select class="default-select wide w-100" name="store" id="pos_store_id"
+                                                    disabled style="background-color: #e9ecef; cursor: not-allowed;" required>
+                                                    <option value="<%= staffStoreId %>" selected>
+                                                        <%= staffStoreName || 'Assigned Store' %>
+                                                    </option>
                                                 </select>
-                                                <input type="hidden" id="pos_staff_store_id" value="<%= staffStoreId %>">
-                                            <% } else { %>
-                                                <select class="default-select wide w-100" name="store" id="pos_store_id" data-live-search="true">
-                                                    <option value="0" disabled>Select Store</option>
-                                                    <% storeList.forEach(function(x){ %>
-                                                        <option value="<%= x.id %>" <%=cart.store_id==x.id ? 'selected' : ''
-                                                            %>><%= x.name %>
-                                                        </option>
+                                                <input type="hidden" id="pos_staff_store_id"
+                                                    value="<%= staffStoreId %>">
+                                                <% } else { %>
+                                                    <select class="default-select wide w-100" name="store"
+                                                        id="pos_store_id" data-live-search="true" required>
+                                                        <option value="0" <%= (!cart.store_id || cart.store_id == 0) ? 'selected' : '' %> disabled>Select Store *</option>
+                                                        <% storeList.forEach(function(x){ %>
+                                                            <option value="<%= x.id %>" <%= (cart.store_id == x.id) ? 'selected' : '' %>><%= x.name %></option>
                                                         <% }) %>
-                                                </select>
-                                            <% } %>
+                                                    </select>
+                                                <% } %>
                                         </div>
                                     </div>
 
                                     <div class="col-6 <%= login === 'customer'? 'd-none': '' %>">
                                         <div class="pos-date-group">
-                                            <label class="pos-field-label">Select Customer</label>
-                                            <div class="d-flex justify-content-between align-items-center">
+                                            <label class="pos-field-label">Select Customer <span class="text-danger">*</span></label>
+                                             <div class="d-flex justify-content-between align-items-center">
                                                 <% if (accessdata.logas==='custmor' ) { %>
                                                     <input type="hidden" id="single-select" name="customer"
                                                         value="<%= customerList[0]?.id || 0 %>">
                                                 <% } else { %>
                                                     <select id="single-select" name="customer"
-                                                        class="default-select wide w-100" data-live-search="true">
-                                                        <option value="0" disabled <%= (!cart.customer_id || cart.customer_id == 0) ? 'selected' : '' %>>Select Customer</option>
+                                                        class="default-select wide w-100" data-live-search="true" required
+                                                        <%= (!isStaff && (!cart.store_id || cart.store_id == 0)) ? 'disabled' : '' %>>
+                                                        <option value="0" disabled <%= (!cart.customer_id || cart.customer_id == 0) ? 'selected' : '' %>>
+                                                            <%= (!isStaff && (!cart.store_id || cart.store_id == 0)) ? 'Select Store First *' : 'Select Customer *' %>
+                                                        </option>
                                                         <% customerList.forEach(function(x) { %>
                                                             <% let showExtra="" ; %>
                                                             <% if ((x.username=='' || x.username==null) &&
@@ -168,29 +199,21 @@
                                                                 (x.number==null || x.number=='' ) ) { %>
                                                                 <% if (accessdata.logas !='store' ) {
                                                                     showExtra=x.store_name; } %>
-                                                                    <% } else { %>
-                                                                        <% showExtra=x.number; %>
-                                                                            <% } %>
-                                                                                <% let
-                                                                                    selected=(cart.customer_id==x.id || (!cart.customer_id && (x.username=='' || x.username==null || (x.name && x.name.toLowerCase().includes('walk in')))))
-                                                                                    ? 'selected' : '' ; %>
-                                                                                    <option value="<%= x.id %>"
-                                                                                        <%=selected %>>
-                                                                                        <%= x.name %>
-                                                                                            <% if (showExtra) {
-                                                                                                %>(
-                                                                                                <%= showExtra %>
-                                                                                                    )<% } %>
-                                                                                    </option>
-                                                                                    <% }); %>
+                                                            <% } else { %>
+                                                                <% showExtra=x.number; %>
+                                                            <% } %>
+                                                            <% let selected = (cart.customer_id == x.id || (isStaff && (!cart.customer_id || cart.customer_id == 0) && (x.username == '' || x.username == null || (x.name && x.name.toLowerCase().includes('walk in'))))) ? 'selected' : ''; %>
+                                                            <option value="<%= x.id %>" <%= selected %>>
+                                                                <%= x.name %><% if (showExtra) { %> (<%= showExtra %>)<% } %>
+                                                            </option>
+                                                        <% }); %>
                                                     </select>
-                                                        <button type="button"
-                                                            class="btn btn-primary ms-2 pos-btn-add-customer"
-                                                            data-bs-toggle="modal" data-bs-target="#addcustomer">
-                                                            <i class="fa fa-plus"></i>
-                                                        </button>
-                                                        <% } %>
-
+                                                    <button type="button"
+                                                        class="btn btn-primary ms-2 pos-btn-add-customer"
+                                                        data-bs-toggle="modal" data-bs-target="#addcustomer">
+                                                        <i class="fa fa-plus"></i>
+                                                    </button>
+                                                <% } %>
                                             </div>
                                         </div>
                                     </div>
@@ -254,19 +277,20 @@
                                     <table class="pos-cart-table table-bordered verticle-middle text-center">
                                         <thead>
                                             <tr>
-                                                <th style="width: 38%; text-align: left; padding-left: 8px !important;">
+                                                <th
+                                                    style="width: 100%; text-align: left; padding-left: 8px !important;">
                                                     <%= language.Service %>
                                                 </th>
-                                                <th style="width: 14%;">
+                                                <th style="width: 80px; text-align: center;">
                                                     <%= language.Color %>
                                                 </th>
-                                                <th style="width: 22%;">
+                                                <th style="width: 100px;text-align: center;">
                                                     <%= language.Rate %>
                                                 </th>
-                                                <th style="width: 18%;">
+                                                <th style="width: 80px;text-align: center;">
                                                     <%= language.Qty %>
                                                 </th>
-                                                <th style="width: 8%;"></th>
+                                                <th style="width: 50px;text-align: center;"></th>
                                             </tr>
                                         </thead>
                                         <tbody id="POS_service_added_list">
@@ -439,20 +463,31 @@
                                                     <label class="form-label mb-0" for="POS_extra_discount_order">
                                                         <%= language.Extra_Discount %>
                                                     </label>
-                                                    <div class="pos-discount-type-group" role="group" aria-label="Discount Type">
-                                                        <input type="radio" class="btn-check" name="discount_type" id="pos_disc_type_fixed" value="fixed" checked autocomplete="off">
-                                                        <label class="pos-disc-btn active" for="pos_disc_type_fixed" id="pos_disc_btn_fixed" title="Fixed Amount">Fix ($)</label>
+                                                    <div class="pos-discount-type-group" role="group"
+                                                        aria-label="Discount Type">
+                                                        <input type="radio" class="btn-check" name="discount_type"
+                                                            id="pos_disc_type_fixed" value="fixed" checked
+                                                            autocomplete="off">
+                                                        <label class="pos-disc-btn active" for="pos_disc_type_fixed"
+                                                            id="pos_disc_btn_fixed" title="Fixed Amount">Fix ($)</label>
 
-                                                        <input type="radio" class="btn-check" name="discount_type" id="pos_disc_type_percent" value="percent" autocomplete="off">
-                                                        <label class="pos-disc-btn" for="pos_disc_type_percent" id="pos_disc_btn_percent" title="Percentage">% Percent</label>
+                                                        <input type="radio" class="btn-check" name="discount_type"
+                                                            id="pos_disc_type_percent" value="percent"
+                                                            autocomplete="off">
+                                                        <label class="pos-disc-btn" for="pos_disc_type_percent"
+                                                            id="pos_disc_btn_percent" title="Percentage">%
+                                                            Percent</label>
                                                     </div>
                                                 </div>
                                                 <div class="input-group pos-discount-input-group">
-                                                    <span class="input-group-text pos-discount-prefix" id="pos_discount_prefix">$</span>
-                                                    <input type="number" id="POS_extra_discount_order" class="form-control"
-                                                        placeholder="0.00" min="0" step="any" autocomplete="off">
+                                                    <span class="input-group-text pos-discount-prefix"
+                                                        id="pos_discount_prefix">$</span>
+                                                    <input type="number" id="POS_extra_discount_order"
+                                                        class="form-control" placeholder="0.00" min="0" step="any"
+                                                        autocomplete="off">
                                                 </div>
-                                                <input type="hidden" name="extradiscount" id="POS_extradiscount_hidden" value="0">
+                                                <input type="hidden" name="extradiscount" id="POS_extradiscount_hidden"
+                                                    value="0">
                                             </div>
                                         </div>
 
@@ -483,7 +518,9 @@
 
                                         <div class="row">
                                             <div class="col text-sm">
-                                                <%= language.Extra_Discount %> <span id="payment_extradiscount_percent_info" class="text-primary font-weight-bold"></span> :
+                                                <%= language.Extra_Discount %> <span
+                                                        id="payment_extradiscount_percent_info"
+                                                        class="text-primary font-weight-bold"></span> :
                                             </div>
                                             <div class="col-auto text-sm payment_val paysymbol extsymbol"
                                                 id="payment_extradiscount">$ 0.00</div>
@@ -626,45 +663,53 @@
                                         <input type="text" class="form-control" name="address">
                                     </div>
 
-                                    <% if (typeof isStaff !== 'undefined' && isStaff) { %>
-                                        <div class="col-md-12 mb-3">
-                                            <div class="form-group">
-                                                <label class="form-label"><strong><%= language.Store_List || 'Assigned Store' %></strong></label>
-                                                <input type="text" class="form-control" value="<%= (typeof staffStoreName !== 'undefined' && staffStoreName) ? staffStoreName : 'Assigned Store' %>" readonly disabled style="background-color: #e9ecef; cursor: not-allowed;">
-                                                <input type="hidden" name="storeid" value="<%= staffStoreId %>">
-                                            </div>
-                                        </div>
-                                    <% } else { %>
+                                    <% if (typeof isStaff !=='undefined' && isStaff) { %>
                                         <div class="col-md-12 mb-3">
                                             <div class="form-group">
                                                 <label class="form-label"><strong>
-                                                        <%= language.Store_List || 'Store' %>
-                                                    </strong><span class="text-danger">*</span></label>
-                                                <select class="form-control wide mb-3" name="storeid"
-                                                    id="coupon_storlist_update" required>
-                                                    <option value="" disabled <%= (!cart.store_id || cart.store_id == 0) ? 'selected' : '' %>> Select Store </option>
-                                                    <% storeList.forEach(function(x){ %>
-                                                        <option value="<%= x.id %>" <%= (cart.store_id == x.id) ? 'selected' : '' %>>
-                                                            <%= x.name %>
-                                                        </option>
-                                                    <% }) %>
-                                                </select>
+                                                        <%= language.Store_List || 'Assigned Store' %>
+                                                    </strong></label>
+                                                <input type="text" class="form-control"
+                                                    value="<%= (typeof staffStoreName !== 'undefined' && staffStoreName) ? staffStoreName : 'Assigned Store' %>"
+                                                    readonly disabled
+                                                    style="background-color: #e9ecef; cursor: not-allowed;">
+                                                <input type="hidden" name="storeid" value="<%= staffStoreId %>">
                                             </div>
                                         </div>
-                                    <% } %>
+                                        <% } else { %>
+                                            <div class="col-md-12 mb-3">
+                                                <div class="form-group">
+                                                    <label class="form-label"><strong>
+                                                            <%= language.Store_List || 'Store' %>
+                                                        </strong><span class="text-danger">*</span></label>
+                                                    <select class="form-control wide mb-3" name="storeid"
+                                                        id="coupon_storlist_update" required>
+                                                        <option value="" disabled <%=(!cart.store_id ||
+                                                            cart.store_id==0) ? 'selected' : '' %>> Select Store
+                                                        </option>
+                                                        <% storeList.forEach(function(x){ %>
+                                                            <option value="<%= x.id %>" <%=(cart.store_id==x.id)
+                                                                ? 'selected' : '' %>>
+                                                                <%= x.name %>
+                                                            </option>
+                                                            <% }) %>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <% } %>
 
-                                    <div class="form-group">
-                                        <label><strong>
-                                                <%= language.Username %>
-                                            </strong></label>
-                                        <input type="text" class="form-control" name="username">
-                                    </div>
-                                    <div class="form-group">
-                                        <label><strong>
-                                                <%= language.Password %>
-                                            </strong></label>
-                                        <input type="text" class="form-control" name="password">
-                                    </div>
+                                                <div class="form-group">
+                                                    <label><strong>
+                                                            <%= language.Username %>
+                                                        </strong></label>
+                                                    <input type="text" class="form-control" name="username">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label><strong>
+                                                            <%= language.Password %>
+                                                        </strong></label>
+                                                    <input type="text" class="form-control" name="password">
+                                                </div>
 
                                 </div>
                         </div>
@@ -1100,7 +1145,7 @@
                 </script>
                 <script src="/js/pos-print-client.js"></script>
                 <script>
-                    (function() {
+                    (function () {
                         const serverUrl = "<%= accessdata?.masterstore?.printing_server_url || 'http://127.0.0.1:4321' %>";
                         const silentEnabled = <%= (accessdata?.masterstore?.silent_print_enabled !== 0) ? 'true' : 'false' %>;
                         const targetPrinter = "<%= accessdata?.masterstore?.invoice_printer_name || '' %>";

@@ -866,14 +866,14 @@
          url: baseUrl + "/admin/customerlist/" + storeid,
          dataType: 'json',
          success: function (res) {
+            $('#single-select').prop('disabled', false);
             if (res.customerList.length < 1) {
-               $('#single-select').html('<option value="0" selected disabled >No Any Customer Register Yet</option>');
+               $('#single-select').html('<option value="0" selected disabled >No Customers Registered in Selected Store</option>');
             } else {
-               $('#single-select').html('<option value="0" disabled >Select Customer </option>');
+               $('#single-select').html('<option value="0" ' + (!res.defaultCustomerId ? 'selected' : '') + ' disabled >Select Customer *</option>');
             }
             $.each(res.customerList, function (index, value) {
-               var isDefault = (res.defaultCustomerId && value.id == res.defaultCustomerId) || 
-                               (!res.defaultCustomerId && (value.username === '' || value.username === null || (value.name && value.name.toLowerCase().includes('walk in'))));
+               var isDefault = (res.defaultCustomerId && value.id == res.defaultCustomerId);
                var extra = (value.username === '' || value.username === null ? (value.store_name || '') : (value.number || ''));
                var extraText = extra ? ' (' + extra + ')' : '';
                $('#single-select').append(
@@ -884,6 +884,8 @@
             });
             if (res.defaultCustomerId) {
                $('#single-select').val(res.defaultCustomerId);
+            } else {
+               $('#single-select').val('0');
             }
             if ($.fn.selectpicker) {
                $('#single-select').selectpicker('refresh');
@@ -972,6 +974,11 @@
    })
 
    $(document).on("click", "#POS_service", function () {
+      var store = $('#pos_store_id').val() || $('#pos_staff_store_id').val();
+      if (!store || store === '0') {
+         toastr.warning('Please Select Store First');
+         return false;
+      }
       let id = $(this).attr('data-id')
 
       var baseUrl = window.location.origin;
@@ -1798,14 +1805,22 @@
 
 
    $(document).on("click", '#POS_payment_model_show', function () {
-      var customer = $('#single-select').val()
-      var serviselength = $('#POS_service_added_list tr').length
+      var store = $('#pos_store_id').val() || $('#pos_staff_store_id').val();
+      var customer = $('#single-select').val();
+      var serviselength = $('#POS_service_added_list tr').length;
       var baseUrl = window.location.origin;
-      if (!customer) {
-         toastr.warning('Please Select Coustomer')
-      } else if (serviselength < 1) {
-         toastr.warning('Min One Service Required')
-      } else {
+      if (!store || store === '0') {
+         toastr.warning('Please Select Store');
+         return;
+      }
+      if (!customer || customer === '0') {
+         toastr.warning('Please Select Customer');
+         return;
+      }
+      if (serviselength < 1) {
+         toastr.warning('Min One Service Required');
+         return;
+      }
          $.ajax({
             type: 'GET',
             url: baseUrl + "/admin/paymentdata/",

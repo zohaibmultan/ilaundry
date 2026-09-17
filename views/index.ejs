@@ -64,12 +64,31 @@
                                 <!-- Right Column: Live Snapshot Card -->
                                 <div class="cc-right">
                                     <div class="cc-snapshot-card">
-                                        <div class="cc-snapshot-header">
-                                            <span class="cc-snapshot-title">LIVE SNAPSHOT</span>
-                                            <span class="cc-updating-badge">
-                                                <span class="cc-pulse-dot"></span>
-                                                <span>updating</span>
-                                            </span>
+                                        <div class="cc-snapshot-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="cc-snapshot-title">LIVE SNAPSHOT</span>
+                                                <% if (typeof isStaff !== 'undefined' && isStaff) { %>
+                                                    <span class="badge bg-primary text-white" style="font-size: 0.75rem;">
+                                                        <i class="fas fa-store me-1"></i><%= staffStoreName || 'Assigned Store' %>
+                                                    </span>
+                                                <% } %>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <% if (typeof isStaff !== 'undefined' && !isStaff && typeof storeList !== 'undefined' && storeList.length > 0) { %>
+                                                    <div class="cc-store-filter-wrap">
+                                                        <select id="dashboard-store-filter" class="form-select form-select-sm py-1 px-2 border-0 shadow-sm" style="font-size: 0.8rem; font-weight: 600; border-radius: 8px; background-color: #f8fafc; color: #1e293b; min-width: 160px;">
+                                                            <option value="all" selected>All Stores (Combined)</option>
+                                                            <% storeList.forEach(function(st) { %>
+                                                                <option value="<%= st.id %>"><%= st.name %></option>
+                                                            <% }) %>
+                                                        </select>
+                                                    </div>
+                                                <% } %>
+                                                <span class="cc-updating-badge">
+                                                    <span class="cc-pulse-dot"></span>
+                                                    <span>updating</span>
+                                                </span>
+                                            </div>
                                         </div>
 
                                         <div class="cc-metrics-grid">
@@ -120,11 +139,85 @@
                             </div>
                         </div>
                     </div>
+
+                    <% if (typeof isStaff !== 'undefined' && !isStaff && typeof storeStatsList !== 'undefined' && storeStatsList.length > 0) { %>
+                    <!-- Per-Store Counters & Performance Breakdown for Admin -->
+                    <div class="col-12 mb-4">
+                        <div class="card shadow-sm border-0" style="border-radius: 16px; overflow: hidden;">
+                            <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center border-bottom flex-wrap gap-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                        <i class="fas fa-store-alt text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0 font-weight-bold" style="color: #0f172a; font-size: 1.05rem;">Per-Store Counters & Performance</h5>
+                                        <small class="text-muted">Live counters breakdown across each individual store location</small>
+                                    </div>
+                                </div>
+                                <span class="badge bg-light text-primary font-weight-bold py-2 px-3" style="border-radius: 20px;">
+                                    <%= storeStatsList.length %> Active Stores
+                                </span>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0" id="table-per-store-stats">
+                                        <thead style="background-color: #f8fafc; color: #475569; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            <tr>
+                                                <th class="ps-4 py-3">Store Name</th>
+                                                <th class="py-3 text-end">Sales</th>
+                                                <th class="py-3 text-center">Orders</th>
+                                                <th class="py-3 text-center">Services</th>
+                                                <th class="py-3 text-center">Customers</th>
+                                                <th class="pe-4 py-3 text-end">Quick Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody style="font-size: 0.9rem; color: #1e293b;">
+                                            <% storeStatsList.forEach(function(s) { %>
+                                                <tr id="store-stat-row-<%= s.store_id %>">
+                                                    <td class="ps-4 py-3 font-weight-bold">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <span class="badge rounded-pill bg-light text-primary border" style="font-size: 0.75rem;">#<%= s.store_id %></span>
+                                                            <span class="store-name-text"><%= s.store_name %></span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="py-3 text-end font-weight-bold text-success" id="store-sales-<%= s.store_id %>">
+                                                        <%= accessdata?.masterstore?.currency_symbol || '$' %><%= Number(s.tottalsales || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                                                    </td>
+                                                    <td class="py-3 text-center" id="store-orders-<%= s.store_id %>">
+                                                        <span class="badge bg-secondary-subtle text-secondary px-3 py-1 font-weight-bold" style="border-radius: 12px; font-size: 0.85rem;">
+                                                            <%= Number(s.totalorder || 0).toLocaleString('en-US') %>
+                                                        </span>
+                                                    </td>
+                                                    <td class="py-3 text-center" id="store-services-<%= s.store_id %>">
+                                                        <span class="badge bg-info-subtle text-info px-3 py-1 font-weight-bold" style="border-radius: 12px; font-size: 0.85rem;">
+                                                            <%= Number(s.totalservices || 0).toLocaleString('en-US') %>
+                                                        </span>
+                                                    </td>
+                                                    <td class="py-3 text-center" id="store-customers-<%= s.store_id %>">
+                                                        <span class="badge bg-success-subtle text-success px-3 py-1 font-weight-bold" style="border-radius: 12px; font-size: 0.85rem;">
+                                                            <%= Number(s.totalcustomer || 0).toLocaleString('en-US') %>
+                                                        </span>
+                                                    </td>
+                                                    <td class="pe-4 py-3 text-end">
+                                                        <button type="button" class="btn btn-outline-primary btn-xs filter-store-btn" data-store-id="<%= s.store_id %>">
+                                                            <i class="fas fa-filter me-1"></i> Snapshot
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <% } %>
+
                     <div class="col-xl-12 col-lg-12 col-xxl-12 col-sm-12">
                         <div class="card">
                             <div class="card-header">
                                 <h4 class="card-title">
-                                    <%= language.Recent_Order %>
+                                    <%= language.Recent_Order %> (Top 10)
                                 </h4>
                             </div>
                             <div class="card-body p-0">
@@ -147,12 +240,11 @@
                                                 <th scope="col">
                                                     <%= language.Payment_Amount %>
                                                 </th>
-                                                <% if (accessdata.mutibranch===true) { %>
-
+                                                <% if (typeof isStaff === 'undefined' || !isStaff || accessdata.mutibranch===true) { %>
                                                     <th scope="col">
-                                                        <%= language.Store_Name %>
+                                                        <%= language.Store_Name || 'Store Name' %>
                                                     </th>
-                                                    <% } %>
+                                                <% } %>
                                                         <th scope="col" class="text-center" style="width: 50px;">
                                                             <%= language.Action || language.View || 'Action' %>
                                                         </th>
@@ -211,11 +303,13 @@
                                                     <td class="symbol">
                                                         <%= data.paid_amount %>
                                                     </td>
-                                                    <% if (accessdata.mutibranch===true) { %>
+                                                    <% if (typeof isStaff === 'undefined' || !isStaff || accessdata.mutibranch===true) { %>
                                                         <td>
-                                                            <%= data.store %>
+                                                            <span class="badge bg-light text-dark font-weight-bold">
+                                                                <%= data.store || '-' %>
+                                                            </span>
                                                         </td>
-                                                        <% } %>
+                                                    <% } %>
                                                             <td class="text-center">
                                                                 <div class="tbl-action-group">
                                                                     <a href="/order/view/<%=data.id %>"
@@ -289,54 +383,101 @@
                 <script src="/js/plugins-init/chartjs-init.js"></script>
                 <script>
                     (function () {
-                        function refreshDashboardStats() {
-                            fetch('/api/dashboard-stats')
+                        var storeFilterEl = document.getElementById('dashboard-store-filter');
+
+                        function getActiveStoreFilter() {
+                            return storeFilterEl ? storeFilterEl.value : 'all';
+                        }
+
+                        function updateSnapshotMetrics(d) {
+                            var salesEl = document.getElementById('stat-sales');
+                            var ordersEl = document.getElementById('stat-orders');
+                            var servicesEl = document.getElementById('stat-services');
+                            var customersEl = document.getElementById('stat-customers');
+                            var currencySymbol = (document.getElementById('currencySymbol') && document.getElementById('currencySymbol').value) || '$';
+
+                            if (salesEl) {
+                                var formattedSales = currencySymbol + ' ' + Number(d.tottalsales || 0).toLocaleString('en-US', {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                });
+                                if (salesEl.textContent.trim() !== formattedSales.trim()) {
+                                    salesEl.textContent = formattedSales;
+                                    salesEl.classList.add('cc-stat-highlight');
+                                    setTimeout(function () { salesEl.classList.remove('cc-stat-highlight'); }, 1000);
+                                }
+                            }
+
+                            if (ordersEl) {
+                                var formattedOrders = Number(d.totalorder || 0).toLocaleString('en-US');
+                                if (ordersEl.textContent.trim() !== formattedOrders) {
+                                    ordersEl.textContent = formattedOrders;
+                                    ordersEl.classList.add('cc-stat-highlight');
+                                    setTimeout(function () { ordersEl.classList.remove('cc-stat-highlight'); }, 1000);
+                                }
+                            }
+
+                            if (servicesEl) {
+                                var formattedServices = Number(d.totalservices || 0).toLocaleString('en-US');
+                                if (servicesEl.textContent.trim() !== formattedServices) {
+                                    servicesEl.textContent = formattedServices;
+                                    servicesEl.classList.add('cc-stat-highlight');
+                                    setTimeout(function () { servicesEl.classList.remove('cc-stat-highlight'); }, 1000);
+                                }
+                            }
+
+                            if (customersEl) {
+                                var formattedCustomers = Number(d.totalcustomer || 0).toLocaleString('en-US');
+                                if (customersEl.textContent.trim() !== formattedCustomers) {
+                                    customersEl.textContent = formattedCustomers;
+                                    customersEl.classList.add('cc-stat-highlight');
+                                    setTimeout(function () { customersEl.classList.remove('cc-stat-highlight'); }, 1000);
+                                }
+                            }
+                        }
+
+                        function updatePerStoreTable(storeStatsList) {
+                            if (!storeStatsList || !Array.isArray(storeStatsList)) return;
+                            var currencySymbol = (document.getElementById('currencySymbol') && document.getElementById('currencySymbol').value) || '$';
+
+                            storeStatsList.forEach(function (s) {
+                                var sSalesEl = document.getElementById('store-sales-' + s.store_id);
+                                var sOrdersEl = document.getElementById('store-orders-' + s.store_id);
+                                var sServicesEl = document.getElementById('store-services-' + s.store_id);
+                                var sCustomersEl = document.getElementById('store-customers-' + s.store_id);
+
+                                if (sSalesEl) {
+                                    sSalesEl.textContent = currencySymbol + Number(s.tottalsales || 0).toLocaleString('en-US', {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    });
+                                }
+                                if (sOrdersEl) {
+                                    var badge = sOrdersEl.querySelector('.badge');
+                                    if (badge) badge.textContent = Number(s.totalorder || 0).toLocaleString('en-US');
+                                }
+                                if (sServicesEl) {
+                                    var badge = sServicesEl.querySelector('.badge');
+                                    if (badge) badge.textContent = Number(s.totalservices || 0).toLocaleString('en-US');
+                                }
+                                if (sCustomersEl) {
+                                    var badge = sCustomersEl.querySelector('.badge');
+                                    if (badge) badge.textContent = Number(s.totalcustomer || 0).toLocaleString('en-US');
+                                }
+                            });
+                        }
+
+                        function refreshDashboardStats(forcedStoreId) {
+                            var currentStore = (forcedStoreId !== undefined) ? forcedStoreId : getActiveStoreFilter();
+                            var url = '/api/dashboard-stats?store_id=' + encodeURIComponent(currentStore);
+
+                            fetch(url)
                                 .then(function (res) { return res.json(); })
                                 .then(function (result) {
                                     if (result && result.success && result.data) {
-                                        var d = result.data;
-                                        var salesEl = document.getElementById('stat-sales');
-                                        var ordersEl = document.getElementById('stat-orders');
-                                        var servicesEl = document.getElementById('stat-services');
-                                        var customersEl = document.getElementById('stat-customers');
-
-                                        if (salesEl) {
-                                            var formattedSales = Number(d.tottalsales || 0).toLocaleString('en-US', {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2
-                                            });
-                                            if (salesEl.textContent.trim() !== formattedSales) {
-                                                salesEl.textContent = formattedSales;
-                                                salesEl.classList.add('cc-stat-highlight');
-                                                setTimeout(function () { salesEl.classList.remove('cc-stat-highlight'); }, 1000);
-                                            }
-                                        }
-
-                                        if (ordersEl) {
-                                            var formattedOrders = Number(d.totalorder || 0).toLocaleString('en-US');
-                                            if (ordersEl.textContent.trim() !== formattedOrders) {
-                                                ordersEl.textContent = formattedOrders;
-                                                ordersEl.classList.add('cc-stat-highlight');
-                                                setTimeout(function () { ordersEl.classList.remove('cc-stat-highlight'); }, 1000);
-                                            }
-                                        }
-
-                                        if (servicesEl) {
-                                            var formattedServices = Number(d.totalservices || 0).toLocaleString('en-US');
-                                            if (servicesEl.textContent.trim() !== formattedServices) {
-                                                servicesEl.textContent = formattedServices;
-                                                servicesEl.classList.add('cc-stat-highlight');
-                                                setTimeout(function () { servicesEl.classList.remove('cc-stat-highlight'); }, 1000);
-                                            }
-                                        }
-
-                                        if (customersEl) {
-                                            var formattedCustomers = Number(d.totalcustomer || 0).toLocaleString('en-US');
-                                            if (customersEl.textContent.trim() !== formattedCustomers) {
-                                                customersEl.textContent = formattedCustomers;
-                                                customersEl.classList.add('cc-stat-highlight');
-                                                setTimeout(function () { customersEl.classList.remove('cc-stat-highlight'); }, 1000);
-                                            }
+                                        updateSnapshotMetrics(result.data);
+                                        if (result.storeStatsList) {
+                                            updatePerStoreTable(result.storeStatsList);
                                         }
                                     }
                                 })
@@ -345,8 +486,31 @@
                                 });
                         }
 
+                        if (storeFilterEl) {
+                            storeFilterEl.addEventListener('change', function () {
+                                refreshDashboardStats(this.value);
+                            });
+                        }
+
+                        document.addEventListener('click', function (e) {
+                            var filterBtn = e.target.closest('.filter-store-btn');
+                            if (filterBtn) {
+                                var storeId = filterBtn.getAttribute('data-store-id');
+                                if (storeFilterEl && storeId) {
+                                    storeFilterEl.value = storeId;
+                                    refreshDashboardStats(storeId);
+                                    var snapCard = document.querySelector('.cc-snapshot-card');
+                                    if (snapCard) {
+                                        snapCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    }
+                                }
+                            }
+                        });
+
                         // Poll every 30 seconds
-                        setInterval(refreshDashboardStats, 30000);
+                        setInterval(function () {
+                            refreshDashboardStats();
+                        }, 30000);
                     })();
                 </script>
 

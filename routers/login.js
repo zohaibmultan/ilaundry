@@ -804,141 +804,215 @@ router.post("/shopregister", upload.single("logo"), async (req, res) => {
 
 // home page
 router.get("/index", auth, async (req, res) => {
-  const { id, roll, store, loginas } = req.user;
+  try {
+    const { id, roll, store, loginas } = req.user;
 
-  const accessdata = await access(req.user);
-  console.log("accessdata", accessdata);
-  console.log("accessdata", req.user);
+    const accessdata = await access(req.user);
 
-  const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
-  FROM tbl_staff_roll sr
-  JOIN tbl_roll r ON sr.main_roll_id = r.id
-  WHERE sr.id = ${roll}
-`);
+    const rolldetail = await DataFind(`
+      SELECT 
+        sr.*, 
+        r.roll_status, 
+        r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
 
-  console.log("rolldetail", rolldetail);
+    if (!rolldetail || rolldetail.length === 0) {
+      req.flash("error", "Staff role not found. Please contact administrator.");
+      return res.redirect("/");
+    }
 
-  if (!rolldetail || rolldetail.length === 0) {
-    req.flash("error", "Staff role not found. Please contact administrator.");
+    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const staffStoreId = isStaff ? (adminData[0].store_ID || store) : null;
+    let staffStoreName = "";
+    if (isStaff && staffStoreId) {
+      const sName = await DataFind(`SELECT name FROM tbl_store WHERE id = '${staffStoreId}'`);
+      if (sName.length > 0) staffStoreName = sName[0].name;
+    }
+
+    if (isStaff) {
+      // Staff view: strictly scoped to assigned store
+      const staffStats = await DataFind(`
+        SELECT 
+          (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE store_id = '${staffStoreId}' AND order_status != '6') AS tottalsales,
+          (SELECT COUNT(*) FROM tbl_order WHERE store_id = '${staffStoreId}' AND order_status != '6') AS totalorder,
+          (SELECT COUNT(*) FROM tbl_services WHERE store_ID = '${staffStoreId}') AS totalservices,
+          (SELECT COUNT(*) FROM tbl_customer WHERE store_id = '${staffStoreId}' AND delet_flage != '1') AS totalcustomer
+      `);
+
+      const recentOrder = await DataFind(`
+        SELECT tbl_order.order_id, tbl_order.id, tbl_order.gross_total, tbl_order.paid_amount, tbl_order.store_id, tbl_order.order_status, tbl_customer.name as customer, tbl_orderstatus.status, tbl_store.name as store
+        FROM tbl_order
+        JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id  
+        JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
+        JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
+        WHERE tbl_order.store_id = '${staffStoreId}'
+        ORDER BY tbl_order.id DESC 
+        LIMIT 10
+      `);
+
+      const chartOrders = await DataFind(`
+        SELECT id, order_date, gross_total 
+        FROM tbl_order 
+        WHERE store_id = '${staffStoreId}' AND YEAR(order_date) = YEAR(CURDATE()) AND order_status != '6'
+      `);
+
+      let orderfunction = await groupOrdersByYearAndMonth(chartOrders);
+      let countorder = orderfunction.totorder;
+      let countsales = orderfunction.totsales;
+
+      return res.render("index", {
+        accessdata,
+        data: staffStats[0] || { tottalsales: 0, totalorder: 0, totalservices: 0, totalcustomer: 0 },
+        recentOrder,
+        roll: rolldetail[0],
+        language: req.language_data,
+        language_name: req.language_name,
+        countorder,
+        countsales,
+        isStaff: true,
+        staffStoreId,
+        staffStoreName,
+        storeStatsList: [],
+        storeList: []
+      });
+    } else {
+      // Admin view: overall totals across all stores + per-store stats + top 10 orders across all stores with store name
+      const overallStats = await DataFind(`
+        SELECT 
+          (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE order_status != '6') AS tottalsales,
+          (SELECT COUNT(*) FROM tbl_order WHERE order_status != '6') AS totalorder,
+          (SELECT COUNT(*) FROM tbl_services) AS totalservices,
+          (SELECT COUNT(*) FROM tbl_customer WHERE delet_flage != '1') AS totalcustomer
+      `);
+
+      const storeList = await DataFind("SELECT id, name FROM tbl_store WHERE status = 1 AND delete_flage = 0 ORDER BY id ASC");
+
+      const storeStatsList = await DataFind(`
+        SELECT 
+          s.id AS store_id,
+          s.name AS store_name,
+          COALESCE(SUM(CASE WHEN o.order_status != '6' THEN o.gross_total ELSE 0 END), 0) AS tottalsales,
+          COUNT(DISTINCT CASE WHEN o.order_status != '6' THEN o.id ELSE NULL END) AS totalorder,
+          (SELECT COUNT(*) FROM tbl_services WHERE store_ID = s.id) AS totalservices,
+          (SELECT COUNT(*) FROM tbl_customer WHERE store_id = s.id AND delet_flage != '1') AS totalcustomer
+        FROM tbl_store s
+        LEFT JOIN tbl_order o ON s.id = o.store_id
+        WHERE s.status = 1 AND s.delete_flage = 0
+        GROUP BY s.id, s.name
+        ORDER BY s.id ASC
+      `);
+
+      const recentOrder = await DataFind(`
+        SELECT tbl_order.order_id, tbl_order.id, tbl_order.gross_total, tbl_order.paid_amount, tbl_order.store_id, tbl_order.order_status, tbl_customer.name as customer, tbl_orderstatus.status, tbl_store.name as store 
+        FROM tbl_order 
+        JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id 
+        JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
+        LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
+        ORDER BY tbl_order.id DESC 
+        LIMIT 10
+      `);
+
+      const chartOrders = await DataFind(`
+        SELECT id, order_date, gross_total 
+        FROM tbl_order 
+        WHERE YEAR(order_date) = YEAR(CURDATE()) AND order_status != '6'
+      `);
+
+      let orderfunction = await groupOrdersByYearAndMonth(chartOrders);
+      let countorder = orderfunction.totorder;
+      let countsales = orderfunction.totsales;
+
+      return res.render("index", {
+        accessdata,
+        data: overallStats[0] || { tottalsales: 0, totalorder: 0, totalservices: 0, totalcustomer: 0 },
+        recentOrder,
+        roll: rolldetail[0],
+        language: req.language_data,
+        language_name: req.language_name,
+        countorder,
+        countsales,
+        isStaff: false,
+        staffStoreId: null,
+        staffStoreName: "",
+        storeStatsList,
+        storeList
+      });
+    }
+  } catch (err) {
+    console.error("Error in /index:", err);
+    req.flash("error", "Internal Server Error");
     return res.redirect("/");
-  }
-  // tbl_orderstatus on tbl_order.order_status=tbl_orderstatus.id join tbl_store on tbl_order.store_id=tbl_store.id ORDER BY tbl_order.id DESC limit 5`)
-
-  var qury = `SELECT id, order_date, gross_total FROM tbl_order WHERE YEAR(order_date) = YEAR(CURDATE()) AND order_status !='6'`;
-  // var qury = `SELECT id, order_date, gross_total FROM tbl_order`;
-
-  const order = await DataFind(qury);
-  console.log("order", order);
-
-  let orderfunction = await groupOrdersByYearAndMonth(order);
-  let countorder = orderfunction.totorder;
-  let countsales = orderfunction.totsales;
-
-  console.log(countsales);
-
-  // let countorder =  "2023&!1#50@2#36@6#82@7#88@8#100@9#89@10#107@11#91@12#66&&!NaN&!NaN#1&&!2024&!1#82@2#72@3#88@4#58@5#309@6#143@7#117@8#89@9#75@10#100@11#81@12#86&&!2025&!3#128@1#113@2#243@4#106@5#81@6#55&&!NaN&!NaN#1"
-
-  // let countsales = "2023&!1#3937@2#2219@6#6777@7#3669746@8#17699@9#17365@10#50145@11#11676@12#8457&&!NaN&!NaN#81&&!2024&!1#17073@2#10592@3#10904@4#9389@5#47696@6#21349@7#14866@8#25611@9#3.294454000000003e+27@10#6.14148e+22@11#29331@12#11575&&!2025&!3#3795017802@1#27019@2#43879@4#15859@5#10995@6#7055&&!NaN&!NaN#414"
-  // console.log(rolldetail);
-
-  if (rolldetail[0].rollType == "master") {
-    const totalsele = await DataFind(
-      "SELECT (SELECT SUM(gross_total) FROM tbl_order WHERE order_status !='6') as tottalsales, (select count(*) FROM tbl_order WHERE order_status !='6') as totalorder, (select count(*) FROM tbl_services) as totalservices, (select count(*) FROM tbl_customer WHERE username IS NOT null ) as totalcustomer"
-    );
-    console.log("totalsele1", totalsele);
-
-    const recentOrder =
-      await DataFind(`SELECT tbl_order.order_id,tbl_order.id,tbl_order.gross_total,tbl_order.paid_amount,tbl_order.store_id,tbl_order.order_status,tbl_customer.name as customer,tbl_orderstatus.status,tbl_store.name as store FROM tbl_order join tbl_customer on tbl_order.customer_id=tbl_customer.id join
-      tbl_orderstatus on tbl_order.order_status=tbl_orderstatus.id join tbl_store on tbl_order.store_id=tbl_store.id ORDER BY tbl_order.id DESC limit 5`);
-
-    // console.log("req.language_data", req.language_data);
-    console.log("accessdata", accessdata);
-    console.log("totalsele", totalsele);
-
-    res.render("index", {
-      accessdata,
-      data: totalsele[0],
-      recentOrder,
-      roll: rolldetail[0],
-      language: req.language_data,
-      language_name: req.language_name,
-      countorder,
-      countsales,
-    });
-  } else {
-    // const totalsele = await DataFind(
-    //   "SELECT (SELECT SUM(gross_total) FROM tbl_order WHERE store_id = " +
-    //     store +
-    //     ") as tottalsales, (select count(*) FROM tbl_order WHERE store_id = " +
-    //     store +
-    //     ") as totalorder, (select count(*) FROM tbl_services WHERE store_id = " +
-    //     store +
-    //     ") as totalservices, (select count(*) FROM tbl_customer WHERE store_id = " +
-    //     store +
-    //     ") as totalcustomer "
-    // );
-    const totalsele = await DataFind(`
-  SELECT 
-    (SELECT SUM(gross_total) FROM tbl_order WHERE store_id = ${store} AND  order_status !='6') AS tottalsales,
-    (SELECT COUNT(*) FROM tbl_order WHERE store_id = ${store} AND  order_status !='6') AS totalorder,
-    (SELECT COUNT(*) FROM tbl_services WHERE store_id = ${store}  ) AS totalservices,
-    (SELECT COUNT(*) FROM tbl_customer WHERE store_id = ${store} AND username != '' AND delet_flage != '1') AS totalcustomer
-`);
-
-    const recentOrder =
-      await DataFind(`SELECT tbl_order.order_id,tbl_order.id,tbl_order.gross_total,tbl_order.paid_amount,tbl_order.store_id,tbl_order.order_status,tbl_customer.name as customer,tbl_orderstatus.status,tbl_store.name as store
-                       FROM tbl_order
-                      JOIN tbl_customer on tbl_order.customer_id=tbl_customer.id  
-                      JOIN tbl_orderstatus on tbl_order.order_status=tbl_orderstatus.id 
-                      JOIN tbl_store on tbl_order.store_id=tbl_store.id 
-                      WHERE tbl_store.id = "${store}" ORDER BY tbl_order.id DESC limit 5`);
-    // console.log("req.language_data", req.language_data);
-    console.log("totalsele2", totalsele);
-
-    res.render("index", {
-      accessdata,
-      data: totalsele[0],
-      recentOrder,
-      roll: rolldetail[0],
-      language: req.language_data,
-      language_name: req.language_name,
-      countorder,
-      countsales,
-    });
   }
 });
 
 router.get("/api/dashboard-stats", auth, async (req, res) => {
   try {
-    const { roll, store } = req.user;
-    const rolldetail = await DataFind(`SELECT sr.*, r.roll_status, r.rollType FROM tbl_staff_roll sr JOIN tbl_roll r ON sr.main_roll_id = r.id WHERE sr.id = ${roll}`);
-    let totalsele;
-    if (rolldetail && rolldetail[0] && rolldetail[0].rollType == "master") {
-      totalsele = await DataFind(
-        "SELECT (SELECT SUM(gross_total) FROM tbl_order WHERE order_status !='6') as tottalsales, (select count(*) FROM tbl_order WHERE order_status !='6') as totalorder, (select count(*) FROM tbl_services) as totalservices, (select count(*) FROM tbl_customer WHERE username IS NOT null ) as totalcustomer"
-      );
-    } else {
-      totalsele = await DataFind(`
+    const { id, roll, store } = req.user;
+    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const staffStoreId = isStaff ? (adminData[0].store_ID || store) : null;
+
+    let targetStore = req.query.store_id;
+
+    if (isStaff) {
+      targetStore = staffStoreId;
+    }
+
+    let statsQuery;
+    if (targetStore && targetStore !== "0" && targetStore !== "all") {
+      statsQuery = `
         SELECT 
-          (SELECT SUM(gross_total) FROM tbl_order WHERE store_id = ${store} AND order_status !='6') AS tottalsales,
-          (SELECT COUNT(*) FROM tbl_order WHERE store_id = ${store} AND order_status !='6') AS totalorder,
-          (SELECT COUNT(*) FROM tbl_services WHERE store_id = ${store}) AS totalservices,
-          (SELECT COUNT(*) FROM tbl_customer WHERE store_id = ${store} AND username != '' AND delet_flage != '1') AS totalcustomer
+          (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE store_id = '${targetStore}' AND order_status != '6') AS tottalsales,
+          (SELECT COUNT(*) FROM tbl_order WHERE store_id = '${targetStore}' AND order_status != '6') AS totalorder,
+          (SELECT COUNT(*) FROM tbl_services WHERE store_ID = '${targetStore}') AS totalservices,
+          (SELECT COUNT(*) FROM tbl_customer WHERE store_id = '${targetStore}' AND delet_flage != '1') AS totalcustomer
+      `;
+    } else {
+      statsQuery = `
+        SELECT 
+          (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE order_status != '6') AS tottalsales,
+          (SELECT COUNT(*) FROM tbl_order WHERE order_status != '6') AS totalorder,
+          (SELECT COUNT(*) FROM tbl_services) AS totalservices,
+          (SELECT COUNT(*) FROM tbl_customer WHERE delet_flage != '1') AS totalcustomer
+      `;
+    }
+
+    const totalsele = await DataFind(statsQuery);
+    const stats = totalsele && totalsele[0] ? totalsele[0] : { tottalsales: 0, totalorder: 0, totalservices: 0, totalcustomer: 0 };
+
+    let storeStatsList = [];
+    if (!isStaff) {
+      storeStatsList = await DataFind(`
+        SELECT 
+          s.id AS store_id,
+          s.name AS store_name,
+          COALESCE(SUM(CASE WHEN o.order_status != '6' THEN o.gross_total ELSE 0 END), 0) AS tottalsales,
+          COUNT(DISTINCT CASE WHEN o.order_status != '6' THEN o.id ELSE NULL END) AS totalorder,
+          (SELECT COUNT(*) FROM tbl_services WHERE store_ID = s.id) AS totalservices,
+          (SELECT COUNT(*) FROM tbl_customer WHERE store_id = s.id AND delet_flage != '1') AS totalcustomer
+        FROM tbl_store s
+        LEFT JOIN tbl_order o ON s.id = o.store_id
+        WHERE s.status = 1 AND s.delete_flage = 0
+        GROUP BY s.id, s.name
+        ORDER BY s.id ASC
       `);
     }
-    const stats = totalsele && totalsele[0] ? totalsele[0] : { tottalsales: 0, totalorder: 0, totalservices: 0, totalcustomer: 0 };
+
     return res.json({
       success: true,
+      isStaff,
+      targetStore: targetStore || 'all',
       data: {
         tottalsales: Number(stats.tottalsales || 0),
         totalorder: Number(stats.totalorder || 0),
         totalservices: Number(stats.totalservices || 0),
         totalcustomer: Number(stats.totalcustomer || 0)
-      }
+      },
+      storeStatsList
     });
   } catch (err) {
     console.error("Error in /api/dashboard-stats:", err);

@@ -115,7 +115,10 @@ router.get("/pos", auth, async (req, res) => {
       customerList = [],
       cartservice = [],
       cart,
-      addonlist = [];
+      addonlist = [],
+      isStaff = false,
+      staffStoreId = null,
+      staffStoreName = "";
 
     if (
       accessdata.roll.rollType == "customer" &&
@@ -278,9 +281,8 @@ router.get("/pos", auth, async (req, res) => {
     } else {
       // admin or staff login
       const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
-      const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
-      const staffStoreId = isStaff ? adminData[0].store_ID : null;
-      let staffStoreName = "";
+      isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+      staffStoreId = isStaff ? adminData[0].store_ID : null;
       if (staffStoreId) {
         const sName = await DataFind(`SELECT name FROM tbl_store WHERE id = '${staffStoreId}'`);
         if (sName.length > 0) staffStoreName = sName[0].name;
@@ -305,25 +307,25 @@ router.get("/pos", auth, async (req, res) => {
       storeList = await DataFind("SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0");
       ismulty = (multiy[0].type == 1);
 
-      let targetStoreId;
+      let targetStoreId = 0;
       if (isStaff && staffStoreId) {
         targetStoreId = staffStoreId;
         login = rolldetail[0].rollType === "master" ? "master" : "store";
-      } else if (rolldetail[0].rollType === "master") {
+      } else {
         login = "master";
         const existingCart = await DataFind("SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'");
         if (existingCart.length > 0 && existingCart[0].store_id && existingCart[0].store_id != '0') {
           targetStoreId = existingCart[0].store_id;
         } else {
-          targetStoreId = storeList.length > 0 ? storeList[0].id : 1;
+          targetStoreId = 0; // Default: no store selected for Admin
         }
-      } else {
-        login = "store";
-        targetStoreId = store && store != '0' ? store : (storeList.length > 0 ? storeList[0].id : 1);
       }
 
-      const taxData = await DataFind("SELECT tax_percent FROM tbl_store WHERE id=" + targetStoreId);
-      const taxVal = taxData.length > 0 ? taxData[0].tax_percent : 0;
+      let taxVal = 0;
+      if (targetStoreId && targetStoreId != 0) {
+        const taxData = await DataFind("SELECT tax_percent FROM tbl_store WHERE id=" + targetStoreId);
+        taxVal = taxData.length > 0 ? taxData[0].tax_percent : 0;
+      }
 
       const cartdata = await DataFind("SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'");
       if (cartdata.length > 0) {
@@ -337,20 +339,18 @@ router.get("/pos", auth, async (req, res) => {
       } else {
         await DataInsert(
           `tbl_cart`,
-          `created_by, order_id, store_id, tax`,
-          `'${loginas},${id}', '${orderid}', '${targetStoreId}', ${taxVal}`,
+          `created_by, order_id, store_id, tax, customer_id`,
+          `'${loginas},${id}', '${orderid}', '${targetStoreId}', ${taxVal}, '0'`,
           req.hostname,
           req.protocol
         );
       }
 
-      // Ensure Walk-in customer exists for targetStoreId
-      const walkinCustomer = await getOrCreateWalkInCustomer(targetStoreId, req);
-
       cart = await DataFind("SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'");
 
-      // For staff, OR if cart customer is missing/zero, auto-assign the Walk-in customer of targetStoreId
-      if (isStaff || !cart[0].customer_id || cart[0].customer_id == "0") {
+      // For staff, auto-assign the Walk-in customer of targetStoreId
+      if (isStaff && targetStoreId && targetStoreId != 0) {
+        const walkinCustomer = await getOrCreateWalkInCustomer(targetStoreId, req);
         if (walkinCustomer) {
           await DataUpdate(
             `tbl_cart`,
@@ -363,10 +363,17 @@ router.get("/pos", auth, async (req, res) => {
         }
       }
 
-      customerList = await getStoreScopedCustomers(targetStoreId);
-      service_list = await DataFind("SELECT * FROM tbl_services WHERE status=0 AND store_ID=" + targetStoreId);
-      addonlist = await DataFind("SELECT * FROM tbl_addons WHERE status=0 AND store_ID=" + targetStoreId);
-      cartservice = await DataFind("SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" + cart[0].service_list_id + "')");
+      if (targetStoreId && targetStoreId != 0) {
+        customerList = await getStoreScopedCustomers(targetStoreId);
+        service_list = await DataFind("SELECT * FROM tbl_services WHERE status=0 AND store_ID=" + targetStoreId);
+        addonlist = await DataFind("SELECT * FROM tbl_addons WHERE status=0 AND store_ID=" + targetStoreId);
+        cartservice = await DataFind("SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" + cart[0].service_list_id + "')");
+      } else {
+        customerList = [];
+        service_list = [];
+        addonlist = [];
+        cartservice = [];
+      }
     }
 
     if (!cart || cart.length === 0) {
@@ -499,8 +506,13 @@ router.get("/addonlist/:id", auth, async (req, res) => {
     );
     const taxVal = tax.length > 0 ? tax[0].tax_percent : 0;
 
-    const walkinCustomer = await getOrCreateWalkInCustomer(storeid, req);
-    const defaultCustSql = walkinCustomer ? `, customer_id='${walkinCustomer.id}'` : "";
+    let defaultCustSql = "";
+    if (isStaff) {
+      const walkinCustomer = await getOrCreateWalkInCustomer(storeid, req);
+      defaultCustSql = walkinCustomer ? `, customer_id='${walkinCustomer.id}'` : "";
+    } else {
+      defaultCustSql = `, customer_id='0'`;
+    }
 
     await DataUpdate(
       `tbl_cart`,
@@ -536,21 +548,34 @@ router.get("/customerlist/:id", auth, async (req, res) => {
       storeid = store;
     }
 
-    const walkinCustomer = await getOrCreateWalkInCustomer(storeid, req);
     const customerList = await getStoreScopedCustomers(storeid);
-    const defaultCustomerId = walkinCustomer ? walkinCustomer.id : (customerList.length > 0 ? customerList[0].id : 0);
+    let defaultCustomerId = 0;
 
-    if (defaultCustomerId) {
+    if (isStaff) {
+      const walkinCustomer = await getOrCreateWalkInCustomer(storeid, req);
+      defaultCustomerId = walkinCustomer ? walkinCustomer.id : (customerList.length > 0 ? customerList[0].id : 0);
+
+      if (defaultCustomerId) {
+        await DataUpdate(
+          `tbl_cart`,
+          `customer_id='${defaultCustomerId}', store_id='${storeid}'`,
+          `created_by='${loginas},${id}'`,
+          req.hostname,
+          req.protocol
+        );
+      }
+    } else {
+      // For Admin: DO NOT auto-select customer. Customer remains unselected (0) until Admin explicitly selects one.
       await DataUpdate(
         `tbl_cart`,
-        `customer_id='${defaultCustomerId}', store_id='${storeid}'`,
+        `customer_id='0', store_id='${storeid}'`,
         `created_by='${loginas},${id}'`,
         req.hostname,
         req.protocol
       );
     }
 
-    res.status(200).json({ customerList, defaultCustomerId });
+    res.status(200).json({ customerList, defaultCustomerId, isStaff });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
