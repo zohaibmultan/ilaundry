@@ -29,95 +29,51 @@
                                     <%= language.Add_New_Staff %>
                                 </button>
                             </div>
-                            <div class="card-body ">
+                            <div class="card-body">
+                                <!-- Server-side DataTable Toolbar -->
+                                <div class="server-dt-toolbar">
+                                    <div class="server-dt-search">
+                                        <i class="fa fa-search"></i>
+                                        <input type="search" id="dtStaffSearch" placeholder="<%= language.Search || 'Search staff by name, phone, email, username...' %>">
+                                    </div>
+                                    <div class="server-dt-filters">
+                                        <select class="server-dt-select" id="dtStaffStatus">
+                                            <option value="all"><%= language.All_Status || 'All Status' %></option>
+                                            <option value="1"><%= language.Approved || 'Approved' %></option>
+                                            <option value="0"><%= language.Pending || 'Pending' %></option>
+                                        </select>
+
+                                        <% if (ismulty) { %>
+                                            <select class="server-dt-select" id="dtStaffStore">
+                                                <option value="all"><%= language.All_Store || 'All Stores' %></option>
+                                                <% storeList.forEach(function(st) { %>
+                                                    <option value="<%= st.id %>"><%= st.name %></option>
+                                                <% }) %>
+                                            </select>
+                                        <% } %>
+
+                                        <select class="server-dt-select" id="dtStaffPageLength">
+                                            <option value="10">10 <%= language.Entries || 'entries' %></option>
+                                            <option value="25">25 <%= language.Entries || 'entries' %></option>
+                                            <option value="50">50 <%= language.Entries || 'entries' %></option>
+                                            <option value="100">100 <%= language.Entries || 'entries' %></option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div class="table-responsive">
-                                    <table id="example3" class="table display table-responsive-lg"  style="width:100%">
+                                    <table id="server_staff_table" class="table display server-side-dt" style="width:100%">
                                         <thead>
                                             <tr>
-                                                <th>#</th>
-                                                <th>
-                                                    <%= language.Staff_Name %>
-                                                </th>
-
-                                                <th>
-                                                    <%= language.Contact %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Shop_Name || language.Store || 'Assigned Store' %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Status %>
-                                                </th>
-                                                <th
-                                                    class="text-center <%= accessdata.roll.staff.includes('edit') || accessdata.roll.staff.includes('delete') ?'':'d-none' %>">
-                                                    <%= language.Action %>
-                                                </th>
+                                                <th style="width: 50px;">#</th>
+                                                <th><%= language.Staff_Name %></th>
+                                                <th><%= language.Contact %></th>
+                                                <th><%= language.Shop_Name || language.Store || 'Assigned Store' %></th>
+                                                <th style="width: 110px;"><%= language.Status %></th>
+                                                <th class="text-center" style="width: 130px;"><%= language.Action %></th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            <% staffdata.forEach(function(data, i){ %>
-                                                <tr>
-                                                    <td>
-                                                        <%=i + 1 %>
-                                                    </td>
-                                                    <td>
-                                                        <%=data.name %>
-                                                    </td>
-
-                                                    <td>
-                                                        <div>
-                                                            <%=data.number %>
-                                                        </div>
-                                                        <div>
-                                                            <%=data.email %>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <span class="badge badge-sm badge-info"><%= data.store || 'Not Assigned' %></span>
-                                                    </td>
-                                                    <td>
-                                                        <div class="form-check form-switch">
-                                                            <input class="form-check-input" type="checkbox"
-                                                                id="active<%= data.id %>"
-                                                                onchange="changeStatus('<%= data.id %>')"
-                                                                <%=data.approved==1 ? 'checked' : '' %>>
-                                                        </div>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div class="tbl-action-group">
-                                                            <a href="#"
-                                                                class="btn-tbl-action btn-tbl-edit <%= accessdata.roll.staff.includes('edit') ?'':'d-none' %>"
-                                                                id="update_staff" data-bs-toggle="modal"
-                                                                data-bs-target="#staff_update" data-id="<%=data.id %>"
-                                                                data-name="<%=data.name %>" data-number="<%=data.number %>"
-                                                                data-roll_id="<%= data.roll_id %>"
-                                                                data-email="<%=data.email %>"
-                                                                data-username="<%=data.username %>"
-                                                                data-password="<%=data.password %>"
-                                                                data-store-id="<%= data.store_ID %>"
-                                                                data-approved="<%=data.approved %>"
-                                                                title="<%= language.Edit || 'Edit' %>">
-                                                                <i class="fas fa-pencil-alt"></i></a>
-
-                                                            <a href="/tool/deletstaff/<%= data.id %>"
-                                                                class="btn-tbl-action btn-tbl-delete <%= accessdata.roll.staff.includes('delete') ?'':'d-none' %>"
-                                                                id="delete"
-                                                                title="<%= language.Delete || 'Delete' %>">
-                                                                <i class="fa fa-trash"></i></a>
-
-                                                            <a class="btn-tbl-action btn-tbl-manage <%= accessdata.roll.staff.includes('edit') ?'':'d-none' %>"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#roll_list_update_<%= data.rollType %>"
-                                                                data-rollup-id="<%= data.roll_id %>"
-                                                                data-roll-type="<%= data.rollType %>"
-                                                                id="rollmanege<%= data.rollType %>"
-                                                                title="<%= language.Role || 'Manage Role' %>">
-                                                                <i class="fas fa-tasks"></i></a>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                <% }) %>
-                                        </tbody>
+                                        <tbody></tbody>
                                     </table>
                                 </div>
                             </div>
@@ -2127,24 +2083,111 @@
 
 
                 <script>
-                    function changeStatus(id) {
-                        const checkbox = document.getElementById(`active${id}`);
+                    function escapeHtml(str) {
+                        if (!str) return '';
+                        return String(str)
+                          .replace(/&/g, '&amp;')
+                          .replace(/</g, '&lt;')
+                          .replace(/>/g, '&gt;')
+                          .replace(/"/g, '&quot;')
+                          .replace(/'/g, '&#039;');
+                    }
 
-                        const isChecked = checkbox.checked;
-
-                        const status = isChecked ? 'active' : 'deactive';
-
-                        console.log(`ID: ${id}, Checked: ${isChecked}, Status to send: ${status}`);
-
+                    function changeStaffStatus(id, currentApproved) {
+                        const status = currentApproved === 1 ? 'deactive' : 'active';
                         $.ajax({
                             type: 'POST',
                             url: `/tool/staffroll/${id}`,
                             data: { status: status },
                             success: function (res) {
-                                console.log('Server response:', res);
+                                if (window.staffTable) {
+                                    window.staffTable.ajax.reload(null, false);
+                                }
+                            },
+                            error: function(err) {
+                                console.error('Failed to change staff status', err);
                             }
                         });
                     }
+
+                    $(document).ready(function() {
+                        window.staffTable = window.initServerDataTable('#server_staff_table', {
+                            ajaxUrl: '/tool/staff/data',
+                            columns: [
+                                {
+                                    data: null,
+                                    orderable: false,
+                                    searchable: false,
+                                    render: function(data, type, row, meta) {
+                                        return meta.settings._iDisplayStart + meta.row + 1;
+                                    }
+                                },
+                                {
+                                    data: 'name',
+                                    render: function(data) {
+                                        return `<div class="fw-bold text-dark">${escapeHtml(data)}</div>`;
+                                    }
+                                },
+                                {
+                                    data: 'number',
+                                    render: function(data, type, row) {
+                                        return `
+                                            <div class="fw-semibold text-dark"><i class="fa fa-phone-alt text-success me-1"></i>${escapeHtml(data || '')}</div>
+                                            ${row.email ? `<div class="text-xs text-muted"><i class="fa fa-envelope text-info me-1"></i>${escapeHtml(row.email)}</div>` : ''}
+                                        `;
+                                    }
+                                },
+                                {
+                                    data: 'store',
+                                    render: function(data) {
+                                        return `<span class="badge bg-light text-dark px-2 py-1">${escapeHtml(data || 'Not Assigned')}</span>`;
+                                    }
+                                },
+                                {
+                                    data: 'approved',
+                                    render: function(data, type, row) {
+                                        const isChecked = data === 1 ? 'checked' : '';
+                                        return `
+                                            <div class="form-check form-switch d-inline-block">
+                                                <input class="form-check-input" type="checkbox" id="active${row.id}" ${isChecked} onchange="changeStaffStatus('${row.id}', ${data})">
+                                            </div>
+                                        `;
+                                    }
+                                },
+                                {
+                                    data: null,
+                                    orderable: false,
+                                    searchable: false,
+                                    className: 'text-center',
+                                    render: function(data, type, row) {
+                                        let html = '<div class="tbl-action-group justify-content-center">';
+                                        if (row.canEdit) {
+                                            html += `<a href="#" class="btn-dt-action btn-edit btn-staff-edit" id="update_staff" data-bs-toggle="modal" data-bs-target="#staff_update" 
+                                                        data-id="${row.id}" data-name="${escapeHtml(row.name)}" data-number="${escapeHtml(row.number)}" 
+                                                        data-roll_id="${row.roll_id}" data-email="${escapeHtml(row.email)}" data-username="${escapeHtml(row.username)}" 
+                                                        data-password="${escapeHtml(row.password)}" data-store-id="${row.store_ID}" data-approved="${row.approved}" 
+                                                        title="<%= language.Edit || 'Edit' %>"><i class="fas fa-pencil-alt"></i></a>`;
+                                        }
+                                        if (row.canDelete) {
+                                            html += `<a href="/tool/deletstaff/${row.id}" class="btn-dt-action btn-delete" title="<%= language.Delete || 'Delete' %>" onclick="return confirm('<%= language.Are_you_sure_delete || 'Are you sure you want to delete this staff?' %>');"><i class="fa fa-trash"></i></a>`;
+                                        }
+                                        if (row.canEdit) {
+                                            html += `<a class="btn-dt-action btn-info" data-bs-toggle="modal" data-bs-target="#roll_list_update_${row.rollType}" data-roll-id="${row.roll_id}" data-roll-type="${row.rollType}" id="rollmanege${row.rollType}" title="<%= language.Role || 'Manage Role' %>"><i class="fas fa-tasks"></i></a>`;
+                                        }
+                                        html += '</div>';
+                                        return html;
+                                    }
+                                }
+                            ],
+                            order: [[0, 'desc']],
+                            searchInput: '#dtStaffSearch',
+                            pageLengthSelect: '#dtStaffPageLength',
+                            filterElements: {
+                                status_filter: '#dtStaffStatus',
+                                store_filter: '#dtStaffStore'
+                            }
+                        });
+                    });
 
                     $(document).on('click', '#update_staff', function () {
                         const storeId = $(this).attr('data-store-id');
@@ -2153,7 +2196,6 @@
                         }
                     });
                 </script>
-
 </body>
 
 

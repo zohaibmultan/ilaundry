@@ -15,6 +15,7 @@ var {
   DataFind
 } = require("../middelwer/databaseQurey");
 var mysql = require("mysql2")
+const { paginateDataTable } = require("../middelwer/dataTableHelper");
 // <<<<<<<<<<<<<<<<<<<SERVICE LIST ALL CRUD ROUTER>>>>>>>>>>>>>>>>>>>>>>
 
 router.get("/list", auth, async (req, res) => {
@@ -35,31 +36,21 @@ router.get("/list", auth, async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
+    let storeList = [];
     if (
       rolldetail[0].rollType === "master" &&
       rolldetail[0].service.includes("read")
     ) {
       const multiy = await DataFind("SELECT type FROM tbl_master_shop");
-      if (multiy[0].type == 1) {
-        var qury =
-          "SELECT tbl_services.*,(SELECT GROUP_CONCAT(`services_type`) from `tbl_services_type` WHERE find_in_set(tbl_services_type.id,tbl_services.services_type_id)) as serviceType, tbl_store.name as store FROM tbl_services join tbl_store on tbl_services.store_ID=tbl_store.id";
-        var ismulty = true;
-      } else {
-        var storeID = await DataFind(
-          `SELECT * FROM tbl_admin WHERE  id= ${id}`
-        );
-
-        var qury =
-          "SELECT tbl_services.*,(SELECT GROUP_CONCAT(`services_type`) from `tbl_services_type` WHERE find_in_set(tbl_services_type.id,tbl_services.services_type_id)) as serviceType, tbl_store.name as store FROM tbl_services join tbl_store on tbl_services.store_ID=tbl_store.id WHERE store_ID='" +
-          storeID[0].store_ID +
-          "'";
-        var ismulty = false;
+      var ismulty = multiy[0].type == 1;
+      if (ismulty) {
+        storeList = await DataFind("SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0");
       }
 
-      const servicesdata = await DataFind(qury);
       res.render("service", {
-        servicesdata: servicesdata,
+        servicesdata: [],
         ismulty,
+        storeList,
         accessdata,
         language: req.language_data,
         language_name: req.language_name,
@@ -68,14 +59,10 @@ router.get("/list", auth, async (req, res) => {
       rolldetail[0].rollType === "store" &&
       rolldetail[0].service.includes("read")
     ) {
-      const servicesdata = await DataFind(
-        "SELECT tbl_services.*,(SELECT GROUP_CONCAT(`services_type`) from `tbl_services_type` WHERE find_in_set(tbl_services_type.id,tbl_services.services_type_id)) as serviceType FROM tbl_services WHERE store_ID=" +
-          store +
-          ""
-      );
       res.render("service", {
-        servicesdata: servicesdata,
+        servicesdata: [],
         ismulty: false,
+        storeList: [],
         accessdata,
         language: req.language_data,
         language_name: req.language_name,
@@ -86,6 +73,86 @@ router.get("/list", auth, async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
+});
+
+router.get("/list/data", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    if (loginas == 0) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    let scopeConditions = [];
+    let isMaster = false;
+    if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && rolldetail[0].service && rolldetail[0].service.includes("read")) {
+      isMaster = true;
+    } else if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "store" && rolldetail[0].service && rolldetail[0].service.includes("read")) {
+      scopeConditions.push(`tbl_services.store_ID = '${store}'`);
+    } else {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const filterConditions = [];
+    const statusParam = req.query.status_filter || req.query.status;
+    if (statusParam !== undefined && statusParam !== null && !["all", "ALL", ""].includes(String(statusParam).trim())) {
+      const cleanStatus = String(statusParam).trim() === "0" ? "0" : "1";
+      filterConditions.push(`tbl_services.status = '${cleanStatus}'`);
+    }
+
+    const storeParam = req.query.store_filter || req.query.store_id;
+    if (storeParam && isMaster && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+      const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_services.store_ID = '${cleanStore}'`);
+    }
+
+    const canEdit = Boolean(accessdata && accessdata.roll && accessdata.roll.service && accessdata.roll.service.includes("edit"));
+    const canDelete = Boolean(accessdata && accessdata.roll && accessdata.roll.service && accessdata.roll.service.includes("delete"));
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_services.*, 
+               COALESCE(tbl_store.name, '') as store, 
+               (SELECT GROUP_CONCAT(tbl_services_type.services_type) FROM tbl_services_type WHERE FIND_IN_SET(tbl_services_type.id, tbl_services.services_type_id)) as serviceType`,
+      from: `tbl_services LEFT JOIN tbl_store ON tbl_services.store_ID = tbl_store.id`,
+      searchColumns: [
+        'tbl_services.name',
+        'tbl_store.name'
+      ],
+      baseWhere: scopeConditions,
+      filterWhere: filterConditions,
+      defaultOrder: 'tbl_services.id DESC',
+      columnMap: {
+        0: 'tbl_services.id',
+        1: 'tbl_services.name',
+        2: 'tbl_store.name',
+        3: 'tbl_services.status'
+      },
+      postProcess: async (rows) => {
+        return rows.map((s) => ({
+          id: s.id,
+          name: s.name || '',
+          image: s.image || '',
+          serviceType: s.serviceType || '',
+          store: s.store || '',
+          status: parseInt(s.status) || 0,
+          canEdit,
+          canDelete
+        }));
+      }
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Services list data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
   }
 });
 
@@ -414,46 +481,20 @@ router.get("/type", auth, async (req, res) => {
       rolldetail[0].rollType === "master" &&
       rolldetail[0].service.includes("read")
     ) {
-      const multiy = await DataFind("SELECT type FROM tbl_master_shop");
-      if (multiy[0].type == 1) {
-        const servicestypedata = await DataFind(
-          "SELECT tbl_services_type.*,tbl_store.name as store FROM tbl_services_type join tbl_store on tbl_services_type.store_ID=tbl_store.id"
-        );
-        res.render("service_type", {
-          servicesTypeList: servicestypedata,
-          ismulty,
-          storeList,
-          accessdata,
-          language: req.language_data,
-          language_name: req.language_name,
-        });
-      } else {
-        var storeID = await DataFind(
-          `SELECT * FROM tbl_admin WHERE  id= ${id}`
-        );
-        const servicestypedata = await DataFind(
-          "SELECT * FROM tbl_services_type WHERE store_ID=" +
-            storeID[0].store_ID +
-            ""
-        );
-        res.render("service_type", {
-          servicesTypeList: servicestypedata,
-          ismulty: false,
-          storeList: [],
-          accessdata,
-          language: req.language_data,
-          language_name: req.language_name,
-        });
-      }
+      res.render("service_type", {
+        servicesTypeList: [],
+        ismulty,
+        storeList,
+        accessdata,
+        language: req.language_data,
+        language_name: req.language_name,
+      });
     } else if (
       rolldetail[0].rollType === "store" &&
       rolldetail[0].service.includes("read")
     ) {
-      const servicestypedata = await DataFind(
-        "SELECT * FROM tbl_services_type WHERE store_ID=" + store + ""
-      );
       res.render("service_type", {
-        servicesTypeList: servicestypedata,
+        servicesTypeList: [],
         ismulty: false,
         storeList: [],
         accessdata,
@@ -466,6 +507,84 @@ router.get("/type", auth, async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
+});
+
+router.get("/type/data", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    if (loginas == 0) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    let scopeConditions = [];
+    let isMaster = false;
+    if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && rolldetail[0].service && rolldetail[0].service.includes("read")) {
+      isMaster = true;
+    } else if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "store" && rolldetail[0].service && rolldetail[0].service.includes("read")) {
+      scopeConditions.push(`tbl_services_type.store_ID = '${store}'`);
+    } else {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const filterConditions = [];
+    const statusParam = req.query.status_filter || req.query.status;
+    if (statusParam !== undefined && statusParam !== null && !["all", "ALL", ""].includes(String(statusParam).trim())) {
+      const cleanStatus = String(statusParam).trim() === "0" ? "0" : "1";
+      filterConditions.push(`tbl_services_type.status = '${cleanStatus}'`);
+    }
+
+    const storeParam = req.query.store_filter || req.query.store_id;
+    if (storeParam && isMaster && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+      const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_services_type.store_ID = '${cleanStore}'`);
+    }
+
+    const canEdit = Boolean(accessdata && accessdata.roll && accessdata.roll.service && accessdata.roll.service.includes("edit"));
+    const canDelete = Boolean(accessdata && accessdata.roll && accessdata.roll.service && accessdata.roll.service.includes("delete"));
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_services_type.*, COALESCE(tbl_store.name, '') as store`,
+      from: `tbl_services_type LEFT JOIN tbl_store ON tbl_services_type.store_ID = tbl_store.id`,
+      searchColumns: [
+        'tbl_services_type.services_type',
+        'tbl_services_type.id',
+        'tbl_store.name'
+      ],
+      baseWhere: scopeConditions,
+      filterWhere: filterConditions,
+      defaultOrder: 'tbl_services_type.id DESC',
+      columnMap: {
+        0: 'tbl_services_type.id',
+        1: 'tbl_services_type.services_type',
+        2: 'tbl_services_type.id',
+        3: 'tbl_store.name',
+        4: 'tbl_services_type.status'
+      },
+      postProcess: async (rows) => {
+        return rows.map((st) => ({
+          id: st.id,
+          services_type: st.services_type || '',
+          store: st.store || '',
+          status: parseInt(st.status) || 0,
+          canEdit,
+          canDelete
+        }));
+      }
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Service types list data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
   }
 });
 
@@ -723,48 +842,20 @@ router.get("/addon", auth, async (req, res) => {
       rolldetail[0].rollType === "master" &&
       rolldetail[0].service.includes("read")
     ) {
-      const multiy = await DataFind("SELECT type FROM tbl_master_shop");
-      if (multiy[0].type == 1) {
-        const addondata = await DataFind(
-          "SELECT tbl_addons.*,tbl_store.name as store FROM tbl_addons join tbl_store on tbl_addons.store_ID=tbl_store.id"
-        );
-
-        res.render("addons", {
-          addonList: addondata,
-          ismulty,
-          storeList,
-          accessdata,
-          language: req.language_data,
-          language_name: req.language_name,
-        });
-      } else {
-        var storeID = await DataFind(
-          `SELECT * FROM tbl_admin WHERE  id= ${id}`
-        );
-        const addondata = await DataFind(
-          "SELECT * FROM tbl_addons WHERE store_ID='" +
-            storeID[0].store_ID +
-            "'"
-        );
-
-        res.render("addons", {
-          addonList: addondata,
-          ismulty: false,
-          storeList: [],
-          accessdata,
-          language: req.language_data,
-          language_name: req.language_name,
-        });
-      }
+      res.render("addons", {
+        addonList: [],
+        ismulty,
+        storeList,
+        accessdata,
+        language: req.language_data,
+        language_name: req.language_name,
+      });
     } else if (
       rolldetail[0].rollType === "store" &&
       rolldetail[0].service.includes("read")
     ) {
-      const addondata = await DataFind(
-        "SELECT * FROM tbl_addons WHERE store_ID=" + store + ""
-      );
       res.render("addons", {
-        addonList: addondata,
+        addonList: [],
         ismulty: false,
         storeList: [],
         accessdata,
@@ -777,6 +868,85 @@ router.get("/addon", auth, async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
+});
+
+router.get("/addon/data", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    if (loginas == 0) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    let scopeConditions = [];
+    let isMaster = false;
+    if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && rolldetail[0].service && rolldetail[0].service.includes("read")) {
+      isMaster = true;
+    } else if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "store" && rolldetail[0].service && rolldetail[0].service.includes("read")) {
+      scopeConditions.push(`tbl_addons.store_ID = '${store}'`);
+    } else {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const filterConditions = [];
+    const statusParam = req.query.status_filter || req.query.status;
+    if (statusParam !== undefined && statusParam !== null && !["all", "ALL", ""].includes(String(statusParam).trim())) {
+      const cleanStatus = String(statusParam).trim() === "0" ? "0" : "1";
+      filterConditions.push(`tbl_addons.status = '${cleanStatus}'`);
+    }
+
+    const storeParam = req.query.store_filter || req.query.store_id;
+    if (storeParam && isMaster && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+      const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_addons.store_ID = '${cleanStore}'`);
+    }
+
+    const canEdit = Boolean(accessdata && accessdata.roll && accessdata.roll.service && accessdata.roll.service.includes("edit"));
+    const canDelete = Boolean(accessdata && accessdata.roll && accessdata.roll.service && accessdata.roll.service.includes("delete"));
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_addons.*, COALESCE(tbl_store.name, '') as store`,
+      from: `tbl_addons LEFT JOIN tbl_store ON tbl_addons.store_ID = tbl_store.id`,
+      searchColumns: [
+        'tbl_addons.addon',
+        'tbl_addons.price',
+        'tbl_store.name'
+      ],
+      baseWhere: scopeConditions,
+      filterWhere: filterConditions,
+      defaultOrder: 'tbl_addons.id DESC',
+      columnMap: {
+        0: 'tbl_addons.id',
+        1: 'tbl_addons.addon',
+        2: 'tbl_addons.price',
+        3: 'tbl_store.name',
+        4: 'tbl_addons.status'
+      },
+      postProcess: async (rows) => {
+        return rows.map((a) => ({
+          id: a.id,
+          addon: a.addon || '',
+          price: parseFloat(a.price) || 0,
+          store: a.store || '',
+          status: parseInt(a.status) || 0,
+          canEdit,
+          canDelete
+        }));
+      }
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Addons list data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
   }
 });
 

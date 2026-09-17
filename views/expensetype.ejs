@@ -27,59 +27,47 @@
                                     <%= language.Add_Category_Type %>
                                 </button>
                             </div>
-                            <div class="card-body ">
+                            <div class="card-body">
+                                <!-- Server-side DataTable Toolbar -->
+                                <div class="server-dt-toolbar">
+                                    <div class="server-dt-search">
+                                        <i class="fa fa-search"></i>
+                                        <input type="search" id="dtExpTypeSearch" placeholder="<%= language.Search || 'Search category types...' %>">
+                                    </div>
+                                    <div class="server-dt-filters">
+                                        <% if (ismulty) { %>
+                                            <select class="server-dt-select" id="dtExpTypeStore">
+                                                <option value="all"><%= language.All_Store || 'All Stores' %></option>
+                                                <% (storeList || []).forEach(function(st) { %>
+                                                    <option value="<%= st.id %>"><%= st.name %></option>
+                                                <% }) %>
+                                            </select>
+                                        <% } %>
+
+                                        <select class="server-dt-select" id="dtExpTypePageLength">
+                                            <option value="10">10 <%= language.Entries || 'entries' %></option>
+                                            <option value="25">25 <%= language.Entries || 'entries' %></option>
+                                            <option value="50">50 <%= language.Entries || 'entries' %></option>
+                                            <option value="100">100 <%= language.Entries || 'entries' %></option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div class="table-responsive">
-                                    <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                    <table id="server_expensetype_table" class="table display server-side-dt" style="width: 100%;">
                                         <thead>
                                             <tr>
-                                                <th>#</th>
-                                                <th>
-                                                    <%= language.Expence_Category_Type %>
-                                                </th>
-                                                <th class="<%= ismulty ? '': 'd-none' %>">
-                                                    <%= language.Store_Name %>
-                                                </th>
-                                                <th
-                                                    class="text-center <%= accessdata.roll.expense.includes('edit') || accessdata.roll.expense.includes('delete') ?'':'d-none' %>">
+                                                <th style="width: 50px;">#</th>
+                                                <th><%= language.Expence_Category_Type %></th>
+                                                <th class="<%= ismulty ? '': 'd-none' %>"><%= language.Store_Name %></th>
+                                                <th class="text-center <%= accessdata.roll.expense.includes('edit') || accessdata.roll.expense.includes('delete') ?'':'d-none' %>" style="width: 110px;">
                                                     <%= language.Action %>
                                                 </th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            <% type.forEach(function(data, i){ %>
-                                                <tr>
-                                                    <td>
-                                                        <%= i + 1 %>
-                                                    </td>
-                                                    <td>
-                                                        <%=data.type_name %>
-                                                    </td>
-                                                    <td class="<%= ismulty ? '': 'd-none' %>">
-                                                        <%=data.store %>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div class="tbl-action-group">
-                                                            <a href="#"
-                                                                class="btn-tbl-action btn-tbl-edit <%= accessdata.roll.expense.includes('edit') ?'':'d-none' %>"
-                                                                id="action" data-bs-toggle="modal"
-                                                                data-bs-target="#editexpcattype"
-                                                                data-name="<%=data.type_name %>" data-id="<%=data.id %>"
-                                                                title="<%= language.Edit || 'Edit' %>">
-                                                                <i class="fas fa-pencil-alt"></i></a>
-
-                                                            <a href="/expense/deletcategorytype/<%= data.id%>"
-                                                                class="btn-tbl-action btn-tbl-delete <%= accessdata.roll.expense.includes('delete') ?'':'d-none' %>"
-                                                                title="<%= language.Delete || 'Delete' %>">
-                                                                <i class="fa fa-trash"></i></a>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                <% }) %>
-                                        </tbody>
+                                        <tbody></tbody>
                                     </table>
                                 </div>
-
-
                             </div>
                         </div>
                     </div>
@@ -201,13 +189,91 @@
             <%- include('templet/script')-%>
 
                 <script>
-                    $('#addexpcattype').on('shown.bs.modal', function () {
+                    function escapeHtml(str) {
+                        if (!str) return '';
+                        return String(str)
+                          .replace(/&/g, '&amp;')
+                          .replace(/</g, '&lt;')
+                          .replace(/>/g, '&gt;')
+                          .replace(/"/g, '&quot;')
+                          .replace(/'/g, '&#039;');
+                    }
 
-                        $('#coupon_storlist_update').select2({
-                            dropdownParent: $('#addexpcattype'),
-                            placeholder: 'Select Store(s)',
-                            width: '100%',
-                            allowClear: true
+                    $(document).ready(function() {
+                        const isMultistore = <%= ismulty ? 'true' : 'false' %>;
+
+                        const columns = [
+                            {
+                                data: null,
+                                orderable: false,
+                                searchable: false,
+                                render: function(data, type, row, meta) {
+                                    return meta.settings._iDisplayStart + meta.row + 1;
+                                }
+                            },
+                            {
+                                data: 'type_name',
+                                render: function(data) {
+                                    return `<span class="fw-semibold text-dark">${escapeHtml(data)}</span>`;
+                                }
+                            },
+                            {
+                                data: 'store',
+                                visible: isMultistore,
+                                render: function(data) {
+                                    return `<span class="badge light badge-light text-dark">${escapeHtml(data || 'All Stores')}</span>`;
+                                }
+                            },
+                            {
+                                data: null,
+                                orderable: false,
+                                searchable: false,
+                                className: 'text-center',
+                                render: function(data, type, row) {
+                                    const editBtn = row.canEdit ? `
+                                        <a href="#" class="btn-tbl-action btn-tbl-edit" 
+                                           id="action" data-bs-toggle="modal"
+                                           data-bs-target="#editexpcattype"
+                                           data-name="${escapeHtml(row.type_name)}" 
+                                           data-id="${row.id}"
+                                           title="<%= language.Edit || 'Edit' %>">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </a>` : '';
+
+                                    const deleteBtn = row.canDelete ? `
+                                        <a href="/expense/deletcategorytype/${row.id}" 
+                                           class="btn-tbl-action btn-tbl-delete" 
+                                           id="delete"
+                                           title="<%= language.Delete || 'Delete' %>">
+                                            <i class="fa fa-trash"></i>
+                                        </a>` : '';
+
+                                    return `<div class="tbl-action-group">${editBtn}${deleteBtn}</div>`;
+                                }
+                            }
+                        ];
+
+                        window.initServerDataTable('#server_expensetype_table', {
+                            ajaxUrl: '/expense/categorytype/data',
+                            columns: columns,
+                            searchInput: '#dtExpTypeSearch',
+                            pageLengthSelect: '#dtExpTypePageLength',
+                            filterSelectors: {
+                                store_id: '#dtExpTypeStore'
+                            },
+                            order: [[0, 'desc']],
+                            language: {
+                                emptyTable: '<%= language.No_data_available_in_table || "No category types found" %>'
+                            }
+                        });
+
+                        $('#addexpcattype').on('shown.bs.modal', function () {
+                            $('#coupon_storlist_update').select2({
+                                dropdownParent: $('#addexpcattype'),
+                                placeholder: 'Select Store(s)',
+                                width: '100%',
+                                allowClear: true
+                            });
                         });
                     });
                 </script>

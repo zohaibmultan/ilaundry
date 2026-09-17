@@ -25,67 +25,54 @@
                                <h3 class="card-title"><%= language.Customer_List %> </h3>
                                 <button class="btn btn-rounded btn-sm btn-primary <%= login == "customer" ||  !accessdata?.roll?.customers?.includes('write') ? 'd-none': '' %>" data-bs-toggle="modal" data-bs-target="#addcoustomer" ><i class="fa fa-plus color-info me-2 text-white"></i></span><%= language.Add_Customer %> </button>         
                             </div>
-                            <div class="card-body ">
+                            <div class="card-body">
+                                <!-- Server-side DataTable Toolbar -->
+                                <div class="server-dt-toolbar">
+                                    <div class="server-dt-search">
+                                        <i class="fa fa-search"></i>
+                                        <input type="search" id="dtCustomerSearch" placeholder="<%= language.Search || 'Search customers by name, phone, email, address...' %>">
+                                    </div>
+                                    <div class="server-dt-filters">
+                                        <select class="server-dt-select" id="dtCustomerStatus">
+                                            <option value="all"><%= language.All_Status || 'All Status' %></option>
+                                            <option value="1"><%= language.Approved || 'Approved' %></option>
+                                            <option value="0"><%= language.Pending || 'Pending' %></option>
+                                        </select>
+
+                                        <% if (ismulty && login === "master") { %>
+                                            <select class="server-dt-select" id="dtCustomerStore">
+                                                <option value="all"><%= language.All_Store || 'All Stores' %></option>
+                                                <% storeList.forEach(function(st) { %>
+                                                    <option value="<%= st.id %>"><%= st.name %></option>
+                                                <% }) %>
+                                            </select>
+                                        <% } %>
+
+                                        <select class="server-dt-select" id="dtCustomerPageLength">
+                                            <option value="10">10 <%= language.Entries || 'entries' %></option>
+                                            <option value="25">25 <%= language.Entries || 'entries' %></option>
+                                            <option value="50">50 <%= language.Entries || 'entries' %></option>
+                                            <option value="100">100 <%= language.Entries || 'entries' %></option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div class="table-responsive">
-                                    <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                    <table id="server_customer_table" class="table display server-side-dt" style="width: 100%;">
                                         <thead>
                                             <tr>
-                                                <th>#</th>
-                                                <th><%= language.Customer_Name %> </th>
-                                                <th><%= language.Contect %> </th>
-                                                <th><%= language.Address %>  </th>
-                                                <th class="<%= ismulty  && login == "master" ? '': 'd-none' %>"><%= language.Store_Name %>  </th>
-												<th><%= language.Status %>  </th>
-												<!-- <th>Ledger</th> -->
-                                                <th class="text-center"><%= language.Action %> </th>
+                                                <th style="width: 50px;">#</th>
+                                                <th><%= language.Customer_Name %></th>
+                                                <th><%= language.Contect %></th>
+                                                <th><%= language.Address %></th>
+                                                <th class="<%= ismulty && login == 'master' ? '' : 'd-none' %>"><%= language.Store_Name %></th>
+                                                <th style="width: 110px;"><%= language.Status %></th>
+                                                <th class="text-center" style="width: 130px;"><%= language.Action %></th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            <% coustormdata.forEach(function(data, i){ %>
-                                                <% if (data.name != "Walk in customer") { %>
-                                                    <tr>
-                                                        <td><%= i + 1 %></td>
-                                                        <td><%=data.name %></td>
-                                                        <td><p><%=data.number %></p><span><%=data.email %></span></td>
-                                                        <td><%=data.address %></td>
-                                                        <td class="<%= ismulty  && login == "master" ? '': 'd-none' %>"><%=data.store %></td>
-                                                        <td>
-                                                            <%if( data.approved === 1){ %>
-                                                                <span class="badge light badge-success">Approved</span>
-                                                            <% }else{ %>
-                                                                <span class="badge light badge-warning">pending</span>
-                                                            <% } %>
-                                                        </td> 
-                                                        <td class="text-center">
-                                                            <div class="tbl-action-group">
-                                                                <a href="#" class="btn-tbl-action btn-tbl-edit <%= (accessdata.logas ='custmor' && accessdata.roll.customer?.includes('edit') ) || accessdata.roll.customers?.includes('edit') ? '': 'd-none' %>" id="action"
-                                                                    data-bs-toggle="modal" data-bs-target="#coustomer"
-                                                                    data-name="<%=data.name %>" data-number="<%=data.number %>" data-email="<%=data.email %>" data-addresh="<%=data.address %>"
-                                                                    data-tax="<%=data.taxnumber %>" data-approved="<%=data.approved %>" data-active="<%=data.delet_flage %>" data-id="<%=data.id %>"
-                                                                    data-roll="<%=data.roll_id %>"
-                                                                    title="<%= language.Edit || 'Edit' %>">
-                                                                    <i class="fas fa-pencil-alt"></i></a>   
-                                                                <% if(data.transiction>0){%>     
-                                                                    <a href="/coustomer/ledger/<%=data.id %>" class="btn-tbl-action btn-tbl-ledger" title="<%= language.Ledger || 'Customer Ledger' %>">
-                                                                        <i class="fas fa-book-open"></i></a>
-                                                                <% } %>
-                                                                <button type="button" class="btn-tbl-action btn-tbl-delete <%= !accessdata?.roll?.customers?.includes('delete') ?'d-none':'' %>"
-                                                                    data-bs-toggle="modal" data-bs-target="#deleteCustomerModal"
-                                                                    data-id="<%= data.id %>" data-name="<%= data.name %>"
-                                                                    title="<%= language.Delete || 'Delete' %>">
-                                                                    <i class="fa fa-trash"></i>
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                <% } %>
-                                           <% }) %>
-   
-                                        </tbody>
+                                        <tbody></tbody>
                                     </table>
                                 </div>
-                            
-                            
                             </div>
                        </div>
                     </div>
@@ -276,8 +263,128 @@
         <!--********** Main wrapper end **********-->
         <%- include('templet/script')-%>
 <script>
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  $(document).ready(function() {
+    const isMasterMultistore = <%= (ismulty && login === 'master') ? 'true' : 'false' %>;
+
+    const dtColumns = [
+      {
+        data: null,
+        orderable: false,
+        searchable: false,
+        render: function(data, type, row, meta) {
+          return meta.settings._iDisplayStart + meta.row + 1;
+        }
+      },
+      {
+        data: 'name',
+        render: function(data, type, row) {
+          return `<div class="fw-bold text-dark">${escapeHtml(data)}</div>`;
+        }
+      },
+      {
+        data: 'number',
+        render: function(data, type, row) {
+          return `
+            <div class="fw-semibold text-dark"><i class="fa fa-phone-alt text-success me-1"></i>${escapeHtml(row.number || '')}</div>
+            ${row.email ? `<div class="text-xs text-muted"><i class="fa fa-envelope text-info me-1"></i>${escapeHtml(row.email)}</div>` : ''}
+          `;
+        }
+      },
+      {
+        data: 'address',
+        render: function(data) {
+          return `<span class="text-sm text-secondary">${escapeHtml(data) || '—'}</span>`;
+        }
+      }
+    ];
+
+    if (isMasterMultistore) {
+      dtColumns.push({
+        data: 'store',
+        render: function(data) {
+          return `<span class="badge bg-light text-dark px-2 py-1">${escapeHtml(data) || '—'}</span>`;
+        }
+      });
+    }
+
+    dtColumns.push({
+      data: 'approved',
+      render: function(data) {
+        if (data === 1) {
+          return '<span class="badge-status-pill badge-pill-completed"><i class="fa fa-check-circle"></i> <%= language.Approved || "Approved" %></span>';
+        }
+        return '<span class="badge-status-pill badge-pill-pending"><i class="fa fa-clock"></i> <%= language.Pending || "Pending" %></span>';
+      }
+    });
+
+    dtColumns.push({
+      data: null,
+      orderable: false,
+      searchable: false,
+      className: 'text-center',
+      render: function(data, type, row) {
+        let html = '<div class="tbl-action-group justify-content-center">';
+        if (row.canEdit) {
+          html += `
+            <a href="#" class="btn-dt-action btn-edit btn-edit-customer" 
+               data-bs-toggle="modal" data-bs-target="#coustomer"
+               data-id="${row.id}" 
+               data-name="${escapeHtml(row.name)}" 
+               data-number="${escapeHtml(row.number)}" 
+               data-email="${escapeHtml(row.email)}" 
+               data-addresh="${escapeHtml(row.address)}"
+               data-tax="${escapeHtml(row.taxnumber)}" 
+               data-approved="${row.approved}" 
+               data-active="${row.delet_flage}" 
+               data-roll="${row.roll_id}"
+               title="<%= language.Edit || 'Edit' %>">
+              <i class="fas fa-pencil-alt"></i>
+            </a>`;
+        }
+        if (row.transiction > 0) {
+          html += `
+            <a href="/coustomer/ledger/${row.id}" class="btn-dt-action btn-info" title="<%= language.Ledger || 'Customer Ledger' %>">
+              <i class="fas fa-book-open"></i>
+            </a>`;
+        }
+        if (row.canDelete) {
+          html += `
+            <button type="button" class="btn-dt-action btn-delete btn-delete-customer"
+                    data-bs-toggle="modal" data-bs-target="#deleteCustomerModal"
+                    data-id="${row.id}" data-name="${escapeHtml(row.name)}"
+                    title="<%= language.Delete || 'Delete' %>">
+              <i class="fa fa-trash"></i>
+            </button>`;
+        }
+        html += '</div>';
+        return html;
+      }
+    });
+
+    window.customerTable = window.initServerDataTable('#server_customer_table', {
+      ajaxUrl: '/coustomer/list/data',
+      columns: dtColumns,
+      order: [[0, 'desc']],
+      searchInput: '#dtCustomerSearch',
+      pageLengthSelect: '#dtCustomerPageLength',
+      filterElements: {
+        status_filter: '#dtCustomerStatus',
+        store_filter: '#dtCustomerStore'
+      }
+    });
+  });
+
   $('#addcoustomer').on('shown.bs.modal', function () {
-    
     $('#Customer_add').select2({
       dropdownParent: $('#addcoustomer'),
       placeholder: 'Select Store(s)',
@@ -286,13 +393,37 @@
     });
   });
 
-  $(document).on('click', '.btn-tbl-delete[data-bs-target="#deleteCustomerModal"]', function() {
+  $(document).on('click', '.btn-edit-customer', function() {
+    var id = $(this).attr('data-id');
+    var act = "/coustomer/update/" + id;
+    var approved = $(this).attr('data-approved');
+    var active = $(this).attr('data-active');
+    $('#name').val($(this).attr('data-name'));
+    $('#number').val($(this).attr('data-number'));
+    $('#email').val($(this).attr('data-email'));
+    $('#address').val($(this).attr('data-addresh'));
+    $('#tax').val($(this).attr('data-tax'));
+    $("#coustomer_form").attr('action', act);
+    if (approved == 1) {
+      $('#Approved').prop('checked', true);
+    } else {
+      $('#Approved').prop('checked', false);
+    }
+    if (active == 0) {
+      $('#active').prop('checked', true);
+    } else {
+      $('#active').prop('checked', false);
+    }
+    $('#customroll').val($(this).attr('data-roll'));
+  });
+
+  $(document).on('click', '.btn-delete-customer', function() {
     const custId = $(this).attr('data-id');
     const custName = $(this).attr('data-name');
     $('#deleteCustomerModalName').text(custName || '');
     $('#deleteCustomerConfirmBtn').attr('href', '/coustomer/delete/' + custId);
   });
-</script>  
+</script>
 </body>
 
 

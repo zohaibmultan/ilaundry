@@ -3,7 +3,8 @@ const router = express.Router();
 const auth = require("../middelwer/auth");
 const { upload } = require("../middelwer/multer");
 const access = require("../middelwer/access");
-var {DataDelete,DataUpdate,DataInsert,DataFind} = require("../middelwer/databaseQurey")
+var {DataDelete,DataUpdate,DataInsert,DataFind} = require("../middelwer/databaseQurey");
+const { paginateDataTable } = require("../middelwer/dataTableHelper");
 
 router.get("/list", auth, async (req, res) => {
   try {
@@ -37,15 +38,12 @@ router.get("/list", auth, async (req, res) => {
       const storeList = await DataFind(
         "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0"
       );
-      const couponList = await DataFind(
-        "SELECT tbl_coupon.*,(SELECT GROUP_CONCAT(`name`) from `tbl_store` WHERE find_in_set(tbl_store.id,tbl_coupon.store_list_id)) as storeList FROM tbl_coupon"
-      );
 
       res.render("coupon", {
         mlty,
         isadmin: true,
         storeList,
-        couponList,
+        couponList: [],
         accessdata,
         language: req.language_data,
         language_name: req.language_name,
@@ -54,21 +52,14 @@ router.get("/list", auth, async (req, res) => {
       rolldetail[0].rollType === "store" &&
       rolldetail[0].coupon.includes("read")
     ) {
-      const couponList = await DataFind(
-        "SELECT * FROM tbl_coupon WHERE find_in_set('" +
-          store +
-          "',tbl_coupon.store_list_id);"
-      );
-      console.log("store", store);
-
       const storeList = await DataFind(
-        `SELECT id,name FROM tbl_store WHERE status=1 AND  id='${store}'  AND delete_flage=0`
+        `SELECT id,name FROM tbl_store WHERE status=1 AND id='${store}' AND delete_flage=0`
       );
       res.render("coupon", {
         mlty: false,
         isadmin: false,
         storeList: storeList,
-        couponList,
+        couponList: [],
         accessdata,
         language: req.language_data,
         language_name: req.language_name,
@@ -79,6 +70,103 @@ router.get("/list", auth, async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
+});
+
+router.get("/list/data", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    if (loginas == 0) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (!rolldetail || rolldetail.length === 0 || !rolldetail[0].coupon || !rolldetail[0].coupon.includes("read")) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const isMaster = rolldetail[0].rollType === "master";
+    const canEdit = isMaster && rolldetail[0].coupon.includes("edit");
+    const canDelete = isMaster && rolldetail[0].coupon.includes("delete");
+
+    const scopeConditions = [];
+    if (!isMaster) {
+      scopeConditions.push(`FIND_IN_SET('${store}', tbl_coupon.store_list_id)`);
+    }
+
+    const filterConditions = [];
+    const statusParam = req.query.status_filter || req.query.status;
+    if (statusParam !== undefined && statusParam !== null && !["all", "ALL", ""].includes(String(statusParam).trim())) {
+      const cleanStatus = String(statusParam).trim() === "0" ? "0" : "1";
+      filterConditions.push(`tbl_coupon.status = '${cleanStatus}'`);
+    }
+
+    const storeParam = req.query.store_filter || req.query.store_id;
+    if (storeParam && isMaster && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+      const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`FIND_IN_SET('${cleanStore}', tbl_coupon.store_list_id)`);
+    }
+
+    const typeParam = req.query.type_filter || req.query.type;
+    if (typeParam && !["all", "ALL", ""].includes(String(typeParam).trim())) {
+      const cleanType = String(typeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_coupon.coupon_type = '${cleanType}'`);
+    }
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_coupon.*, (SELECT GROUP_CONCAT(name SEPARATOR ', ') FROM tbl_store WHERE FIND_IN_SET(tbl_store.id, tbl_coupon.store_list_id)) as storeList`,
+      from: `tbl_coupon`,
+      searchColumns: [
+        'tbl_coupon.titel',
+        'tbl_coupon.code',
+        'tbl_coupon.coupon_type',
+        'tbl_coupon.discount',
+        'tbl_coupon.min_purchase'
+      ],
+      baseWhere: scopeConditions,
+      filterWhere: filterConditions,
+      defaultOrder: 'tbl_coupon.id DESC',
+      columnMap: {
+        0: 'tbl_coupon.id',
+        1: 'tbl_coupon.titel',
+        2: 'tbl_coupon.code',
+        3: 'tbl_coupon.min_purchase',
+        4: 'tbl_coupon.discount',
+        5: 'tbl_coupon.start_date',
+        6: 'tbl_coupon.end_date',
+        7: 'tbl_coupon.status'
+      },
+      postProcess: async (rows) => {
+        return rows.map((c) => ({
+          id: c.id,
+          titel: c.titel || '',
+          code: c.code || '',
+          min_purchase: parseFloat(c.min_purchase) || 0,
+          discount: parseFloat(c.discount) || 0,
+          start_date: c.start_date || '',
+          end_date: c.end_date || '',
+          status: parseInt(c.status) || 0,
+          store_list_id: c.store_list_id || '',
+          storeList: c.storeList || '',
+          coupon_type: c.coupon_type || '',
+          limit_forsame_user: c.limit_forsame_user || 1,
+          isadmin: isMaster,
+          canEdit,
+          canDelete
+        }));
+      }
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Coupon list data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
   }
 });
 

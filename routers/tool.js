@@ -13,6 +13,8 @@ var {
   DataFind,
 } = require("../middelwer/databaseQurey");
 
+const { paginateDataTable } = require("../middelwer/dataTableHelper");
+
 // <<<<<<<<<<roll >>>>>>>>>>>>>>>>>
 
 router.get("/roll", auth, async (req, res) => {
@@ -46,23 +48,8 @@ router.get("/roll", auth, async (req, res) => {
           "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0"
         );
 
-        // const data = await DataFind(
-        //   "SELECT tbl_roll.id, tbl_roll.roll, tbl_roll.delet_flage,tbl_roll.roll_status,tbl_store.name as store FROM tbl_roll join tbl_store on tbl_roll.store_ID=tbl_store.id WHERE tbl_roll.delet_flage=0"
-        // );
-
-        const data = await DataFind(`SELECT 
-                                      tbl_roll.id, 
-                                      tbl_roll.roll, 
-                                      tbl_roll.delet_flage,
-                                      tbl_roll.rollType,
-                                      tbl_roll.roll_status
-                                      FROM tbl_roll 
-                                      WHERE tbl_roll.delet_flage = 0`);
-
-        console.log("data", data);
-
         res.render("roll", {
-          rollList: data,
+          rollList: [],
           ismulty,
           storeList,
           accessdata,
@@ -70,17 +57,8 @@ router.get("/roll", auth, async (req, res) => {
           language_name: req.language_name,
         });
       } else {
-        var ismulty = false;
-        var storeID = await DataFind(
-          `SELECT * FROM tbl_admin WHERE  id= ${id}`
-        );
-
-        const data = await DataFind(
-          `SELECT tbl_roll.id, tbl_roll.roll, tbl_roll.roll_status, tbl_roll.delet_flage FROM tbl_roll  WHERE tbl_roll.delet_flage=0`
-        );
-
         res.render("roll", {
-          rollList: data,
+          rollList: [],
           ismulty: false,
           storeList: [],
           accessdata,
@@ -92,13 +70,9 @@ router.get("/roll", auth, async (req, res) => {
       rolldetail[0].rollType === "store" &&
       rolldetail[0].rollaccess.includes("read")
     ) {
-      var ismulty = false;
-      var qury =
-        "SELECT id, roll,rollType, delet_flage,roll_status FROM tbl_roll";
-      const rollList = await DataFind(qury);
       res.render("roll", {
-        rollList: rollList,
-        ismulty,
+        rollList: [],
+        ismulty: false,
         storeList: [],
         accessdata,
         language: req.language_data,
@@ -110,6 +84,59 @@ router.get("/roll", auth, async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
+});
+
+router.get("/roll/data", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    if (loginas == 0) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const filterConditions = [];
+    const statusParam = req.query.status_filter || req.query.roll_status;
+    if (statusParam && !["all", "ALL", ""].includes(String(statusParam).trim())) {
+      const cleanStatus = String(statusParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_roll.roll_status = '${cleanStatus}'`);
+    }
+
+    const canEdit = Boolean(
+      accessdata && (accessdata.logas === 'master' || (accessdata.roll && accessdata.roll.rollaccess && accessdata.roll.rollaccess.includes('edit')))
+    );
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_roll.id, tbl_roll.roll, tbl_roll.rollType, tbl_roll.roll_status, tbl_roll.delet_flage`,
+      from: `tbl_roll`,
+      searchColumns: [
+        'tbl_roll.roll',
+        'tbl_roll.rollType',
+        'tbl_roll.roll_status'
+      ],
+      baseWhere: ['tbl_roll.delet_flage = 0'],
+      filterWhere: filterConditions,
+      defaultOrder: 'tbl_roll.id ASC',
+      columnMap: {
+        0: 'tbl_roll.id',
+        1: 'tbl_roll.roll',
+        2: 'tbl_roll.roll_status'
+      },
+      postProcess: async (rows) => {
+        return rows.map((r) => ({
+          id: r.id,
+          roll: r.roll,
+          rollType: r.rollType,
+          roll_status: r.roll_status,
+          canEdit
+        }));
+      }
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Roll data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
   }
 });
 
@@ -786,9 +813,8 @@ router.get("/storelist", auth, async (req, res) => {
     if (rolldetail[0].rollType === "master") {
       const multiy = await DataFind("SELECT type FROM tbl_master_shop");
       if (multiy[0].type == 1) {
-        var storeList = await DataFind("SELECT * FROM tbl_store");
         res.render("storelist", {
-          storeList,
+          storeList: [],
           accessdata,
           language: req.language_data,
           language_name: req.language_name,
@@ -802,6 +828,56 @@ router.get("/storelist", auth, async (req, res) => {
       return res.redirect(req.get("Referrer") || "/");
     }
   } catch (error) { }
+});
+
+router.get("/storelist/data", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    if (loginas == 0) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const filterConditions = [];
+    const statusParam = req.query.status_filter || req.query.status;
+    if (statusParam !== undefined && statusParam !== null && !["all", "ALL", ""].includes(String(statusParam).trim())) {
+      const cleanStatus = String(statusParam).trim() === "1" ? "1" : "0";
+      filterConditions.push(`tbl_store.status = '${cleanStatus}'`);
+    }
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_store.*`,
+      from: `tbl_store`,
+      searchColumns: [
+        'tbl_store.name',
+        'tbl_store.id',
+        'tbl_store.number',
+        'tbl_store.email',
+        'tbl_store.address'
+      ],
+      baseWhere: ['tbl_store.delete_flage = 0'],
+      filterWhere: filterConditions,
+      defaultOrder: 'tbl_store.id DESC',
+      columnMap: {
+        0: 'tbl_store.id',
+        1: 'tbl_store.name',
+        2: 'tbl_store.id',
+        3: 'tbl_store.status'
+      },
+      postProcess: async (rows) => {
+        return rows.map((s) => ({
+          id: s.id,
+          name: s.name || '',
+          status: parseInt(s.status) || 0
+        }));
+      }
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Storelist data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
+  }
 });
 
 //  branch store data render page master only
@@ -1339,15 +1415,6 @@ router.get("/staff", auth, async (req, res) => {
       storeList = await DataFind(
         `SELECT id, name FROM tbl_store WHERE id = '${store}' AND status = 1 AND delete_flage = 0`
       );
-      var staffdata = await DataFind(`
-        SELECT tbl_admin.*, tbl_store.name as store, r.roll, r.rollType, sr.main_roll_id
-        FROM tbl_admin
-        LEFT JOIN tbl_store ON tbl_admin.store_ID = tbl_store.id
-        LEFT JOIN tbl_staff_roll AS sr ON tbl_admin.roll_id = sr.id
-        LEFT JOIN tbl_roll AS r ON sr.main_roll_id = r.id
-        WHERE tbl_admin.store_ID = '${store}' AND tbl_admin.is_staff != '0' AND tbl_admin.delet_flage = 0
-        ORDER BY tbl_admin.id DESC
-      `);
 
       var rolldata = await DataFind(
         "SELECT * FROM tbl_roll WHERE delet_flage=0 AND roll_status ='active' AND rollType ='store'"
@@ -1359,7 +1426,7 @@ router.get("/staff", auth, async (req, res) => {
 
     res.render("staff", {
       rolldata,
-      staffdata,
+      staffdata: [],
       storeList,
       ismulty,
       accessdata,
@@ -1368,6 +1435,107 @@ router.get("/staff", auth, async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+  }
+});
+
+router.get("/staff/data", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    if (loginas == 0) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    let scopeConditions = [
+      "tbl_admin.is_staff != '0'",
+      "tbl_admin.delet_flage = 0"
+    ];
+
+    let isMaster = false;
+    if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && rolldetail[0].staff && rolldetail[0].staff.includes("read")) {
+      isMaster = true;
+    } else if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "store" && rolldetail[0].staff && rolldetail[0].staff.includes("read")) {
+      scopeConditions.push(`tbl_admin.store_ID = '${store}'`);
+    } else {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const filterConditions = [];
+    const statusParam = req.query.status_filter || req.query.approved;
+    if (statusParam !== undefined && statusParam !== null && !["all", "ALL", ""].includes(String(statusParam).trim())) {
+      const cleanApproved = String(statusParam).trim() === "1" ? "1" : "0";
+      filterConditions.push(`tbl_admin.approved = ${cleanApproved}`);
+    }
+
+    const storeParam = req.query.store_filter || req.query.store_id;
+    if (storeParam && isMaster && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+      const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_admin.store_ID = '${cleanStore}'`);
+    }
+
+    const canEdit = Boolean(accessdata && accessdata.roll && accessdata.roll.staff && accessdata.roll.staff.includes("edit"));
+    const canDelete = Boolean(accessdata && accessdata.roll && accessdata.roll.staff && accessdata.roll.staff.includes("delete"));
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_admin.*, 
+               COALESCE(tbl_store.name, 'Not Assigned') as store, 
+               COALESCE(tbl_roll.roll, '') as roll, 
+               COALESCE(tbl_roll.rollType, 'store') as rollType, 
+               tbl_staff_roll.main_roll_id`,
+      from: `tbl_admin
+             LEFT JOIN tbl_store ON tbl_admin.store_ID = tbl_store.id
+             LEFT JOIN tbl_staff_roll ON tbl_admin.roll_id = tbl_staff_roll.id
+             LEFT JOIN tbl_roll ON tbl_staff_roll.main_roll_id = tbl_roll.id`,
+      searchColumns: [
+        'tbl_admin.name',
+        'tbl_admin.number',
+        'tbl_admin.email',
+        'tbl_admin.username',
+        'tbl_store.name',
+        'tbl_roll.roll'
+      ],
+      baseWhere: scopeConditions,
+      filterWhere: filterConditions,
+      defaultOrder: 'tbl_admin.id DESC',
+      columnMap: {
+        0: 'tbl_admin.id',
+        1: 'tbl_admin.name',
+        2: 'tbl_admin.number',
+        3: 'tbl_store.name',
+        4: 'tbl_admin.approved'
+      },
+      postProcess: async (rows) => {
+        return rows.map((s) => ({
+          id: s.id,
+          name: s.name || '',
+          number: s.number || '',
+          email: s.email || '',
+          username: s.username || '',
+          password: s.password || '',
+          store_ID: s.store_ID || '',
+          store: s.store || 'Not Assigned',
+          roll: s.roll || '',
+          rollType: s.rollType || 'store',
+          roll_id: s.roll_id || '',
+          main_roll_id: s.main_roll_id || '',
+          approved: s.approved === 1 ? 1 : 0,
+          canEdit,
+          canDelete
+        }));
+      }
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Staff list data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
   }
 });
 

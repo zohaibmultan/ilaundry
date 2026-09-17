@@ -31,126 +31,155 @@
                             </div>
 
                             <div class="card-body">
+                                <!-- Server-side DataTable Toolbar -->
+                                <div class="server-dt-toolbar">
+                                    <div class="server-dt-search">
+                                        <i class="fa fa-search"></i>
+                                        <input type="search" id="dtStoreSearch" placeholder="<%= language.Search || 'Search stores by name, ID, phone...' %>">
+                                    </div>
+                                    <div class="server-dt-filters">
+                                        <select class="server-dt-select" id="dtStoreStatus">
+                                            <option value="all"><%= language.All_Status || 'All Status' %></option>
+                                            <option value="1"><%= language.Active || 'Active' %></option>
+                                            <option value="0"><%= language.Deactive || 'Deactive' %></option>
+                                        </select>
 
-                                <!----- shop table ----->
-
-                                <div class="shop_table">
-
-                                    <div class="table-responsive">
-                                        <table id="example2" class="table display table-responsive-md" style="width: 100%;">
-                                            <thead>
-                                                <tr>
-                                                    <th>#</th>
-                                                    <th>
-                                                        <%= language.Shop_Name %>
-                                                    </th>
-                                                    <th>
-                                                        <%= language.Store_ID %>
-                                                    </th>
-                                                    <th>
-                                                        <%= language.Status %>
-                                                    </th>
-                                                    <th class="text-center">
-                                                        <%= language.Action %>
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="tb_row">
-                                                <% storeList.forEach(function(data, i){ %>
-                                                    <tr>
-                                                        <td>
-                                                            <%= i + 1 %>
-                                                        </td>
-                                                        <td>
-                                                            <%= data.name%>
-                                                        </td>
-                                                        <td>
-                                                            <%= data.id%>
-                                                        </td>
-                                                        <td>
-                                                            <% if(data.status==1){ %>
-                                                                <div class="form-group">
-                                                                    <div class="form-check form-switch">
-                                                                        <input class="form-check-input" type="checkbox"
-                                                                            id="active" name="active" checked
-                                                                            onclick="changeStatus('active','<%= data.id %>')">
-                                                                    </div>
-                                                                </div>
-                                                                <% }else if(data.status==0){ %>
-                                                                    <div class="form-group">
-                                                                        <div class="form-check form-switch">
-                                                                            <input class="form-check-input"
-                                                                                type="checkbox" id="active"
-                                                                                name="active"
-                                                                                onclick="changeStatus('deactive','<%= data.id %>')">
-                                                                        </div>
-                                                                    </div>
-                                                                    <% } %>
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <div class="tbl-action-group">
-                                                                <a href="/tool/approvedshop/<%= data.id %>"
-                                                                    class="btn-tbl-action btn-tbl-edit"
-                                                                    id="action"
-                                                                    title="<%= language.Edit || 'Edit' %>">
-                                                                    <i class="fas fa-pencil-alt"></i></a>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                    <% }) %>
-                                            </tbody>
-                                        </table>
-
+                                        <select class="server-dt-select" id="dtStorePageLength">
+                                            <option value="10">10 <%= language.Entries || 'entries' %></option>
+                                            <option value="25">25 <%= language.Entries || 'entries' %></option>
+                                            <option value="50">50 <%= language.Entries || 'entries' %></option>
+                                            <option value="100">100 <%= language.Entries || 'entries' %></option>
+                                        </select>
                                     </div>
                                 </div>
 
-                                <!----- end shop table ----->
+                                <div class="table-responsive">
+                                    <table id="server_store_table" class="table display server-side-dt" style="width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 50px;">#</th>
+                                                <th><%= language.Shop_Name %></th>
+                                                <th style="width: 130px;"><%= language.Store_ID %></th>
+                                                <th style="width: 120px;"><%= language.Status %></th>
+                                                <th class="text-center" style="width: 100px;"><%= language.Action %></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-
         </div>
 
         <!--********** Content body end **********-->
 
-        </div>
         <!--**********************************
             Footer start
         ***********************************-->
         <%- include('templet/footer')-%>
 
-            <!--**********************************
+        <!--**********************************
             Footer end
         ***********************************-->
 
-            </div>
+        </div>
 
-            <!--********** Main wrapper end **********-->
-            <%- include('templet/script')-%>
+        <!--********** Main wrapper end **********-->
+        <%- include('templet/script')-%>
 
+        <script>
+            function escapeHtml(str) {
+                if (!str) return '';
+                return String(str)
+                  .replace(/&/g, '&amp;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;')
+                  .replace(/"/g, '&quot;')
+                  .replace(/'/g, '&#039;');
+            }
 
-
-                <script>
-                    function changeStatus(n, id) {
-                        let status = n === 'active' ? 'deactive' : 'active'
-                        console.log(id);
-
-                        $.ajax({
-                            type: 'post',
-                            url: `/tool/storestatus/${id}`,
-                            data: { status: status },
-                            success: function (res) {
-                                console.log(res);
-
-                            }
-
-                        })
+            function changeStatus(currentStatus, id) {
+                const newStatus = currentStatus === 'active' ? 'deactive' : 'active';
+                $.ajax({
+                    type: 'post',
+                    url: `/tool/storestatus/${id}`,
+                    data: { status: newStatus },
+                    success: function (res) {
+                        if (window.storeTable) {
+                            window.storeTable.ajax.reload(null, false);
+                        }
+                    },
+                    error: function(err) {
+                        console.error("Failed to update store status", err);
                     }
-                </script>
+                });
+            }
 
+            $(document).ready(function() {
+                window.storeTable = window.initServerDataTable('#server_store_table', {
+                    ajaxUrl: '/tool/storelist/data',
+                    columns: [
+                        {
+                            data: null,
+                            orderable: false,
+                            searchable: false,
+                            render: function(data, type, row, meta) {
+                                return meta.settings._iDisplayStart + meta.row + 1;
+                            }
+                        },
+                        {
+                            data: 'name',
+                            render: function(data) {
+                                return `<div class="fw-bold text-dark">${escapeHtml(data)}</div>`;
+                            }
+                        },
+                        {
+                            data: 'id',
+                            render: function(data) {
+                                return `<span class="badge bg-light text-dark px-2 py-1 fw-semibold">#${escapeHtml(data)}</span>`;
+                            }
+                        },
+                        {
+                            data: 'status',
+                            render: function(data, type, row) {
+                                const isChecked = data === 1 ? 'checked' : '';
+                                const curStatus = data === 1 ? 'active' : 'deactive';
+                                return `
+                                    <div class="form-check form-switch d-inline-block">
+                                        <input class="form-check-input" type="checkbox" id="active_${row.id}" ${isChecked} onchange="changeStatus('${curStatus}', '${row.id}')">
+                                    </div>
+                                `;
+                            }
+                        },
+                        {
+                            data: null,
+                            orderable: false,
+                            searchable: false,
+                            className: 'text-center',
+                            render: function(data, type, row) {
+                                return `
+                                    <div class="tbl-action-group justify-content-center">
+                                        <a href="/tool/approvedshop/${row.id}" class="btn-dt-action btn-edit" title="<%= language.Edit || 'Edit' %>">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </a>
+                                    </div>
+                                `;
+                            }
+                        }
+                    ],
+                    order: [[0, 'desc']],
+                    searchInput: '#dtStoreSearch',
+                    pageLengthSelect: '#dtStorePageLength',
+                    filterElements: {
+                        status_filter: '#dtStoreStatus'
+                    }
+                });
+            });
+        </script>
 </body>
 
 

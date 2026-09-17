@@ -11,6 +11,7 @@ var {
   DataInsert,
   DataFind
 } = require("../middelwer/databaseQurey");
+const { paginateDataTable } = require("../middelwer/dataTableHelper");
 
 async function idfororder() {
   const orderiddata = await DataFind(
@@ -3698,39 +3699,78 @@ router.get("/notification", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
-    console.log("accessdata", accessdata);
-
-    // const notification_data = await DataFind(
-    //   `SELECT * FROM tbl_notification WHERE received = '${accessdata.topbardata.id}'`
-    // );
-
-    let notification_data = [];
-    if (accessdata.mutibranch === true && accessdata.logas == "master") {
-      notification_data = await DataFind(`SELECT * FROM tbl_notification`);
-    } else if (
-      (accessdata.mutibranch === false && accessdata.logas == "master") ||
-      accessdata.logas == "store"
-    ) {
-      notification_data = await DataFind(
-        `SELECT * FROM tbl_notification WHERE received = '${accessdata.topbardata.store_ID}'`
-      );
-    } else {
-      notification_data = await DataFind(
-        `SELECT * FROM tbl_notification WHERE received = '${accessdata.topbardata.id}'`
-      );
-    }
-
-    const order_date = await DataFind(`SELECT * FROM tbl_order`);
 
     res.render("notification", {
       accessdata,
-      notification_data,
-      order_date,
+      notification_data: [],
+      order_date: [],
       language: req.language_data,
       language_name: req.language_name,
     });
   } catch (error) {
     console.log(error);
+  }
+});
+
+router.get("/notification/data", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    if (loginas == 0) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const accessdata = await access(req.user);
+
+    let scopeConditions = [];
+    if (accessdata.mutibranch === true && accessdata.logas == "master") {
+      // master multi-branch sees all
+    } else if (
+      (accessdata.mutibranch === false && accessdata.logas == "master") ||
+      accessdata.logas == "store"
+    ) {
+      scopeConditions.push(`tbl_notification.received = '${accessdata.topbardata.store_ID}'`);
+    } else {
+      scopeConditions.push(`tbl_notification.received = '${accessdata.topbardata.id}'`);
+    }
+
+    const filterConditions = [];
+    const dateParam = req.query.date_filter;
+    if (dateParam && dateParam.trim() !== '') {
+      const cleanDate = String(dateParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`DATE(tbl_notification.date) = '${cleanDate}'`);
+    }
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_notification.id, tbl_notification.invoice, tbl_notification.date, tbl_notification.sender, tbl_notification.received, tbl_notification.notification, tbl_order.id as order_primary_id`,
+      from: `tbl_notification LEFT JOIN tbl_order ON tbl_notification.invoice = tbl_order.order_id`,
+      searchColumns: [
+        'tbl_notification.invoice',
+        'tbl_notification.notification',
+        'tbl_notification.date'
+      ],
+      baseWhere: scopeConditions,
+      filterWhere: filterConditions,
+      defaultOrder: 'tbl_notification.id DESC',
+      columnMap: {
+        0: 'tbl_notification.invoice',
+        1: 'tbl_notification.date',
+        2: 'tbl_notification.notification'
+      },
+      postProcess: async (rows) => {
+        return rows.map((n) => ({
+          id: n.id,
+          invoice: n.invoice || '',
+          date: n.date || '',
+          notification: n.notification || '',
+          order_id: n.order_primary_id || null
+        }));
+      }
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Notification list data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
   }
 });
 

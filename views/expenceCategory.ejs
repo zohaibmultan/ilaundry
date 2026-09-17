@@ -27,78 +27,56 @@
                                     <%= language.Add_Category %>
                                 </button>
                             </div>
-                            <div class="card-body ">
+                            <div class="card-body">
+                                <!-- Server-side DataTable Toolbar -->
+                                <div class="server-dt-toolbar">
+                                    <div class="server-dt-search">
+                                        <i class="fa fa-search"></i>
+                                        <input type="search" id="dtExpCatSearch" placeholder="<%= language.Search || 'Search expense categories...' %>">
+                                    </div>
+                                    <div class="server-dt-filters">
+                                        <select class="server-dt-select" id="dtExpCatType">
+                                            <option value="all"><%= language.All_Type || 'All Types' %></option>
+                                            <% (type || []).forEach(function(t) { %>
+                                                <option value="<%= t.id %>"><%= t.type_name %></option>
+                                            <% }) %>
+                                        </select>
+
+                                        <% if (ismulty) { %>
+                                            <select class="server-dt-select" id="dtExpCatStore">
+                                                <option value="all"><%= language.All_Store || 'All Stores' %></option>
+                                                <% (storeList || []).forEach(function(st) { %>
+                                                    <option value="<%= st.id %>"><%= st.name %></option>
+                                                <% }) %>
+                                            </select>
+                                        <% } %>
+
+                                        <select class="server-dt-select" id="dtExpCatPageLength">
+                                            <option value="10">10 <%= language.Entries || 'entries' %></option>
+                                            <option value="25">25 <%= language.Entries || 'entries' %></option>
+                                            <option value="50">50 <%= language.Entries || 'entries' %></option>
+                                            <option value="100">100 <%= language.Entries || 'entries' %></option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div class="table-responsive">
-                                    <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                    <table id="server_expcat_table" class="table display server-side-dt" style="width: 100%;">
                                         <thead>
                                             <tr>
-                                                <th>#</th>
-                                                <th>
-                                                    <%= language.Category_Name %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Category_Type %>
-                                                </th>
-                                                <th class="<%= ismulty ? '': 'd-none' %>">
-                                                    <%= language.Store_Name %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Status %>
-                                                </th>
-                                                <th
-                                                    class="text-center <%= accessdata.roll.expense.includes('edit') || accessdata.roll.expense.includes('delete') ?'':'d-none' %>">
+                                                <th style="width: 50px;">#</th>
+                                                <th><%= language.Category_Name %></th>
+                                                <th><%= language.Category_Type %></th>
+                                                <th class="<%= ismulty ? '': 'd-none' %>"><%= language.Store_Name %></th>
+                                                <th style="width: 110px;"><%= language.Status %></th>
+                                                <th class="text-center <%= accessdata.roll.expense.includes('edit') || accessdata.roll.expense.includes('delete') ?'':'d-none' %>" style="width: 110px;">
                                                     <%= language.Action %>
                                                 </th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            <% list.forEach(function(data, i){ %>
-                                                <tr>
-                                                    <td>
-                                                        <%= i + 1 %>
-                                                    </td>
-                                                    <td>
-                                                        <%=data.cat_name %>
-                                                    </td>
-                                                    <td>
-                                                        <%=data.type_name %>
-                                                    </td>
-                                                    <td class="<%= ismulty ? '': 'd-none' %>">
-                                                        <%=data.store %>
-                                                    </td>
-                                                    <td>
-                                                        <%if( data.delet_flage==0){ %>
-                                                            <span class="badge light badge-success">Active</span>
-                                                            <% }else{ %>
-                                                                <span class="badge light badge-warning">Deactive</span>
-                                                                <% } %>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div class="tbl-action-group">
-                                                            <a href="#"
-                                                                class="btn-tbl-action btn-tbl-edit <%= accessdata.roll.expense.includes('edit') ?'':'d-none' %>"
-                                                                id="expcataction" data-bs-toggle="modal"
-                                                                data-bs-target="#updateexpcat"
-                                                                data-catname="<%=data.cat_name %>"
-                                                                data-exp_cat_type_id="<%=data.exp_cat_type_id %>"
-                                                                data-id="<%=data.id %>" data-storeid="<%=data.store_ID %>"
-                                                                title="<%= language.Edit || 'Edit' %>">
-                                                                <i class="fas fa-pencil-alt"></i></a>
-
-                                                            <a href="/expense/deletexpcat/<%= data.id%>"
-                                                                class="btn-tbl-action btn-tbl-delete <%= accessdata.roll.expense.includes('delete') ?'':'d-none' %>"
-                                                                title="<%= language.Delete || 'Delete' %>">
-                                                                <i class="fa fa-trash"></i></a>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                <% }) %>
-
-                                        </tbody>
+                                        <tbody></tbody>
                                     </table>
                                 </div>
-
-
                             </div>
                         </div>
                     </div>
@@ -282,9 +260,106 @@
                             allowClear: true
                         });
                     });
-
                 </script>
 
+                <script>
+                    function escapeHtml(str) {
+                        if (!str) return '';
+                        return String(str)
+                          .replace(/&/g, '&amp;')
+                          .replace(/</g, '&lt;')
+                          .replace(/>/g, '&gt;')
+                          .replace(/"/g, '&quot;')
+                          .replace(/'/g, '&#039;');
+                    }
+
+                    $(document).ready(function() {
+                        const isMultistore = <%= ismulty ? 'true' : 'false' %>;
+
+                        const columns = [
+                            {
+                                data: null,
+                                orderable: false,
+                                searchable: false,
+                                render: function(data, type, row, meta) {
+                                    return meta.settings._iDisplayStart + meta.row + 1;
+                                }
+                            },
+                            {
+                                data: 'cat_name',
+                                render: function(data) {
+                                    return `<span class="fw-semibold text-dark">${escapeHtml(data)}</span>`;
+                                }
+                            },
+                            {
+                                data: 'type_name',
+                                render: function(data) {
+                                    return `<span class="badge light badge-primary">${escapeHtml(data || '-')}</span>`;
+                                }
+                            },
+                            {
+                                data: 'store',
+                                visible: isMultistore,
+                                render: function(data) {
+                                    return `<span class="badge light badge-light text-dark">${escapeHtml(data || 'All Stores')}</span>`;
+                                }
+                            },
+                            {
+                                data: 'delet_flage',
+                                render: function(data) {
+                                    if (parseInt(data) === 0) {
+                                        return '<span class="badge-status-pill badge-status-active">Active</span>';
+                                    } else {
+                                        return '<span class="badge-status-pill badge-status-inactive">Deactive</span>';
+                                    }
+                                }
+                            },
+                            {
+                                data: null,
+                                orderable: false,
+                                searchable: false,
+                                className: 'text-center',
+                                render: function(data, type, row) {
+                                    const editBtn = row.canEdit ? `
+                                        <a href="#" class="btn-tbl-action btn-tbl-edit" 
+                                           id="expcataction" data-bs-toggle="modal"
+                                           data-bs-target="#updateexpcat"
+                                           data-catname="${escapeHtml(row.cat_name)}"
+                                           data-exp_cat_type_id="${row.exp_cat_type_id}"
+                                           data-id="${row.id}" 
+                                           data-storeid="${row.store_ID}"
+                                           title="<%= language.Edit || 'Edit' %>">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </a>` : '';
+
+                                    const deleteBtn = row.canDelete ? `
+                                        <a href="/expense/deletexpcat/${row.id}" 
+                                           class="btn-tbl-action btn-tbl-delete" 
+                                           title="<%= language.Delete || 'Delete' %>">
+                                            <i class="fa fa-trash"></i>
+                                        </a>` : '';
+
+                                    return `<div class="tbl-action-group">${editBtn}${deleteBtn}</div>`;
+                                }
+                            }
+                        ];
+
+                        window.initServerDataTable('#server_expcat_table', {
+                            ajaxUrl: '/expense/categorylist/data',
+                            columns: columns,
+                            searchInput: '#dtExpCatSearch',
+                            pageLengthSelect: '#dtExpCatPageLength',
+                            filterSelectors: {
+                                category_type_id: '#dtExpCatType',
+                                store_id: '#dtExpCatStore'
+                            },
+                            order: [[0, 'desc']],
+                            language: {
+                                emptyTable: '<%= language.No_data_available_in_table || "No categories found" %>'
+                            }
+                        });
+                    });
+                </script>
 </body>
 
 

@@ -1,0 +1,422 @@
+/* ==========================================================================
+   UNIFIED SERVER-SIDE DATATABLES DESIGN SYSTEM
+   Standardized styling across all primary operational tables in iLaundry
+   ========================================================================== */
+
+/* Container & Filter Toolbar */
+.server-dt-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba(248, 250, 252, 0.75);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+}
+
+[data-theme-version="dark"] .server-dt-toolbar {
+    background: rgba(15, 23, 42, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.server-dt-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.server-dt-filter-item {
+    min-width: 150px;
+}
+
+.server-dt-search {
+    position: relative;
+    min-width: 240px;
+}
+
+.server-dt-search i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 13px;
+    pointer-events: none;
+}
+
+.server-dt-search input {
+    padding-left: 36px !important;
+    height: 38px;
+    font-size: 13px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background-color: #ffffff;
+    transition: all 0.2s ease;
+}
+
+[data-theme-version="dark"] .server-dt-search input {
+    background-color: #1e293b;
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #f8fafc;
+}
+
+.server-dt-search input:focus {
+    border-color: #0081ee;
+    box-shadow: 0 0 0 3px rgba(0, 129, 238, 0.15);
+}
+
+/* Base Table Styling */
+.server-datatable-wrapper {
+    position: relative;
+}
+
+.server-datatable-wrapper table.dataTable {
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 0.5rem !important;
+    border: none !important;
+    margin: 0 !important;
+}
+
+/* Headers: Bold, Crisp, High Contrast */
+.server-datatable-wrapper table.dataTable thead th {
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    color: #475569 !important;
+    padding: 0.75rem 1rem !important;
+    border: none !important;
+    border-bottom: 2px solid rgba(226, 232, 240, 0.8) !important;
+    background: transparent !important;
+    white-space: nowrap;
+}
+
+[data-theme-version="dark"] .server-datatable-wrapper table.dataTable thead th {
+    color: #94a3b8 !important;
+    border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Rows & Cells: Elevated Card Row Aesthetic */
+.server-datatable-wrapper table.dataTable tbody tr {
+    background: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03) !important;
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+[data-theme-version="dark"] .server-datatable-wrapper table.dataTable tbody tr {
+    background: #1e293b !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.server-datatable-wrapper table.dataTable tbody tr:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07) !important;
+}
+
+[data-theme-version="dark"] .server-datatable-wrapper table.dataTable tbody tr:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+.server-datatable-wrapper table.dataTable tbody td {
+    font-size: 0.85rem !important;
+    color: #1e293b !important;
+    padding: 0.85rem 1rem !important;
+    vertical-align: middle !important;
+    border-top: 1px solid rgba(226, 232, 240, 0.6) !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.6) !important;
+    border-left: none !important;
+    border-right: none !important;
+}
+
+[data-theme-version="dark"] .server-datatable-wrapper table.dataTable tbody td {
+    color: #f1f5f9 !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.server-datatable-wrapper table.dataTable tbody td:first-child {
+    border-left: 1px solid rgba(226, 232, 240, 0.6) !important;
+    border-top-left-radius: 10px !important;
+    border-bottom-left-radius: 10px !important;
+}
+
+.server-datatable-wrapper table.dataTable tbody td:last-child {
+    border-right: 1px solid rgba(226, 232, 240, 0.6) !important;
+    border-top-right-radius: 10px !important;
+    border-bottom-right-radius: 10px !important;
+}
+
+[data-theme-version="dark"] .server-datatable-wrapper table.dataTable tbody td:first-child,
+[data-theme-version="dark"] .server-datatable-wrapper table.dataTable tbody td:last-child {
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Secondary & Metadata Text */
+.server-dt-primary-text {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+[data-theme-version="dark"] .server-dt-primary-text {
+    color: #f8fafc;
+}
+
+.server-dt-secondary-text {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+[data-theme-version="dark"] .server-dt-secondary-text {
+    color: #94a3b8;
+}
+
+/* Badges: Clean Pill Style */
+.badge-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    text-transform: capitalize;
+    letter-spacing: 0.3px;
+}
+
+.badge-status-pill.status-pending {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.badge-status-pill.status-processing {
+    background: rgba(59, 130, 246, 0.12);
+    color: #2563eb;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.badge-status-pill.status-ready {
+    background: rgba(139, 92, 246, 0.12);
+    color: #7c3aed;
+    border: 1px solid rgba(139, 92, 246, 0.25);
+}
+
+.badge-status-pill.status-delivered {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.badge-status-pill.status-returned {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.badge-status-pill.status-cancelled {
+    background: rgba(100, 116, 139, 0.12);
+    color: #475569;
+    border: 1px solid rgba(100, 116, 139, 0.25);
+}
+
+.badge-status-pill.status-active {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.badge-status-pill.status-inactive {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* Action Icon Buttons */
+.server-dt-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-dt-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(203, 213, 225, 0.8);
+    background: #ffffff;
+    color: #475569;
+    font-size: 13px;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+[data-theme-version="dark"] .btn-dt-action {
+    background: #1e293b;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+}
+
+.btn-dt-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.btn-dt-action.btn-view:hover {
+    color: #0081ee;
+    border-color: #0081ee;
+    background: rgba(0, 129, 238, 0.06);
+}
+
+.btn-dt-action.btn-edit:hover {
+    color: #f59e0b;
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.06);
+}
+
+.btn-dt-action.btn-print:hover {
+    color: #10b981;
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.06);
+}
+
+.btn-dt-action.btn-delete:hover {
+    color: #ef4444;
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.06);
+}
+
+/* DataTables Built-in Elements Clean-up */
+.server-datatable-wrapper .dataTables_filter {
+    display: none; /* Replaced by unified top toolbar search */
+}
+
+.server-datatable-wrapper .dataTables_length {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: #64748b;
+}
+
+.server-datatable-wrapper .dataTables_length select {
+    height: 34px;
+    font-size: 12.5px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    padding: 2px 28px 2px 10px;
+    background-color: #fff;
+}
+
+[data-theme-version="dark"] .server-datatable-wrapper .dataTables_length select {
+    background-color: #1e293b;
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #cbd5e1;
+}
+
+/* Pagination & Info Bar */
+.server-dt-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+[data-theme-version="dark"] .server-dt-footer {
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.server-datatable-wrapper .dataTables_info {
+    font-size: 12.5px;
+    color: #64748b;
+    padding: 0 !important;
+}
+
+[data-theme-version="dark"] .server-datatable-wrapper .dataTables_info {
+    color: #94a3b8;
+}
+
+.server-datatable-wrapper .dataTables_paginate {
+    padding: 0 !important;
+}
+
+.server-datatable-wrapper .dataTables_paginate .paginate_button {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px !important;
+    margin: 0 2px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: #475569 !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+}
+
+[data-theme-version="dark"] .server-datatable-wrapper .dataTables_paginate .paginate_button {
+    color: #cbd5e1 !important;
+}
+
+.server-datatable-wrapper .dataTables_paginate .paginate_button:hover {
+    background: rgba(0, 129, 238, 0.08) !important;
+    color: #0081ee !important;
+    border-color: rgba(0, 129, 238, 0.2) !important;
+}
+
+.server-datatable-wrapper .dataTables_paginate .paginate_button.current,
+.server-datatable-wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: #0081ee !important;
+    color: #ffffff !important;
+    border-color: #0081ee !important;
+    box-shadow: 0 2px 8px rgba(0, 129, 238, 0.35) !important;
+}
+
+.server-datatable-wrapper .dataTables_paginate .paginate_button.disabled,
+.server-datatable-wrapper .dataTables_paginate .paginate_button.disabled:hover {
+    opacity: 0.35 !important;
+    cursor: not-allowed !important;
+    background: transparent !important;
+    border-color: transparent !important;
+}
+
+/* Modern Processing Spinner Overlay */
+.server-datatable-wrapper .dataTables_processing {
+    position: absolute;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+    backdrop-filter: blur(8px);
+    border-radius: 12px !important;
+    padding: 12px 24px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #0081ee !important;
+    z-index: 100 !important;
+}
+
+[data-theme-version="dark"] .server-datatable-wrapper .dataTables_processing {
+    background: rgba(15, 23, 42, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #38bdf8 !important;
+}

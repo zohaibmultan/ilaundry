@@ -56,68 +56,46 @@
                                     </a>
                                 </div>
                             </div>
-                            <div class="card-body ">
+                            <div class="card-body">
+                                <!-- Server-side DataTable Toolbar -->
+                                <div class="server-dt-toolbar">
+                                    <div class="server-dt-search">
+                                        <i class="fa fa-search"></i>
+                                        <input type="search" id="dtLedgerSearch" placeholder="<%= language.Search || 'Search account, description, type, amount...' %>">
+                                    </div>
+                                    <div class="server-dt-filters">
+                                        <select class="server-dt-select" id="dtLedgerType">
+                                            <option value="all"><%= language.All_Type || 'All Types' %></option>
+                                            <option value="Debit"><%= language.Debit || 'Debit' %></option>
+                                            <option value="Credit"><%= language.Credit || 'Credit' %></option>
+                                        </select>
+
+                                        <input type="date" class="server-dt-input" id="dtLedgerStartDate" title="<%= language.Start_Date || 'Start Date' %>">
+                                        <input type="date" class="server-dt-input" id="dtLedgerEndDate" title="<%= language.End_Date || 'End Date' %>">
+
+                                        <select class="server-dt-select" id="dtLedgerPageLength">
+                                            <option value="10">10 <%= language.Entries || 'entries' %></option>
+                                            <option value="25">25 <%= language.Entries || 'entries' %></option>
+                                            <option value="50">50 <%= language.Entries || 'entries' %></option>
+                                            <option value="100">100 <%= language.Entries || 'entries' %></option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div class="table-responsive">
-                                    <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                    <table id="server_ledger_table" class="table display server-side-dt" style="width: 100%;">
                                         <thead>
                                             <tr>
-                                                <th>#</th>
-                                                <th scope="col">
-                                                    <%= language.Date %>
-                                                </th>
-                                                <th scope="col">
-                                                    <%= language.Account %>
-                                                </th>
-                                                <th scope="col">
-                                                    <%= language.Type %>
-                                                </th>
-                                                <th scope="col">
-                                                    <%= language.Description %>
-                                                </th>
-                                                <th scope="col">
-                                                    <%= language.Debit %>
-                                                </th>
-                                                <th scope="col">
-                                                    <%= language.Credit %>
-                                                </th>
+                                                <th style="width: 50px;">#</th>
+                                                <th style="width: 120px;"><%= language.Date %></th>
+                                                <th><%= language.Account %></th>
+                                                <th style="width: 110px;"><%= language.Type %></th>
+                                                <th><%= language.Description %></th>
+                                                <th class="text-end" style="width: 120px;"><%= language.Debit %></th>
+                                                <th class="text-end" style="width: 120px;"><%= language.Credit %></th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            <% transection_list.forEach(function(data, i){ %>
-                                                <tr>
-                                                    <td>
-                                                        <%= i + 1 %>
-                                                    </td>
-                                                    <td>
-                                                        <% let Order_date=new Date(data.date) %>
-                                                            <% let Order_day=(Order_date.getDate() < 10 ? '0' : '' ) +
-                                                                Order_date.getDate() %>
-                                                                <% let Order_month=((Order_date.getMonth()+1) < 10 ? '0'
-                                                                    : '' ) + (Order_date.getMonth()+1) %>
-                                                                    <% let Order_year=Order_date.getFullYear() %>
-                                                                        <% let
-                                                                            Order_fullDate=`${Order_year}/${Order_month}/${Order_day}`
-                                                                            %>
-                                                                            <%= Order_fullDate %>
-                                                    </td>
-                                                    <td>
-                                                        <%=data.ac_name %>
-                                                    </td>
-                                                    <td>
-                                                        <%=data.transec_type %>
-                                                    </td>
-                                                    <td>
-                                                        <%=data.transec_detail %>
-                                                    </td>
-                                                    <td class="symbol">
-                                                        <%=data.debit_amount %>
-                                                    </td>
-                                                    <td class="symbol">
-                                                        <%=data.credit_amount %>
-                                                    </td>
-                                                </tr>
-                                                <% }) %>
-                                        </tbody>
+                                        <tbody></tbody>
                                     </table>
                                 </div>
                             </div>
@@ -145,31 +123,86 @@
             <!--********** Main wrapper end **********-->
             <%- include('templet/script')-%>
 <script>
-  window.clearCurrency = function(){
-    $('#example3 .symbol').each(function () {
-      const text = $(this).text();
-      const clean = text.replace(/[^\d.-]/g, ''); 
-      $(this).text(clean);
-    });
-  };
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
 
-  window.applyCurrency = function(){
-    var sym = $('input[name=sym]').val() || '';
-    $('#example3 .symbol').each(function () {
-      const value = parseFloat($(this).text());
-      if (!isNaN(value)) {
-        $(this).text(sym + value.toFixed(2));
+  $(document).ready(function () {
+    const customerId = "<%= customer ? customer.id : '' %>";
+
+    window.ledgerTable = window.initServerDataTable('#server_ledger_table', {
+      ajaxUrl: '/coustomer/ledger/' + customerId + '/data',
+      columns: [
+        {
+          data: null,
+          orderable: false,
+          searchable: false,
+          render: function(data, type, row, meta) {
+            return meta.settings._iDisplayStart + meta.row + 1;
+          }
+        },
+        {
+          data: 'date',
+          render: function(data) {
+            return `<span class="fw-semibold text-dark">${escapeHtml(data) || '—'}</span>`;
+          }
+        },
+        {
+          data: 'ac_name',
+          render: function(data) {
+            return `<span class="badge bg-light text-dark px-2 py-1">${escapeHtml(data) || '—'}</span>`;
+          }
+        },
+        {
+          data: 'transec_type',
+          render: function(data) {
+            const isDebit = String(data).toLowerCase() === 'debit';
+            if (isDebit) {
+              return '<span class="badge-status-pill badge-pill-cancelled"><i class="fa fa-arrow-circle-up"></i> ' + escapeHtml(data) + '</span>';
+            }
+            return '<span class="badge-status-pill badge-pill-completed"><i class="fa fa-arrow-circle-down"></i> ' + escapeHtml(data) + '</span>';
+          }
+        },
+        {
+          data: 'transec_detail',
+          render: function(data) {
+            return `<span class="text-sm text-secondary">${escapeHtml(data) || '—'}</span>`;
+          }
+        },
+        {
+          data: 'debit_amount',
+          className: 'text-end',
+          render: function(data) {
+            const amt = parseFloat(data) || 0;
+            if (amt <= 0) return '<span class="text-muted">—</span>';
+            return `<span class="fw-bold text-danger">${window.formatDtCurrency(amt)}</span>`;
+          }
+        },
+        {
+          data: 'credit_amount',
+          className: 'text-end',
+          render: function(data) {
+            const amt = parseFloat(data) || 0;
+            if (amt <= 0) return '<span class="text-muted">—</span>';
+            return `<span class="fw-bold text-success">${window.formatDtCurrency(amt)}</span>`;
+          }
+        }
+      ],
+      order: [[0, 'desc']],
+      searchInput: '#dtLedgerSearch',
+      pageLengthSelect: '#dtLedgerPageLength',
+      filterElements: {
+        type_filter: '#dtLedgerType',
+        start_date: '#dtLedgerStartDate',
+        end_date: '#dtLedgerEndDate'
       }
     });
-  };
-
-  window.currency = function(){
-    window.clearCurrency();
-    window.applyCurrency();
-  };
-
-  $(document).ready(function (){
-    window.currency();
   });
 </script>         
 

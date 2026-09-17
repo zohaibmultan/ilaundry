@@ -35,80 +35,53 @@
                                 <input type="hiden" name="thousands_separator"
                                     value="<%= accessdata.thousands_separator %>">
                             </div>
-                            <div class="card-body ">
-                                <div class="table-responsive">
-                                    <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
-                                        <thead>
-                                            <tr>
-                                                <th>#</th>
-                                                <th>
-                                                    <%= language.Addons %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Price %>
-                                                </th>
-                                                <th class="<%= ismulty ? '': 'd-none' %>">
-                                                    <%= language.Store_Name %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Status %>
-                                                </th>
-                                                <th
-                                                    class="text-center <%= accessdata.roll.service.includes('edit') || accessdata.roll.service.includes('delete') ?'':'d-none' %>">
-                                                    <%= language.Action %>
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <% addonList.forEach(function(data, i){ %>
-                                                <tr>
-                                                    <td>
-                                                        <%= i + 1 %>
-                                                    </td>
-                                                    <td>
-                                                        <%= data.addon %>
-                                                    </td>
-                                                    <td class="symbol">
-                                                        <%= data.price %>
-                                                    </td>
-                                                    <td class="<%= ismulty ? '': 'd-none' %>">
-                                                        <%=data.store %>
-                                                    </td>
-                                                    <td>
-                                                        <%if( data.status==0){ %>
-                                                            <span class="badge light badge-secondary ">Active</span>
-                                                            <% }else{ %>
-                                                                <span class="badge light badge-warning">Deactive</span>
-                                                                <% } %>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div class="tbl-action-group">
-                                                            <a href="#"
-                                                                class="btn-tbl-action btn-tbl-edit <%= accessdata.roll.service.includes('edit') ?'':'d-none' %>"
-                                                                id="services_addons_update" data-bs-toggle="modal"
-                                                                data-bs-target="#service_addons_update"
-                                                                data-id=" <%= data.id %>" data-addon="<%= data.addon %>"
-                                                                data-price=" <%= data.price %>"
-                                                                data-status=" <%= data.status %>"
-                                                                title="<%= language.Edit || 'Edit' %>">
-                                                                <i class="fas fa-pencil-alt"></i></a>
+                            <div class="card-body">
+                                <!-- Server-side DataTable Toolbar -->
+                                <div class="server-dt-toolbar">
+                                    <div class="server-dt-search">
+                                        <i class="fa fa-search"></i>
+                                        <input type="search" id="dtAddonSearch" placeholder="<%= language.Search || 'Search addons...' %>">
+                                    </div>
+                                    <div class="server-dt-filters">
+                                        <select class="server-dt-select" id="dtAddonStatus">
+                                            <option value="all"><%= language.All_Status || 'All Status' %></option>
+                                            <option value="0"><%= language.Active || 'Active' %></option>
+                                            <option value="1"><%= language.Deactive || 'Deactive' %></option>
+                                        </select>
 
-                                                            <a href="/services/deletaddon/<%= data.id %>"
-                                                                class="btn-tbl-action btn-tbl-delete <%= accessdata.roll.service.includes('delete') ?'':'d-none' %>"
-                                                                id="delete" title="<%= language.Delete || 'Delete' %>">
-                                                                <i class="fa fa-trash"></i></a>
-                                                        </div>
-                                                    </td>
-                                                </tr>
+                                        <% if (ismulty) { %>
+                                            <select class="server-dt-select" id="dtAddonStore">
+                                                <option value="all"><%= language.All_Store || 'All Stores' %></option>
+                                                <% (storeList || []).forEach(function(st) { %>
+                                                    <option value="<%= st.id %>"><%= st.name %></option>
                                                 <% }) %>
+                                            </select>
+                                        <% } %>
 
-
-
-                                        </tbody>
-                                    </table>
+                                        <select class="server-dt-select" id="dtAddonPageLength">
+                                            <option value="10">10 <%= language.Entries || 'entries' %></option>
+                                            <option value="25">25 <%= language.Entries || 'entries' %></option>
+                                            <option value="50">50 <%= language.Entries || 'entries' %></option>
+                                            <option value="100">100 <%= language.Entries || 'entries' %></option>
+                                        </select>
+                                    </div>
                                 </div>
 
-
+                                <div class="table-responsive">
+                                    <table id="server_addons_table" class="table display server-side-dt" style="width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 50px;">#</th>
+                                                <th><%= language.Addons %></th>
+                                                <th><%= language.Price %></th>
+                                                <th class="<%= ismulty ? '': 'd-none' %>"><%= language.Store_Name %></th>
+                                                <th style="width: 110px;"><%= language.Status %></th>
+                                                <th class="text-center" style="width: 110px;"><%= language.Action %></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -269,12 +242,111 @@
 
 
                 <script>
-                    $('#service_addons').on('shown.bs.modal', function () {
-                        $('#coupon_addon').select2({
-                            dropdownParent: $('#service_addons'),
-                            placeholder: 'Select Store(s)',
-                            width: '100%',
-                            allowClear: true
+                    function escapeHtml(str) {
+                        if (!str) return '';
+                        return String(str)
+                          .replace(/&/g, '&amp;')
+                          .replace(/</g, '&lt;')
+                          .replace(/>/g, '&gt;')
+                          .replace(/"/g, '&quot;')
+                          .replace(/'/g, '&#039;');
+                    }
+
+                    $(document).ready(function() {
+                        const isMultistore = <%= ismulty ? 'true' : 'false' %>;
+
+                        const columns = [
+                            {
+                                data: null,
+                                orderable: false,
+                                searchable: false,
+                                render: function(data, type, row, meta) {
+                                    return meta.settings._iDisplayStart + meta.row + 1;
+                                }
+                            },
+                            {
+                                data: 'addon',
+                                render: function(data, type, row) {
+                                    return `<span class="fw-semibold text-dark">${escapeHtml(data)}</span>`;
+                                }
+                            },
+                            {
+                                data: 'price',
+                                render: function(data, type, row) {
+                                    return `<span class="fw-semibold">${window.formatDtCurrency(data)}</span>`;
+                                }
+                            },
+                            {
+                                data: 'store',
+                                visible: isMultistore,
+                                render: function(data, type, row) {
+                                    return `<span class="badge light badge-light text-dark">${escapeHtml(data || 'All Stores')}</span>`;
+                                }
+                            },
+                            {
+                                data: 'status',
+                                render: function(data, type, row) {
+                                    if (parseInt(data) === 0) {
+                                        return '<span class="badge-status-pill badge-status-active">Active</span>';
+                                    } else {
+                                        return '<span class="badge-status-pill badge-status-inactive">Deactive</span>';
+                                    }
+                                }
+                            },
+                            {
+                                data: null,
+                                orderable: false,
+                                searchable: false,
+                                className: 'text-center',
+                                render: function(data, type, row) {
+                                    const editBtn = row.canEdit ? `
+                                        <a href="#" class="btn-tbl-action btn-tbl-edit" 
+                                           id="services_addons_update" 
+                                           data-bs-toggle="modal" 
+                                           data-bs-target="#service_addons_update"
+                                           data-id="${row.id}" 
+                                           data-addon="${escapeHtml(row.addon)}" 
+                                           data-price="${row.price}" 
+                                           data-status="${row.status}"
+                                           title="<%= language.Edit || 'Edit' %>">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </a>` : '';
+
+                                    const deleteBtn = row.canDelete ? `
+                                        <a href="/services/deletaddon/${row.id}" 
+                                           class="btn-tbl-action btn-tbl-delete" 
+                                           id="delete" 
+                                           title="<%= language.Delete || 'Delete' %>">
+                                            <i class="fa fa-trash"></i>
+                                        </a>` : '';
+
+                                    return `<div class="tbl-action-group">${editBtn}${deleteBtn}</div>`;
+                                }
+                            }
+                        ];
+
+                        window.initServerDataTable('#server_addons_table', {
+                            ajaxUrl: '/services/addon/data',
+                            columns: columns,
+                            searchInput: '#dtAddonSearch',
+                            pageLengthSelect: '#dtAddonPageLength',
+                            filterSelectors: {
+                                status: '#dtAddonStatus',
+                                store_id: '#dtAddonStore'
+                            },
+                            order: [[0, 'desc']],
+                            language: {
+                                emptyTable: '<%= language.No_data_available_in_table || "No addons found" %>'
+                            }
+                        });
+
+                        $('#service_addons').on('shown.bs.modal', function () {
+                            $('#coupon_addon').select2({
+                                dropdownParent: $('#service_addons'),
+                                placeholder: 'Select Store(s)',
+                                width: '100%',
+                                allowClear: true
+                            });
                         });
                     });
                 </script>

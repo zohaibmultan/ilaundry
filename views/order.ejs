@@ -32,291 +32,73 @@
                                     value="<%= accessdata.thousands_separator %>">
                             </div>
                             <div class="card-body">
-                                <div class="row order-filter-toolbar mb-3" style="position: relative; z-index: 100;">
-                                    <div class="col-8">
-                                        <!-- <label class="form-label">Start Date</label> -->
-                                        <input type="text" class="form-control" id="order_list_serach"
-                                            placeholder="Search by Order ID, Customer, Phone, Store...">
+                                <div class="server-dt-toolbar">
+                                    <div class="server-dt-search">
+                                        <i class="fa fa-search"></i>
+                                        <input type="text" class="form-control" id="order_search_input"
+                                            placeholder="<%= language.Search || 'Search by Order ID, Customer, Phone, Store, Ref...' %>">
                                     </div>
-
-                                    <div class="col-4">
-                                        <!-- <label class="form-label">Filter</label> -->
-                                        <select class="default-select form-control wide mb-3" name="orders"
-                                            id="orders_list_status" data-live-search="true">
-                                            <option value="__ALL__ORDERS__00911#" selected> All Orders</option>
-                                            <% Ordersatus.forEach(function (data){ %>
-                                                <option value="<%=data.status %>">
-                                                    <%=data.status %>
-                                                </option>
+                                    <div class="server-dt-filters">
+                                        <div class="server-dt-filter-item">
+                                            <select class="form-select form-control" id="order_status_filter">
+                                                <option value="" selected><%= language.All_Orders || 'All Statuses' %></option>
+                                                <% Ordersatus.forEach(function (data){ %>
+                                                    <option value="<%= data.id %>">
+                                                        <%= data.status %>
+                                                    </option>
                                                 <% }) %>
-                                        </select>
-                                    </div>
-
-                                </div>
-
-                                <div class="row">
-
-                                    <div class="tableFixHead">
-                                        <div class="table-responsive">
-                                            <table class="table table-responsive-sm">
-                                                <thead class="table_head">
-                                                    <tr>
-                                                        <th>
-                                                            <%= language.Order_Info %>
-                                                        </th>
-                                                        <th>
-                                                            <%= language.Customer %>
-                                                        </th>
-                                                        <th>
-                                                            <%= language.Order_Amount %>
-                                                        </th>
-                                                        <th>
-                                                            <%= language.Status %>
-                                                        </th>
-                                                        <th>
-                                                            <%= language.Payment %>
-                                                        </th>
-                                                        <th class="<%= ((typeof isStaff !== 'undefined' && isStaff) || login !== 'master') ? 'd-none' : '' %> ">
-                                                            <%= language.Store_Name %>
-                                                        </th>
-                                                        <th class="text-center">
-                                                            <%= language.Action || 'Action' %>
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="order_list_tbl">
-                                                    <% if(orderlist.length < 1){ %>
-                                                        <div class="p-2 center">
-                                                            <div class="card-body p-2 ">
-                                                                <h3 class="text-center text-danger">
-                                                                    <%= language.No_Order_List_Found %>
-                                                                </h3>
-                                                            </div>
-                                                        </div>
-                                                        <% } %>
-                                                            <% orderlist.forEach(function(data){ %>
-                                                                <tr class="load_data">
-                                                                    <td>
-                                                                        <p class="text-sm mb-0 text-nowrap">
-                                                                            <span class="me-1">
-                                                                                <%= language.Order_ID %> :
-                                                                            </span>
-                                                                            <span>
-                                                                                <%=data.order_id %>
-                                                                            </span>
-                                                                        </p>
-                                                                        <p class="text-sm mb-0 text-nowrap">
-                                                                            <span class="me-1">
-                                                                                <%= language.Order_Date %> :
-                                                                            </span>
-                                                                            <% let Order_date=new Date(data.order_date)
-                                                                                %>
-                                                                                <% let Order_day=(Order_date.getDate() <
-                                                                                    10 ? '0' : '' ) +
-                                                                                    Order_date.getDate() %>
-                                                                                    <% let
-                                                                                        Order_month=((Order_date.getMonth()+1)
-                                                                                        < 10 ? '0' : '' ) +
-                                                                                        (Order_date.getMonth()+1) %>
-                                                                                        <% let
-                                                                                            Order_year=Order_date.getFullYear()
-                                                                                            %>
-                                                                                            <% let
-                                                                                                Order_fullDate=`${Order_year}-${Order_month}-${Order_day}`
-                                                                                                %>
-                                                                                                <span>
-                                                                                                    <%=Order_fullDate %>
-                                                                                                </span>
-                                                                        </p>
-                                                                        <p class="text-sm mb-0 text-nowrap">
-                                                                            <span class="me-1">
-                                                                                <%= language.Delivery_Date %> :
-                                                                            </span>
-                                                                            <% let Delivery_date=new
-                                                                                Date(data.delivery_date) %>
-                                                                                <% let
-                                                                                    Delivery_day=(Delivery_date.getDate()
-                                                                                    < 10 ? '0' : '' ) +
-                                                                                    Delivery_date.getDate() %>
-                                                                                    <% let
-                                                                                        Delivery_month=((Delivery_date.getMonth()+1)
-                                                                                        < 10 ? '0' : '' ) +
-                                                                                        (Delivery_date.getMonth()+1) %>
-                                                                                        <% let
-                                                                                            Delivery_year=Delivery_date.getFullYear()
-                                                                                            %>
-                                                                                            <% let
-                                                                                                Delivery_fullDate=`${Delivery_year}-${Delivery_month}-${Delivery_day}`
-                                                                                                %>
-                                                                                                <span>
-                                                                                                    <%= Delivery_fullDate
-                                                                                                        %>
-                                                                                                </span>
-                                                                        </p>
-                                                                    </td>
-
-                                                                    <td>
-                                                                        <p class="text-sm px-2 mb-0 text-nowrap">
-                                                                            <%=data.name %>
-                                                                        </p>
-                                                                        <p class="text-sm px-2 mb-0">
-                                                                            <%=data.number %>
-                                                                        </p>
-                                                                    </td>
-
-                                                                    <td>
-                                                                        <p class="text-sm px-2 mb-0 text-nowrap symbol">
-                                                                            <%=data.gross_total %>
-                                                                        </p>
-                                                                    </td>
-
-                                                                    <td>
-                                                                        <% if(data.order_status==1){ %>
-                                                                            <button type="button"
-                                                                                class="btn btn-dark btn-xxs text-nowrap"
-                                                                                disabled>
-                                                                                <%=data.orderStatus %>
-                                                                            </button>
-                                                                            <% }else if(data.order_status==2){ %>
-                                                                                <button type="button"
-                                                                                    class="btn btn-warning btn-xxs text-nowrap"
-                                                                                    disabled>
-                                                                                    <%=data.orderStatus %>
-                                                                                </button>
-                                                                                <% }else if(data.order_status==3){ %>
-                                                                                    <button type="button"
-                                                                                        class="btn btn-secondary btn-xxs text-nowrap"
-                                                                                        disabled>
-                                                                                        <%=data.orderStatus %>
-                                                                                    </button>
-                                                                                    <% }else if(data.order_status==4){
-                                                                                        %>
-                                                                                        <button type="button"
-                                                                                            class="btn btn-info btn-xxs text-nowrap"
-                                                                                            disabled>
-                                                                                            <%=data.orderStatus %>
-                                                                                        </button>
-                                                                                        <% }else
-                                                                                            if(data.order_status==5){ %>
-                                                                                            <button type="button"
-                                                                                                class="btn btn-danger btn-xxs text-nowrap"
-                                                                                                disabled>
-                                                                                                <%=data.orderStatus %>
-                                                                                            </button>
-                                                                                            <% }else
-                                                                                                if(data.order_status==6){
-                                                                                                %>
-                                                                                                <button type="button"
-                                                                                                    class="btn btn-danger btn-xxs text-nowrap"
-                                                                                                    disabled>
-                                                                                                    <%=data.orderStatus
-                                                                                                        %>
-                                                                                                </button>
-                                                                                                <% } %>
-                                                                    </td>
-
-                                                                    <td>
-                                                                        <p class="text-sm mb-0 text-nowrap">
-                                                                            <span class="me-2">
-                                                                                <%= language.Total_Amount %> :
-                                                                            </span>
-                                                                            <span class="symbol">
-                                                                                <%=data.gross_total %>
-                                                                            </span>
-                                                                        </p>
-                                                                        <p class="text-sm mb-1 text-nowrap">
-                                                                            <span class="me-2">
-                                                                                <%= language.Paid_Amount %> :
-                                                                            </span>
-                                                                            <span class="symbol">
-                                                                                <%=data.paid_amount %>
-                                                                            </span>
-                                                                        </p>
-
-                                                                        <% if(data.balance_amount> 0){ %>
-                                                                            <% if(accessdata.logas=='custmor' ){ %>
-                                                                                <button type="button"
-                                                                                    class="btn light  btn-info btn-xxs mb-2"
-                                                                                    disabled>
-                                                                                    <%= language.Pending %>
-                                                                                </button>
-                                                                                <% }else{ %>
-                                                                                    <button
-                                                                                        onclick="open_patment_model('<%=data.id %>')"
-                                                                                        type="button"
-                                                                                        class="btn light btn-success btn-xxs mb-2"
-                                                                                        <%=accessdata.roll.orders.includes('edit')
-                                                                                        ?'':'disabled' %>>
-                                                                                        <%= language.Add_Payment %>
-                                                                                    </button>
-                                                                                    <% } %>
-                                                                                        <% }else{ %>
-                                                                                            <button type="button"
-                                                                                                class="btn btn-dark btn-xxs mb-2"
-                                                                                                disabled>
-                                                                                                <%= language.Fully_Paid
-                                                                                                    %>
-                                                                                            </button>
-                                                                                            <% } %>
-                                                                    </td>
-
-                                                                    <td
-                                                                        class="<%= ((typeof isStaff !== 'undefined' && isStaff) || login !== 'master') ? 'd-none' : '' %> ">
-                                                                        <p class="text-sm mb-0 text-uppercase">
-                                                                            <%=data.storeName %>
-                                                                        </p>
-                                                                    </td>
-
-                                                                    <td class="text-center">
-                                                                        <div class="tbl-action-group">
-                                                                            <% if (data.order_status !=6) { %>
-                                                                                <a href="/admin/edit/<%=data.id %>"
-                                                                                    class="btn-tbl-action btn-tbl-edit"
-                                                                                    title="<%= language.Edit || 'Edit' %>">
-                                                                                    <i class="fas fa-pencil-alt"></i>
-                                                                                </a>
-                                                                                <% } %>
-                                                                                    <a href="/order/view/<%=data.id %>"
-                                                                                        class="btn-tbl-action btn-tbl-view"
-                                                                                        title="<%= language.View || 'View' %>">
-                                                                                        <i class="fa fa-eye"></i>
-                                                                                    </a>
-                                                                                    <button type="button"
-                                                                                        class="btn-tbl-action btn-tbl-print"
-                                                                                        id="print_barcode"
-                                                                                        data-bs-toggle="modal"
-                                                                                        data-bs-target="#exampleModalLong"
-                                                                                        data-id="<%=data.id %>"
-                                                                                        title="<%= language.Print || 'Print' %>">
-                                                                                        <i class="fa fa-print"></i>
-                                                                                    </button>
-                                                                                    <% if (accessdata.logas != 'custmor' && (accessdata.topbardata?.is_staff == 0 || (accessdata.roll?.orders && accessdata.roll.orders.includes('delete')))) { %>
-                                                                                        <button type="button"
-                                                                                            class="btn-tbl-action btn-tbl-delete"
-                                                                                            data-bs-toggle="modal"
-                                                                                            data-bs-target="#deleteOrderModal"
-                                                                                            data-id="<%=data.id %>"
-                                                                                            data-orderid="<%=data.order_id %>"
-                                                                                            title="<%= language.Delete || 'Delete' %>">
-                                                                                            <i class="fa fa-trash"></i>
-                                                                                        </button>
-                                                                                    <% } %>
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                                <% }) %>
-
-                                                </tbody>
-                                            </table>
-                                            <div class="text-center">
-                                                <a class="btn text-success" id="loadMoreorder">
-                                                    <%= language.Load_more %>
-                                                </a>
-                                            </div>
+                                            </select>
+                                        </div>
+                                        <% if (login === 'master' && typeof storeList !== 'undefined' && storeList.length > 0) { %>
+                                        <div class="server-dt-filter-item">
+                                            <select class="form-select form-control" id="order_store_filter">
+                                                <option value="" selected><%= language.All_Stores || 'All Stores' %></option>
+                                                <% storeList.forEach(function (st){ %>
+                                                    <option value="<%= st.id %>">
+                                                        <%= st.name %>
+                                                    </option>
+                                                <% }) %>
+                                            </select>
+                                        </div>
+                                        <% } %>
+                                        <div class="server-dt-filter-item" style="max-width: 140px;">
+                                            <input type="date" class="form-control" id="order_start_date" title="Start Date">
+                                        </div>
+                                        <div class="server-dt-filter-item" style="max-width: 140px;">
+                                            <input type="date" class="form-control" id="order_end_date" title="End Date">
+                                        </div>
+                                        <div class="server-dt-filter-item" style="max-width: 110px;">
+                                            <select class="form-select form-control" id="order_page_length">
+                                                <option value="10" selected>10 / page</option>
+                                                <option value="25">25 / page</option>
+                                                <option value="50">50 / page</option>
+                                                <option value="100">100 / page</option>
+                                            </select>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <!-- </div> -->
+                                <div class="server-datatable-wrapper">
+                                    <div class="table-responsive">
+                                        <table id="server_order_table" class="table display w-100">
+                                            <thead>
+                                                <tr>
+                                                    <th><%= language.Order_Info || 'Order Info' %></th>
+                                                    <th><%= language.Customer || 'Customer' %></th>
+                                                    <th><%= language.Order_Amount || 'Order Amount' %></th>
+                                                    <th><%= language.Status || 'Status' %></th>
+                                                    <th><%= language.Payment || 'Payment' %></th>
+                                                    <th class="<%= ((typeof isStaff !== 'undefined' && isStaff) || login !== 'master') ? 'd-none' : '' %>">
+                                                        <%= language.Store_Name || 'Store Name' %>
+                                                    </th>
+                                                    <th class="text-center" style="width: 170px;">
+                                                        <%= language.Action || 'Action' %>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -507,8 +289,132 @@
             <!--********** Main wrapper end **********-->
             <%- include('templet/script')-%>
                 <script>
-                    $('#addpaymentmodel1').on('shown.bs.modal', function () {
+                    $(document).ready(function() {
+                        var isMaster = '<%= login %>' === 'master';
+                        var isStaff = <%= (typeof isStaff !== 'undefined' && isStaff) ? 'true' : 'false' %>;
 
+                        window.orderTable = initServerDataTable('#server_order_table', {
+                            ajaxUrl: '/order/list/data',
+                            searchInput: '#order_search_input',
+                            pageLengthSelect: '#order_page_length',
+                            filterInputs: '#order_status_filter, #order_store_filter, #order_start_date, #order_end_date',
+                            getFilters: function() {
+                                return {
+                                    status_filter: $('#order_status_filter').val() || '',
+                                    store_filter: $('#order_store_filter').length ? ($('#order_store_filter').val() || '') : '',
+                                    start_date: $('#order_start_date').val() || '',
+                                    end_date: $('#order_end_date').val() || ''
+                                };
+                            },
+                            columns: [
+                                {
+                                    data: 'order_id',
+                                    render: function(data, type, row) {
+                                        return '<div class="server-dt-primary-text mb-1">' +
+                                               '<span class="me-1 fw-bold text-primary">' + (data || '') + '</span>' +
+                                               '</div>' +
+                                               '<div class="server-dt-secondary-text mb-0">' +
+                                               '<span class="me-1 opacity-75"><%= language.Order_Date || "Order Date" %>:</span>' +
+                                               '<span>' + (row.formattedOrderDate || '') + '</span>' +
+                                               '</div>' +
+                                               '<div class="server-dt-secondary-text mb-0">' +
+                                               '<span class="me-1 opacity-75"><%= language.Delivery_Date || "Delivery Date" %>:</span>' +
+                                               '<span>' + (row.formattedDeliveryDate || '') + '</span>' +
+                                               '</div>';
+                                    }
+                                },
+                                {
+                                    data: 'customer_name',
+                                    render: function(data, type, row) {
+                                        return '<div class="server-dt-primary-text">' + (data || 'Walk In Customer') + '</div>' +
+                                               (row.customer_number ? '<div class="server-dt-secondary-text"><i class="fa fa-phone me-1 opacity-50"></i>' + row.customer_number + '</div>' : '');
+                                    }
+                                },
+                                {
+                                    data: 'gross_total',
+                                    className: 'symbol font-w600',
+                                    render: function(data) {
+                                        return parseFloat(data || 0).toFixed(2);
+                                    }
+                                },
+                                {
+                                    data: 'orderStatusName',
+                                    render: function(data, type, row) {
+                                        return '<span class="badge-status-pill ' + row.statusClass + '">' +
+                                               (data || 'Pending') +
+                                               '</span>';
+                                    }
+                                },
+                                {
+                                    data: 'gross_total',
+                                    orderable: false,
+                                    render: function(data, type, row) {
+                                        var gross = parseFloat(row.gross_total || 0).toFixed(2);
+                                        var paid = parseFloat(row.paid_amount || 0).toFixed(2);
+                                        var balance = parseFloat(row.balance_amount || 0);
+
+                                        var paymentBtn = '';
+                                        if (balance > 0) {
+                                            if ('<%= accessdata.logas %>' === 'custmor') {
+                                                paymentBtn = '<span class="badge badge-warning light btn-xxs"><%= language.Pending || "Pending" %></span>';
+                                            } else {
+                                                paymentBtn = '<button type="button" onclick="open_patment_model(\'' + row.id + '\')" class="btn btn-xs btn-outline-success py-1 px-2">' +
+                                                             '<i class="fa fa-plus-circle me-1"></i> <%= language.Add_Payment || "Add Payment" %>' +
+                                                             '</button>';
+                                            }
+                                        } else {
+                                            paymentBtn = '<span class="badge badge-dark light btn-xxs"><%= language.Fully_Paid || "Fully Paid" %></span>';
+                                        }
+
+                                        return '<div class="server-dt-secondary-text mb-1">' +
+                                               '<span class="me-1">Total:</span><span class="symbol fw-bold">' + gross + '</span>' +
+                                               ' | <span class="me-1">Paid:</span><span class="symbol text-success">' + paid + '</span>' +
+                                               '</div>' +
+                                               '<div>' + paymentBtn + '</div>';
+                                    }
+                                },
+                                {
+                                    data: 'storeName',
+                                    visible: isMaster && !isStaff,
+                                    render: function(data) {
+                                        return '<span class="badge badge-light text-dark fw-bold text-uppercase">' + (data || '') + '</span>';
+                                    }
+                                },
+                                {
+                                    data: 'id',
+                                    orderable: false,
+                                    className: 'text-center',
+                                    render: function(data, type, row) {
+                                        var actions = '<div class="server-dt-actions justify-content-center">';
+
+                                        if (row.order_status != 6 && row.canEdit) {
+                                            actions += '<a href="/admin/edit/' + data + '" class="btn-dt-action btn-edit" title="<%= language.Edit || "Edit" %>">' +
+                                                       '<i class="fa fa-pencil"></i></a>';
+                                        }
+
+                                        actions += '<a href="/order/view/' + data + '" class="btn-dt-action btn-view" title="<%= language.View || "View" %>">' +
+                                                   '<i class="fa fa-eye"></i></a>';
+
+                                        actions += '<button type="button" class="btn-dt-action btn-print" id="print_barcode" data-bs-toggle="modal" data-bs-target="#exampleModalLong" data-id="' + data + '" title="<%= language.Barcode || "Barcode" %>">' +
+                                                   '<i class="fa fa-barcode"></i></button>';
+
+                                        actions += '<a href="/order/pos_invoice/' + data + '" class="btn-dt-action btn-print" target="_blank" title="POS Thermal Invoice">' +
+                                                   '<i class="fa fa-receipt"></i></a>';
+
+                                        if (row.canDelete) {
+                                            actions += '<button type="button" class="btn-dt-action btn-delete" data-bs-toggle="modal" data-bs-target="#deleteOrderModal" data-id="' + data + '" data-orderid="' + row.order_id + '" title="<%= language.Delete || "Delete" %>">' +
+                                                       '<i class="fa fa-trash"></i></button>';
+                                        }
+
+                                        actions += '</div>';
+                                        return actions;
+                                    }
+                                }
+                            ]
+                        });
+                    });
+
+                    $('#addpaymentmodel1').on('shown.bs.modal', function () {
                         $('#payment').select2({
                             dropdownParent: $('#addpaymentmodel1'),
                             placeholder: 'Select Account(a)',
@@ -517,7 +423,7 @@
                         });
                     });
 
-                    $(document).on('click', '.btn-tbl-delete[data-bs-target="#deleteOrderModal"]', function() {
+                    $(document).on('click', '.btn-dt-action.btn-delete[data-bs-target="#deleteOrderModal"]', function() {
                         const orderId = $(this).attr('data-id');
                         const orderCode = $(this).attr('data-orderid');
                         $('#deleteOrderModalCode').text(orderCode || ('#' + orderId));

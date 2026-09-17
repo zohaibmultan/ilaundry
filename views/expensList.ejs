@@ -35,105 +35,65 @@
                                 <input type="hiden" name="thousands_separator"
                                     value="<%= accessdata.thousands_separator %>">
                             </div>
-                            <div class="card-body ">
+                            <div class="card-body">
+                                <!-- Server-side DataTable Toolbar -->
+                                <div class="server-dt-toolbar">
+                                    <div class="server-dt-search">
+                                        <i class="fa fa-search"></i>
+                                        <input type="search" id="dtExpenseSearch" placeholder="<%= language.Search || 'Search expenses...' %>">
+                                    </div>
+                                    <div class="server-dt-filters">
+                                        <select class="server-dt-select" id="dtExpenseCategory">
+                                            <option value="all"><%= language.All_Categories || 'All Categories' %></option>
+                                            <% (categ || []).forEach(function(c) { %>
+                                                <option value="<%= c.id %>"><%= c.cat_name %></option>
+                                            <% }) %>
+                                        </select>
+
+                                        <select class="server-dt-select" id="dtExpenseAccount">
+                                            <option value="all"><%= language.All_Accounts || 'All Accounts' %></option>
+                                            <% (acountlist || []).forEach(function(a) { %>
+                                                <option value="<%= a.id %>"><%= a.ac_name %></option>
+                                            <% }) %>
+                                        </select>
+
+                                        <% if (ismulty) { %>
+                                            <select class="server-dt-select" id="dtExpenseStore">
+                                                <option value="all"><%= language.All_Store || 'All Stores' %></option>
+                                                <% (storeList || []).forEach(function(st) { %>
+                                                    <option value="<%= st.id %>"><%= st.name %></option>
+                                                <% }) %>
+                                            </select>
+                                        <% } %>
+
+                                        <select class="server-dt-select" id="dtExpensePageLength">
+                                            <option value="10">10 <%= language.Entries || 'entries' %></option>
+                                            <option value="25">25 <%= language.Entries || 'entries' %></option>
+                                            <option value="50">50 <%= language.Entries || 'entries' %></option>
+                                            <option value="100">100 <%= language.Entries || 'entries' %></option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div class="table-responsive">
-                                    <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                    <table id="server_expense_table" class="table display server-side-dt" style="width: 100%;">
                                         <thead>
                                             <tr>
-                                                <th>
-                                                    <%= language.Date %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Amount %>
-                                                </th>
-                                                <th>
-                                                    <%= language.TOWARDS %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Tax_included %>
-                                                </th>
-                                                <th>
-                                                    <%= language.PAYMENT_MODE %>
-                                                </th>
-                                                <th class="<%= ismulty ? '': 'd-none' %>">
-                                                    <%= language.Store_Name %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Created_By %>
-                                                </th>
-                                                <th
-                                                    class="text-center <%= accessdata.roll.expense.includes('edit') || accessdata.roll.expense.includes('delete') ?'':'d-none' %>">
+                                                <th style="width: 105px;"><%= language.Date %></th>
+                                                <th><%= language.Amount %></th>
+                                                <th><%= language.TOWARDS %></th>
+                                                <th style="width: 100px;"><%= language.Tax_included %></th>
+                                                <th><%= language.PAYMENT_MODE %></th>
+                                                <th class="<%= ismulty ? '': 'd-none' %>"><%= language.Store_Name %></th>
+                                                <th><%= language.Created_By %></th>
+                                                <th class="text-center <%= accessdata.roll.expense.includes('edit') || accessdata.roll.expense.includes('delete') ?'':'d-none' %>" style="width: 110px;">
                                                     <%= language.Action || 'Action' %>
                                                 </th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            <% expenlist.forEach(function(data){ %>
-                                                <tr>
-                                                    <td class="text-nowrap">
-                                                        <% let Order_date=new Date(data.date) %>
-                                                            <% let Order_day=(Order_date.getDate() < 10 ? '0' : '' ) +
-                                                                Order_date.getDate() %>
-                                                                <% let Order_month=((Order_date.getMonth()+1) < 10 ? '0'
-                                                                    : '' ) + (Order_date.getMonth()+1) %>
-                                                                    <% let Order_year=Order_date.getFullYear() %>
-                                                                        <% let
-                                                                            Order_fullDate=`${Order_year}-${Order_month}-${Order_day}`
-                                                                            %>
-
-                                                                            <%= Order_fullDate %>
-                                                    </td>
-                                                    <td class="symbol">
-                                                        <%= data.amount %>
-                                                    </td>
-                                                    <td>
-                                                        <%= data.towards %>
-                                                    </td>
-                                                    <td> <span class="badge light badge-warning ">
-                                                            <%= data.taxInclud %>
-                                                        </span> </td>
-                                                    <td>
-                                                        <%= data.ac_name %>
-                                                    </td>
-                                                    <td class="<%= ismulty ? '': 'd-none' %>">
-                                                        <%=data.store %>
-                                                    </td>
-                                                    <td>
-                                                        <%= data.name %>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div class="tbl-action-group">
-                                                            <a href="#"
-                                                                class="btn-tbl-action btn-tbl-edit <%= accessdata.roll.expense.includes('edit') ?'':'d-none' %>"
-                                                                id="expaction" data-bs-toggle="modal"
-                                                                data-bs-target="#expense_edit"
-                                                                data-date="<%= data.date %>"
-                                                                data-amount="<%= data.amount %>"
-                                                                data-toward="<%= data.towards %>"
-                                                                data-tex="<%= data.taxInclud %>"
-                                                                data-payment="<%= data.payment_mode %>"
-                                                                data-category="<%= data.category %>"
-                                                                data-id="<%= data.id %>"
-                                                                data-storeid="<%= data.store_ID %>"
-                                                                data-texpercent="<%= data.taxpercent %>"
-                                                                title="<%= language.Edit || 'Edit' %>">
-                                                                <i class="fas fa-pencil-alt"></i></a>
-
-                                                            <a href="/expense/deletexpe/<%= data.id %>"
-                                                                class="btn-tbl-action btn-tbl-delete <%= accessdata.roll.expense.includes('delete') ?'':'d-none' %>"
-                                                                id="delete" title="<%= language.Delete || 'Delete' %>">
-                                                                <i class="fa fa-trash"></i></a>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                <% }) %>
-
-
-                                        </tbody>
+                                        <tbody></tbody>
                                     </table>
                                 </div>
-
-
                             </div>
                         </div>
                     </div>
@@ -461,6 +421,135 @@
                             placeholder: 'Select Payment Method(p)',
                             width: '100%',
                             allowClear: true
+                        });
+                    });
+                </script>
+                <script>
+                    function escapeHtml(str) {
+                        if (!str) return '';
+                        return String(str)
+                          .replace(/&/g, '&amp;')
+                          .replace(/</g, '&lt;')
+                          .replace(/>/g, '&gt;')
+                          .replace(/"/g, '&quot;')
+                          .replace(/'/g, '&#039;');
+                    }
+
+                    function formatExpenseDate(dStr) {
+                        if (!dStr) return '-';
+                        try {
+                            const d = new Date(dStr);
+                            if (isNaN(d.getTime())) return dStr;
+                            const day = (d.getDate() < 10 ? '0' : '') + d.getDate();
+                            const month = ((d.getMonth() + 1) < 10 ? '0' : '') + (d.getMonth() + 1);
+                            const year = d.getFullYear();
+                            return `${year}-${month}-${day}`;
+                        } catch(e) {
+                            return dStr;
+                        }
+                    }
+
+                    $(document).ready(function() {
+                        const isMultistore = <%= ismulty ? 'true' : 'false' %>;
+
+                        const columns = [
+                            {
+                                data: 'date',
+                                render: function(data) {
+                                    return `<span class="text-muted fw-medium">${formatExpenseDate(data)}</span>`;
+                                }
+                            },
+                            {
+                                data: 'amount',
+                                render: function(data) {
+                                    return `<span class="fw-bold text-dark">${window.formatDtCurrency(data)}</span>`;
+                                }
+                            },
+                            {
+                                data: 'towards',
+                                render: function(data, type, row) {
+                                    const catBadge = row.cat_name ? `<span class="badge light badge-primary me-1">${escapeHtml(row.cat_name)}</span>` : '';
+                                    return `<div>${catBadge}<span class="text-dark">${escapeHtml(data || '')}</span></div>`;
+                                }
+                            },
+                            {
+                                data: 'taxInclud',
+                                render: function(data) {
+                                    if (String(data).toLowerCase() === 'yes') {
+                                        return '<span class="badge light badge-success">Yes</span>';
+                                    }
+                                    return '<span class="badge light badge-secondary">No</span>';
+                                }
+                            },
+                            {
+                                data: 'ac_name',
+                                render: function(data) {
+                                    return `<span class="badge light badge-info">${escapeHtml(data || 'Cash')}</span>`;
+                                }
+                            },
+                            {
+                                data: 'store',
+                                visible: isMultistore,
+                                render: function(data) {
+                                    return `<span class="badge light badge-light text-dark">${escapeHtml(data || 'All Stores')}</span>`;
+                                }
+                            },
+                            {
+                                data: 'created_by_name',
+                                render: function(data) {
+                                    return `<span class="text-muted">${escapeHtml(data || '-')}</span>`;
+                                }
+                            },
+                            {
+                                data: null,
+                                orderable: false,
+                                searchable: false,
+                                className: 'text-center',
+                                render: function(data, type, row) {
+                                    const editBtn = row.canEdit ? `
+                                        <a href="#" class="btn-tbl-action btn-tbl-edit" 
+                                           id="expaction" data-bs-toggle="modal"
+                                           data-bs-target="#expense_edit"
+                                           data-date="${row.date}"
+                                           data-amount="${row.amount}"
+                                           data-toward="${escapeHtml(row.towards)}"
+                                           data-tex="${row.taxInclud}"
+                                           data-payment="${row.payment_mode}"
+                                           data-category="${row.category}"
+                                           data-id="${row.id}"
+                                           data-storeid="${row.store_ID}"
+                                           data-texpercent="${row.taxpercent}"
+                                           title="<%= language.Edit || 'Edit' %>">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </a>` : '';
+
+                                    const deleteBtn = row.canDelete ? `
+                                        <a href="/expense/deletexpe/${row.id}" 
+                                           class="btn-tbl-action btn-tbl-delete" 
+                                           id="delete" 
+                                           title="<%= language.Delete || 'Delete' %>">
+                                            <i class="fa fa-trash"></i>
+                                        </a>` : '';
+
+                                    return `<div class="tbl-action-group">${editBtn}${deleteBtn}</div>`;
+                                }
+                            }
+                        ];
+
+                        window.initServerDataTable('#server_expense_table', {
+                            ajaxUrl: '/expense/list/data',
+                            columns: columns,
+                            searchInput: '#dtExpenseSearch',
+                            pageLengthSelect: '#dtExpensePageLength',
+                            filterSelectors: {
+                                category: '#dtExpenseCategory',
+                                account: '#dtExpenseAccount',
+                                store_id: '#dtExpenseStore'
+                            },
+                            order: [[0, 'desc']],
+                            language: {
+                                emptyTable: '<%= language.No_data_available_in_table || "No expenses found" %>'
+                            }
                         });
                     });
                 </script>

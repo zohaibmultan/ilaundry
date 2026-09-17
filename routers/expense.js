@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../middelwer/auth");
 const access = require("../middelwer/access");
-var {DataDelete,DataUpdate,DataInsert,DataFind} = require("../middelwer/databaseQurey")
+var {DataDelete,DataUpdate,DataInsert,DataFind} = require("../middelwer/databaseQurey");
+const { paginateDataTable } = require("../middelwer/dataTableHelper");
 
 // Expence Category Type
 router.get("/categorytype", auth, async (req, res) => {
@@ -37,18 +38,11 @@ router.get("/categorytype", auth, async (req, res) => {
           "SELECT tbl_exp_cat_type.*,tbl_store.name as store FROM tbl_exp_cat_type join tbl_store on tbl_exp_cat_type.store_ID=tbl_store.id WHERE tbl_exp_cat_type.delet_flage=0";
         var ismulty = true;
       } else {
-        var storeID = await DataFind(
-          `SELECT * FROM tbl_admin WHERE  id= ${id}`
-        );
-
-        var qury = `SELECT tbl_exp_cat_type.*,tbl_store.name as store FROM tbl_exp_cat_type join tbl_store on tbl_exp_cat_type.store_ID=tbl_store.id WHERE tbl_exp_cat_type.delet_flage=0 AND store_ID='${storeID[0].store_ID}'`;
         var ismulty = false;
       }
 
-      const data = await DataFind(qury);
-
       res.render("expensetype", {
-        type: data,
+        type: [],
         ismulty,
         storeList,
         accessdata,
@@ -59,13 +53,8 @@ router.get("/categorytype", auth, async (req, res) => {
       rolldetail[0].rollType.includes("store") &&
       rolldetail[0].expense.includes("read")
     ) {
-      const data = await DataFind(
-        "SELECT * FROM tbl_exp_cat_type WHERE delet_flage=0 AND store_ID=" +
-          store +
-          ""
-      );
       res.render("expensetype", {
-        type: data,
+        type: [],
         ismulty: false,
         storeList: [],
         accessdata,
@@ -78,6 +67,73 @@ router.get("/categorytype", auth, async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
+});
+
+router.get("/categorytype/data", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    if (loginas == 0) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (!rolldetail || rolldetail.length === 0 || !rolldetail[0].expense || !rolldetail[0].expense.includes("read")) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const isMaster = rolldetail[0].rollType.includes("master");
+    const canEdit = rolldetail[0].expense.includes("edit");
+    const canDelete = rolldetail[0].expense.includes("delete");
+
+    const scopeConditions = [`tbl_exp_cat_type.delet_flage = 0`];
+    if (!isMaster) {
+      scopeConditions.push(`tbl_exp_cat_type.store_ID = '${store}'`);
+    }
+
+    const filterConditions = [];
+    const storeParam = req.query.store_filter || req.query.store_id;
+    if (storeParam && isMaster && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+      const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_exp_cat_type.store_ID = '${cleanStore}'`);
+    }
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_exp_cat_type.*, COALESCE(tbl_store.name, '') as store`,
+      from: `tbl_exp_cat_type LEFT JOIN tbl_store ON tbl_exp_cat_type.store_ID = tbl_store.id`,
+      searchColumns: [
+        'tbl_exp_cat_type.type_name',
+        'tbl_store.name'
+      ],
+      baseWhere: scopeConditions,
+      filterWhere: filterConditions,
+      defaultOrder: 'tbl_exp_cat_type.id DESC',
+      columnMap: {
+        0: 'tbl_exp_cat_type.id',
+        1: 'tbl_exp_cat_type.type_name',
+        2: 'tbl_store.name'
+      },
+      postProcess: async (rows) => {
+        return rows.map((t) => ({
+          id: t.id,
+          type_name: t.type_name || '',
+          store: t.store || '',
+          canEdit,
+          canDelete
+        }));
+      }
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Expense category type list data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
   }
 });
 
@@ -305,11 +361,9 @@ router.get("/categorylist", auth, async (req, res) => {
         var ismulty = false;
       }
 
-      const list = await DataFind(qury);
-
       res.render("expenceCategory", {
         type: data,
-        list: list,
+        list: [],
         ismulty,
         storeList,
         accessdata,
@@ -325,14 +379,10 @@ router.get("/categorylist", auth, async (req, res) => {
           store +
           ""
       );
-      const list =
-        await DataFind(`SELECT tbl_exp_cat.id,tbl_exp_cat.store_ID,tbl_exp_cat.exp_cat_type_id,tbl_exp_cat.cat_name,tbl_exp_cat.delet_flage,
-            tbl_exp_cat_type.type_name FROM tbl_exp_cat join tbl_exp_cat_type on tbl_exp_cat.exp_cat_type_id=tbl_exp_cat_type.id 
-            WHERE tbl_exp_cat.delet_flage=0 AND tbl_exp_cat.store_ID=${store}`);
 
       res.render("expenceCategory", {
         type: data,
-        list: list,
+        list: [],
         ismulty: false,
         storeList: [],
         accessdata,
@@ -345,6 +395,88 @@ router.get("/categorylist", auth, async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
+});
+
+router.get("/categorylist/data", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    if (loginas == 0) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (!rolldetail || rolldetail.length === 0 || !rolldetail[0].expense || !rolldetail[0].expense.includes("read")) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const isMaster = rolldetail[0].rollType.includes("master");
+    const canEdit = rolldetail[0].expense.includes("edit");
+    const canDelete = rolldetail[0].expense.includes("delete");
+
+    const scopeConditions = [`tbl_exp_cat.delet_flage = 0`];
+    if (!isMaster) {
+      scopeConditions.push(`tbl_exp_cat.store_ID = '${store}'`);
+    }
+
+    const filterConditions = [];
+    const storeParam = req.query.store_filter || req.query.store_id;
+    if (storeParam && isMaster && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+      const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_exp_cat.store_ID = '${cleanStore}'`);
+    }
+
+    const typeParam = req.query.category_type_id || req.query.type_id;
+    if (typeParam && !["all", "ALL", ""].includes(String(typeParam).trim())) {
+      const cleanType = String(typeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_exp_cat.exp_cat_type_id = '${cleanType}'`);
+    }
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_exp_cat.id, tbl_exp_cat.store_ID, tbl_exp_cat.exp_cat_type_id, tbl_exp_cat.cat_name, tbl_exp_cat.delet_flage, COALESCE(tbl_exp_cat_type.type_name, '') as type_name, COALESCE(tbl_store.name, '') as store`,
+      from: `tbl_exp_cat 
+             LEFT JOIN tbl_exp_cat_type ON tbl_exp_cat.exp_cat_type_id = tbl_exp_cat_type.id 
+             LEFT JOIN tbl_store ON tbl_exp_cat.store_ID = tbl_store.id`,
+      searchColumns: [
+        'tbl_exp_cat.cat_name',
+        'tbl_exp_cat_type.type_name',
+        'tbl_store.name'
+      ],
+      baseWhere: scopeConditions,
+      filterWhere: filterConditions,
+      defaultOrder: 'tbl_exp_cat.id DESC',
+      columnMap: {
+        0: 'tbl_exp_cat.id',
+        1: 'tbl_exp_cat.cat_name',
+        2: 'tbl_exp_cat_type.type_name',
+        3: 'tbl_store.name',
+        4: 'tbl_exp_cat.delet_flage'
+      },
+      postProcess: async (rows) => {
+        return rows.map((c) => ({
+          id: c.id,
+          cat_name: c.cat_name || '',
+          exp_cat_type_id: c.exp_cat_type_id,
+          type_name: c.type_name || '',
+          store_ID: c.store_ID,
+          store: c.store || '',
+          delet_flage: parseInt(c.delet_flage) || 0,
+          canEdit,
+          canDelete
+        }));
+      }
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Expense category list data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
   }
 });
 
@@ -576,52 +708,40 @@ router.get("/list", auth, async (req, res) => {
   WHERE sr.id = ${roll}
 `);
 
+    let ismulty = false;
+    let account = "SELECT id, ac_name From tbl_account WHERE store_ID=0 AND delet_flage !='1'";
     if (
       rolldetail[0].rollType === "master" &&
       rolldetail[0].expense.includes("read")
     ) {
       const multiy = await DataFind("SELECT type FROM tbl_master_shop");
       if (multiy[0].type == 1) {
-        var qury = `SELECT tbl_expense.id,tbl_expense.date,tbl_expense.amount,tbl_expense.taxpercent,tbl_expense.category,tbl_expense.store_ID,towards,tbl_exp_cat.cat_name,taxInclud,payment_mode, tbl_admin.name, tbl_store.name as store, tbl_account.ac_name from tbl_expense join tbl_account on tbl_expense.payment_mode=tbl_account.id join tbl_admin on tbl_expense.created_by=tbl_admin.id join tbl_exp_cat on tbl_expense.category=tbl_exp_cat.id JOIN tbl_store on tbl_expense.store_ID=tbl_store.id where tbl_expense.delet_flage=0`;
-        var ismulty = true;
-        var account =
-          "SELECT id, ac_name From tbl_account WHERE store_ID=0 AND  delet_flage !='1'";
+        ismulty = true;
+        account = "SELECT id, ac_name From tbl_account WHERE store_ID=0 AND delet_flage !='1'";
       } else {
-        var storeID = await DataFind(
-          `SELECT * FROM tbl_admin WHERE  id= ${id}`
-        );
-
-        var qury = `SELECT tbl_expense.id,tbl_expense.date,tbl_expense.amount,tbl_expense.taxpercent,tbl_expense.category,tbl_expense.store_ID,towards,tbl_exp_cat.cat_name,taxInclud,payment_mode, tbl_admin.name, tbl_store.name as store, tbl_account.ac_name from tbl_expense join tbl_account on tbl_expense.payment_mode=tbl_account.id join tbl_admin on tbl_expense.created_by=tbl_admin.id join tbl_exp_cat on tbl_expense.category=tbl_exp_cat.id JOIN tbl_store on tbl_expense.store_ID=tbl_store.id  where tbl_expense.delet_flage=0 AND tbl_expense.store_ID ='${storeID[0].store_ID}' `;
-        var ismulty = false;
-        var account = `SELECT id, ac_name From tbl_account WHERE store_ID='${storeID[0].store_ID}' AND  delet_flage !='1'`;
+        const storeID = await DataFind(`SELECT * FROM tbl_admin WHERE id= ${id}`);
+        ismulty = false;
+        account = `SELECT id, ac_name From tbl_account WHERE store_ID='${storeID[0].store_ID}' AND delet_flage !='1'`;
       }
     } else if (
       rolldetail[0].rollType === "store" &&
       rolldetail[0].expense.includes("read")
     ) {
-      var ismulty = false;
-      var account =
-        "SELECT id, ac_name From tbl_account WHERE store_ID=" +
-        store +
-        " AND  delet_flage !='1' ";
-      var qury =
-        "SELECT tbl_expense.id,tbl_expense.date,tbl_expense.amount,tbl_expense.taxpercent,tbl_expense.category,tbl_expense.store_ID,towards,tbl_exp_cat.cat_name,taxInclud,payment_mode, tbl_admin.name, tbl_store.name as store, tbl_account.ac_name from tbl_expense join tbl_account on tbl_expense.payment_mode=tbl_account.id join tbl_admin on tbl_expense.created_by=tbl_admin.id join tbl_exp_cat on tbl_expense.category=tbl_exp_cat.id JOIN tbl_store on tbl_expense.store_ID=tbl_store.id where tbl_expense.delet_flage=0 AND tbl_expense.store_ID=" +
-        store +
-        "";
+      ismulty = false;
+      account = "SELECT id, ac_name From tbl_account WHERE store_ID=" + store + " AND delet_flage !='1'";
+    } else {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
     }
 
     const expencategory = await DataFind(
-      "SELECT id,cat_name FROM tbl_exp_cat WHERE delet_flage !=1 AND store_ID='" +
-        store +
-        "'"
+      "SELECT id,cat_name FROM tbl_exp_cat WHERE delet_flage !=1"
     );
     const acountlist = await DataFind(account);
 
-    const expdata = await DataFind(qury);
-
     res.render("expensList", {
       categ: expencategory,
-      expenlist: expdata,
+      expenlist: [],
       ismulty,
       storeList,
       acountlist,
@@ -631,6 +751,118 @@ router.get("/list", auth, async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+  }
+});
+
+router.get("/list/data", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    if (loginas == 0) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (!rolldetail || rolldetail.length === 0 || !rolldetail[0].expense || !rolldetail[0].expense.includes("read")) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
+
+    const isMaster = rolldetail[0].rollType === "master";
+    const canEdit = rolldetail[0].expense.includes("edit");
+    const canDelete = rolldetail[0].expense.includes("delete");
+
+    const scopeConditions = [`tbl_expense.delet_flage = 0`];
+    if (!isMaster) {
+      scopeConditions.push(`tbl_expense.store_ID = '${store}'`);
+    }
+
+    const filterConditions = [];
+    const storeParam = req.query.store_filter || req.query.store_id;
+    if (storeParam && isMaster && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+      const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_expense.store_ID = '${cleanStore}'`);
+    }
+
+    const catParam = req.query.category_filter || req.query.category;
+    if (catParam && !["all", "ALL", ""].includes(String(catParam).trim())) {
+      const cleanCat = String(catParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_expense.category = '${cleanCat}'`);
+    }
+
+    const accountParam = req.query.account_filter || req.query.account;
+    if (accountParam && !["all", "ALL", ""].includes(String(accountParam).trim())) {
+      const cleanAccount = String(accountParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_expense.payment_mode = '${cleanAccount}'`);
+    }
+
+    const startDate = req.query.start_date;
+    const endDate = req.query.end_date;
+    if (startDate && startDate.trim() !== "") {
+      const cleanStart = String(startDate).trim().replace(/'/g, "\\'");
+      filterConditions.push(`DATE(tbl_expense.date) >= '${cleanStart}'`);
+    }
+    if (endDate && endDate.trim() !== "") {
+      const cleanEnd = String(endDate).trim().replace(/'/g, "\\'");
+      filterConditions.push(`DATE(tbl_expense.date) <= '${cleanEnd}'`);
+    }
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_expense.id, tbl_expense.date, tbl_expense.amount, tbl_expense.taxpercent, tbl_expense.category, tbl_expense.store_ID, tbl_expense.towards, COALESCE(tbl_exp_cat.cat_name, '') as cat_name, tbl_expense.taxInclud, tbl_expense.payment_mode, COALESCE(tbl_admin.name, '') as created_by_name, COALESCE(tbl_store.name, '') as store_name, COALESCE(tbl_account.ac_name, '') as ac_name`,
+      from: `tbl_expense 
+             LEFT JOIN tbl_account ON tbl_expense.payment_mode = tbl_account.id 
+             LEFT JOIN tbl_admin ON tbl_expense.created_by = tbl_admin.id 
+             LEFT JOIN tbl_exp_cat ON tbl_expense.category = tbl_exp_cat.id 
+             LEFT JOIN tbl_store ON tbl_expense.store_ID = tbl_store.id`,
+      searchColumns: [
+        'tbl_expense.towards',
+        'tbl_expense.amount',
+        'tbl_exp_cat.cat_name',
+        'tbl_account.ac_name',
+        'tbl_admin.name',
+        'tbl_store.name'
+      ],
+      baseWhere: scopeConditions,
+      filterWhere: filterConditions,
+      defaultOrder: 'tbl_expense.id DESC',
+      columnMap: {
+        0: 'tbl_expense.date',
+        1: 'tbl_expense.amount',
+        2: 'tbl_expense.towards',
+        3: 'tbl_expense.taxInclud',
+        4: 'tbl_account.ac_name',
+        5: 'tbl_store.name',
+        6: 'tbl_admin.name'
+      },
+      postProcess: async (rows) => {
+        return rows.map((e) => ({
+          id: e.id,
+          date: e.date,
+          amount: parseFloat(e.amount) || 0,
+          towards: e.towards || '',
+          taxInclud: e.taxInclud || 'no',
+          taxpercent: e.taxpercent || 0,
+          payment_mode: e.payment_mode,
+          ac_name: e.ac_name || '',
+          category: e.category,
+          cat_name: e.cat_name || '',
+          store_ID: e.store_ID,
+          store: e.store_name || '',
+          created_by_name: e.created_by_name || '',
+          canEdit,
+          canDelete
+        }));
+      }
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Expense list data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
   }
 });
 

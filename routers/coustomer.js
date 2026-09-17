@@ -5,6 +5,8 @@ const access = require("../middelwer/access");
 const bcrypt = require('bcrypt')
 var {DataDelete,DataUpdate,DataInsert,DataFind} = require("../middelwer/databaseQurey")
 
+const { paginateDataTable } = require("../middelwer/dataTableHelper");
+
 router.get("/list", auth, async (req, res) => {
   const { id, roll, store, loginas } = req.user;
   const accessdata = await access(req.user);
@@ -30,99 +32,26 @@ router.get("/list", auth, async (req, res) => {
     if (sName.length > 0) staffStoreName = sName[0].name;
   }
 
+  let login = "store";
   if (loginas == 0) {
-    var ismulty = false;
-    var qury = `  SELECT 
-    c.*, 
-    (
-      SELECT COUNT(*) 
-      FROM tbl_transections t
-      JOIN tbl_account a ON t.account_id = a.id
-      WHERE t.customer_id = c.id
-    ) AS transiction
-  FROM tbl_customer c
-  WHERE c.store_ID = "${store}" 
-    AND c.username != '' 
-    AND c.delet_flage = 0 
-    AND c.id = ${id}`;
-
-    var login = "customer";
+    login = "customer";
   } else {
     const rolldetail = await DataFind(`
-                                SELECT 
-                                sr.*,
-                                r.roll_status, 
-                                r.rollType 
-                                FROM tbl_staff_roll sr
-                                JOIN tbl_roll r ON sr.main_roll_id = r.id
-                                WHERE sr.id = ${roll}
-                                     `);
-    console.log("rolldetail", rolldetail);
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
 
     if (isStaff && staffStoreId) {
-      var login = rolldetail[0].rollType === "master" ? "master" : "store";
-      var qury = `SELECT tbl_customer.*, COALESCE(tbl_store.name, '') AS store, (
-        SELECT COUNT(*) 
-        FROM tbl_transections 
-        JOIN tbl_account ON tbl_transections.account_id = tbl_account.id
-        WHERE tbl_transections.customer_id = tbl_customer.id
-      ) AS transiction FROM tbl_customer LEFT JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id WHERE tbl_customer.delet_flage = 0 AND tbl_customer.store_ID = '${staffStoreId}' AND (tbl_customer.username != '' OR tbl_customer.number != '' OR tbl_customer.email != '')`;
-    } else if (
-      rolldetail[0].rollType === "master" &&
-      rolldetail[0].customers.includes("read")
-    ) {
-      var login = "master";
-
-      var qury = `SELECT tbl_customer.*,  COALESCE(tbl_store.name, '') AS store,  (
-        SELECT COUNT(*) 
-        FROM tbl_transections 
-        JOIN tbl_account ON tbl_transections.account_id = tbl_account.id
-        WHERE tbl_transections.customer_id = tbl_customer.id
-     
-      ) AS transiction FROM  tbl_customer LEFT JOIN  tbl_store ON   tbl_customer.store_ID = tbl_store.id WHERE  tbl_customer.  delet_flage = 0   AND (tbl_customer.username != ''  OR tbl_customer.number != '' OR tbl_customer.email != '')`;
-    } else if (
-      rolldetail[0].rollType === "store" &&
-      rolldetail[0].customers.includes("read")
-    ) {
-      var login = "store";
-
-      if (multiy[0].customer_selection == 1) {
-        var qury = `SELECT tbl_customer.*, (
-        SELECT COUNT(*) 
-        FROM tbl_transections 
-        JOIN tbl_account ON tbl_transections.account_id = tbl_account.id
-        WHERE tbl_transections.customer_id = tbl_customer.id
- 
-      ) AS transiction  FROM tbl_customer WHERE (username != ''  AND number != ''  AND  email != '') AND delet_flage = 0 `;
-      } else {
-        var qury = `SELECT tbl_customer.*, (
-        SELECT COUNT(*) 
-        FROM tbl_transections 
-        JOIN tbl_account ON tbl_transections.account_id = tbl_account.id
-        WHERE tbl_transections.customer_id = tbl_customer.id
-          
-      ) AS transiction FROM tbl_customer where store_ID="${store}" AND (username != ''  AND number != '' AND  email != '' ) AND delet_flage = 0 `;
-      }
-    } else {
-      req.flash("error", "Your are not authoraized");
-      return res.redirect("back");
+      login = (rolldetail.length > 0 && rolldetail[0].rollType === "master") ? "master" : "store";
+    } else if (rolldetail.length > 0 && rolldetail[0].rollType === "master") {
+      login = "master";
     }
   }
 
-  let alldata = await DataFind(qury);
-  let newdata = alldata.map(async (dval) => {
-    
-    let ledger = await DataFind(
-      `SELECT COUNT(*) AS tot_ledger FROM tbl_transections WHERE store_ID = '${dval.store_ID}'`
-    );
-    dval.tot_ledger = ledger[0].tot_ledger;
-    return dval;
-  });
-  let data = await Promise.all(newdata);
-   console.log("data12",data);
-   
   res.render("coustomer", {
-    coustormdata: data,
+    coustormdata: [],
     login,
     ismulty,
     storeList,
@@ -133,6 +62,140 @@ router.get("/list", auth, async (req, res) => {
     language: req.language_data,
     language_name: req.language_name,
   });
+});
+
+router.get("/list/data", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+
+    const multiy = await DataFind("SELECT type, customer_selection FROM tbl_master_shop");
+    const ismulty = multiy && multiy.length > 0 && multiy[0].type == 1 && multiy[0].customer_selection == 0;
+
+    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const staffStoreId = isStaff ? adminData[0].store_ID : null;
+
+    let login = "store";
+    let scopeConditions = [
+      "tbl_customer.delet_flage = 0",
+      "tbl_customer.name != 'Walk in customer'",
+      "(tbl_customer.username != '' OR tbl_customer.number != '' OR tbl_customer.email != '')"
+    ];
+
+    if (loginas == 0) {
+      login = "customer";
+      scopeConditions.push(`tbl_customer.store_ID = '${store}'`);
+      scopeConditions.push(`tbl_customer.id = ${id}`);
+    } else {
+      const rolldetail = await DataFind(`
+        SELECT sr.*, r.roll_status, r.rollType 
+        FROM tbl_staff_roll sr
+        JOIN tbl_roll r ON sr.main_roll_id = r.id
+        WHERE sr.id = ${roll}
+      `);
+
+      if (isStaff && staffStoreId) {
+        login = (rolldetail.length > 0 && rolldetail[0].rollType === "master") ? "master" : "store";
+        scopeConditions.push(`tbl_customer.store_ID = '${staffStoreId}'`);
+      } else if (
+        rolldetail &&
+        rolldetail.length > 0 &&
+        rolldetail[0].rollType === "master" &&
+        rolldetail[0].customers &&
+        rolldetail[0].customers.includes("read")
+      ) {
+        login = "master";
+      } else if (
+        rolldetail &&
+        rolldetail.length > 0 &&
+        rolldetail[0].rollType === "store" &&
+        rolldetail[0].customers &&
+        rolldetail[0].customers.includes("read")
+      ) {
+        login = "store";
+        if (multiy && multiy.length > 0 && multiy[0].customer_selection != 1) {
+          scopeConditions.push(`tbl_customer.store_ID = '${store}'`);
+        }
+      } else {
+        return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+      }
+    }
+
+    const filterConditions = [];
+    const statusParam = req.query.status_filter || req.query.approved;
+    if (statusParam !== undefined && statusParam !== null && !["all", "ALL", ""].includes(String(statusParam).trim())) {
+      const cleanApproved = String(statusParam).trim() === "1" ? "1" : "0";
+      filterConditions.push(`tbl_customer.approved = ${cleanApproved}`);
+    }
+
+    const storeParam = req.query.store_filter || req.query.store_id;
+    if (storeParam && login === "master" && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+      const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_customer.store_ID = '${cleanStore}'`);
+    }
+
+    const canEdit = Boolean(
+      (accessdata && accessdata.logas === 'custmor' && accessdata.roll && accessdata.roll.customer && accessdata.roll.customer.includes('edit')) ||
+      (accessdata && accessdata.roll && accessdata.roll.customers && accessdata.roll.customers.includes('edit'))
+    );
+    const canDelete = Boolean(
+      accessdata && accessdata.roll && accessdata.roll.customers && accessdata.roll.customers.includes('delete')
+    );
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_customer.*, 
+               COALESCE(tbl_store.name, '') AS store,
+               (
+                 SELECT COUNT(*) 
+                 FROM tbl_transections 
+                 WHERE tbl_transections.customer_id = tbl_customer.id
+               ) AS transiction`,
+      from: `tbl_customer LEFT JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id`,
+      searchColumns: [
+        'tbl_customer.name',
+        'tbl_customer.number',
+        'tbl_customer.email',
+        'tbl_customer.address',
+        'tbl_customer.taxnumber',
+        'tbl_store.name'
+      ],
+      baseWhere: scopeConditions,
+      filterWhere: filterConditions,
+      defaultOrder: 'tbl_customer.id DESC',
+      columnMap: {
+        0: 'tbl_customer.id',
+        1: 'tbl_customer.name',
+        2: 'tbl_customer.number',
+        3: 'tbl_customer.address',
+        4: 'tbl_store.name',
+        5: 'tbl_customer.approved'
+      },
+      postProcess: async (rows) => {
+        return rows.map((cust) => ({
+          id: cust.id,
+          name: cust.name || '',
+          number: cust.number || '',
+          email: cust.email || '',
+          address: cust.address || '',
+          store: cust.store || '',
+          taxnumber: cust.taxnumber || '',
+          roll_id: cust.roll_id || '',
+          approved: cust.approved === 1 ? 1 : 0,
+          delet_flage: cust.delet_flage,
+          transiction: parseInt(cust.transiction) || 0,
+          canEdit,
+          canDelete,
+          login
+        }));
+      }
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Customer list data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
+  }
 });
 
 
@@ -284,16 +347,6 @@ router.get("/ledger/:id", auth, async (req, res) => {
   try {
     const accessdata = await access(req.user);
 
-    console.log(req.params.id);
-
-    var qury = `SELECT tbl_transections.*, COALESCE(tbl_account.ac_name, "") AS ac_name
-                FROM tbl_customer 
-                JOIN tbl_transections ON tbl_customer.id = tbl_transections.customer_id
-                JOIN tbl_account ON tbl_transections.account_id=tbl_account.id
-                WHERE tbl_customer.id = '${req.params.id}'`;
-
-    const transection_list = await DataFind(qury);
-
     const customerData = await DataFind(`SELECT * FROM tbl_customer WHERE id = '${req.params.id}'`);
     const customer = (customerData && customerData.length > 0) ? customerData[0] : null;
 
@@ -301,11 +354,82 @@ router.get("/ledger/:id", auth, async (req, res) => {
       accessdata,
       language: req.language_data,
       language_name: req.language_name,
-      transection_list,
+      transection_list: [],
       customer,
     });
   } catch (error) {
     console.log(error);
+  }
+});
+
+router.get("/ledger/:id/data", auth, async (req, res) => {
+  try {
+    const customerId = req.params.id;
+    const filterConditions = [];
+
+    const typeParam = req.query.type_filter || req.query.transec_type;
+    if (typeParam && !["all", "ALL", ""].includes(String(typeParam).trim())) {
+      const cleanType = String(typeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_transections.transec_type = '${cleanType}'`);
+    }
+
+    if (req.query.start_date) {
+      const cleanStartDate = String(req.query.start_date).trim().replace(/'/g, "\\'");
+      filterConditions.push(`DATE(tbl_transections.date) >= '${cleanStartDate}'`);
+    }
+    if (req.query.end_date) {
+      const cleanEndDate = String(req.query.end_date).trim().replace(/'/g, "\\'");
+      filterConditions.push(`DATE(tbl_transections.date) <= '${cleanEndDate}'`);
+    }
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_transections.*, COALESCE(tbl_account.ac_name, "") AS ac_name`,
+      from: `tbl_transections LEFT JOIN tbl_account ON tbl_transections.account_id = tbl_account.id`,
+      searchColumns: [
+        'tbl_account.ac_name',
+        'tbl_transections.transec_type',
+        'tbl_transections.transec_detail',
+        'tbl_transections.debit_amount',
+        'tbl_transections.credit_amount'
+      ],
+      baseWhere: [`tbl_transections.customer_id = '${customerId}'`],
+      filterWhere: filterConditions,
+      defaultOrder: 'tbl_transections.id DESC',
+      columnMap: {
+        0: 'tbl_transections.id',
+        1: 'tbl_transections.date',
+        2: 'tbl_account.ac_name',
+        3: 'tbl_transections.transec_type',
+        4: 'tbl_transections.transec_detail',
+        5: 'tbl_transections.debit_amount',
+        6: 'tbl_transections.credit_amount'
+      },
+      postProcess: async (rows) => {
+        return rows.map((row) => {
+          let dateStr = '';
+          if (row.date) {
+            const d = new Date(row.date);
+            const day = (d.getDate() < 10 ? '0' : '') + d.getDate();
+            const month = ((d.getMonth() + 1) < 10 ? '0' : '') + (d.getMonth() + 1);
+            dateStr = `${d.getFullYear()}/${month}/${day}`;
+          }
+          return {
+            id: row.id,
+            date: dateStr,
+            ac_name: row.ac_name || '',
+            transec_type: row.transec_type || '',
+            transec_detail: row.transec_detail || '',
+            debit_amount: row.debit_amount || 0,
+            credit_amount: row.credit_amount || 0
+          };
+        });
+      }
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Customer ledger data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
   }
 });    
 

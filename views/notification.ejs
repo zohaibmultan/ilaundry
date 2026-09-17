@@ -1,99 +1,151 @@
 <!DOCTYPE html>
 <html lang="en" class="h-100">
 
-
 <head>
     <!-- meta and links start -->
     <%- include('templet/meta')-%>
-
 </head>
 
 <body>
-        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
-        <!--********** Content body start **********-->
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+    <!--********** Content body start **********-->
 
-        <div class="content-body">
-            <div class="container-fluid" style="min-height: 100vh;">
-                <div class="row">
-
-                    <div class="col-sm-12">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                     <table id="example" class="table display table-responsive-md" aria-label="table">
-                                        <thead>
-                                            <tr>
-                                                <th>
-                                                    <%= language.Invoice %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Date %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Notification %>
-                                                </th>
-                                                <th class="text-center">
-                                                    <%= language.Action %>
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <% notification_data.forEach((data)=> { %>
-                                                <tr>
-                                                    <td>
-                                                        <%= data.invoice %>
-                                                    </td>
-                                                    <td class="text-nowrap">
-                                                        <%= data.date %>
-                                                    </td>
-                                                    <td>
-                                                        <%= data.notification %>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div class="tbl-action-group">
-                                                            <% order_date.forEach((order_date)=> { %>
-                                                                <% if (data.invoice==order_date.order_id) { %>
-                                                                    <a href="/order/view/<%=order_date.id %>"
-                                                                        class="btn-tbl-action btn-tbl-view"
-                                                                        title="<%= language.View || 'View' %>">
-                                                                        <i class="fa fa-eye"></i></a>
-                                                                <% } %>
-                                                            <% }) %>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                <% }) %>
-                                        </tbody>
-                                    </table>
+    <div class="content-body">
+        <div class="container-fluid" style="min-height: 100vh;">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <%= language.Notification || 'Notifications' %>
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <!-- Server-side DataTable Toolbar -->
+                            <div class="server-dt-toolbar">
+                                <div class="server-dt-search">
+                                    <i class="fa fa-search"></i>
+                                    <input type="search" id="dtNotificationSearch" placeholder="<%= language.Search || 'Search notifications...' %>">
                                 </div>
+                                <div class="server-dt-filters">
+                                    <input type="date" class="server-dt-select" id="dtNotificationDate" title="Filter by date">
+
+                                    <select class="server-dt-select" id="dtNotificationPageLength">
+                                        <option value="10">10 <%= language.Entries || 'entries' %></option>
+                                        <option value="25">25 <%= language.Entries || 'entries' %></option>
+                                        <option value="50">50 <%= language.Entries || 'entries' %></option>
+                                        <option value="100">100 <%= language.Entries || 'entries' %></option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table id="server_notification_table" class="table display server-side-dt" style="width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 130px;"><%= language.Invoice %></th>
+                                            <th style="width: 140px;"><%= language.Date %></th>
+                                            <th><%= language.Notification %></th>
+                                            <th class="text-center" style="width: 90px;"><%= language.Action %></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
-
-
         </div>
+    </div>
 
-        <!--********** Content body end **********-->
-        <!--**********************************
-            Footer start
-        ***********************************-->
-        <%- include('templet/footer')-%>
+    <!--********** Content body end **********-->
+    <!--**********************************
+        Footer start
+    ***********************************-->
+    <%- include('templet/footer')-%>
 
-            <!--**********************************
-            Footer end
-        ***********************************-->
+    <!--**********************************
+        Footer end
+    ***********************************-->
 
-            </div>
+    </div>
 
-            <!--********** Main wrapper end **********-->
-            <!--**********************************
+    <!--********** Main wrapper end **********-->
+    <!--**********************************
         Scripts
     ***********************************-->
-            <%- include('templet/script')-%>
+    <%- include('templet/script')-%>
 
+    <script>
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#039;');
+        }
+
+        $(document).ready(function() {
+            const columns = [
+                {
+                    data: 'invoice',
+                    render: function(data, type, row) {
+                        if (!data) return '<span class="text-muted">-</span>';
+                        if (row.order_id) {
+                            return `<a href="/order/view/${row.order_id}" class="fw-bold text-primary font-monospace">#${escapeHtml(data)}</a>`;
+                        }
+                        return `<span class="fw-bold font-monospace text-dark">#${escapeHtml(data)}</span>`;
+                    }
+                },
+                {
+                    data: 'date',
+                    render: function(data) {
+                        return `<span class="text-muted text-nowrap">${escapeHtml(data || '')}</span>`;
+                    }
+                },
+                {
+                    data: 'notification',
+                    render: function(data) {
+                        return `<span class="text-dark">${escapeHtml(data || '')}</span>`;
+                    }
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-center',
+                    render: function(data, type, row) {
+                        if (row.order_id) {
+                            return `
+                                <div class="tbl-action-group">
+                                    <a href="/order/view/${row.order_id}" class="btn-tbl-action btn-tbl-view" title="<%= language.View || 'View' %>">
+                                        <i class="fa fa-eye"></i>
+                                    </a>
+                                </div>`;
+                        }
+                        return '<span class="text-muted">-</span>';
+                    }
+                }
+            ];
+
+            window.initServerDataTable('#server_notification_table', {
+                ajaxUrl: '/admin/notification/data',
+                columns: columns,
+                searchInput: '#dtNotificationSearch',
+                pageLengthSelect: '#dtNotificationPageLength',
+                filterSelectors: {
+                    date_filter: '#dtNotificationDate'
+                },
+                order: [[1, 'desc']],
+                language: {
+                    emptyTable: '<%= language.No_data_available_in_table || "No notifications found" %>'
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

@@ -11,6 +11,7 @@ var {
   DataInsert,
   DataFind
 } = require("../middelwer/databaseQurey");
+const { paginateDataTable } = require("../middelwer/dataTableHelper");
 
 async function idfororder() {
   const orderiddata = await DataFind(
@@ -153,6 +154,179 @@ async function buildOrderListQuery(user, statusParam, searchParam, limit = 10, o
   return { authorized: true, query, login, isStaff, staffStoreId };
 }
 
+router.get("/list/data", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
+
+    let scopeConditions = [];
+    let login = "store";
+
+    if (loginas == 0) {
+      login = "customer";
+      scopeConditions.push(`tbl_order.customer_id = ${id}`);
+    } else {
+      const rolldetail = await DataFind(`
+        SELECT sr.*, r.roll_status, r.rollType 
+        FROM tbl_staff_roll sr
+        JOIN tbl_roll r ON sr.main_roll_id = r.id
+        WHERE sr.id = ${roll}
+      `);
+
+      if (isStaff && staffStoreId) {
+        login = "store";
+        scopeConditions.push(`tbl_order.store_id = '${staffStoreId}'`);
+      } else if (
+        rolldetail &&
+        rolldetail.length > 0 &&
+        rolldetail[0].rollType === "master" &&
+        rolldetail[0].orders &&
+        rolldetail[0].orders.includes("read")
+      ) {
+        const multiy = await DataFind("SELECT type FROM tbl_master_shop");
+        if (multiy && multiy.length > 0 && multiy[0].type == 1) {
+          login = "master";
+        } else {
+          login = "store";
+          const storeID = await DataFind(`SELECT * FROM tbl_admin WHERE id = ${id}`);
+          const sId = (storeID && storeID.length > 0) ? storeID[0].store_ID : store;
+          scopeConditions.push(`tbl_order.store_id = '${sId}'`);
+        }
+      } else if (
+        rolldetail &&
+        rolldetail.length > 0 &&
+        rolldetail[0].rollType === "store" &&
+        rolldetail[0].orders &&
+        rolldetail[0].orders.includes("read")
+      ) {
+        login = "store";
+        scopeConditions.push(`tbl_order.store_id = ${store}`);
+      } else {
+        const adminData = await DataFind(`SELECT * FROM tbl_admin WHERE id = ${id}`);
+        if (adminData.length > 0) {
+          const multiy = await DataFind("SELECT type FROM tbl_master_shop");
+          if (multiy && multiy.length > 0 && multiy[0].type == 1) {
+            login = "master";
+          } else {
+            login = "store";
+            scopeConditions.push(`tbl_order.store_id = '${adminData[0].store_ID}'`);
+          }
+        }
+      }
+    }
+
+    const filterConditions = [];
+    const statusParam = req.query.status_filter || req.query.status;
+    if (statusParam && !["all", "ALL", "__ALL__ORDERS__00911", "__ALL__ORDERS__00911#", "", "0"].includes(String(statusParam).trim())) {
+      const cleanStatus = String(statusParam).trim().replace(/'/g, "\\'");
+      const orderStatus = await DataFind(
+        `SELECT * FROM tbl_orderstatus WHERE status = '${cleanStatus}' OR id = '${cleanStatus}'`
+      );
+      if (orderStatus.length > 0) {
+        filterConditions.push(`tbl_order.order_status = '${orderStatus[0].id}'`);
+      }
+    }
+
+    const storeParam = req.query.store_filter || req.query.store_id;
+    if (storeParam && login === "master" && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+      const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_order.store_id = '${cleanStore}'`);
+    }
+
+    if (req.query.start_date) {
+      const cleanStartDate = String(req.query.start_date).trim().replace(/'/g, "\\'");
+      filterConditions.push(`DATE(tbl_order.order_date) >= '${cleanStartDate}'`);
+    }
+    if (req.query.end_date) {
+      const cleanEndDate = String(req.query.end_date).trim().replace(/'/g, "\\'");
+      filterConditions.push(`DATE(tbl_order.order_date) <= '${cleanEndDate}'`);
+    }
+
+    const canDelete = Boolean(
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.orders &&
+      accessdata.roll.orders.includes("delete")
+    );
+    const canEdit = Boolean(
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.orders &&
+      accessdata.roll.orders.includes("edit")
+    );
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_order.*, 
+               COALESCE(tbl_customer.name, '') AS customer_name, 
+               COALESCE(tbl_customer.number, '') AS customer_number,
+               COALESCE(tbl_store.name, '') AS storeName, 
+               COALESCE(tbl_orderstatus.status, '') AS orderStatusName`,
+      from: `tbl_order 
+             LEFT JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id
+             LEFT JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id 
+             LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id`,
+      searchColumns: [
+        'tbl_order.order_id',
+        'tbl_customer.name',
+        'tbl_customer.number',
+        'tbl_store.name',
+        'tbl_orderstatus.status',
+        'tbl_order.reference_number'
+      ],
+      baseWhere: scopeConditions,
+      filterWhere: filterConditions,
+      defaultOrder: 'tbl_order.id DESC',
+      columnMap: {
+        0: 'tbl_order.order_id',
+        1: 'tbl_customer.name',
+        2: 'tbl_order.gross_total',
+        3: 'tbl_order.order_status',
+        4: 'tbl_order.paid_amount',
+        5: 'tbl_store.name'
+      },
+      postProcess: async (rows) => {
+        return rows.map((order) => {
+          const oDate = order.order_date ? new Date(order.order_date) : new Date();
+          const dDate = order.delivery_date ? new Date(order.delivery_date) : new Date();
+          const oDay = (oDate.getDate() < 10 ? '0' : '') + oDate.getDate();
+          const oMonth = (oDate.getMonth() + 1 < 10 ? '0' : '') + (oDate.getMonth() + 1);
+          const oYear = oDate.getFullYear();
+          const dDay = (dDate.getDate() < 10 ? '0' : '') + dDate.getDate();
+          const dMonth = (dDate.getMonth() + 1 < 10 ? '0' : '') + (dDate.getMonth() + 1);
+          const dYear = dDate.getFullYear();
+
+          const formattedOrderDate = `${oYear}-${oMonth}-${oDay}`;
+          const formattedDeliveryDate = `${dYear}-${dMonth}-${dDay}`;
+
+          let statusClass = 'status-processing';
+          if (order.order_status == 1) statusClass = 'status-pending';
+          else if (order.order_status == 2) statusClass = 'status-processing';
+          else if (order.order_status == 3) statusClass = 'status-ready';
+          else if (order.order_status == 4) statusClass = 'status-delivered';
+          else if (order.order_status == 5) statusClass = 'status-returned';
+          else if (order.order_status == 6) statusClass = 'status-cancelled';
+
+          return {
+            ...order,
+            formattedOrderDate,
+            formattedDeliveryDate,
+            statusClass,
+            canDelete,
+            canEdit,
+            isMaster: login === "master"
+          };
+        });
+      }
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error("/order/list/data error:", error);
+    res.status(500).json({ error: error.message, data: [] });
+  }
+});
+
 router.get("/list", auth, async (req, res) => {
   try {
     const accessdata = await access(req.user);
@@ -164,6 +338,7 @@ router.get("/list", auth, async (req, res) => {
 
     const orderlist = await DataFind(built.query);
     const Ordersatus = await DataFind("SELECT * FROM tbl_orderstatus ");
+    const storeList = await DataFind("SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0");
 
     res.render("order", {
       login: built.login,
@@ -171,6 +346,7 @@ router.get("/list", auth, async (req, res) => {
       staffStoreId: built.staffStoreId,
       Ordersatus,
       orderlist,
+      storeList,
       accessdata,
       language: req.language_data,
       language_name: req.language_name,

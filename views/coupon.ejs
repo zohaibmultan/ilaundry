@@ -59,121 +59,59 @@
                                     value="<%= accessdata?.thousands_separator %>">
                             </div>
                             <div class="card-body">
+                                <!-- Server-side DataTable Toolbar -->
+                                <div class="server-dt-toolbar">
+                                    <div class="server-dt-search">
+                                        <i class="fa fa-search"></i>
+                                        <input type="search" id="dtCouponSearch" placeholder="<%= language.Search || 'Search coupons...' %>">
+                                    </div>
+                                    <div class="server-dt-filters">
+                                        <select class="server-dt-select" id="dtCouponStatus">
+                                            <option value="all"><%= language.All_Status || 'All Status' %></option>
+                                            <option value="0"><%= language.Active || 'Active' %></option>
+                                            <option value="1"><%= language.Deactive || 'Deactive' %></option>
+                                        </select>
+
+                                        <select class="server-dt-select" id="dtCouponType">
+                                            <option value="all"><%= language.All_Type || 'All Types' %></option>
+                                            <option value="fixed">Fixed</option>
+                                            <option value="percentage">Percentage</option>
+                                        </select>
+
+                                        <% if (mlty) { %>
+                                            <select class="server-dt-select" id="dtCouponStore">
+                                                <option value="all"><%= language.All_Store || 'All Stores' %></option>
+                                                <% (storeList || []).forEach(function(st) { %>
+                                                    <option value="<%= st.id %>"><%= st.name %></option>
+                                                <% }) %>
+                                            </select>
+                                        <% } %>
+
+                                        <select class="server-dt-select" id="dtCouponPageLength">
+                                            <option value="10">10 <%= language.Entries || 'entries' %></option>
+                                            <option value="25">25 <%= language.Entries || 'entries' %></option>
+                                            <option value="50">50 <%= language.Entries || 'entries' %></option>
+                                            <option value="100">100 <%= language.Entries || 'entries' %></option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div class="table-responsive">
-                                    <table id="example3"
-                                        class="display table table-bordered table-striped verticle-middle table-responsive-sm" style="width: 100%;">
+                                    <table id="server_coupon_table" class="table display server-side-dt" style="width: 100%;">
                                         <thead>
                                             <tr>
-                                                <th class="text-nowrap">#</th>
-                                                <th class="text-nowrap">
-                                                    <%= language.Title %>
-                                                </th>
-                                                <th class="text-nowrap">
-                                                    <%= language.Code %>
-                                                </th>
-                                                <th class="text-nowrap">
-                                                    <%= language.Minmum_Purchase %>
-                                                </th>
-                                                <th class="text-nowrap">
-                                                    <%= language.Discount %>
-                                                </th>
-                                                <th class="text-nowrap">
-                                                    <%= language.Start_Date %>
-                                                </th>
-                                                <th class="text-nowrap">
-                                                    <%= language.End_Date %>
-                                                </th>
-                                                <th class="text-nowrap">
-                                                    <%= language.Status %>
-                                                </th>
-                                                <th class="<%= isadmin ? '': 'd-none' %> text-nowrap text-center">
-                                                    <%= language.Action %>
-                                                </th>
+                                                <th style="width: 50px;">#</th>
+                                                <th><%= language.Title %></th>
+                                                <th><%= language.Code %></th>
+                                                <th><%= language.Minmum_Purchase %></th>
+                                                <th><%= language.Discount %></th>
+                                                <th><%= language.Start_Date %></th>
+                                                <th><%= language.End_Date %></th>
+                                                <th style="width: 110px;"><%= language.Status %></th>
+                                                <th class="<%= isadmin ? '': 'd-none' %> text-center" style="width: 110px;"><%= language.Action %></th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            <% couponList.forEach(function(data, i){ %>
-                                                <tr>
-                                                    <td class="text-nowrap">
-                                                        <%= i + 1 %>
-                                                    </td>
-                                                    <td class="text-nowrap">
-                                                        <%= data.titel %>
-                                                    </td>
-                                                    <td class="text-nowrap">
-                                                        <%= data.code %>
-                                                    </td>
-                                                    <td class="symbol text-nowrap">
-                                                        <%= data.min_purchase %>
-                                                    </td>
-                                                    <td class="symbol text-nowrap">
-                                                        <%= data.discount %>
-                                                    </td>
-                                                    <td class="text-nowrap">
-                                                        <% let start_date=new Date(data.start_date) %>
-                                                            <% let start_date_day=(start_date.getDate() < 10 ? '0' : ''
-                                                                ) + start_date.getDate() %>
-                                                                <% let start_date_month=((start_date.getMonth()+1) < 10
-                                                                    ? '0' : '' ) + (start_date.getMonth()+1) %>
-                                                                    <% let start_date_year=start_date.getFullYear() %>
-                                                                        <% let
-                                                                            start_date_fullDate=`${start_date_year}-${start_date_month}-${start_date_day}`
-                                                                            %>
-
-                                                                            <%= start_date_fullDate %>
-                                                    </td>
-                                                    <td class="text-nowrap">
-                                                        <% let end_date=new Date(data.end_date) %>
-                                                            <% let end_date_day=(end_date.getDate() < 10 ? '0' : '' ) +
-                                                                end_date.getDate() %>
-                                                                <% let end_date_month=((end_date.getMonth()+1) < 10
-                                                                    ? '0' : '' ) + (end_date.getMonth()+1) %>
-                                                                    <% let end_date_year=end_date.getFullYear() %>
-                                                                        <% let
-                                                                            end_date_fullDate=`${end_date_year}-${end_date_month}-${end_date_day}`
-                                                                            %>
-
-                                                                            <%= end_date_fullDate %>
-                                                    </td>
-
-                                                    <td class="text-nowrap">
-                                                        <%if( data.status==0){ %>
-                                                            <span class="badge light badge-success ">Active</span>
-                                                            <% }else{ %>
-                                                                <span class="badge light badge-warning">Deactive</span>
-                                                                <% } %>
-                                                    </td>
-                                                    <td class="<%= isadmin ? '': 'd-none' %> text-nowrap text-center">
-                                                        <div class="tbl-action-group">
-                                                            <a href="#" class="btn-tbl-action btn-tbl-edit"
-                                                                id="coupons_update" data-bs-toggle="modal"
-                                                                data-bs-target="#coupon_update" data-id="<%= data.id %>"
-                                                                data-titel="<%= data.titel %>"
-                                                                data-type="<%= data.coupon_type %>"
-                                                                data-limit="<%= data.limit_forsame_user %>"
-                                                                data-start="<%= data.start_date %>"
-                                                                data-end="<%= data.end_date %>"
-                                                                data-minorder="<%= data.min_purchase %>"
-                                                                data-discount="<%= data.discount %>"
-                                                                data-status="<%= data.status %>"
-                                                                data-storelist="<%= data.store_list_id %>"
-                                                                title="<%= language.Edit || 'Edit' %>">
-                                                                <i class="fas fa-pencil-alt"></i></a>
-
-                                                            <button type="button"
-                                                                class="btn-tbl-action btn-tbl-delete"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#deleteCouponModal"
-                                                                data-id="<%= data.id %>"
-                                                                data-title="<%= data.coupon_titel %>"
-                                                                title="<%= language.Delete || 'Delete' %>">
-                                                                <i class="fa fa-trash"></i>
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                <% }) %>
-                                        </tbody>
+                                        <tbody></tbody>
                                     </table>
                                 </div>
                             </div>
@@ -515,38 +453,178 @@
             <!--********** Main wrapper end **********-->
             <%- include('templet/script')-%>
                 <script>
-                    $('#coupon_add').on('shown.bs.modal', function () {
-                        setTimeout(() => {
-                            $('#storelist').select2({
-                                dropdownParent: $('#coupon_add'),
+                    function escapeHtml(str) {
+                        if (!str) return '';
+                        return String(str)
+                          .replace(/&/g, '&amp;')
+                          .replace(/</g, '&lt;')
+                          .replace(/>/g, '&gt;')
+                          .replace(/"/g, '&quot;')
+                          .replace(/'/g, '&#039;');
+                    }
+
+                    function formatCouponDate(dStr) {
+                        if (!dStr) return '-';
+                        try {
+                            const d = new Date(dStr);
+                            if (isNaN(d.getTime())) return dStr;
+                            const day = (d.getDate() < 10 ? '0' : '') + d.getDate();
+                            const month = ((d.getMonth() + 1) < 10 ? '0' : '') + (d.getMonth() + 1);
+                            const year = d.getFullYear();
+                            return `${year}-${month}-${day}`;
+                        } catch(e) {
+                            return dStr;
+                        }
+                    }
+
+                    $(document).ready(function() {
+                        const isAdmin = <%= isadmin ? 'true' : 'false' %>;
+
+                        const columns = [
+                            {
+                                data: null,
+                                orderable: false,
+                                searchable: false,
+                                render: function(data, type, row, meta) {
+                                    return meta.settings._iDisplayStart + meta.row + 1;
+                                }
+                            },
+                            {
+                                data: 'titel',
+                                render: function(data, type, row) {
+                                    return `<span class="fw-semibold text-dark">${escapeHtml(data)}</span>`;
+                                }
+                            },
+                            {
+                                data: 'code',
+                                render: function(data, type, row) {
+                                    return `<span class="badge bg-light text-primary font-monospace fw-bold px-2 py-1">${escapeHtml(data)}</span>`;
+                                }
+                            },
+                            {
+                                data: 'min_purchase',
+                                render: function(data, type, row) {
+                                    return `<span class="fw-semibold">${window.formatDtCurrency(data)}</span>`;
+                                }
+                            },
+                            {
+                                data: 'discount',
+                                render: function(data, type, row) {
+                                    if (row.coupon_type === 'percentage') {
+                                        return `<span class="badge light badge-info font-weight-bold">${data}%</span>`;
+                                    }
+                                    return `<span class="fw-semibold">${window.formatDtCurrency(data)}</span>`;
+                                }
+                            },
+                            {
+                                data: 'start_date',
+                                render: function(data) {
+                                    return `<span class="text-muted">${formatCouponDate(data)}</span>`;
+                                }
+                            },
+                            {
+                                data: 'end_date',
+                                render: function(data) {
+                                    return `<span class="text-muted">${formatCouponDate(data)}</span>`;
+                                }
+                            },
+                            {
+                                data: 'status',
+                                render: function(data, type, row) {
+                                    if (parseInt(data) === 0) {
+                                        return '<span class="badge-status-pill badge-status-active">Active</span>';
+                                    } else {
+                                        return '<span class="badge-status-pill badge-status-inactive">Deactive</span>';
+                                    }
+                                }
+                            },
+                            {
+                                data: null,
+                                orderable: false,
+                                searchable: false,
+                                visible: isAdmin,
+                                className: 'text-center',
+                                render: function(data, type, row) {
+                                    const editBtn = row.canEdit ? `
+                                        <a href="#" class="btn-tbl-action btn-tbl-edit"
+                                           id="coupons_update" data-bs-toggle="modal"
+                                           data-bs-target="#coupon_update" 
+                                           data-id="${row.id}"
+                                           data-titel="${escapeHtml(row.titel)}"
+                                           data-type="${row.coupon_type}"
+                                           data-limit="${row.limit_forsame_user}"
+                                           data-start="${row.start_date}"
+                                           data-end="${row.end_date}"
+                                           data-minorder="${row.min_purchase}"
+                                           data-discount="${row.discount}"
+                                           data-status="${row.status}"
+                                           data-storelist="${row.store_list_id}"
+                                           title="<%= language.Edit || 'Edit' %>">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </a>` : '';
+
+                                    const deleteBtn = row.canDelete ? `
+                                        <button type="button"
+                                           class="btn-tbl-action btn-tbl-delete"
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#deleteCouponModal"
+                                           data-id="${row.id}"
+                                           data-title="${escapeHtml(row.titel)}"
+                                           title="<%= language.Delete || 'Delete' %>">
+                                            <i class="fa fa-trash"></i>
+                                        </button>` : '';
+
+                                    return `<div class="tbl-action-group">${editBtn}${deleteBtn}</div>`;
+                                }
+                            }
+                        ];
+
+                        window.initServerDataTable('#server_coupon_table', {
+                            ajaxUrl: '/coupon/list/data',
+                            columns: columns,
+                            searchInput: '#dtCouponSearch',
+                            pageLengthSelect: '#dtCouponPageLength',
+                            filterSelectors: {
+                                status: '#dtCouponStatus',
+                                type: '#dtCouponType',
+                                store_id: '#dtCouponStore'
+                            },
+                            order: [[0, 'desc']],
+                            language: {
+                                emptyTable: '<%= language.No_data_available_in_table || "No coupons found" %>'
+                            }
+                        });
+
+                        $('#coupon_add').on('shown.bs.modal', function () {
+                            setTimeout(() => {
+                                $('#storelist').select2({
+                                    dropdownParent: $('#coupon_add'),
+                                    placeholder: 'Select Store(s)',
+                                    width: '100%',
+                                    allowClear: true
+                                });
+                            }, 100);
+                        });
+
+                        $('#coupon_update').on('shown.bs.modal', function () {
+                            if ($.fn.select2 && $('#cupon_update').hasClass('select2-hidden-accessible')) {
+                                $('#cupon_update').select2('destroy');
+                            }
+
+                            $('#cupon_update').select2({
+                                dropdownParent: $('#coupon_update'),
                                 placeholder: 'Select Store(s)',
                                 width: '100%',
                                 allowClear: true
                             });
-                        }, 100);
-                    });
-                </script>
-
-                <script>
-                    $('#coupon_update').on('shown.bs.modal', function () {
-
-                        if ($.fn.select2 && $('#cupon_update').hasClass('select2-hidden-accessible')) {
-                            $('#cupon_update').select2('destroy');
-                        }
-
-                        $('#cupon_update').select2({
-                            dropdownParent: $('#coupon_update'),
-                            placeholder: 'Select Store(s)',
-                            width: '100%',
-                            allowClear: true
                         });
-                    });
 
-                    $(document).on('click', '.btn-tbl-delete[data-bs-target="#deleteCouponModal"]', function() {
-                        const couponId = $(this).attr('data-id');
-                        const couponTitle = $(this).attr('data-title');
-                        $('#deleteCouponModalTitle').text(couponTitle || ('#' + couponId));
-                        $('#deleteCouponConfirmBtn').attr('href', '/coupon/delete/' + couponId);
+                        $(document).on('click', '.btn-tbl-delete[data-bs-target="#deleteCouponModal"]', function() {
+                            const couponId = $(this).attr('data-id');
+                            const couponTitle = $(this).attr('data-title');
+                            $('#deleteCouponModalTitle').text(couponTitle || ('#' + couponId));
+                            $('#deleteCouponConfirmBtn').attr('href', '/coupon/delete/' + couponId);
+                        });
                     });
                 </script>
 

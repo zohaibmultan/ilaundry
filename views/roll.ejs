@@ -29,65 +29,40 @@
                                     <%= language.Add_New_Role %>
                                 </button> -->
                             </div>
-                            <div class="card-body ">
+                            <div class="card-body">
+                                <!-- Server-side DataTable Toolbar -->
+                                <div class="server-dt-toolbar">
+                                    <div class="server-dt-search">
+                                        <i class="fa fa-search"></i>
+                                        <input type="search" id="dtRollSearch" placeholder="<%= language.Search || 'Search roles...' %>">
+                                    </div>
+                                    <div class="server-dt-filters">
+                                        <select class="server-dt-select" id="dtRollStatus">
+                                            <option value="all"><%= language.All_Status || 'All Status' %></option>
+                                            <option value="active"><%= language.Active || 'Active' %></option>
+                                            <option value="deactive"><%= language.Deactive || 'Deactive' %></option>
+                                        </select>
+
+                                        <select class="server-dt-select" id="dtRollPageLength">
+                                            <option value="10">10 <%= language.Entries || 'entries' %></option>
+                                            <option value="25">25 <%= language.Entries || 'entries' %></option>
+                                            <option value="50">50 <%= language.Entries || 'entries' %></option>
+                                            <option value="100">100 <%= language.Entries || 'entries' %></option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div class="table-responsive">
-                                    <table id="example3" class="table display table-responsive-lg" style="width: 100%;">
+                                    <table id="server_roll_table" class="table display server-side-dt" style="width: 100%;">
                                         <thead>
                                             <tr>
-                                                <th>#</th>
-                                                <th>
-                                                    <%= language.Role_Name %>
-                                                </th>
-                                                <!-- <th class="<%= ismulty ? '': 'd-none' %>">
-                                                    <%= language.Store_Name %>
-                                                </th> -->
-                                                <th>
-                                                    <%= language.Role_Status %>
-                                                </th>
-                                                <th
-                                                    class="text-center <%= accessdata.logas == 'master' || accessdata.roll.rollaccess.includes('edit') || accessdata.roll.rollaccess.includes('delete') ?'':'d-none' %>">
-                                                    <%= language.Action %>
-                                                </th>
+                                                <th style="width: 50px;">#</th>
+                                                <th><%= language.Role_Name %></th>
+                                                <th style="width: 120px;"><%= language.Role_Status %></th>
+                                                <th class="text-center" style="width: 100px;"><%= language.Action %></th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            <% rollList.forEach(function(data, i){ %>
-                                                <tr>
-                                                    <td>
-                                                        <%= i + 1%>
-                                                    </td>
-                                                    <td>
-                                                        <%= data.roll%>
-                                                    </td>
-                                                    <!-- <td class="<%= ismulty ? '': 'd-none' %>">
-                                                        <%=data.store %>
-                                                    </td> -->
-                                                    <td>
-
-                                                        <div class="form-group">
-                                                            <div class="form-check form-switch">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    id="active<%= data.id %>" name="active"
-                                                                    onclick="changeStatus('<%= data.id %>')"
-                                                                    <%=data.roll_status==='active' ? 'checked' : '' %>>
-                                                            </div>
-                                                        </div>
-
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div class="tbl-action-group">
-                                                            <a href="#"
-                                                                class="btn-tbl-action btn-tbl-edit <%= accessdata.logas == 'master' || accessdata.roll.rollaccess.includes('edit') ?'' : 'd-none' %>"
-                                                                id="updateroll<%= data.rollType  %>" data-bs-toggle="modal"
-                                                                data-bs-target="#roll_list_update_<%= data.rollType  %>"
-                                                                data-id="<%= data.id%>"
-                                                                title="<%= language.Edit || 'Edit' %>">
-                                                                <i class="fas fa-pencil-alt"></i></a>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                <% }) %>
-                                        </tbody>
+                                        <tbody></tbody>
                                     </table>
                                 </div>
                             </div>
@@ -2245,32 +2220,88 @@
                 </script>
 
                 <script>
-                    function changeStatus(id) {
-                        const checkbox = document.getElementById(`active${id}`);
+                    function escapeHtml(str) {
+                        if (!str) return '';
+                        return String(str)
+                          .replace(/&/g, '&amp;')
+                          .replace(/</g, '&lt;')
+                          .replace(/>/g, '&gt;')
+                          .replace(/"/g, '&quot;')
+                          .replace(/'/g, '&#039;');
+                    }
 
-                        const isChecked = checkbox.checked;
-
-                        const status = isChecked ? 'active' : 'deactive';
-
-                        console.log(`ID: ${id}, Checked: ${isChecked}, Status to send: ${status}`);
+                    function changeRoleStatus(id, currentStatus) {
+                        const newStatus = currentStatus === 'active' ? 'deactive' : 'active';
                         $.ajax({
                             type: 'POST',
                             url: `/tool/rollstatus/${id}`,
-                            data: { status: status },
+                            data: { status: newStatus },
                             success: function (res) {
-                                console.log('Server response:', res);
+                                if (window.rollTable) {
+                                    window.rollTable.ajax.reload(null, false);
+                                }
                             },
                             error: function (err) {
                                 console.error('Error:', err);
-
-                                checkbox.checked = !checkbox.checked;
                             }
                         });
                     }
+
+                    $(document).ready(function() {
+                        window.rollTable = window.initServerDataTable('#server_roll_table', {
+                            ajaxUrl: '/tool/roll/data',
+                            columns: [
+                                {
+                                    data: null,
+                                    orderable: false,
+                                    searchable: false,
+                                    render: function(data, type, row, meta) {
+                                        return meta.settings._iDisplayStart + meta.row + 1;
+                                    }
+                                },
+                                {
+                                    data: 'roll',
+                                    render: function(data, type, row) {
+                                        return `<div class="fw-bold text-dark">${escapeHtml(data)}</div><div class="text-xs text-muted text-uppercase">${escapeHtml(row.rollType || '')}</div>`;
+                                    }
+                                },
+                                {
+                                    data: 'roll_status',
+                                    render: function(data, type, row) {
+                                        const isChecked = data === 'active' ? 'checked' : '';
+                                        return `
+                                            <div class="form-check form-switch d-inline-block">
+                                                <input class="form-check-input" type="checkbox" id="active${row.id}" ${isChecked} onchange="changeRoleStatus('${row.id}', '${escapeHtml(data)}')">
+                                            </div>
+                                        `;
+                                    }
+                                },
+                                {
+                                    data: null,
+                                    orderable: false,
+                                    searchable: false,
+                                    className: 'text-center',
+                                    render: function(data, type, row) {
+                                        if (!row.canEdit) return '';
+                                        return `
+                                            <div class="tbl-action-group justify-content-center">
+                                                <a href="#" class="btn-dt-action btn-edit" id="updateroll${row.rollType}" data-bs-toggle="modal" data-bs-target="#roll_list_update_${row.rollType}" data-id="${row.id}" title="<%= language.Edit || 'Edit' %>">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </a>
+                                            </div>
+                                        `;
+                                    }
+                                }
+                            ],
+                            order: [[0, 'asc']],
+                            searchInput: '#dtRollSearch',
+                            pageLengthSelect: '#dtRollPageLength',
+                            filterElements: {
+                                status_filter: '#dtRollStatus'
+                            }
+                        });
+                    });
                 </script>
-
-
-
 </body>
 
 
