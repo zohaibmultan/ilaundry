@@ -19,8 +19,8 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="card ">
-                            <div class="card-header">
-                                <h3 class="card-title">
+                            <div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h3 class="card-title mb-0">
                                     <%= language.Staff %>
                                 </h3>
                                 <button
@@ -38,7 +38,7 @@
                                             <input class="form-control" type="search" id="dtStaffSearch" placeholder="<%= language.Search || 'Search staff by name, phone, email, username...' %>">
                                         </div>
                                     </div>
-                                    <div class="<%= ismulty ? 'col-12 col-sm-4 col-md-3 col-lg-3' : 'col-12 col-sm-6 col-md-3 col-lg-3' %>">
+                                    <div class="<%= ismulty ? 'col-6 col-sm-4 col-md-3 col-lg-3' : 'col-6 col-sm-6 col-md-3 col-lg-3' %>">
                                         <select class="form-select" id="dtStaffStatus">
                                             <option value="all"><%= language.All_Status || 'All Status' %></option>
                                             <option value="1"><%= language.Approved || 'Approved' %></option>
@@ -47,7 +47,7 @@
                                     </div>
 
                                     <% if (ismulty) { %>
-                                        <div class="col-12 col-sm-4 col-md-3 col-lg-3">
+                                        <div class="col-6 col-sm-4 col-md-3 col-lg-3">
                                             <select class="form-select" id="dtStaffStore">
                                                 <option value="all"><%= language.All_Store || 'All Stores' %></option>
                                                 <% storeList.forEach(function(st) { %>
@@ -95,7 +95,7 @@
 
         <!-- Modal update -->
         <div class="modal fade" id="staff_update">
-            <div class="modal-dialog  modal-dialog-scrollable" role="document">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">

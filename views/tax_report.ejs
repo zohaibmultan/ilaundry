@@ -31,9 +31,9 @@
                                     <input type="hiden" name="thousands_separator"
                                         value="<%= accessdata.thousands_separator %>">
                                 </div>
-                                <div class="row">
+                                <div class="row g-3">
                                     <div
-                                        class="col-lg-3 col-md-6 col-sm-12 <%= accessdata.logas == 'master' && accessdata.mutibranch  ? '' :'d-none' %>">
+                                        class="col-12 col-md-6 col-lg-3 <%= accessdata.logas == 'master' && accessdata.mutibranch  ? '' :'d-none' %>">
                                         <label class="form-label">
                                             <%= language.Store_Name %>
                                         </label>
@@ -47,7 +47,7 @@
                                         </select>
 
                                     </div>
-                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                    <div class="col-6 col-md-6 col-lg-3">
                                         <label class="form-label">
                                             <%= language.Start_Date %>
                                         </label>
@@ -55,7 +55,7 @@
                                             id="tax_report_start_date">
                                     </div>
 
-                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                    <div class="col-6 col-md-6 col-lg-3">
                                         <label class="form-label">
                                             <%= language.End_Date %>
                                         </label>
@@ -63,7 +63,7 @@
                                             id="tax_report_end_date">
                                     </div>
 
-                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                    <div class="col-12 col-md-6 col-lg-3">
                                         <label class="form-label">
                                             <%= language.Filter %>
                                         </label>
@@ -145,32 +145,30 @@
 
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="col d-flex">
+                                <div class="row g-3 align-items-center mt-2">
+                                    <div class="col-6 col-md-auto d-flex align-items-center gap-1">
                                         <strong class="text-nowrap">
                                             <%= language.Total_Amount %> :
                                         </strong>
                                         <strong class="text-nowrap"><span id="tax_report_amount"
                                                 class="symbol">0</span></strong>
                                     </div>
-                                    <div class="col d-flex">
+                                    <div class="col-6 col-md-auto d-flex align-items-center gap-1">
                                         <strong class="text-nowrap">
                                             <%= language.Total_Tax %> :
                                         </strong>
                                         <strong class="text-nowrap"> <span id="tax_report_tax"
                                                 class="symbol">0</span></strong>
                                     </div>
-                                    <div class="col">
-                                        <div class="d-flex mt-2">
-                                            <button type="submit" class="btn btn-success text-nowrap me-2"
-                                                onclick="downloadtaxreport()" id="Download_order_report">
-                                                <%= language.Download_Report %>
-                                            </button>
-                                            <button type="submit" id="order_report_print"
-                                                class="btn btn-warning mb-0 text-nowrap">
-                                                <%= language.Print_Report %>
-                                            </button>
-                                        </div>
+                                    <div class="col-12 col-md d-flex justify-content-md-end flex-wrap gap-2 mt-2 mt-md-0">
+                                        <button type="submit" class="btn btn-success text-nowrap"
+                                            onclick="downloadtaxreport()" id="Download_order_report">
+                                            <%= language.Download_Report %>
+                                        </button>
+                                        <button type="submit" id="order_report_print"
+                                            class="btn btn-warning mb-0 text-nowrap">
+                                            <%= language.Print_Report %>
+                                        </button>
                                     </div>
                                 </div>
                             </div>

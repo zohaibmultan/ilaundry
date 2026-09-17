@@ -18,23 +18,22 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="card ">
-                            <div class="card-header d-flex justify-content-between">
+                            <div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <div>
-                                    <h3 class="card-title">
+                                    <h3 class="card-title mb-0">
                                         <%= language.Services %>
                                     </h3>
                                 </div>
-                                <div class="text-end">
-                                    <a href="/services/csv_file" class="btn btn-rounded btn-primary btn-sm mx-3 mb-2">
-                                        <i class="fa fa-upload color-info me-2"></i></span>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a href="/services/csv_file" class="btn btn-rounded btn-primary btn-sm">
+                                        <i class="fa fa-upload color-info me-2"></i>
                                         <%= language.Bulk_Upload_Services %>
                                     </a>
 
-                                    <a href="/services/addservice"><button
-                                            class="btn btn-sm btn-rounded btn-primary  <%= accessdata.roll.service.includes('write') ?'':'d-none' %> mb-2">
-                                            <i class="fa fa-plus color-info me-2"></i></span>
-                                            <%= language.Add_New_Services %>
-                                        </button></a>
+                                    <a href="/services/addservice" class="btn btn-sm btn-rounded btn-primary <%= accessdata.roll.service.includes('write') ?'':'d-none' %>">
+                                        <i class="fa fa-plus color-info me-2"></i>
+                                        <%= language.Add_New_Services %>
+                                    </a>
                                 </div>
                             </div>
                             <div class="card-body">
@@ -46,7 +45,7 @@
                                             <input class="form-control" type="search" id="dtServiceSearch" placeholder="<%= language.Search || 'Search services...' %>">
                                         </div>
                                     </div>
-                                    <div class="<%= ismulty ? 'col-12 col-sm-4 col-md-3 col-lg-3' : 'col-12 col-sm-6 col-md-3 col-lg-3' %>">
+                                    <div class="<%= ismulty ? 'col-6 col-sm-4 col-md-3 col-lg-3' : 'col-6 col-sm-6 col-md-3 col-lg-3' %>">
                                         <select class="form-select" id="dtServiceStatus">
                                             <option value="all"><%= language.All_Status || 'All Status' %></option>
                                             <option value="0"><%= language.Active || 'Active' %></option>
@@ -55,7 +54,7 @@
                                     </div>
 
                                     <% if (ismulty) { %>
-                                        <div class="col-12 col-sm-4 col-md-3 col-lg-3">
+                                        <div class="col-6 col-sm-4 col-md-3 col-lg-3">
                                             <select class="form-select" id="dtServiceStore">
                                                 <option value="all"><%= language.All_Store || 'All Stores' %></option>
                                                 <% (storeList || []).forEach(function(st) { %>

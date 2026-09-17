@@ -5,6 +5,39 @@
 (function(window, $) {
     "use strict";
 
+    // Set DataTables to log errors to console rather than displaying alert modals
+    if ($ && $.fn && $.fn.dataTable && $.fn.dataTable.ext) {
+        $.fn.dataTable.ext.errMode = 'console';
+    }
+
+    /**
+     * Standard currency formatter for DataTables columns
+     * Uses currency symbol from <input name="sym"> with fallback.
+     */
+    function formatDtCurrency(val) {
+        if (val === undefined || val === null || val === '') return '—';
+        var sym = $('input[name=sym]').val() || '';
+        var num = parseFloat(val);
+        if (isNaN(num)) return val;
+        return sym + num.toFixed(2);
+    }
+    window.formatDtCurrency = formatDtCurrency;
+
+    /**
+     * Safe HTML escaper for cell rendering
+     */
+    if (typeof window.escapeHtml !== 'function') {
+        window.escapeHtml = function(str) {
+            if (!str && str !== 0) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+    }
+
     function initServerDataTable(selector, options) {
         var $table = $(selector);
         if (!$table.length) return null;
@@ -40,6 +73,21 @@
                 url: options.ajaxUrl,
                 type: 'GET',
                 data: function(d) {
+                    // Extract filter mappings from filterSelectors or filterElements
+                    var filterMap = options.filterSelectors || options.filterElements || {};
+                    for (var key in filterMap) {
+                        if (filterMap.hasOwnProperty(key)) {
+                            var sel = filterMap[key];
+                            if (sel) {
+                                var fVal = $(sel).val();
+                                if (fVal !== undefined && fVal !== null && fVal !== '') {
+                                    d[key] = fVal;
+                                }
+                            }
+                        }
+                    }
+
+                    // Merge custom getFilters if provided
                     if (typeof options.getFilters === 'function') {
                         var customFilters = options.getFilters();
                         $.extend(d, customFilters);
@@ -106,9 +154,22 @@
             });
         }
 
-        // Bind Filter Inputs / Selects
+        // Bind Filter Inputs / Selects automatically
+        var allFilterSelectors = [];
         if (options.filterInputs) {
-            $(document).on('change', options.filterInputs, function() {
+            allFilterSelectors.push(options.filterInputs);
+        }
+        var filterMap = options.filterSelectors || options.filterElements || {};
+        for (var fk in filterMap) {
+            if (filterMap.hasOwnProperty(fk) && filterMap[fk]) {
+                allFilterSelectors.push(filterMap[fk]);
+            }
+        }
+
+        if (allFilterSelectors.length > 0) {
+            var combinedFilterSelector = allFilterSelectors.join(', ');
+            $(document).off('change.serverDtFilter', combinedFilterSelector)
+                       .on('change.serverDtFilter', combinedFilterSelector, function() {
                 dataTable.ajax.reload();
             });
         }

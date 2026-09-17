@@ -25,13 +25,13 @@
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span class="badge <%= masterstore.type == 1 ? 'badge-primary' : 'badge-secondary' %>">
+                    <span class="badge <%= masterstore.type == 1 ? 'bg-primary-subtle text-primary' : 'bg-secondary-subtle text-secondary' %>">
                         <i class="fas fa-store me-1"></i> <%= masterstore.type == 1 ? 'Multi-Store Enabled' : 'Single Store' %>
                     </span>
-                    <span class="badge badge-info">
+                    <span class="badge bg-info-subtle text-info">
                         <i class="fas fa-dollar-sign me-1"></i> Currency: <%= masterstore.currency_symbol || '$' %>
                     </span>
-                    <span class="badge badge-success">
+                    <span class="badge bg-success-subtle text-success">
                         <i class="fas fa-print me-1"></i> Dual-Printers Configured
                     </span>
                 </div>
@@ -65,7 +65,7 @@
                                         <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="width: 8px; height: 8px;"></span>
                                         <span>Checking Server...</span>
                                     </div>
-                                    <span class="badge badge-primary">HARDWARE</span>
+                                    <span class="badge bg-primary-subtle text-primary">HARDWARE</span>
                                 </div>
                             </div>
 
@@ -250,7 +250,7 @@
                                         <p class="settings-card-subtitle">Application branding, store logo, browser favicon, and footer</p>
                                     </div>
                                 </div>
-                                <span class="badge badge-info">BRANDING</span>
+                                <span class="badge bg-info-subtle text-info">BRANDING</span>
                             </div>
 
                             <div class="row g-3">
@@ -312,7 +312,7 @@
                                         <p class="settings-card-subtitle">Multi-store topology, customer isolation, and auto-approval policies</p>
                                     </div>
                                 </div>
-                                <span class="badge badge-success">OPERATIONS</span>
+                                <span class="badge bg-success-subtle text-success">OPERATIONS</span>
                             </div>
 
                             <div class="row g-3">
@@ -417,7 +417,7 @@
                                         <p class="settings-card-subtitle">Monetary formatting, decimal markers, and operational timezone</p>
                                     </div>
                                 </div>
-                                <span class="badge badge-warning">LOCALIZATION</span>
+                                <span class="badge bg-warning-subtle text-warning">LOCALIZATION</span>
                             </div>
 
                             <div class="row g-3">
@@ -475,7 +475,7 @@
                                         <p class="settings-card-subtitle">OneSignal web push notifications and Twilio SMS gateway API configuration</p>
                                     </div>
                                 </div>
-                                <span class="badge badge-secondary">INTEGRATIONS</span>
+                                <span class="badge bg-secondary-subtle text-secondary">INTEGRATIONS</span>
                             </div>
 
                             <div class="row g-4">

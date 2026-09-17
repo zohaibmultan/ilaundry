@@ -176,7 +176,7 @@
     color: #94a3b8;
 }
 
-/* Badges: Clean Pill Style */
+/* Badges & Status Pills: Universal Theme-Aware Styles */
 .badge-status-pill {
     display: inline-flex;
     align-items: center;
@@ -187,54 +187,238 @@
     border-radius: 999px;
     text-transform: capitalize;
     letter-spacing: 0.3px;
+    line-height: 1.4;
+    white-space: nowrap;
+    transition: all 0.15s ease;
 }
 
-.badge-status-pill.status-pending {
-    background: rgba(245, 158, 11, 0.12);
-    color: #d97706;
-    border: 1px solid rgba(245, 158, 11, 0.25);
+/* Light Mode - Status Pills */
+.badge-status-pill.status-pending,
+.badge-status-pill.badge-pill-pending,
+.badge-status-pill.badge-status-pending {
+    background: rgba(245, 158, 11, 0.14);
+    color: #b45309;
+    border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .badge-status-pill.status-processing {
-    background: rgba(59, 130, 246, 0.12);
-    color: #2563eb;
-    border: 1px solid rgba(59, 130, 246, 0.25);
+    background: rgba(59, 130, 246, 0.14);
+    color: #1d4ed8;
+    border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .badge-status-pill.status-ready {
-    background: rgba(139, 92, 246, 0.12);
-    color: #7c3aed;
-    border: 1px solid rgba(139, 92, 246, 0.25);
+    background: rgba(139, 92, 246, 0.14);
+    color: #6d28d9;
+    border: 1px solid rgba(139, 92, 246, 0.3);
 }
 
-.badge-status-pill.status-delivered {
-    background: rgba(16, 185, 129, 0.12);
-    color: #059669;
+.badge-status-pill.status-delivered,
+.badge-status-pill.status-active,
+.badge-status-pill.badge-status-active,
+.badge-status-pill.badge-pill-completed {
+    background: rgba(16, 185, 129, 0.14);
+    color: #047857;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-status-pill.status-returned,
+.badge-status-pill.status-inactive,
+.badge-status-pill.badge-status-inactive {
+    background: rgba(239, 68, 68, 0.14);
+    color: #b91c1c;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-status-pill.status-cancelled,
+.badge-status-pill.badge-pill-cancelled {
+    background: rgba(100, 116, 139, 0.14);
+    color: #334155;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+/* Dark Mode - Status Pills */
+[data-theme-version="dark"] .badge-status-pill.status-pending,
+[data-theme-version="dark"] .badge-status-pill.badge-pill-pending,
+[data-theme-version="dark"] .badge-status-pill.badge-status-pending {
+    background: rgba(245, 158, 11, 0.22);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.45);
+}
+
+[data-theme-version="dark"] .badge-status-pill.status-processing {
+    background: rgba(59, 130, 246, 0.22);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.45);
+}
+
+[data-theme-version="dark"] .badge-status-pill.status-ready {
+    background: rgba(139, 92, 246, 0.22);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, 0.45);
+}
+
+[data-theme-version="dark"] .badge-status-pill.status-delivered,
+[data-theme-version="dark"] .badge-status-pill.status-active,
+[data-theme-version="dark"] .badge-status-pill.badge-status-active,
+[data-theme-version="dark"] .badge-status-pill.badge-pill-completed {
+    background: rgba(16, 185, 129, 0.22);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.45);
+}
+
+[data-theme-version="dark"] .badge-status-pill.status-returned,
+[data-theme-version="dark"] .badge-status-pill.status-inactive,
+[data-theme-version="dark"] .badge-status-pill.badge-status-inactive {
+    background: rgba(239, 68, 68, 0.22);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.45);
+}
+
+[data-theme-version="dark"] .badge-status-pill.status-cancelled,
+[data-theme-version="dark"] .badge-status-pill.badge-pill-cancelled {
+    background: rgba(148, 163, 184, 0.2);
+    color: #cbd5e1;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+/* Light / Subtle Badges - Universal Dark & Light Theme Contrast */
+.badge.light.badge-primary,
+.badge.bg-primary-subtle {
+    background-color: rgba(99, 102, 241, 0.12) !important;
+    color: #4338ca !important;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.badge.light.badge-success,
+.badge.bg-success-subtle {
+    background-color: rgba(16, 185, 129, 0.12) !important;
+    color: #047857 !important;
     border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
-.badge-status-pill.status-returned {
-    background: rgba(239, 68, 68, 0.12);
-    color: #dc2626;
+.badge.light.badge-info,
+.badge.bg-info-subtle {
+    background-color: rgba(14, 165, 233, 0.12) !important;
+    color: #0369a1 !important;
+    border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.badge.light.badge-warning,
+.badge.bg-warning-subtle {
+    background-color: rgba(245, 158, 11, 0.14) !important;
+    color: #b45309 !important;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.badge.light.badge-danger,
+.badge.bg-danger-subtle {
+    background-color: rgba(239, 68, 68, 0.12) !important;
+    color: #b91c1c !important;
     border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
-.badge-status-pill.status-cancelled {
-    background: rgba(100, 116, 139, 0.12);
-    color: #475569;
+.badge.light.badge-secondary,
+.badge.bg-secondary-subtle {
+    background-color: rgba(100, 116, 139, 0.12) !important;
+    color: #334155 !important;
     border: 1px solid rgba(100, 116, 139, 0.25);
 }
 
-.badge-status-pill.status-active {
-    background: rgba(16, 185, 129, 0.12);
-    color: #059669;
-    border: 1px solid rgba(16, 185, 129, 0.25);
+.badge.light.badge-dark {
+    background-color: rgba(15, 23, 42, 0.08) !important;
+    color: #1e293b !important;
+    border: 1px solid rgba(15, 23, 42, 0.15);
 }
 
-.badge-status-pill.status-inactive {
-    background: rgba(239, 68, 68, 0.12);
-    color: #dc2626;
-    border: 1px solid rgba(239, 68, 68, 0.25);
+/* Neutral/Light Badges in Light Mode */
+.badge.bg-light,
+.badge.light.badge-light {
+    background-color: #f1f5f9 !important;
+    color: #334155 !important;
+    border: 1px solid #e2e8f0;
+}
+
+.badge.bg-light.text-primary {
+    background-color: rgba(99, 102, 241, 0.1) !important;
+    color: #4f46e5 !important;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.badge.bg-light.text-muted {
+    background-color: #f1f5f9 !important;
+    color: #64748b !important;
+    border: 1px solid #e2e8f0;
+}
+
+/* Dark Theme Overrides for all Badges */
+[data-theme-version="dark"] .badge.light.badge-primary,
+[data-theme-version="dark"] .badge.bg-primary-subtle {
+    background-color: rgba(99, 102, 241, 0.22) !important;
+    color: #a5b4fc !important;
+    border-color: rgba(99, 102, 241, 0.45);
+}
+
+[data-theme-version="dark"] .badge.light.badge-success,
+[data-theme-version="dark"] .badge.bg-success-subtle {
+    background-color: rgba(16, 185, 129, 0.22) !important;
+    color: #6ee7b7 !important;
+    border-color: rgba(16, 185, 129, 0.45);
+}
+
+[data-theme-version="dark"] .badge.light.badge-info,
+[data-theme-version="dark"] .badge.bg-info-subtle {
+    background-color: rgba(14, 165, 233, 0.22) !important;
+    color: #7dd3fc !important;
+    border-color: rgba(14, 165, 233, 0.45);
+}
+
+[data-theme-version="dark"] .badge.light.badge-warning,
+[data-theme-version="dark"] .badge.bg-warning-subtle {
+    background-color: rgba(245, 158, 11, 0.22) !important;
+    color: #fde047 !important;
+    border-color: rgba(245, 158, 11, 0.45);
+}
+
+[data-theme-version="dark"] .badge.light.badge-danger,
+[data-theme-version="dark"] .badge.bg-danger-subtle {
+    background-color: rgba(239, 68, 68, 0.22) !important;
+    color: #fca5a5 !important;
+    border-color: rgba(239, 68, 68, 0.45);
+}
+
+[data-theme-version="dark"] .badge.light.badge-secondary,
+[data-theme-version="dark"] .badge.bg-secondary-subtle {
+    background-color: rgba(148, 163, 184, 0.2) !important;
+    color: #cbd5e1 !important;
+    border-color: rgba(148, 163, 184, 0.4);
+}
+
+[data-theme-version="dark"] .badge.light.badge-dark {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #f1f5f9 !important;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme-version="dark"] .badge.bg-light,
+[data-theme-version="dark"] .badge.light.badge-light {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: #f1f5f9 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme-version="dark"] .badge.bg-light.text-dark {
+    color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] .badge.bg-light.text-primary {
+    background-color: rgba(99, 102, 241, 0.2) !important;
+    color: #a5b4fc !important;
+    border-color: rgba(99, 102, 241, 0.35) !important;
+}
+
+[data-theme-version="dark"] .badge.bg-light.text-muted {
+    color: #94a3b8 !important;
 }
 
 /* Action Icon Buttons */
@@ -420,3 +604,54 @@
     border-color: rgba(255, 255, 255, 0.1) !important;
     color: #38bdf8 !important;
 }
+
+/* ==========================================================================
+   Responsive Adaptations (Mobile & Tablet)
+   ========================================================================== */
+@media (max-width: 575.98px) {
+    .server-dt-footer {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        gap: 10px !important;
+        padding-top: 0.5rem !important;
+    }
+
+    .server-datatable-wrapper .dataTables_info {
+        text-align: center !important;
+        font-size: 11.5px !important;
+    }
+
+    .server-datatable-wrapper .dataTables_paginate {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 3px !important;
+    }
+
+    .server-datatable-wrapper .dataTables_paginate .paginate_button {
+        min-width: 28px !important;
+        height: 28px !important;
+        font-size: 11.5px !important;
+        padding: 0 6px !important;
+        margin: 0 !important;
+    }
+
+    .server-datatable-wrapper table.dataTable tbody td {
+        padding: 0.65rem 0.6rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    .server-dt-actions {
+        display: inline-flex !important;
+        flex-wrap: nowrap !important;
+        gap: 3px !important;
+    }
+
+    .server-dt-actions .btn-dt-action {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 12px !important;
+    }
+}
+

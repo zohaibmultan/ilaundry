@@ -18,8 +18,8 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="card ">
-                            <div class="card-header">
-                                <h3 class="card-title">
+                            <div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h3 class="card-title mb-0">
                                     <%= language.Expence_List %>
                                 </h3>
                                 <button
@@ -63,7 +63,7 @@
                                     </div>
 
                                     <% if (ismulty) { %>
-                                        <div class="col-12 col-sm-6 col-md-2 col-lg-3">
+                                        <div class="col-6 col-sm-6 col-md-2 col-lg-3">
                                             <select class="form-select" id="dtExpenseStore">
                                                 <option value="all"><%= language.All_Store || 'All Stores' %></option>
                                                 <% (storeList || []).forEach(function(st) { %>
@@ -73,7 +73,7 @@
                                         </div>
                                     <% } %>
 
-                                    <div class="<%= ismulty ? 'col-12 col-sm-6 col-md-2 col-lg-2' : 'col-12 col-sm-4 col-md-2 col-lg-3' %>">
+                                    <div class="<%= ismulty ? 'col-6 col-sm-6 col-md-2 col-lg-2' : 'col-6 col-sm-4 col-md-2 col-lg-3' %>">
                                         <select class="form-select" id="dtExpensePageLength">
                                             <option value="10">10 <%= language.Entries || 'entries' %></option>
                                             <option value="25">25 <%= language.Entries || 'entries' %></option>
@@ -94,7 +94,7 @@
                                                 <th><%= language.PAYMENT_MODE %></th>
                                                 <th class="<%= ismulty ? '': 'd-none' %>"><%= language.Store_Name %></th>
                                                 <th><%= language.Created_By %></th>
-                                                <th class="text-center <%= accessdata.roll.expense.includes('edit') || accessdata.roll.expense.includes('delete') ?'':'d-none' %>" style="width: 110px;">
+                                                <th class="text-center <%= (accessdata?.roll?.expense?.includes('edit') || accessdata?.roll?.expense?.includes('delete')) ? '' : 'd-none' %>" style="width: 110px;">
                                                     <%= language.Action || 'Action' %>
                                                 </th>
                                             </tr>
@@ -115,7 +115,7 @@
 
             <!-- Modal update -->
             <div class="modal fade" id="expense_edit">
-                <div class="modal-dialog  modal-dialog-scrollable" role="document">
+                <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">
@@ -228,7 +228,7 @@
 
             <!-- Modal add -->
             <div class="modal fade" id="expense_list">
-                <div class="modal-dialog  modal-dialog-scrollable" role="document">
+                <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">

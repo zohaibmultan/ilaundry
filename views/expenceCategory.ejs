@@ -17,8 +17,8 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="card ">
-                            <div class="card-header">
-                                <h3 class="card-title">
+                            <div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h3 class="card-title mb-0">
                                     <%= language.Expence_Category_List %>
                                 </h3>
                                 <button
@@ -36,7 +36,7 @@
                                             <input class="form-control" type="search" id="dtExpCatSearch" placeholder="<%= language.Search || 'Search expense categories...' %>">
                                         </div>
                                     </div>
-                                    <div class="<%= ismulty ? 'col-12 col-sm-4 col-md-3 col-lg-3' : 'col-12 col-sm-6 col-md-3 col-lg-3' %>">
+                                    <div class="<%= ismulty ? 'col-6 col-sm-4 col-md-3 col-lg-3' : 'col-6 col-sm-6 col-md-3 col-lg-3' %>">
                                         <select class="form-select" id="dtExpCatType">
                                             <option value="all"><%= language.All_Type || 'All Types' %></option>
                                             <% (type || []).forEach(function(t) { %>
@@ -46,7 +46,7 @@
                                     </div>
 
                                     <% if (ismulty) { %>
-                                        <div class="col-12 col-sm-4 col-md-3 col-lg-3">
+                                        <div class="col-6 col-sm-4 col-md-3 col-lg-3">
                                             <select class="form-select" id="dtExpCatStore">
                                                 <option value="all"><%= language.All_Store || 'All Stores' %></option>
                                                 <% (storeList || []).forEach(function(st) { %>
@@ -96,7 +96,7 @@
 
         <!-- Modal update -->
         <div class="modal fade" id="updateexpcat">
-            <div class="modal-dialog  modal-dialog-scrollable" role="document">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
@@ -151,7 +151,7 @@
         <!-- <<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
         <!-- Modal add -->
         <div class="modal fade" id="addexpcat">
-            <div class="modal-dialog  modal-dialog-scrollable" role="document">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">

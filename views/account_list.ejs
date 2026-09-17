@@ -44,8 +44,8 @@
       <% } %>
 
       <!-- Summary Cards -->
-      <div class="d-flex flex-wrap justify-content-md-start justify-content-center align-items-center text-center">
-        <div class="col-xl-2 col-md-4 col-sm-6 col-12 mx-3 mb-3">
+      <div class="row g-2 justify-content-md-start justify-content-center align-items-center text-center">
+        <div class="col-12 col-sm-6 col-md-4 col-xl-2 mb-2">
           <h3><span class="symbol"><%= comission %></span></h3>
           <h5><%= language.Total_commission_Amount %></h5>
           <a href="/account/viewcomission/commission">
@@ -55,7 +55,7 @@
           </a>
         </div>
 
-        <div class="col-xl-2 col-md-4 col-sm-6 col-12 mx-3 mb-3">
+        <div class="col-12 col-sm-6 col-md-4 col-xl-2 mb-2">
           <h3><span class="symbol"><%= paidcomission %></span></h3>
           <h5><%= language.Total_Paid_Amount %></h5>
           <a href="/account/viewcomission/paidcommission">
@@ -65,7 +65,7 @@
           </a>
         </div>
 
-        <div class="col-xl-2  col-md-4 col-sm-6 col-12 mx-3 mb-3">
+        <div class="col-12 col-sm-6 col-md-4 col-xl-2 mb-2">
           <h3><span class="symbol" id="due"><%= due.toFixed(2) %></span></h3>
           <h5><%= language.Total_Due_Amount %></h5>
         </div>
@@ -76,8 +76,8 @@
                     </div>
                     <div class="col-12">
                         <div class="card ">
-                            <div class="card-header">
-                                <h3 class="card-title">
+                            <div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h3 class="card-title mb-0">
                                     <%= language.Account_List %>
                                 </h3>
                                 <button   
@@ -184,7 +184,7 @@
         <!--********** Content body end **********-->
         <!-- Modal payment -->
         <div class="modal fade" id="payment">
-            <div class="modal-dialog modal-dialog-scrollable" role="document">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
@@ -289,7 +289,7 @@
         </div>
         <!-- Modal update -->
         <div class="modal fade" id="account_update">
-            <div class="modal-dialog modal-dialog-scrollable" role="document">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
@@ -345,7 +345,7 @@
         </div>
         <!-- Modal add -->
         <div class="modal fade" id="account_add">
-            <div class="modal-dialog modal-dialog-scrollable" role="document">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">

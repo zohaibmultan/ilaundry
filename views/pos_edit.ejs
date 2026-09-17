@@ -15,6 +15,19 @@
         <div class="content-body pos-content-body">
 
             <div class="container-fluid" style="min-height: 100vh;">
+                <!-- Mobile / Tablet Segmented View Switcher (<992px) -->
+                <div class="pos-responsive-segmented-bar d-lg-none">
+                    <button type="button" class="pos-segmented-btn active" id="posBtnShowCatalog" onclick="switchPosMobileTab('catalog')">
+                        <i class="fas fa-tshirt"></i>
+                        <span><%= language.Services || 'Services' %></span>
+                    </button>
+                    <button type="button" class="pos-segmented-btn" id="posBtnShowCart" onclick="switchPosMobileTab('cart')">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span><%= language.Order_Cart || 'Cart & Checkout' %></span>
+                        <span class="badge bg-primary text-white ms-1 rounded-pill" id="posMobileCartBadge"><%= (typeof cartservice !== 'undefined' && cartservice) ? cartservice.length : 0 %></span>
+                    </button>
+                </div>
+
                 <div class="row pos-main-row">
                     <!-- left side service list part -->
                     <div class="d-none">
@@ -23,7 +36,7 @@
                         <input type="hiden" name="thousands_separator" value="<%= accessdata.thousands_separator %>">
                     </div>
 
-                    <div class="col-xl-7 col-lg-6">
+                    <div class="col-xl-7 col-lg-6 pos-tab-panel-catalog" id="posCatalogColumn">
                         <div class="pos-card">
                             <div class="pos-card-body">
                                 <div class="pos-search-box">
@@ -77,7 +90,7 @@
                     </div>
 
                     <!-- right side pos part -->
-                    <div class="col-xl-5 col-lg-6">
+                    <div class="col-xl-5 col-lg-6 pos-tab-panel-cart pos-panel-hidden" id="posCartColumn">
                         <div class="pos-card pos-cart-card">
                             <div class="pos-card-body">
                                 <div class="row g-2 mb-2">
@@ -96,7 +109,7 @@
                                         <input type="text" id="order_id" value="<%= order_date[0].id %>" readonly>
                                     </div>
 
-                                    <div class="col-4">
+                                    <div class="col-12 col-sm-4">
                                         <div class="pos-date-group">
                                             <label class="pos-field-label">Order #</label>
                                             <input type="text" id="pos_order_id" class="form-control pos-input-sm w-100"
@@ -104,7 +117,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-4">
+                                    <div class="col-6 col-sm-4">
                                         <div class="pos-date-group">
                                             <label class="pos-field-label"><%= language.Order_Date || 'Order Date' %></label>
                                             <% let new_date=new Date(order_date[0].order_date) %>
@@ -120,7 +133,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-4">
+                                    <div class="col-6 col-sm-4">
                                         <div class="pos-date-group">
                                             <label class="pos-field-label"><%= language.Delivery_Date || 'Delivery Date' %></label>
                                             <% let del_raw = order_date[0].delivery_date || order_date[0].order_date %>
@@ -263,7 +276,7 @@
 
             <!-- Modal service type -->
             <div class="modal fade" id="service_type_model">
-                <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-sm" role="document">
+                <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-sm modal-fullscreen-sm-down" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">
@@ -398,7 +411,7 @@
 
             <!-- Modal payment -->
             <div class="modal fade" id="POS_payment_model">
-                <div class="modal-dialog modal-dialog-scrollable" role="document">
+                <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">
@@ -593,6 +606,36 @@
             <!--********** Main wrapper end **********-->
             <%- include('templet/script')-%>
                 <script>
+                    // Responsive Mobile/Tablet Segmented View Switcher
+                    function switchPosMobileTab(tab) {
+                        const catalogCol = document.getElementById('posCatalogColumn');
+                        const cartCol = document.getElementById('posCartColumn');
+                        const btnCatalog = document.getElementById('posBtnShowCatalog');
+                        const btnCart = document.getElementById('posBtnShowCart');
+                        
+                        if (tab === 'catalog') {
+                            catalogCol?.classList.remove('pos-panel-hidden');
+                            cartCol?.classList.add('pos-panel-hidden');
+                            btnCatalog?.classList.add('active');
+                            btnCart?.classList.remove('active');
+                        } else {
+                            catalogCol?.classList.add('pos-panel-hidden');
+                            cartCol?.classList.remove('pos-panel-hidden');
+                            btnCart?.classList.add('active');
+                            btnCatalog?.classList.remove('active');
+                        }
+                    }
+                    window.switchPosMobileTab = switchPosMobileTab;
+
+                    function updatePosMobileCartBadge() {
+                        const cartList = document.getElementById('POS_service_added_list');
+                        const badge = document.getElementById('posMobileCartBadge');
+                        if (cartList && badge) {
+                            const count = cartList.querySelectorAll('tr').length;
+                            badge.textContent = count;
+                        }
+                    }
+
                     $('#POS_payment_model').on('shown.bs.modal', function () {
                         if ($('#POS_payment_type_list').hasClass("select2-hidden-accessible")) {
                             $('#POS_payment_type_list').select2('destroy');
@@ -603,6 +646,14 @@
                             width: '100%',
                             allowClear: false
                         });
+                    });
+
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const cartList = document.getElementById('POS_service_added_list');
+                        if (cartList && window.MutationObserver) {
+                            const observer = new MutationObserver(() => updatePosMobileCartBadge());
+                            observer.observe(cartList, { childList: true });
+                        }
                     });
                 </script>
 </body>

@@ -18,8 +18,8 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="card ">
-                            <div class="card-header">
-                                <h3 class="card-title">
+                            <div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h3 class="card-title mb-0">
                                     <%= language.Service_Addons %>
                                 </h3>
                                 <button
@@ -44,7 +44,7 @@
                                             <input class="form-control" type="search" id="dtAddonSearch" placeholder="<%= language.Search || 'Search addons...' %>">
                                         </div>
                                     </div>
-                                    <div class="<%= ismulty ? 'col-12 col-sm-4 col-md-3 col-lg-3' : 'col-12 col-sm-6 col-md-3 col-lg-3' %>">
+                                    <div class="<%= ismulty ? 'col-6 col-sm-4 col-md-3 col-lg-3' : 'col-6 col-sm-6 col-md-3 col-lg-3' %>">
                                         <select class="form-select" id="dtAddonStatus">
                                             <option value="all"><%= language.All_Status || 'All Status' %></option>
                                             <option value="0"><%= language.Active || 'Active' %></option>
@@ -53,7 +53,7 @@
                                     </div>
 
                                     <% if (ismulty) { %>
-                                        <div class="col-12 col-sm-4 col-md-3 col-lg-3">
+                                        <div class="col-6 col-sm-4 col-md-3 col-lg-3">
                                             <select class="form-select" id="dtAddonStore">
                                                 <option value="all"><%= language.All_Store || 'All Stores' %></option>
                                                 <% (storeList || []).forEach(function(st) { %>
@@ -101,7 +101,7 @@
 
         <!-- Modal update -->
         <div class="modal fade" id="service_addons_update">
-            <div class="modal-dialog  modal-dialog-scrollable" role="document">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
@@ -159,7 +159,7 @@
 
         <!-- Modal add -->
         <div class="modal fade" id="service_addons">
-            <div class="modal-dialog  modal-dialog-scrollable" role="document">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">

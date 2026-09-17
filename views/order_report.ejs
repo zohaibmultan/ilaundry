@@ -32,7 +32,7 @@
                                 </div>
                                 <div class="row g-3">
                                     <div
-                                        class="form-group col-lg-3 col-md-6 col-sm-12 <%= accessdata.logas == 'master' && accessdata.mutibranch  ? '' :'d-none' %>">
+                                        class="col-12 col-md-6 col-lg-3 <%= accessdata.logas == 'master' && accessdata.mutibranch  ? '' :'d-none' %>">
                                         <label class="form-label">
                                             <%= language.Store_Name %>
                                         </label>
@@ -46,7 +46,7 @@
                                         </select>
 
                                     </div>
-                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                    <div class="col-6 col-md-6 col-lg-3">
                                         <label class="form-label">
                                             <%= language.Start_Date %>
                                         </label>
@@ -54,7 +54,7 @@
                                             id="order_report_start_date">
                                     </div>
 
-                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                    <div class="col-6 col-md-6 col-lg-3">
                                         <label class="form-label">
                                             <%= language.End_Date %>
                                         </label>
@@ -62,7 +62,7 @@
                                             id="order_report_end_date">
                                     </div>
 
-                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                    <div class="col-12 col-md-6 col-lg-3">
                                         <label class="form-label">
                                             <%= language.Status %>
                                         </label>
@@ -129,39 +129,28 @@
                                                                                             %>
                                                                                     </td>
                                                                                     <td>
-                                                                                        <% if(data.status=='Pending' ){
-                                                                                            %>
-                                                                                            <span
-                                                                                                class="badge badge-warning">
+                                                                                        <% if(data.status=='Pending' ){ %>
+                                                                                            <span class="badge bg-warning-subtle text-warning fw-semibold px-2 py-1">
                                                                                                 <%= data.status %>
                                                                                             </span>
-                                                                                    </td>
-                                                                                    <% } else if
-                                                                                        (data.status=='Processing' ){%>
-                                                                                        <span class="badge badge-info">
-                                                                                            <%= data.status %>
-                                                                                        </span></td>
-                                                                                        <% } else if
-                                                                                            (data.status=='Ready To deliver'
-                                                                                            ){%>
-                                                                                            <span
-                                                                                                class="badge badge-secondary">
+                                                                                        </td>
+                                                                                        <% } else if (data.status=='Processing' ){ %>
+                                                                                            <span class="badge bg-info-subtle text-info fw-semibold px-2 py-1">
                                                                                                 <%= data.status %>
                                                                                             </span></td>
-                                                                                            <% } else if
-                                                                                                (data.status=='Deliver'
-                                                                                                ){%>
-                                                                                                <span
-                                                                                                    class="badge badge-primary">
-                                                                                                    <%= data.status %>
-                                                                                                </span></td>
-                                                                                                <% } else {%>
-                                                                                                    <span
-                                                                                                        class="badge badge-dark">
-                                                                                                        <%= data.status
-                                                                                                            %>
-                                                                                                    </span></td>
-                                                                                                    <% }%>
+                                                                                        <% } else if (data.status=='Ready To deliver' ){ %>
+                                                                                            <span class="badge bg-primary-subtle text-primary fw-semibold px-2 py-1">
+                                                                                                <%= data.status %>
+                                                                                            </span></td>
+                                                                                        <% } else if (data.status=='Deliver' ){ %>
+                                                                                            <span class="badge bg-success-subtle text-success fw-semibold px-2 py-1">
+                                                                                                <%= data.status %>
+                                                                                            </span></td>
+                                                                                        <% } else { %>
+                                                                                            <span class="badge bg-secondary-subtle text-secondary fw-semibold px-2 py-1">
+                                                                                                <%= data.status %>
+                                                                                            </span></td>
+                                                                                        <% } %>
 
 
                                                             </tr>
@@ -174,33 +163,29 @@
 
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="col">
+                                <div class="row g-3 align-items-center mt-2">
+                                    <div class="col-6 col-md-auto d-flex align-items-center gap-1">
                                         <strong class="text-nowrap">
                                             <%= language.Total_Orders %> :
                                         </strong>
                                         <strong><span id="orders_report">0</span></strong>
                                     </div>
-                                    <div class="col d-flex">
+                                    <div class="col-6 col-md-auto d-flex align-items-center gap-1">
                                         <strong class="text-nowrap">
                                             <%= language.Total_Orders_Amount %> :
                                         </strong>
                                         <strong> <span id="order_report_amount"
                                                 class="symbol invosymbol text-nowrap">0</span></strong>
                                     </div>
-                                    <div class="col">
-                                        <div class="d-flex mt-2">
-                                            <button type="submit" class="btn btn-success me-2 text-nowrap"
-                                                onclick="downloadreport()" id="Download_order_report">
-                                                <%= language.Download_Report %>
-                                            </button>
-
-
-                                            <button type="submit" id="order_report_print"
-                                                class="btn btn-warning mb-0 text-nowrap">
-                                                <%= language.Print_Report %>
-                                            </button>
-                                        </div>
+                                    <div class="col-12 col-md d-flex justify-content-md-end flex-wrap gap-2 mt-2 mt-md-0">
+                                        <button type="submit" class="btn btn-success text-nowrap"
+                                            onclick="downloadreport()" id="Download_order_report">
+                                            <%= language.Download_Report %>
+                                        </button>
+                                        <button type="submit" id="order_report_print"
+                                            class="btn btn-warning mb-0 text-nowrap">
+                                            <%= language.Print_Report %>
+                                        </button>
                                     </div>
                                 </div>
                             </div>

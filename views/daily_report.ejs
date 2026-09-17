@@ -29,8 +29,8 @@
                                     <input type="hiden" name="thousands_separator"
                                         value="<%= accessdata.thousands_separator %>">
                                 </div>
-                                <div class="row">
-                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                <div class="row g-3">
+                                    <div class="col-12 col-sm-6 col-md-4">
                                         <label class="form-label">
                                             <%= language.Date %>
                                         </label>
@@ -45,7 +45,7 @@
                                                                 id="daily_report_date" value="<%= fullDate %>">
                                     </div>
                                     <div
-                                        class="form-group col-lg-4 col-md-6 col-sm-12  <%= accessdata.logas == 'master' && accessdata.mutibranch  ? '' :'d-none' %>">
+                                        class="col-12 col-sm-6 col-md-4 <%= accessdata.logas == 'master' && accessdata.mutibranch  ? '' :'d-none' %>">
                                         <label class="form-label">
                                             <%= language.Store_Name %>
                                         </label>

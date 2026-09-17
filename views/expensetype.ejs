@@ -17,8 +17,8 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="card ">
-                            <div class="card-header">
-                                <h3 class="card-title">
+                            <div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h3 class="card-title mb-0">
                                     <%= language.Expence_Category_Type_List %>
                                 </h3>
                                 <button
@@ -38,7 +38,7 @@
                                     </div>
 
                                     <% if (ismulty) { %>
-                                        <div class="col-12 col-sm-6 col-md-3 col-lg-3">
+                                        <div class="col-6 col-sm-6 col-md-3 col-lg-3">
                                             <select class="form-select" id="dtExpTypeStore">
                                                 <option value="all"><%= language.All_Store || 'All Stores' %></option>
                                                 <% (storeList || []).forEach(function(st) { %>
@@ -48,7 +48,7 @@
                                         </div>
                                     <% } %>
 
-                                    <div class="<%= ismulty ? 'col-12 col-sm-6 col-md-3 col-lg-3' : 'col-12 col-sm-4 col-md-4 col-lg-4' %>">
+                                    <div class="<%= ismulty ? 'col-6 col-sm-6 col-md-3 col-lg-3' : 'col-6 col-sm-4 col-md-4 col-lg-4' %>">
                                         <select class="form-select" id="dtExpTypePageLength">
                                             <option value="10">10 <%= language.Entries || 'entries' %></option>
                                             <option value="25">25 <%= language.Entries || 'entries' %></option>
@@ -86,7 +86,7 @@
 
         <!-- Modal update -->
         <div class="modal fade" id="editexpcattype">
-            <div class="modal-dialog  modal-dialog-scrollable" role="document">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
@@ -125,7 +125,7 @@
 
         <!-- Modal add -->
         <div class="modal fade" id="addexpcattype">
-            <div class="modal-dialog  modal-dialog-scrollable" role="document">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
