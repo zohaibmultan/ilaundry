@@ -32,55 +32,45 @@
                                     value="<%= accessdata.thousands_separator %>">
                             </div>
                             <div class="card-body">
-                                <div class="server-dt-toolbar">
-                                    <div class="server-dt-search">
-                                        <input type="text" class="form-control" id="order_search_input"
-                                            placeholder="<%= language.Search || 'Search by Order ID, Customer, Phone, Store, Ref...' %>">
+                                <div class="row g-2 mb-3">
+                                    <div class="<%= (login==='master' && typeof storeList !=='undefined' && storeList.length > 0) ? 'col-12 col-md-4 col-lg-3' : 'col-12 col-md-5 col-lg-4' %>">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
+                                            <input type="text" class="form-control" id="order_search_input"
+                                                placeholder="<%= language.Search || 'Search by Order ID, Customer, Phone, Store, Ref...' %>">
+                                        </div>
                                     </div>
-                                    <div class="server-dt-filters">
-                                        <div class="server-dt-filter-item">
-                                            <select class="form-select form-control" id="order_status_filter">
-                                                <option value="" selected>
-                                                    <%= language.All_Orders || 'All Statuses' %>
-                                                </option>
-                                                <% Ordersatus.forEach(function (data){ %>
-                                                    <option value="<%= data.id %>">
-                                                        <%= data.status %>
-                                                    </option>
-                                                    <% }) %>
+                                    <div class="<%= (login==='master' && typeof storeList !=='undefined' && storeList.length > 0) ? 'col-12 col-sm-6 col-md-4 col-lg-2' : 'col-12 col-sm-6 col-md-3 col-lg-2' %>">
+                                        <select class="form-select" id="order_status_filter">
+                                            <option value="" selected><%= language.All_Orders || 'All Statuses' %></option>
+                                            <% Ordersatus.forEach(function (data){ %>
+                                                <option value="<%= data.id %>"><%= data.status %></option>
+                                            <% }) %>
+                                        </select>
+                                    </div>
+                                    <% if (login==='master' && typeof storeList !=='undefined' && storeList.length > 0) { %>
+                                        <div class="col-12 col-sm-6 col-md-4 col-lg-2">
+                                            <select class="form-select" id="order_store_filter">
+                                                <option value="" selected><%= language.All_Stores || 'All Stores' %></option>
+                                                <% storeList.forEach(function (st){ %>
+                                                    <option value="<%= st.id %>"><%= st.name %></option>
+                                                <% }) %>
                                             </select>
                                         </div>
-                                        <% if (login==='master' && typeof storeList !=='undefined' && storeList.length>
-                                            0) { %>
-                                            <div class="server-dt-filter-item">
-                                                <select class="form-select form-control" id="order_store_filter">
-                                                    <option value="" selected>
-                                                        <%= language.All_Stores || 'All Stores' %>
-                                                    </option>
-                                                    <% storeList.forEach(function (st){ %>
-                                                        <option value="<%= st.id %>">
-                                                            <%= st.name %>
-                                                        </option>
-                                                        <% }) %>
-                                                </select>
-                                            </div>
-                                            <% } %>
-                                                <div class="server-dt-filter-item" style="max-width: 140px;">
-                                                    <input type="date" class="form-control" id="order_start_date"
-                                                        title="Start Date">
-                                                </div>
-                                                <div class="server-dt-filter-item" style="max-width: 140px;">
-                                                    <input type="date" class="form-control" id="order_end_date"
-                                                        title="End Date">
-                                                </div>
-                                                <div class="server-dt-filter-item" style="max-width: 110px;">
-                                                    <select class="form-select form-control" id="order_page_length">
-                                                        <option value="10" selected>10 / page</option>
-                                                        <option value="25">25 / page</option>
-                                                        <option value="50">50 / page</option>
-                                                        <option value="100">100 / page</option>
-                                                    </select>
-                                                </div>
+                                    <% } %>
+                                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                                        <input type="date" class="form-control" id="order_start_date" title="Start Date">
+                                    </div>
+                                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                                        <input type="date" class="form-control" id="order_end_date" title="End Date">
+                                    </div>
+                                    <div class="<%= (login==='master' && typeof storeList !=='undefined' && storeList.length > 0) ? 'col-12 col-sm-4 col-md-2 col-lg-1' : 'col-12 col-sm-4 col-md-3 col-lg-2' %>">
+                                        <select class="form-select" id="order_page_length">
+                                            <option value="10" selected>10 / page</option>
+                                            <option value="25">25 / page</option>
+                                            <option value="50">50 / page</option>
+                                            <option value="100">100 / page</option>
+                                        </select>
                                     </div>
                                 </div>
 

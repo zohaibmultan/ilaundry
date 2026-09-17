@@ -31,28 +31,34 @@
                             </div>
                             <div class="card-body">
                                 <!-- Server-side DataTable Toolbar -->
-                                <div class="server-dt-toolbar">
-                                    <div class="server-dt-search">
-                                        <i class="fa fa-search"></i>
-                                        <input type="search" id="dtStaffSearch" placeholder="<%= language.Search || 'Search staff by name, phone, email, username...' %>">
+                                <div class="row g-2 mb-3">
+                                    <div class="<%= ismulty ? 'col-12 col-md-4 col-lg-4' : 'col-12 col-md-6 col-lg-6' %>">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
+                                            <input class="form-control" type="search" id="dtStaffSearch" placeholder="<%= language.Search || 'Search staff by name, phone, email, username...' %>">
+                                        </div>
                                     </div>
-                                    <div class="server-dt-filters">
-                                        <select class="server-dt-select" id="dtStaffStatus">
+                                    <div class="<%= ismulty ? 'col-12 col-sm-4 col-md-3 col-lg-3' : 'col-12 col-sm-6 col-md-3 col-lg-3' %>">
+                                        <select class="form-select" id="dtStaffStatus">
                                             <option value="all"><%= language.All_Status || 'All Status' %></option>
                                             <option value="1"><%= language.Approved || 'Approved' %></option>
                                             <option value="0"><%= language.Pending || 'Pending' %></option>
                                         </select>
+                                    </div>
 
-                                        <% if (ismulty) { %>
-                                            <select class="server-dt-select" id="dtStaffStore">
+                                    <% if (ismulty) { %>
+                                        <div class="col-12 col-sm-4 col-md-3 col-lg-3">
+                                            <select class="form-select" id="dtStaffStore">
                                                 <option value="all"><%= language.All_Store || 'All Stores' %></option>
                                                 <% storeList.forEach(function(st) { %>
                                                     <option value="<%= st.id %>"><%= st.name %></option>
                                                 <% }) %>
                                             </select>
-                                        <% } %>
+                                        </div>
+                                    <% } %>
 
-                                        <select class="server-dt-select" id="dtStaffPageLength">
+                                    <div class="<%= ismulty ? 'col-12 col-sm-4 col-md-2 col-lg-2' : 'col-12 col-sm-6 col-md-3 col-lg-3' %>">
+                                        <select class="form-select" id="dtStaffPageLength">
                                             <option value="10">10 <%= language.Entries || 'entries' %></option>
                                             <option value="25">25 <%= language.Entries || 'entries' %></option>
                                             <option value="50">50 <%= language.Entries || 'entries' %></option>

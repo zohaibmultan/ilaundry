@@ -37,36 +37,44 @@
                             </div>
                             <div class="card-body">
                                 <!-- Server-side DataTable Toolbar -->
-                                <div class="server-dt-toolbar">
-                                    <div class="server-dt-search">
-                                        <i class="fa fa-search"></i>
-                                        <input type="search" id="dtExpenseSearch" placeholder="<%= language.Search || 'Search expenses...' %>">
+                                <div class="row g-2 mb-3">
+                                    <div class="<%= ismulty ? 'col-12 col-md-4 col-lg-3' : 'col-12 col-md-4 col-lg-3' %>">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
+                                            <input class="form-control" type="search" id="dtExpenseSearch" placeholder="<%= language.Search || 'Search expenses...' %>">
+                                        </div>
                                     </div>
-                                    <div class="server-dt-filters">
-                                        <select class="server-dt-select" id="dtExpenseCategory">
+                                    <div class="<%= ismulty ? 'col-6 col-sm-4 col-md-2' : 'col-6 col-sm-4 col-md-3 col-lg-3' %>">
+                                        <select class="form-select" id="dtExpenseCategory">
                                             <option value="all"><%= language.All_Categories || 'All Categories' %></option>
                                             <% (categ || []).forEach(function(c) { %>
                                                 <option value="<%= c.id %>"><%= c.cat_name %></option>
                                             <% }) %>
                                         </select>
+                                    </div>
 
-                                        <select class="server-dt-select" id="dtExpenseAccount">
+                                    <div class="<%= ismulty ? 'col-6 col-sm-4 col-md-2' : 'col-6 col-sm-4 col-md-3 col-lg-3' %>">
+                                        <select class="form-select" id="dtExpenseAccount">
                                             <option value="all"><%= language.All_Accounts || 'All Accounts' %></option>
                                             <% (acountlist || []).forEach(function(a) { %>
                                                 <option value="<%= a.id %>"><%= a.ac_name %></option>
                                             <% }) %>
                                         </select>
+                                    </div>
 
-                                        <% if (ismulty) { %>
-                                            <select class="server-dt-select" id="dtExpenseStore">
+                                    <% if (ismulty) { %>
+                                        <div class="col-12 col-sm-6 col-md-2 col-lg-3">
+                                            <select class="form-select" id="dtExpenseStore">
                                                 <option value="all"><%= language.All_Store || 'All Stores' %></option>
                                                 <% (storeList || []).forEach(function(st) { %>
                                                     <option value="<%= st.id %>"><%= st.name %></option>
                                                 <% }) %>
                                             </select>
-                                        <% } %>
+                                        </div>
+                                    <% } %>
 
-                                        <select class="server-dt-select" id="dtExpensePageLength">
+                                    <div class="<%= ismulty ? 'col-12 col-sm-6 col-md-2 col-lg-2' : 'col-12 col-sm-4 col-md-2 col-lg-3' %>">
+                                        <select class="form-select" id="dtExpensePageLength">
                                             <option value="10">10 <%= language.Entries || 'entries' %></option>
                                             <option value="25">25 <%= language.Entries || 'entries' %></option>
                                             <option value="50">50 <%= language.Entries || 'entries' %></option>

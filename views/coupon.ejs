@@ -60,34 +60,42 @@
                             </div>
                             <div class="card-body">
                                 <!-- Server-side DataTable Toolbar -->
-                                <div class="server-dt-toolbar">
-                                    <div class="server-dt-search">
-                                        <i class="fa fa-search"></i>
-                                        <input type="search" id="dtCouponSearch" placeholder="<%= language.Search || 'Search coupons...' %>">
+                                <div class="row g-2 mb-3">
+                                    <div class="<%= mlty ? 'col-12 col-md-4 col-lg-3' : 'col-12 col-md-5 col-lg-4' %>">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
+                                            <input class="form-control" type="search" id="dtCouponSearch" placeholder="<%= language.Search || 'Search coupons...' %>">
+                                        </div>
                                     </div>
-                                    <div class="server-dt-filters">
-                                        <select class="server-dt-select" id="dtCouponStatus">
+                                    <div class="<%= mlty ? 'col-6 col-sm-4 col-md-2' : 'col-6 col-sm-4 col-md-2 col-lg-2' %>">
+                                        <select class="form-select" id="dtCouponStatus">
                                             <option value="all"><%= language.All_Status || 'All Status' %></option>
                                             <option value="0"><%= language.Active || 'Active' %></option>
                                             <option value="1"><%= language.Deactive || 'Deactive' %></option>
                                         </select>
+                                    </div>
 
-                                        <select class="server-dt-select" id="dtCouponType">
+                                    <div class="<%= mlty ? 'col-6 col-sm-4 col-md-2' : 'col-6 col-sm-4 col-md-3 col-lg-3' %>">
+                                        <select class="form-select" id="dtCouponType">
                                             <option value="all"><%= language.All_Type || 'All Types' %></option>
                                             <option value="fixed">Fixed</option>
                                             <option value="percentage">Percentage</option>
                                         </select>
+                                    </div>
 
-                                        <% if (mlty) { %>
-                                            <select class="server-dt-select" id="dtCouponStore">
+                                    <% if (mlty) { %>
+                                        <div class="col-12 col-sm-6 col-md-2 col-lg-3">
+                                            <select class="form-select" id="dtCouponStore">
                                                 <option value="all"><%= language.All_Store || 'All Stores' %></option>
                                                 <% (storeList || []).forEach(function(st) { %>
                                                     <option value="<%= st.id %>"><%= st.name %></option>
                                                 <% }) %>
                                             </select>
-                                        <% } %>
+                                        </div>
+                                    <% } %>
 
-                                        <select class="server-dt-select" id="dtCouponPageLength">
+                                    <div class="<%= mlty ? 'col-12 col-sm-6 col-md-2 col-lg-2' : 'col-12 col-sm-4 col-md-3 col-lg-3' %>">
+                                        <select class="form-select" id="dtCouponPageLength">
                                             <option value="10">10 <%= language.Entries || 'entries' %></option>
                                             <option value="25">25 <%= language.Entries || 'entries' %></option>
                                             <option value="50">50 <%= language.Entries || 'entries' %></option>

@@ -58,22 +58,30 @@
                             </div>
                             <div class="card-body">
                                 <!-- Server-side DataTable Toolbar -->
-                                <div class="server-dt-toolbar">
-                                    <div class="server-dt-search">
-                                        <i class="fa fa-search"></i>
-                                        <input type="search" id="dtLedgerSearch" placeholder="<%= language.Search || 'Search account, description, type, amount...' %>">
+                                <div class="row g-2 mb-3">
+                                    <div class="col-12 col-md-4 col-lg-3">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
+                                            <input class="form-control" type="search" id="dtLedgerSearch" placeholder="<%= language.Search || 'Search account, description, type, amount...' %>">
+                                        </div>
                                     </div>
-                                    <div class="server-dt-filters">
-                                        <select class="server-dt-select" id="dtLedgerType">
+                                    <div class="col-12 col-sm-6 col-md-2 col-lg-2">
+                                        <select class="form-select" id="dtLedgerType">
                                             <option value="all"><%= language.All_Type || 'All Types' %></option>
                                             <option value="Debit"><%= language.Debit || 'Debit' %></option>
                                             <option value="Credit"><%= language.Credit || 'Credit' %></option>
                                         </select>
+                                    </div>
 
-                                        <input type="date" class="server-dt-input" id="dtLedgerStartDate" title="<%= language.Start_Date || 'Start Date' %>">
-                                        <input type="date" class="server-dt-input" id="dtLedgerEndDate" title="<%= language.End_Date || 'End Date' %>">
+                                    <div class="col-6 col-sm-3 col-md-3 col-lg-2">
+                                        <input type="date" class="form-control" id="dtLedgerStartDate" title="<%= language.Start_Date || 'Start Date' %>">
+                                    </div>
+                                    <div class="col-6 col-sm-3 col-md-3 col-lg-2">
+                                        <input type="date" class="form-control" id="dtLedgerEndDate" title="<%= language.End_Date || 'End Date' %>">
+                                    </div>
 
-                                        <select class="server-dt-select" id="dtLedgerPageLength">
+                                    <div class="col-12 col-sm-6 col-md-2 col-lg-3">
+                                        <select class="form-select" id="dtLedgerPageLength">
                                             <option value="10">10 <%= language.Entries || 'entries' %></option>
                                             <option value="25">25 <%= language.Entries || 'entries' %></option>
                                             <option value="50">50 <%= language.Entries || 'entries' %></option>

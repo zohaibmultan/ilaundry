@@ -22,15 +22,18 @@
                         </div>
                         <div class="card-body">
                             <!-- Server-side DataTable Toolbar -->
-                            <div class="server-dt-toolbar">
-                                <div class="server-dt-search">
-                                    <i class="fa fa-search"></i>
-                                    <input type="search" id="dtNotificationSearch" placeholder="<%= language.Search || 'Search notifications...' %>">
+                            <div class="row g-2 mb-3">
+                                <div class="col-12 col-md-6 col-lg-6">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
+                                        <input class="form-control" type="search" id="dtNotificationSearch" placeholder="<%= language.Search || 'Search notifications...' %>">
+                                    </div>
                                 </div>
-                                <div class="server-dt-filters">
-                                    <input type="date" class="server-dt-select" id="dtNotificationDate" title="Filter by date">
-
-                                    <select class="server-dt-select" id="dtNotificationPageLength">
+                                <div class="col-12 col-sm-6 col-md-3 col-lg-3">
+                                    <input type="date" class="form-control" id="dtNotificationDate" title="Filter by date">
+                                </div>
+                                <div class="col-12 col-sm-6 col-md-3 col-lg-3">
+                                    <select class="form-select" id="dtNotificationPageLength">
                                         <option value="10">10 <%= language.Entries || 'entries' %></option>
                                         <option value="25">25 <%= language.Entries || 'entries' %></option>
                                         <option value="50">50 <%= language.Entries || 'entries' %></option>

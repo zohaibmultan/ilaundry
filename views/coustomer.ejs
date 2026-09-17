@@ -35,50 +35,39 @@
               <div class="card-body">
                 <!-- Server-side DataTable Toolbar -->
 
-                <div class="row mb-3 g-3">
-                  <div class=" col-3">
-                    <input class="form-control w-100" type="search" id="dtCustomerSearch"
-                      placeholder="<%= language.Search || 'Search customers by name, phone, email, address...' %>">
+                <div class="row g-2 mb-3">
+                  <div class="<%= (ismulty && login==='master') ? 'col-12 col-md-4 col-lg-4' : 'col-12 col-md-6 col-lg-6' %>">
+                    <div class="input-group">
+                      <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
+                      <input class="form-control" type="search" id="dtCustomerSearch"
+                        placeholder="<%= language.Search || 'Search customers by name, phone, email, address...' %>">
+                    </div>
                   </div>
-                  <div class="col-3">
-                    <select class="form-select form-control" id="dtCustomerStatus">
-                      <option value="all">
-                        <%= language.All_Status || 'All Status' %>
-                      </option>
-                      <option value="1">
-                        <%= language.Approved || 'Approved' %>
-                      </option>
-                      <option value="0">
-                        <%= language.Pending || 'Pending' %>
-                      </option>
+                  <div class="<%= (ismulty && login==='master') ? 'col-12 col-sm-4 col-md-3 col-lg-3' : 'col-12 col-sm-6 col-md-3 col-lg-3' %>">
+                    <select class="form-select" id="dtCustomerStatus">
+                      <option value="all"><%= language.All_Status || 'All Status' %></option>
+                      <option value="1"><%= language.Approved || 'Approved' %></option>
+                      <option value="0"><%= language.Pending || 'Pending' %></option>
                     </select>
                   </div>
                   <% if (ismulty && login==="master" ) { %>
-                    <div class="col-3">
-                      <select class="form-select form-control" id="dtCustomerStore">
-                        <option value="all">
-                          <%= language.All_Store || 'All Stores' %>
-                        </option>
+                    <div class="col-12 col-sm-4 col-md-3 col-lg-3">
+                      <select class="form-select" id="dtCustomerStore">
+                        <option value="all"><%= language.All_Store || 'All Stores' %></option>
                         <% storeList.forEach(function(st) { %>
-                          <option value="<%= st.id %>">
-                            <%= st.name %>
-                          </option>
-                          <% }) %>
+                          <option value="<%= st.id %>"><%= st.name %></option>
+                        <% }) %>
                       </select>
                     </div>
-                    <% } %>
-                      <div class="col-3">
-                        <select class="form-select form-control" id="dtCustomerPageLength">
-                          <option value="10">10 <%= language.Entries || 'entries' %>
-                          </option>
-                          <option value="25">25 <%= language.Entries || 'entries' %>
-                          </option>
-                          <option value="50">50 <%= language.Entries || 'entries' %>
-                          </option>
-                          <option value="100">100 <%= language.Entries || 'entries' %>
-                          </option>
-                        </select>
-                      </div>
+                  <% } %>
+                  <div class="<%= (ismulty && login==='master') ? 'col-12 col-sm-4 col-md-2 col-lg-2' : 'col-12 col-sm-6 col-md-3 col-lg-3' %>">
+                    <select class="form-select" id="dtCustomerPageLength">
+                      <option value="10">10 <%= language.Entries || 'entries' %></option>
+                      <option value="25">25 <%= language.Entries || 'entries' %></option>
+                      <option value="50">50 <%= language.Entries || 'entries' %></option>
+                      <option value="100">100 <%= language.Entries || 'entries' %></option>
+                    </select>
+                  </div>
                 </div>
 
 
