@@ -202,35 +202,20 @@
                                                                     ? 'Select Store First *' : 'Select Customer *' %>
                                                             </option>
                                                             <% customerList.forEach(function(x) { %>
-                                                                <% let showExtra="" ; %>
-                                                                    <% if ((x.username=='' || x.username==null) &&
-                                                                        (x.email==null || x.email=='' ) &&
-                                                                        (x.number==null || x.number=='' ) ) { %>
-                                                                        <% if (accessdata.logas !='store' ) {
-                                                                            showExtra=x.store_name; } %>
-                                                                            <% } else { %>
-                                                                                <% showExtra=x.number; %>
-                                                                                    <% } %>
-                                                                                        <% let
-                                                                                            selected=(cart.customer_id==x.id
-                                                                                            || (isStaff &&
-                                                                                            (!cart.customer_id ||
-                                                                                            cart.customer_id==0) &&
-                                                                                            (x.username=='' ||
-                                                                                            x.username==null || (x.name
-                                                                                            &&
-                                                                                            x.name.toLowerCase().includes('walk
-                                                                                            in'))))) ? 'selected' : '' ;
-                                                                                            %>
-                                                                                            <option value="<%= x.id %>"
-                                                                                                <%=selected %>>
-                                                                                                <%= x.name %>
-                                                                                                    <% if (showExtra) {
-                                                                                                        %> (<%=
-                                                                                                            showExtra %>
-                                                                                                            )<% } %>
-                                                                                            </option>
-                                                                                            <% }); %>
+                                                                <% let showExtra = ""; %>
+                                                                <% if ((x.username == '' || x.username == null) && (x.email == null || x.email == '') && (x.number == null || x.number == '')) { %>
+                                                                    <% if (accessdata.logas != 'store') { showExtra = x.store_name; } %>
+                                                                <% } else { %>
+                                                                    <% showExtra = x.number; %>
+                                                                <% } %>
+                                                                <% 
+                                                                    let isWalkIn = (x.username == '' || x.username == null || (x.name && x.name.toLowerCase().includes('walk in')));
+                                                                    let selected = (cart.customer_id == x.id || (isStaff && (!cart.customer_id || cart.customer_id == 0) && isWalkIn)) ? 'selected' : ''; 
+                                                                %>
+                                                                <option value="<%= x.id %>" <%= selected %>>
+                                                                    <%= x.name %><% if (showExtra) { %> (<%= showExtra %>)<% } %>
+                                                                </option>
+                                                            <% }); %>
                                                         </select>
                                                         <button type="button"
                                                             class="btn btn-primary ms-2 pos-btn-add-customer"
