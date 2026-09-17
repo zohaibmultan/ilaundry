@@ -1,0 +1,12 @@
+{
+  "name": "ilaundry-suite",
+  "version": "1.0.0",
+  "description": "Custom developer kit and specialized agent suite for the iLaundry platform",
+  "agents": [
+    {
+      "name": "ilaundry-developer",
+      "description": "Specialized fullstack engineer for iLaundry POS, thermal printing, server DataTables, and Express/MySQL backend",
+      "instructionFile": "./agents/ilaundry-developer.md"
+    }
+  ]
+}
