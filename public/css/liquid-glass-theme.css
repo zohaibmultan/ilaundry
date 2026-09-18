@@ -4,103 +4,170 @@
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   1. UNIVERSAL 10% FONT SIZE REDUCTION
+   1. UNIVERSAL TYPOGRAPHY SYSTEM (INTER) & RESPONSIVE SCALING
    -------------------------------------------------------------------------- */
-html {
-  font-size: 90% !important;
-  /* 16px default scaled to 14.4px base (-10%) */
-}
-
 :root {
-  --bs-body-font-size: 0.7875rem !important;
-  /* Standard 0.875rem scaled by 10% */
+  --app-font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --bs-body-font-family: var(--app-font-family) !important;
+  --bs-font-sans-serif: var(--app-font-family) !important;
   --lg-glass-blur: 16px;
   --lg-glass-saturate: 180%;
   --lg-glass-radius: 14px;
 }
 
+/* Mobile Base Scale (< 768px): ~13.5px base */
+html {
+  font-family: var(--app-font-family) !important;
+  font-size: 85% !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Tablet Scale (768px - 1199px): ~14.5px base */
+@media (min-width: 768px) {
+  html {
+    font-size: 90% !important;
+  }
+}
+
+/* Desktop Scale (>= 1200px): ~15px base */
+@media (min-width: 1200px) {
+  html {
+    font-size: 93.75% !important;
+  }
+}
+
 body {
-  font-size: var(--bs-body-font-size) !important;
+  font-family: var(--app-font-family) !important;
+  line-height: 1.5 !important;
+  letter-spacing: -0.011em;
+}
+
+/* Standardized Typography Across All Headings */
+h1, .h1,
+h2, .h2,
+h3, .h3,
+h4, .h4,
+h5, .h5,
+h6, .h6 {
+  font-family: var(--app-font-family) !important;
+  letter-spacing: -0.02em;
+}
+
+/* Headings scale */
+h1, .h1 {
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+}
+
+h2, .h2 {
+  font-size: 1.45rem !important;
+  font-weight: 700 !important;
+}
+
+h3, .h3 {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+}
+
+h4, .h4 {
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+}
+
+h5, .h5 {
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+}
+
+h6, .h6 {
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+}
+
+.card-title {
+  font-family: var(--app-font-family) !important;
+  letter-spacing: -0.015em;
 }
 
 /* Proportional scaling for utility classes across pages */
 .fs-10 {
-  font-size: 9px !important;
-}
-
-.fs-11 {
   font-size: 10px !important;
 }
 
-.fs-12 {
+.fs-11 {
   font-size: 11px !important;
 }
 
+.fs-12 {
+  font-size: 12px !important;
+}
+
 .fs-13 {
-  font-size: 11.5px !important;
+  font-size: 13px !important;
 }
 
 .fs-14 {
-  font-size: 12.5px !important;
+  font-size: 14px !important;
 }
 
 .fs-15 {
-  font-size: 13.5px !important;
+  font-size: 15px !important;
 }
 
 .fs-16 {
-  font-size: 14.5px !important;
-}
-
-.fs-18 {
   font-size: 16px !important;
 }
 
-.fs-20 {
+.fs-18 {
   font-size: 18px !important;
 }
 
+.fs-20 {
+  font-size: 20px !important;
+}
+
 .fs-24 {
-  font-size: 21.5px !important;
+  font-size: 24px !important;
 }
 
 .fs-28 {
-  font-size: 25px !important;
+  font-size: 28px !important;
 }
 
 .fs-32 {
-  font-size: 28.5px !important;
+  font-size: 32px !important;
 }
 
-/* Headings scale */
-h1,
-.h1 {
-  font-size: 1.85rem !important;
+/* Ensure inputs, buttons, tables, dropdowns use Inter */
+input, select, textarea, button, .btn, .form-control, .form-select, .badge, .table {
+  font-family: var(--app-font-family) !important;
 }
 
-h2,
-.h2 {
-  font-size: 1.55rem !important;
-}
-
-h3,
-.h3 {
+/* Dashboard Topbar Title Consistency */
+.header-left .dashboard_bar {
+  font-family: var(--app-font-family) !important;
   font-size: 1.35rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
 }
 
-h4,
-.h4 {
-  font-size: 1.15rem !important;
+@media (max-width: 991.98px) {
+  .header-left .dashboard_bar {
+    font-size: 1.15rem !important;
+  }
 }
 
-h5,
-.h5 {
-  font-size: 0.95rem !important;
+/* Form Labels & Badges System */
+label, .form-label {
+  font-family: var(--app-font-family) !important;
+  font-weight: 500 !important;
 }
 
-h6,
-.h6 {
-  font-size: 0.82rem !important;
+.badge {
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
 }
 
 /* --------------------------------------------------------------------------
