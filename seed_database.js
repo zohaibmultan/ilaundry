@@ -38,6 +38,10 @@ async function seed() {
     }
     console.log('✅ Tables truncated.');
 
+    // Ensure schema columns can accommodate extended services & service types
+    await mySqlQury(`ALTER TABLE tbl_services MODIFY services_type_id VARCHAR(500) NOT NULL`);
+    await mySqlQury(`ALTER TABLE tbl_services MODIFY services_type_price VARCHAR(500) NOT NULL`);
+
     // =========================================================================
     // STEP 2: SETUP SYSTEM CONFIGURATION & BASE ROLES
     // =========================================================================
@@ -276,41 +280,511 @@ async function seed() {
         VALUES ('Main Operating Account', 'BANK-US-${1000 + storeId}', 'Commercial checking account', '${storeId}', 3500.00, '${sp.name}', '0')
       `);
 
-      // 5. Service Types (Categories: Wash & Fold, Dry Cleaning, Steam Press, Premium Bedding)
-      const stWash = await mySqlQury(`INSERT INTO tbl_services_type (services_type, status, store_ID) VALUES ('Wash & Fold', '0', '${storeId}')`);
-      const stDry = await mySqlQury(`INSERT INTO tbl_services_type (services_type, status, store_ID) VALUES ('Dry Cleaning', '0', '${storeId}')`);
-      const stPress = await mySqlQury(`INSERT INTO tbl_services_type (services_type, status, store_ID) VALUES ('Steam Press', '0', '${storeId}')`);
-      const stSpecial = await mySqlQury(`INSERT INTO tbl_services_type (services_type, status, store_ID) VALUES ('Premium & Leather', '0', '${storeId}')`);
+      // 5. Service Types (18 realistic laundry & dry cleaning service types)
+      const serviceTypeNames = [
+        'Wash & Fold',
+        'Dry Cleaning',
+        'Steam Press',
+        'Wash & Iron',
+        'Delicate Hand Wash',
+        'Stain Treatment & Spotting',
+        'Starching & Polishing',
+        'Express 4-Hour Rush',
+        'Anti-Bacterial Sanitization',
+        'Eco-Friendly Green Clean',
+        'Woolen & Cashmere Care',
+        'Leather & Suede Restoration',
+        'Silk & Velvet Specialty',
+        'Bedding & Linen Refresh',
+        'Curtain & Drapery Treatment',
+        'Shoe & Sneaker Detailing',
+        'Dyeing & Color Revive',
+        'Minor Alteration & Hemming'
+      ];
 
-      const typeIdsStr = `${stWash.insertId},${stDry.insertId},${stPress.insertId},${stSpecial.insertId}`;
+      const insertedServiceTypes = [];
+      for (const stName of serviceTypeNames) {
+        const stRes = await mySqlQury(`INSERT INTO tbl_services_type (services_type, status, store_ID) VALUES ('${stName.replace(/'/g, "\\'")}', '0', '${storeId}')`);
+        insertedServiceTypes.push({
+          id: stRes.insertId,
+          name: stName
+        });
+      }
 
-      // 6. Services / Garment Items
-      const garmentCatalog = [
-        { name: "Men's Formal Shirt", prices: '5.00,12.00,3.50,18.00' },
-        { name: "Trousers & Chinos", prices: '6.00,14.00,4.00,20.00' },
-        { name: "Casual Denim Jeans", prices: '6.50,15.00,4.50,22.00' },
-        { name: "Two-Piece Business Suit", prices: '15.00,28.00,10.00,45.00' },
-        { name: "Winter Woolen Jacket", prices: '18.00,32.00,12.00,50.00' },
-        { name: "Silk Blouse / Dress", prices: '10.00,22.00,8.00,35.00' },
-        { name: "Bed Sheet & Pillowcase Set", prices: '8.00,18.00,6.00,25.00' },
-        { name: "Heavy Quilt & Comforter", prices: '20.00,38.00,15.00,55.00' }
+      // 6. Services / Garment Items Catalog (40 diverse garments & items per store)
+      // Each service gets 4 to 10 relevant service types with realistic prices
+      const garmentCatalogMaster = [
+        // Men's Wear (1-8)
+        {
+          name: "Men's Formal Shirt",
+          types: [
+            { typeIndex: 0, price: 5.00 },   // Wash & Fold
+            { typeIndex: 1, price: 12.00 },  // Dry Cleaning
+            { typeIndex: 2, price: 3.50 },   // Steam Press
+            { typeIndex: 3, price: 7.00 },   // Wash & Iron
+            { typeIndex: 5, price: 4.50 },   // Stain Treatment
+            { typeIndex: 6, price: 4.00 },   // Starching & Polishing
+            { typeIndex: 7, price: 9.00 },   // Express Rush
+            { typeIndex: 8, price: 6.00 }    // Anti-Bacterial
+          ]
+        },
+        {
+          name: "Men's Casual T-Shirt",
+          types: [
+            { typeIndex: 0, price: 4.00 },
+            { typeIndex: 2, price: 3.00 },
+            { typeIndex: 3, price: 5.50 },
+            { typeIndex: 7, price: 8.00 },
+            { typeIndex: 8, price: 5.00 },
+            { typeIndex: 9, price: 6.00 }
+          ]
+        },
+        {
+          name: "Trousers & Chinos",
+          types: [
+            { typeIndex: 0, price: 6.00 },
+            { typeIndex: 1, price: 14.00 },
+            { typeIndex: 2, price: 4.00 },
+            { typeIndex: 3, price: 8.50 },
+            { typeIndex: 5, price: 5.00 },
+            { typeIndex: 7, price: 11.00 },
+            { typeIndex: 17, price: 9.00 }  // Alteration & Hemming
+          ]
+        },
+        {
+          name: "Casual Denim Jeans",
+          types: [
+            { typeIndex: 0, price: 6.50 },
+            { typeIndex: 1, price: 15.00 },
+            { typeIndex: 2, price: 4.50 },
+            { typeIndex: 3, price: 9.00 },
+            { typeIndex: 5, price: 5.50 },
+            { typeIndex: 8, price: 7.50 },
+            { typeIndex: 16, price: 22.00 }, // Dyeing & Color Revive
+            { typeIndex: 17, price: 10.00 }  // Alteration & Hemming
+          ]
+        },
+        {
+          name: "Two-Piece Business Suit",
+          types: [
+            { typeIndex: 1, price: 28.00 },
+            { typeIndex: 2, price: 10.00 },
+            { typeIndex: 5, price: 8.00 },
+            { typeIndex: 7, price: 20.00 },
+            { typeIndex: 8, price: 14.00 },
+            { typeIndex: 9, price: 32.00 },
+            { typeIndex: 17, price: 18.00 }
+          ]
+        },
+        {
+          name: "Three-Piece Tuxedo",
+          types: [
+            { typeIndex: 1, price: 38.00 },
+            { typeIndex: 2, price: 14.00 },
+            { typeIndex: 5, price: 10.00 },
+            { typeIndex: 7, price: 25.00 },
+            { typeIndex: 9, price: 42.00 },
+            { typeIndex: 17, price: 22.00 }
+          ]
+        },
+        {
+          name: "Casual Blazer / Sport Coat",
+          types: [
+            { typeIndex: 1, price: 20.00 },
+            { typeIndex: 2, price: 8.00 },
+            { typeIndex: 5, price: 6.50 },
+            { typeIndex: 7, price: 15.00 },
+            { typeIndex: 9, price: 24.00 }
+          ]
+        },
+        {
+          name: "Necktie / Bowtie / Scarf",
+          types: [
+            { typeIndex: 1, price: 8.00 },
+            { typeIndex: 2, price: 4.00 },
+            { typeIndex: 4, price: 7.00 },
+            { typeIndex: 5, price: 5.00 }
+          ]
+        },
+
+        // Women's Wear (9-16)
+        {
+          name: "Silk Blouse / Top",
+          types: [
+            { typeIndex: 1, price: 18.00 },
+            { typeIndex: 2, price: 7.00 },
+            { typeIndex: 4, price: 14.00 },
+            { typeIndex: 5, price: 6.00 },
+            { typeIndex: 7, price: 16.00 },
+            { typeIndex: 12, price: 22.00 } // Silk & Velvet Specialty
+          ]
+        },
+        {
+          name: "Pleated Skirt",
+          types: [
+            { typeIndex: 0, price: 7.00 },
+            { typeIndex: 1, price: 15.00 },
+            { typeIndex: 2, price: 6.50 },
+            { typeIndex: 3, price: 9.50 },
+            { typeIndex: 5, price: 5.00 },
+            { typeIndex: 17, price: 8.00 }
+          ]
+        },
+        {
+          name: "Casual Summer Dress",
+          types: [
+            { typeIndex: 0, price: 9.00 },
+            { typeIndex: 1, price: 18.00 },
+            { typeIndex: 2, price: 6.00 },
+            { typeIndex: 3, price: 12.00 },
+            { typeIndex: 5, price: 6.50 },
+            { typeIndex: 7, price: 14.00 }
+          ]
+        },
+        {
+          name: "Evening Cocktail Gown",
+          types: [
+            { typeIndex: 1, price: 35.00 },
+            { typeIndex: 2, price: 12.00 },
+            { typeIndex: 4, price: 28.00 },
+            { typeIndex: 5, price: 12.00 },
+            { typeIndex: 7, price: 25.00 },
+            { typeIndex: 9, price: 40.00 },
+            { typeIndex: 12, price: 38.00 },
+            { typeIndex: 17, price: 20.00 }
+          ]
+        },
+        {
+          name: "Traditional Silk Saree",
+          types: [
+            { typeIndex: 1, price: 22.00 },
+            { typeIndex: 2, price: 8.00 },
+            { typeIndex: 4, price: 18.00 },
+            { typeIndex: 5, price: 7.50 },
+            { typeIndex: 6, price: 9.00 },
+            { typeIndex: 12, price: 26.00 }
+          ]
+        },
+        {
+          name: "Embroidered Kurta / Salwar Kameez",
+          types: [
+            { typeIndex: 0, price: 8.00 },
+            { typeIndex: 1, price: 16.00 },
+            { typeIndex: 2, price: 5.50 },
+            { typeIndex: 3, price: 11.00 },
+            { typeIndex: 4, price: 12.00 },
+            { typeIndex: 5, price: 6.00 },
+            { typeIndex: 8, price: 9.50 }
+          ]
+        },
+        {
+          name: "Formal Women's Jumpsuit",
+          types: [
+            { typeIndex: 1, price: 22.00 },
+            { typeIndex: 2, price: 8.00 },
+            { typeIndex: 3, price: 14.00 },
+            { typeIndex: 5, price: 6.00 },
+            { typeIndex: 7, price: 15.00 }
+          ]
+        },
+        {
+          name: "Cashmere Cardigan",
+          types: [
+            { typeIndex: 1, price: 20.00 },
+            { typeIndex: 2, price: 7.00 },
+            { typeIndex: 4, price: 16.00 },
+            { typeIndex: 5, price: 6.00 },
+            { typeIndex: 10, price: 24.00 } // Woolen & Cashmere
+          ]
+        },
+
+        // Outerwear & Winter Wear (17-23)
+        {
+          name: "Winter Woolen Jacket",
+          types: [
+            { typeIndex: 1, price: 28.00 },
+            { typeIndex: 2, price: 10.00 },
+            { typeIndex: 5, price: 8.00 },
+            { typeIndex: 8, price: 12.00 },
+            { typeIndex: 10, price: 32.00 }
+          ]
+        },
+        {
+          name: "Down Feather Puffer Coat",
+          types: [
+            { typeIndex: 0, price: 22.00 },
+            { typeIndex: 1, price: 34.00 },
+            { typeIndex: 5, price: 9.00 },
+            { typeIndex: 8, price: 14.00 },
+            { typeIndex: 9, price: 38.00 }
+          ]
+        },
+        {
+          name: "Heavy Trench Coat",
+          types: [
+            { typeIndex: 1, price: 32.00 },
+            { typeIndex: 2, price: 11.00 },
+            { typeIndex: 5, price: 8.50 },
+            { typeIndex: 7, price: 22.00 },
+            { typeIndex: 8, price: 15.00 },
+            { typeIndex: 9, price: 36.00 }
+          ]
+        },
+        {
+          name: "Genuine Leather Biker Jacket",
+          types: [
+            { typeIndex: 1, price: 45.00 },
+            { typeIndex: 5, price: 15.00 },
+            { typeIndex: 8, price: 18.00 },
+            { typeIndex: 11, price: 55.00 }, // Leather & Suede
+            { typeIndex: 16, price: 40.00 }  // Color Revive
+          ]
+        },
+        {
+          name: "Suede Coat / Overshirt",
+          types: [
+            { typeIndex: 1, price: 42.00 },
+            { typeIndex: 5, price: 14.00 },
+            { typeIndex: 11, price: 52.00 },
+            { typeIndex: 16, price: 38.00 }
+          ]
+        },
+        {
+          name: "Hoodie & Sweatshirt",
+          types: [
+            { typeIndex: 0, price: 6.50 },
+            { typeIndex: 2, price: 4.00 },
+            { typeIndex: 3, price: 8.00 },
+            { typeIndex: 5, price: 4.50 },
+            { typeIndex: 7, price: 10.00 },
+            { typeIndex: 8, price: 7.00 }
+          ]
+        },
+        {
+          name: "Tracksuit / Sweatpants",
+          types: [
+            { typeIndex: 0, price: 6.00 },
+            { typeIndex: 2, price: 4.00 },
+            { typeIndex: 3, price: 7.50 },
+            { typeIndex: 7, price: 9.00 },
+            { typeIndex: 8, price: 6.50 }
+          ]
+        },
+
+        // Bedding & Linens (24-30)
+        {
+          name: "Bed Sheet & Pillowcase Set",
+          types: [
+            { typeIndex: 0, price: 8.00 },
+            { typeIndex: 1, price: 18.00 },
+            { typeIndex: 2, price: 6.00 },
+            { typeIndex: 3, price: 11.00 },
+            { typeIndex: 7, price: 14.00 },
+            { typeIndex: 8, price: 10.00 },
+            { typeIndex: 13, price: 16.00 } // Bedding & Linen Refresh
+          ]
+        },
+        {
+          name: "Heavy Quilt & Comforter",
+          types: [
+            { typeIndex: 0, price: 20.00 },
+            { typeIndex: 1, price: 38.00 },
+            { typeIndex: 5, price: 10.00 },
+            { typeIndex: 8, price: 16.00 },
+            { typeIndex: 9, price: 42.00 },
+            { typeIndex: 13, price: 32.00 }
+          ]
+        },
+        {
+          name: "Duvet Cover (King/Queen)",
+          types: [
+            { typeIndex: 0, price: 12.00 },
+            { typeIndex: 1, price: 24.00 },
+            { typeIndex: 2, price: 7.50 },
+            { typeIndex: 3, price: 15.00 },
+            { typeIndex: 8, price: 12.00 },
+            { typeIndex: 13, price: 22.00 }
+          ]
+        },
+        {
+          name: "Woolen Fleece Blanket",
+          types: [
+            { typeIndex: 0, price: 14.00 },
+            { typeIndex: 1, price: 26.00 },
+            { typeIndex: 8, price: 12.00 },
+            { typeIndex: 10, price: 28.00 },
+            { typeIndex: 13, price: 24.00 }
+          ]
+        },
+        {
+          name: "Bath Towel & Bathrobe Set",
+          types: [
+            { typeIndex: 0, price: 7.00 },
+            { typeIndex: 2, price: 4.50 },
+            { typeIndex: 3, price: 9.00 },
+            { typeIndex: 7, price: 12.00 },
+            { typeIndex: 8, price: 8.50 },
+            { typeIndex: 13, price: 11.00 }
+          ]
+        },
+        {
+          name: "Plush Decorative Pillow / Cushion",
+          types: [
+            { typeIndex: 0, price: 6.00 },
+            { typeIndex: 1, price: 12.00 },
+            { typeIndex: 5, price: 4.00 },
+            { typeIndex: 8, price: 7.50 },
+            { typeIndex: 13, price: 10.00 }
+          ]
+        },
+        {
+          name: "Tablecloth & Napkins (Set of 6)",
+          types: [
+            { typeIndex: 0, price: 9.00 },
+            { typeIndex: 1, price: 18.00 },
+            { typeIndex: 2, price: 7.00 },
+            { typeIndex: 3, price: 13.00 },
+            { typeIndex: 5, price: 6.00 },
+            { typeIndex: 6, price: 8.00 }
+          ]
+        },
+
+        // Home & Drapes (31-34)
+        {
+          name: "Blackout Curtains (Per Panel)",
+          types: [
+            { typeIndex: 1, price: 22.00 },
+            { typeIndex: 2, price: 9.00 },
+            { typeIndex: 5, price: 7.00 },
+            { typeIndex: 8, price: 12.00 },
+            { typeIndex: 14, price: 26.00 } // Curtain & Drapery Treatment
+          ]
+        },
+        {
+          name: "Sheer Window Drapes (Pair)",
+          types: [
+            { typeIndex: 1, price: 18.00 },
+            { typeIndex: 2, price: 7.50 },
+            { typeIndex: 4, price: 15.00 },
+            { typeIndex: 5, price: 5.50 },
+            { typeIndex: 14, price: 22.00 }
+          ]
+        },
+        {
+          name: "Sofa Slipcover Set",
+          types: [
+            { typeIndex: 0, price: 24.00 },
+            { typeIndex: 1, price: 40.00 },
+            { typeIndex: 5, price: 12.00 },
+            { typeIndex: 8, price: 16.00 },
+            { typeIndex: 9, price: 45.00 }
+          ]
+        },
+        {
+          name: "Area Rug Runner (Washable)",
+          types: [
+            { typeIndex: 0, price: 18.00 },
+            { typeIndex: 1, price: 32.00 },
+            { typeIndex: 5, price: 9.00 },
+            { typeIndex: 8, price: 14.00 }
+          ]
+        },
+
+        // Footwear & Specialty Accessories (35-40)
+        {
+          name: "Athletic & Canvas Sneakers",
+          types: [
+            { typeIndex: 0, price: 12.00 },
+            { typeIndex: 5, price: 6.00 },
+            { typeIndex: 7, price: 16.00 },
+            { typeIndex: 8, price: 10.00 },
+            { typeIndex: 15, price: 20.00 } // Shoe & Sneaker Detailing
+          ]
+        },
+        {
+          name: "Leather Oxford Dress Shoes",
+          types: [
+            { typeIndex: 5, price: 8.00 },
+            { typeIndex: 8, price: 12.00 },
+            { typeIndex: 11, price: 28.00 }, // Leather Restoration
+            { typeIndex: 15, price: 26.00 },
+            { typeIndex: 16, price: 22.00 }  // Color Revive
+          ]
+        },
+        {
+          name: "Suede Boots / Chukka",
+          types: [
+            { typeIndex: 5, price: 9.00 },
+            { typeIndex: 8, price: 12.00 },
+            { typeIndex: 11, price: 30.00 },
+            { typeIndex: 15, price: 28.00 }
+          ]
+        },
+        {
+          name: "Handbag / Purse (Leather/Fabric)",
+          types: [
+            { typeIndex: 4, price: 18.00 },
+            { typeIndex: 5, price: 8.00 },
+            { typeIndex: 8, price: 12.00 },
+            { typeIndex: 11, price: 35.00 },
+            { typeIndex: 16, price: 25.00 }
+          ]
+        },
+        {
+          name: "Backpack & Gym Bag",
+          types: [
+            { typeIndex: 0, price: 10.00 },
+            { typeIndex: 5, price: 5.00 },
+            { typeIndex: 7, price: 14.00 },
+            { typeIndex: 8, price: 9.00 },
+            { typeIndex: 9, price: 15.00 }
+          ]
+        },
+        {
+          name: "Motorcycle / Winter Riding Gloves",
+          types: [
+            { typeIndex: 1, price: 12.00 },
+            { typeIndex: 4, price: 10.00 },
+            { typeIndex: 5, price: 5.00 },
+            { typeIndex: 8, price: 8.00 },
+            { typeIndex: 11, price: 18.00 }
+          ]
+        }
       ];
 
       const insertedServices = [];
-      for (const gc of garmentCatalog) {
+      for (const gc of garmentCatalogMaster) {
+        // Collect type IDs and prices
+        const typeIds = [];
+        const typePrices = [];
+        const typesForService = [];
+
+        for (const t of gc.types) {
+          const stMeta = insertedServiceTypes[t.typeIndex];
+          typeIds.push(stMeta.id);
+          typePrices.push(t.price.toFixed(2));
+          typesForService.push({
+            id: stMeta.id,
+            name: stMeta.name,
+            price: t.price
+          });
+        }
+
+        const typeIdsStr = typeIds.join(',');
+        const pricesStr = typePrices.join(',');
+        const srvSlug = gc.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        const srvImage = `${srvSlug}.png`;
+
         const sRes = await mySqlQury(`
           INSERT INTO tbl_services (name, image, services_type_id, services_type_price, store_ID, status)
-          VALUES ('${gc.name.replace(/'/g, "\\'")}', 'default.png', '${typeIdsStr}', '${gc.prices}', '${storeId}', '0')
+          VALUES ('${gc.name.replace(/'/g, "\\'")}', '${srvImage}', '${typeIdsStr}', '${pricesStr}', '${storeId}', '0')
         `);
+
         insertedServices.push({
           id: sRes.insertId,
           name: gc.name,
-          types: [
-            { id: stWash.insertId, name: 'Wash & Fold', price: parseFloat(gc.prices.split(',')[0]) },
-            { id: stDry.insertId, name: 'Dry Cleaning', price: parseFloat(gc.prices.split(',')[1]) },
-            { id: stPress.insertId, name: 'Steam Press', price: parseFloat(gc.prices.split(',')[2]) },
-            { id: stSpecial.insertId, name: 'Premium & Leather', price: parseFloat(gc.prices.split(',')[3]) }
-          ]
+          image: srvImage,
+          types: typesForService
         });
       }
 
@@ -434,7 +908,7 @@ async function seed() {
               service_name, service_type_name, service_img
             ) VALUES (
               '${srv.id}', '${stObj.id}', ${stObj.price}, ${qty}, '#333333',
-              '${srv.name.replace(/'/g, "\\'")}', '${stObj.name}', 'default.png'
+              '${srv.name.replace(/'/g, "\\'")}', '${stObj.name}', '${srv.image || 'default.png'}'
             )
           `);
           selectedCartIds.push(cartServ.insertId);
