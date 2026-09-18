@@ -306,7 +306,7 @@
 .col-xl-5>.pos-card {
   display: flex !important;
   flex-direction: column !important;
-  height: calc(100vh - 98px) !important;
+  height: calc(100vh - 135px) !important;
   min-height: 580px !important;
 }
 

@@ -9,13 +9,13 @@ var {
   DataDelete,
   DataUpdate,
   DataInsert,
-  DataFind
+  DataFind,
 } = require("../middelwer/databaseQurey");
 const { paginateDataTable } = require("../middelwer/dataTableHelper");
 
 async function idfororder() {
   const orderiddata = await DataFind(
-    `SELECT id FROM tbl_order ORDER BY ID DESC LIMIT 1`
+    `SELECT id FROM tbl_order ORDER BY ID DESC LIMIT 1`,
   );
 
   if (orderiddata.length > 0) {
@@ -37,13 +37,21 @@ async function idfororder() {
 
 async function getStaffScope(userId, loginas) {
   if (loginas == 0) return { isStaff: false, staffStoreId: null };
-  const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${userId}`);
+  const adminData = await DataFind(
+    `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${userId}`,
+  );
   const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
   const staffStoreId = isStaff ? adminData[0].store_ID : null;
   return { isStaff, staffStoreId };
 }
 
-async function buildOrderListQuery(user, statusParam, searchParam, limit = 10, offset = 0) {
+async function buildOrderListQuery(
+  user,
+  statusParam,
+  searchParam,
+  limit = 10,
+  offset = 0,
+) {
   const { id, roll, store, loginas } = user;
   const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
 
@@ -51,11 +59,20 @@ async function buildOrderListQuery(user, statusParam, searchParam, limit = 10, o
   let statusCondition = "";
   if (
     statusParam &&
-    !["all", "ALL", "__ALL__ORDERS__00911", "__ALL__ORDERS__00911#", "", "0", "undefined", "null"].includes(String(statusParam).trim())
+    ![
+      "all",
+      "ALL",
+      "__ALL__ORDERS__00911",
+      "__ALL__ORDERS__00911#",
+      "",
+      "0",
+      "undefined",
+      "null",
+    ].includes(String(statusParam).trim())
   ) {
     const cleanStatus = String(statusParam).trim().replace(/'/g, "\\'");
     const orderStatus = await DataFind(
-      `SELECT * FROM tbl_orderstatus WHERE status = '${cleanStatus}' OR id = '${cleanStatus}'`
+      `SELECT * FROM tbl_orderstatus WHERE status = '${cleanStatus}' OR id = '${cleanStatus}'`,
     );
     if (orderStatus.length > 0) {
       statusCondition = `tbl_order.order_status = '${orderStatus[0].id}'`;
@@ -64,7 +81,11 @@ async function buildOrderListQuery(user, statusParam, searchParam, limit = 10, o
 
   // Normalize search filter
   let searchCondition = "";
-  if (searchParam && typeof searchParam === "string" && searchParam.trim().length > 0) {
+  if (
+    searchParam &&
+    typeof searchParam === "string" &&
+    searchParam.trim().length > 0
+  ) {
     const cleanSearch = searchParam.trim().replace(/'/g, "\\'");
     searchCondition = `(tbl_order.order_id LIKE '%${cleanSearch}%' OR tbl_customer.name LIKE '%${cleanSearch}%' OR tbl_customer.number LIKE '%${cleanSearch}%' OR tbl_store.name LIKE '%${cleanSearch}%' OR tbl_orderstatus.status LIKE '%${cleanSearch}%' OR CAST(tbl_order.id AS CHAR) LIKE '%${cleanSearch}%')`;
   }
@@ -102,8 +123,10 @@ async function buildOrderListQuery(user, statusParam, searchParam, limit = 10, o
         // master can see all stores
       } else {
         login = "store";
-        const storeID = await DataFind(`SELECT * FROM tbl_admin WHERE id = ${id}`);
-        const sId = (storeID && storeID.length > 0) ? storeID[0].store_ID : store;
+        const storeID = await DataFind(
+          `SELECT * FROM tbl_admin WHERE id = ${id}`,
+        );
+        const sId = storeID && storeID.length > 0 ? storeID[0].store_ID : store;
         scopeConditions.push(`tbl_order.store_id = '${sId}'`);
       }
     } else if (
@@ -116,14 +139,18 @@ async function buildOrderListQuery(user, statusParam, searchParam, limit = 10, o
       login = "store";
       scopeConditions.push(`tbl_order.store_id = ${store}`);
     } else {
-      const adminData = await DataFind(`SELECT * FROM tbl_admin WHERE id = ${id}`);
+      const adminData = await DataFind(
+        `SELECT * FROM tbl_admin WHERE id = ${id}`,
+      );
       if (adminData.length > 0) {
         const multiy = await DataFind("SELECT type FROM tbl_master_shop");
         if (multiy && multiy.length > 0 && multiy[0].type == 1) {
           login = "master";
         } else {
           login = "store";
-          scopeConditions.push(`tbl_order.store_id = '${adminData[0].store_ID}'`);
+          scopeConditions.push(
+            `tbl_order.store_id = '${adminData[0].store_ID}'`,
+          );
         }
       } else {
         return { authorized: false };
@@ -135,7 +162,8 @@ async function buildOrderListQuery(user, statusParam, searchParam, limit = 10, o
   if (statusCondition) allConditions.push(statusCondition);
   if (searchCondition) allConditions.push(searchCondition);
 
-  const whereClause = allConditions.length > 0 ? `WHERE ${allConditions.join(" AND ")}` : "";
+  const whereClause =
+    allConditions.length > 0 ? `WHERE ${allConditions.join(" AND ")}` : "";
   const query = `
     SELECT tbl_order.*, 
            COALESCE(tbl_customer.name, "") as name, 
@@ -189,8 +217,11 @@ router.get("/list/data", auth, async (req, res) => {
           login = "master";
         } else {
           login = "store";
-          const storeID = await DataFind(`SELECT * FROM tbl_admin WHERE id = ${id}`);
-          const sId = (storeID && storeID.length > 0) ? storeID[0].store_ID : store;
+          const storeID = await DataFind(
+            `SELECT * FROM tbl_admin WHERE id = ${id}`,
+          );
+          const sId =
+            storeID && storeID.length > 0 ? storeID[0].store_ID : store;
           scopeConditions.push(`tbl_order.store_id = '${sId}'`);
         }
       } else if (
@@ -203,14 +234,18 @@ router.get("/list/data", auth, async (req, res) => {
         login = "store";
         scopeConditions.push(`tbl_order.store_id = ${store}`);
       } else {
-        const adminData = await DataFind(`SELECT * FROM tbl_admin WHERE id = ${id}`);
+        const adminData = await DataFind(
+          `SELECT * FROM tbl_admin WHERE id = ${id}`,
+        );
         if (adminData.length > 0) {
           const multiy = await DataFind("SELECT type FROM tbl_master_shop");
           if (multiy && multiy.length > 0 && multiy[0].type == 1) {
             login = "master";
           } else {
             login = "store";
-            scopeConditions.push(`tbl_order.store_id = '${adminData[0].store_ID}'`);
+            scopeConditions.push(
+              `tbl_order.store_id = '${adminData[0].store_ID}'`,
+            );
           }
         }
       }
@@ -218,28 +253,50 @@ router.get("/list/data", auth, async (req, res) => {
 
     const filterConditions = [];
     const statusParam = req.query.status_filter || req.query.status;
-    if (statusParam && !["all", "ALL", "__ALL__ORDERS__00911", "__ALL__ORDERS__00911#", "", "0"].includes(String(statusParam).trim())) {
+    if (
+      statusParam &&
+      ![
+        "all",
+        "ALL",
+        "__ALL__ORDERS__00911",
+        "__ALL__ORDERS__00911#",
+        "",
+        "0",
+      ].includes(String(statusParam).trim())
+    ) {
       const cleanStatus = String(statusParam).trim().replace(/'/g, "\\'");
       const orderStatus = await DataFind(
-        `SELECT * FROM tbl_orderstatus WHERE status = '${cleanStatus}' OR id = '${cleanStatus}'`
+        `SELECT * FROM tbl_orderstatus WHERE status = '${cleanStatus}' OR id = '${cleanStatus}'`,
       );
       if (orderStatus.length > 0) {
-        filterConditions.push(`tbl_order.order_status = '${orderStatus[0].id}'`);
+        filterConditions.push(
+          `tbl_order.order_status = '${orderStatus[0].id}'`,
+        );
       }
     }
 
     const storeParam = req.query.store_filter || req.query.store_id;
-    if (storeParam && login === "master" && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+    if (
+      storeParam &&
+      login === "master" &&
+      !["all", "ALL", "", "0"].includes(String(storeParam).trim())
+    ) {
       const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
       filterConditions.push(`tbl_order.store_id = '${cleanStore}'`);
     }
 
     if (req.query.start_date) {
-      const cleanStartDate = String(req.query.start_date).trim().replace(/'/g, "\\'");
-      filterConditions.push(`DATE(tbl_order.order_date) >= '${cleanStartDate}'`);
+      const cleanStartDate = String(req.query.start_date)
+        .trim()
+        .replace(/'/g, "\\'");
+      filterConditions.push(
+        `DATE(tbl_order.order_date) >= '${cleanStartDate}'`,
+      );
     }
     if (req.query.end_date) {
-      const cleanEndDate = String(req.query.end_date).trim().replace(/'/g, "\\'");
+      const cleanEndDate = String(req.query.end_date)
+        .trim()
+        .replace(/'/g, "\\'");
       filterConditions.push(`DATE(tbl_order.order_date) <= '${cleanEndDate}'`);
     }
 
@@ -247,13 +304,13 @@ router.get("/list/data", auth, async (req, res) => {
       accessdata &&
       accessdata.roll &&
       accessdata.roll.orders &&
-      accessdata.roll.orders.includes("delete")
+      accessdata.roll.orders.includes("delete"),
     );
     const canEdit = Boolean(
       accessdata &&
       accessdata.roll &&
       accessdata.roll.orders &&
-      accessdata.roll.orders.includes("edit")
+      accessdata.roll.orders.includes("edit"),
     );
 
     const result = await paginateDataTable(req, {
@@ -267,45 +324,51 @@ router.get("/list/data", auth, async (req, res) => {
              LEFT JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id 
              LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id`,
       searchColumns: [
-        'tbl_order.order_id',
-        'tbl_customer.name',
-        'tbl_customer.number',
-        'tbl_store.name',
-        'tbl_orderstatus.status',
-        'tbl_order.reference_number'
+        "tbl_order.order_id",
+        "tbl_customer.name",
+        "tbl_customer.number",
+        "tbl_store.name",
+        "tbl_orderstatus.status",
+        "tbl_order.reference_number",
       ],
       baseWhere: scopeConditions,
       filterWhere: filterConditions,
-      defaultOrder: 'tbl_order.id DESC',
+      defaultOrder: "tbl_order.id DESC",
       columnMap: {
-        0: 'tbl_order.order_id',
-        1: 'tbl_customer.name',
-        2: 'tbl_order.gross_total',
-        3: 'tbl_order.order_status',
-        4: 'tbl_order.paid_amount',
-        5: 'tbl_store.name'
+        0: "tbl_order.order_id",
+        1: "tbl_customer.name",
+        2: "tbl_order.gross_total",
+        3: "tbl_order.order_status",
+        4: "tbl_order.paid_amount",
+        5: "tbl_store.name",
       },
       postProcess: async (rows) => {
         return rows.map((order) => {
-          const oDate = order.order_date ? new Date(order.order_date) : new Date();
-          const dDate = order.delivery_date ? new Date(order.delivery_date) : new Date();
-          const oDay = (oDate.getDate() < 10 ? '0' : '') + oDate.getDate();
-          const oMonth = (oDate.getMonth() + 1 < 10 ? '0' : '') + (oDate.getMonth() + 1);
+          const oDate = order.order_date
+            ? new Date(order.order_date)
+            : new Date();
+          const dDate = order.delivery_date
+            ? new Date(order.delivery_date)
+            : new Date();
+          const oDay = (oDate.getDate() < 10 ? "0" : "") + oDate.getDate();
+          const oMonth =
+            (oDate.getMonth() + 1 < 10 ? "0" : "") + (oDate.getMonth() + 1);
           const oYear = oDate.getFullYear();
-          const dDay = (dDate.getDate() < 10 ? '0' : '') + dDate.getDate();
-          const dMonth = (dDate.getMonth() + 1 < 10 ? '0' : '') + (dDate.getMonth() + 1);
+          const dDay = (dDate.getDate() < 10 ? "0" : "") + dDate.getDate();
+          const dMonth =
+            (dDate.getMonth() + 1 < 10 ? "0" : "") + (dDate.getMonth() + 1);
           const dYear = dDate.getFullYear();
 
           const formattedOrderDate = `${oYear}-${oMonth}-${oDay}`;
           const formattedDeliveryDate = `${dYear}-${dMonth}-${dDay}`;
 
-          let statusClass = 'status-processing';
-          if (order.order_status == 1) statusClass = 'status-pending';
-          else if (order.order_status == 2) statusClass = 'status-processing';
-          else if (order.order_status == 3) statusClass = 'status-ready';
-          else if (order.order_status == 4) statusClass = 'status-delivered';
-          else if (order.order_status == 5) statusClass = 'status-returned';
-          else if (order.order_status == 6) statusClass = 'status-cancelled';
+          let statusClass = "status-processing";
+          if (order.order_status == 1) statusClass = "status-pending";
+          else if (order.order_status == 2) statusClass = "status-processing";
+          else if (order.order_status == 3) statusClass = "status-ready";
+          else if (order.order_status == 4) statusClass = "status-delivered";
+          else if (order.order_status == 5) statusClass = "status-returned";
+          else if (order.order_status == 6) statusClass = "status-cancelled";
 
           return {
             ...order,
@@ -314,10 +377,10 @@ router.get("/list/data", auth, async (req, res) => {
             statusClass,
             canDelete,
             canEdit,
-            isMaster: login === "master"
+            isMaster: login === "master",
           };
         });
-      }
+      },
     });
 
     res.json(result);
@@ -330,7 +393,13 @@ router.get("/list/data", auth, async (req, res) => {
 router.get("/list", auth, async (req, res) => {
   try {
     const accessdata = await access(req.user);
-    const built = await buildOrderListQuery(req.user, req.query.status, req.query.search, 10, 0);
+    const built = await buildOrderListQuery(
+      req.user,
+      req.query.status,
+      req.query.search,
+      10,
+      0,
+    );
     if (!built.authorized) {
       req.flash("error", "You Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
@@ -338,7 +407,9 @@ router.get("/list", auth, async (req, res) => {
 
     const orderlist = await DataFind(built.query);
     const Ordersatus = await DataFind("SELECT * FROM tbl_orderstatus ");
-    const storeList = await DataFind("SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0");
+    const storeList = await DataFind(
+      "SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0",
+    );
 
     res.render("order", {
       login: built.login,
@@ -362,7 +433,13 @@ router.post("/getmore", auth, async (req, res) => {
     const { from, orderstatus, search } = req.body;
     const accessdata = await access(req.user);
     const offset = parseInt(from) || 0;
-    const built = await buildOrderListQuery(req.user, orderstatus, search, 10, offset);
+    const built = await buildOrderListQuery(
+      req.user,
+      orderstatus,
+      search,
+      10,
+      offset,
+    );
     if (!built.authorized) {
       return res.status(403).send({ error: "Unauthorized", orderlists: [] });
     }
@@ -384,8 +461,8 @@ router.post("/getmore", auth, async (req, res) => {
 
 router.get("/delete/:id", auth, async (req, res) => {
   try {
-    if (process.env.DISABLE_DB_WRITE === 'true') {
-      req.flash('error', 'For demo purpose we disabled crud operations!!');
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/order/list");
     }
 
@@ -396,12 +473,15 @@ router.get("/delete/:id", auth, async (req, res) => {
     }
 
     const accessdata = await access(req.user);
-    if (accessdata.logas === 'custmor') {
+    if (accessdata.logas === "custmor") {
       req.flash("error", "You are not authorized to delete orders");
       return res.redirect("/order/list");
     }
 
-    if (accessdata.topbardata?.is_staff != 0 && (!accessdata.roll?.orders || !accessdata.roll.orders.includes('delete'))) {
+    if (
+      accessdata.topbardata?.is_staff != 0 &&
+      (!accessdata.roll?.orders || !accessdata.roll.orders.includes("delete"))
+    ) {
       req.flash("error", "You do not have permission to delete orders");
       return res.redirect("/order/list");
     }
@@ -411,7 +491,7 @@ router.get("/delete/:id", auth, async (req, res) => {
     let findQuery = `SELECT * FROM tbl_order WHERE id = '${orderId}'`;
     if (isStaff && staffStoreId) {
       findQuery += ` AND store_id = '${staffStoreId}'`;
-    } else if (accessdata.login === 'store') {
+    } else if (accessdata.login === "store") {
       findQuery += ` AND store_id = '${store}'`;
     }
 
@@ -424,13 +504,28 @@ router.get("/delete/:id", auth, async (req, res) => {
     const order = orderData[0];
 
     // Delete linked order payments
-    await DataDelete(`tbl_order_payment`, `order_id = '${order.id}'`, req.hostname, req.protocol);
+    await DataDelete(
+      `tbl_order_payment`,
+      `order_id = '${order.id}'`,
+      req.hostname,
+      req.protocol,
+    );
 
     // Delete related ledger transactions for this order
-    await DataDelete(`tbl_transections`, `transec_detail LIKE '%${order.order_id}%'`, req.hostname, req.protocol);
+    await DataDelete(
+      `tbl_transections`,
+      `transec_detail LIKE '%${order.order_id}%'`,
+      req.hostname,
+      req.protocol,
+    );
 
     // Delete the order itself
-    const deleteResult = await DataDelete(`tbl_order`, `id = '${order.id}'`, req.hostname, req.protocol);
+    const deleteResult = await DataDelete(
+      `tbl_order`,
+      `id = '${order.id}'`,
+      req.hostname,
+      req.protocol,
+    );
     if (deleteResult == -1) {
       req.flash("error", "Error deleting order, please try again");
       return res.redirect("/order/list");
@@ -453,7 +548,7 @@ router.get("/view/:id", auth, async (req, res) => {
     const order = await DataFind(
       "SELECT tbl_order.*,tbl_orderstatus.status as status FROM tbl_order join tbl_orderstatus on tbl_order.order_status=tbl_orderstatus.id WHERE tbl_order.id=" +
         orderid +
-        ""
+        "",
     );
 
     if (!order || order.length === 0) {
@@ -463,41 +558,63 @@ router.get("/view/:id", auth, async (req, res) => {
 
     const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
     if (isStaff && staffStoreId && order[0].store_id != staffStoreId) {
-      req.flash("error", "You are not authorized to view orders from other stores");
+      req.flash(
+        "error",
+        "You are not authorized to view orders from other stores",
+      );
       return res.redirect("/order/list");
     }
 
     var splite_id = order[0].order_id.split(/[A-Z-a-z]/).join("");
 
     const storedata = await DataFind(
-      "SELECT * FROM tbl_store WHERE id=" + order[0].store_id + ""
+      "SELECT * FROM tbl_store WHERE id=" + order[0].store_id + "",
     );
     const Ordersatus = await DataFind("SELECT * FROM tbl_orderstatus");
     const orderServiceList = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-      order[0].service_list +
-      "')"
+        order[0].service_list +
+        "')",
     );
     const addonlist = await DataFind(
       "SELECT * from tbl_addons WHERE find_in_set(tbl_addons.id,'" +
-      order[0].addon_data +
-      "')"
+        order[0].addon_data +
+        "')",
     );
     const payments = await DataFind(
       "SELECT tbl_order_payment.*,tbl_account.ac_name FROM tbl_order_payment join tbl_account on tbl_order_payment.payment_account=tbl_account.id WHERE find_in_set(tbl_order_payment.id,'" +
-      order[0].payment_data +
-      "')"
+        order[0].payment_data +
+        "')",
     );
     const customer = await DataFind(
-      "SELECT * FROM tbl_customer WHERE id=" + order[0].customer_id + ""
+      "SELECT * FROM tbl_customer WHERE id=" + order[0].customer_id + "",
     );
     const account = await DataFind(
       "SELECT * FROM tbl_account WHERE store_ID=" +
-      order[0].store_id +
-      "  AND delet_flage != '1' "
+        order[0].store_id +
+        "  AND delet_flage != '1' ",
     );
 
     const accessdata = await access(req.user);
+
+    // Fetch active stores (excluding current store) for 'Deliver to Store' transfer
+    const availableStores = await DataFind(
+      "SELECT id, name, mobile_number, city FROM tbl_store WHERE status = '1' AND delete_flage = '0' AND id != " +
+        order[0].store_id +
+        " ORDER BY name ASC",
+    );
+
+    let transferredFromStore = null;
+    if (order[0].transferred_from_store_id) {
+      const origStore = await DataFind(
+        "SELECT id, name, mobile_number, city FROM tbl_store WHERE id = " +
+          order[0].transferred_from_store_id,
+      );
+      if (origStore && origStore.length > 0) {
+        transferredFromStore = origStore[0];
+      }
+    }
+
     res.render("order_details", {
       order: order[0],
       Ordersatus,
@@ -508,6 +625,8 @@ router.get("/view/:id", auth, async (req, res) => {
       storedata: storedata[0],
       account,
       accessdata,
+      availableStores: availableStores || [],
+      transferredFromStore,
       language: req.language_data,
       language_name: req.language_name,
       splite_id,
@@ -519,8 +638,8 @@ router.get("/view/:id", auth, async (req, res) => {
 
 router.get("/changestatus/:id", auth, async (req, res) => {
   try {
-    if (process.env.DISABLE_DB_WRITE === 'true') {
-      req.flash('error', 'For demo purpose we disabled crud operations!!');
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/");
     }
     console.log(req.params.id);
@@ -550,15 +669,20 @@ router.get("/changestatus/:id", auth, async (req, res) => {
       //   },stutus_change_date=CURRENT_TIMESTAMP WHERE id=${orderid}`
       // );
 
-      const orderupdate = await DataUpdate(`tbl_order`, `order_status=${statusid},commission_status=${statusid == "6" ? "0" : "1"
+      const orderupdate = await DataUpdate(
+        `tbl_order`,
+        `order_status=${statusid},commission_status=${
+          statusid == "6" ? "0" : "1"
         },stutus_change_date=CURRENT_TIMESTAMP`,
-        `id=${orderid}`, req.hostname, req.protocol);
+        `id=${orderid}`,
+        req.hostname,
+        req.protocol,
+      );
 
       if (orderupdate == -1) {
         req.flash("error", "Failed to update order status, please try again");
         return res.redirect("back");
       }
-
 
       const storedata =
         await DataFind(`SELECT tbl_order.order_id,tbl_order.store_id,tbl_orderstatus.status,tbl_store.name,
@@ -567,16 +691,16 @@ router.get("/changestatus/:id", auth, async (req, res) => {
 
       console.log(111, storedata);
       var data = await DataFind(
-        "SELECT * FROM tbl_email WHERE store_id=" + storedata[0].store_id + ""
+        "SELECT * FROM tbl_email WHERE store_id=" + storedata[0].store_id + "",
       );
       console.log(2222, orderid);
       console.log("data", data);
 
       const order_date = await DataFind(
-        `SELECT * FROM tbl_order WHERE id = '${orderid}'`
+        `SELECT * FROM tbl_order WHERE id = '${orderid}'`,
       );
       const customer_data = await DataFind(
-        `SELECT * FROM tbl_customer WHERE id = '${order_date[0].customer_id}'`
+        `SELECT * FROM tbl_customer WHERE id = '${order_date[0].customer_id}'`,
       );
       console.log(1111, "customer_data", customer_data);
 
@@ -665,7 +789,7 @@ router.get("/changestatus/:id", auth, async (req, res) => {
         `'${storedata[0].order_id}', '${fullDate}', '${accessdata.topbardata.id}', '${storedata[0].store_id}', 
     'The order status ${storedata[0].order_id} has been updated, please check it.'`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (storeNotification == -1) {
@@ -679,7 +803,7 @@ router.get("/changestatus/:id", auth, async (req, res) => {
         `'${storedata[0].order_id}', '${fullDate}', '${accessdata.topbardata.id}', '${order_date[0].customer_id}', 
     'The order status ${storedata[0].order_id} has been updated, please check it.'`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (customerNotification == -1) {
@@ -777,10 +901,159 @@ router.get("/changestatus/:id", auth, async (req, res) => {
   }
 });
 
+router.post("/transfer_store", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      return res.status(200).json({
+        status: "error",
+        message: "For demo purpose CRUD operations are disabled!",
+      });
+    }
+
+    const { order_id, target_store_id } = req.body;
+    const { id, roll, loginas } = req.user;
+
+    if (loginas == 0) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not authorized for this operation",
+      });
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT 
+        sr.*, 
+        r.roll_status, 
+        r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (!rolldetail || rolldetail.length === 0 || !rolldetail[0].orders.includes("edit")) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not authorized to edit or transfer orders",
+      });
+    }
+
+    if (!order_id || !target_store_id) {
+      return res.status(400).json({
+        status: "error",
+        message: "Order ID and Target Store ID are required",
+      });
+    }
+
+    const existingOrder = await DataFind(
+      `SELECT * FROM tbl_order WHERE id = ${parseInt(order_id, 10)}`,
+    );
+
+    if (!existingOrder || existingOrder.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "Order not found",
+      });
+    }
+
+    const currentStoreId = existingOrder[0].store_id;
+    if (parseInt(currentStoreId, 10) === parseInt(target_store_id, 10)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Target store cannot be the same as the current store",
+      });
+    }
+
+    const targetStore = await DataFind(
+      `SELECT * FROM tbl_store WHERE id = ${parseInt(target_store_id, 10)} AND status = '1' AND delete_flage = '0'`,
+    );
+
+    if (!targetStore || targetStore.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "Selected target store is invalid or inactive",
+      });
+    }
+
+    const currentStore = await DataFind(
+      `SELECT name FROM tbl_store WHERE id = ${currentStoreId}`,
+    );
+    const fromStoreName =
+      currentStore && currentStore.length > 0
+        ? currentStore[0].name
+        : `Store #${currentStoreId}`;
+    const targetStoreName = targetStore[0].name;
+
+    // Retrieve or dynamically ensure 'Transfer to other Store' status
+    let statusRecord = await DataFind(
+      "SELECT id FROM tbl_orderstatus WHERE status = 'Transfer to other Store'",
+    );
+    let transferStatusId = 7;
+    if (statusRecord && statusRecord.length > 0) {
+      transferStatusId = statusRecord[0].id;
+    }
+
+    // Build audit note
+    const now = new Date();
+    const dateStr = now.toISOString().replace("T", " ").substring(0, 19);
+    const transferNote = `[Transferred on ${dateStr} from "${fromStoreName}" to "${targetStoreName}"]`;
+    const updatedNote = existingOrder[0].note
+      ? `${existingOrder[0].note} | ${transferNote}`
+      : transferNote;
+    const safeNote = updatedNote.replace(/'/g, "\\'");
+
+    // Update tbl_order
+    const updateResult = await DataUpdate(
+      "tbl_order",
+      `store_id = ${parseInt(target_store_id, 10)}, transferred_from_store_id = ${currentStoreId}, order_status = ${transferStatusId}, note = '${safeNote}', stutus_change_date = CURRENT_TIMESTAMP`,
+      `id = ${parseInt(order_id, 10)}`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (updateResult == -1) {
+      return res.status(500).json({
+        status: "error",
+        message: "Failed to transfer order to the selected store",
+      });
+    }
+
+    // Add notification to target store
+    try {
+      const accessdata = await access(req.user);
+      const day = (now.getDate() < 10 ? "0" : "") + now.getDate();
+      const month = (now.getMonth() + 1 < 10 ? "0" : "") + (now.getMonth() + 1);
+      const year = now.getFullYear();
+      const fullDate = `${year}-${month}-${day}`;
+
+      await DataInsert(
+        "tbl_notification",
+        "invoice, date, sender, received, notification",
+        `'${existingOrder[0].order_id}', '${fullDate}', '${accessdata.topbardata.id}', '${target_store_id}', 'Order ${existingOrder[0].order_id} transferred from ${fromStoreName}.'`,
+        req.hostname,
+        req.protocol,
+      );
+    } catch (notifErr) {
+      console.error("Transfer notification error:", notifErr);
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: `Order successfully transferred to ${targetStoreName}`,
+      redirectUrl: "/order/list",
+    });
+  } catch (error) {
+    console.error("Error in /order/transfer_store:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "An internal server error occurred while transferring the order",
+    });
+  }
+});
+
 router.post("/addpayment", auth, async (req, res) => {
   try {
-    if (process.env.DISABLE_DB_WRITE === 'true') {
-      req.flash('error', 'For demo purpose we disabled crud operations!!');
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/");
     }
     const { paid, orderid, balan, payment } = req.body;
@@ -788,15 +1061,22 @@ router.post("/addpayment", auth, async (req, res) => {
     const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
 
     const orderdata = await DataFind(
-      "SELECT * FROM tbl_order WHERE id=" + orderid + ""
+      "SELECT * FROM tbl_order WHERE id=" + orderid + "",
     );
 
     if (!orderdata || orderdata.length === 0) {
-      return res.status(404).json({ status: "error", message: "Order not found" });
+      return res
+        .status(404)
+        .json({ status: "error", message: "Order not found" });
     }
 
     if (isStaff && staffStoreId && orderdata[0].store_id != staffStoreId) {
-      return res.status(403).json({ status: "error", message: "Unauthorized to add payment to orders from other stores" });
+      return res
+        .status(403)
+        .json({
+          status: "error",
+          message: "Unauthorized to add payment to orders from other stores",
+        });
     }
 
     var ORD_id = await idfororder();
@@ -804,7 +1084,7 @@ router.post("/addpayment", auth, async (req, res) => {
     console.log("req.body", req.body);
 
     // const paymentdata =
-    //   await DataFind(`INSERT INTO tbl_order_payment (payment_amount,payment_account,order_id) 
+    //   await DataFind(`INSERT INTO tbl_order_payment (payment_amount,payment_account,order_id)
     //     VALUE (${paid},'${payment}','${orderid}')`);
 
     const paymentdata = await DataInsert(
@@ -812,17 +1092,13 @@ router.post("/addpayment", auth, async (req, res) => {
       `payment_amount, payment_account, order_id`,
       `${paid}, '${payment}', '${orderid}'`,
       req.hostname,
-      req.protocol
+      req.protocol,
     );
 
     if (paymentdata == -1) {
-      req.flash('error', process.env.dataerror);
+      req.flash("error", process.env.dataerror);
       return res.redirect("/some_error_page");
     }
-
-
-
-
 
     // const orderupdate = await DataFind(
     //   "UPDATE tbl_order SET payment_data=CONCAT(payment_data,'," +
@@ -834,23 +1110,29 @@ router.post("/addpayment", auth, async (req, res) => {
     //     ""
     // );
 
-    const orderupdate = await DataUpdate(`tbl_order`, `payment_data = CONCAT(payment_data, ',${paymentdata.insertId}', ''),
+    const orderupdate = await DataUpdate(
+      `tbl_order`,
+      `payment_data = CONCAT(payment_data, ',${paymentdata.insertId}', ''),
          paid_amount = ROUND(paid_amount + ${paidamount}, 2),
          balance_amount = ROUND(gross_total - paid_amount, 2)`,
-      `id=${orderid}`, req.hostname, req.protocol);
+      `id=${orderid}`,
+      req.hostname,
+      req.protocol,
+    );
 
     if (orderupdate == -1) {
-      req.flash("error", "Failed to record payment, please check input and try again");
+      req.flash(
+        "error",
+        "Failed to record payment, please check input and try again",
+      );
       return res.redirect("back");
     }
-
-
 
     // console.log("orderupdate" , orderupdate);
     const account = await DataFind(
       "SELECT * FROM tbl_account WHERE id=" +
-      payment +
-      "  AND delet_flage != '1' "
+        payment +
+        "  AND delet_flage != '1' ",
     );
 
     const balance = parseFloat(account[0].balance) + parseFloat(paid);
@@ -863,30 +1145,32 @@ router.post("/addpayment", auth, async (req, res) => {
     //     "   AND delet_flage != '1' "
     // );
 
-
-    const data = await DataUpdate(`tbl_account`, `balance=${balance}`,
-      `id=${payment} AND delet_flage != '1'`, req.hostname, req.protocol);
+    const data = await DataUpdate(
+      `tbl_account`,
+      `balance=${balance}`,
+      `id=${payment} AND delet_flage != '1'`,
+      req.hostname,
+      req.protocol,
+    );
 
     if (data == -1) {
       req.flash("error", "Failed to update account balance, please try again");
       return res.redirect("back");
     }
 
-    // await DataFind(`INSERT into tbl_transections (account_id,store_ID,transec_detail,transec_type,debit_amount,credit_amount,balance_amount, customer_id) 
+    // await DataFind(`INSERT into tbl_transections (account_id,store_ID,transec_detail,transec_type,debit_amount,credit_amount,balance_amount, customer_id)
     //             VALUE ('${payment}','${account[0].store_ID}','POS Income ${ORD_id}','INCOME', 0,${paidamount},${balance}, '${orderdata[0].customer_id}')`);
 
-
-
-
-
-    if (await DataInsert(
-      `tbl_transections`,
-      `account_id,store_ID,transec_detail,transec_type,debit_amount,credit_amount,balance_amount, customer_id`,
-      `'${payment}','${account[0].store_ID}','POS Income ${ORD_id}','INCOME', 0,${paidamount},${balance}, '${orderdata[0].customer_id}'`,
-      req.hostname,
-      req.protocol
-    ) == -1) {
-      req.flash('error', process.env.dataerror);
+    if (
+      (await DataInsert(
+        `tbl_transections`,
+        `account_id,store_ID,transec_detail,transec_type,debit_amount,credit_amount,balance_amount, customer_id`,
+        `'${payment}','${account[0].store_ID}','POS Income ${ORD_id}','INCOME', 0,${paidamount},${balance}, '${orderdata[0].customer_id}'`,
+        req.hostname,
+        req.protocol,
+      )) == -1
+    ) {
+      req.flash("error", process.env.dataerror);
       return res.redirect("/some_error_page");
     }
 
@@ -904,26 +1188,33 @@ router.get("/paymodel/:id", auth, async (req, res) => {
 
     const order = await DataFind(
       "SELECT tbl_order.*,tbl_orderstatus.status as status FROM tbl_order join tbl_orderstatus on tbl_order.order_status=tbl_orderstatus.id WHERE tbl_order.id=" +
-      orderid +
-      ""
+        orderid +
+        "",
     );
 
     if (!order || order.length === 0) {
-      return res.status(404).json({ status: "error", message: "Order not found" });
+      return res
+        .status(404)
+        .json({ status: "error", message: "Order not found" });
     }
 
     const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
     if (isStaff && staffStoreId && order[0].store_id != staffStoreId) {
-      return res.status(403).json({ status: "error", message: "Unauthorized to access orders from other stores" });
+      return res
+        .status(403)
+        .json({
+          status: "error",
+          message: "Unauthorized to access orders from other stores",
+        });
     }
 
     const customer = await DataFind(
-      "SELECT * FROM tbl_customer WHERE id=" + order[0].customer_id + ""
+      "SELECT * FROM tbl_customer WHERE id=" + order[0].customer_id + "",
     );
     const account = await DataFind(
       "SELECT * FROM tbl_account WHERE store_ID=" +
-      order[0].store_id +
-      "  AND delet_flage != '1' "
+        order[0].store_id +
+        "  AND delet_flage != '1' ",
     );
 
     res.status(200).json({ order: order[0], customer: customer[0], account });
@@ -938,7 +1229,7 @@ router.get("/barcode/:id", auth, async (req, res) => {
     const accessdata = await access(req.user);
 
     const order_date = await DataFind(
-      `SELECT * FROM tbl_order WHERE id = '${req.params.id}'`
+      `SELECT * FROM tbl_order WHERE id = '${req.params.id}'`,
     );
     // console.log(order_date);
 
@@ -946,7 +1237,7 @@ router.get("/barcode/:id", auth, async (req, res) => {
     console.log(service_list);
 
     const service_list_data = await DataFind(
-      `SELECT * FROM tbl_cart_servicelist`
+      `SELECT * FROM tbl_cart_servicelist`,
     );
     // console.log(service_list_data);
     res.json({ service_list, service_list_data, order_date, accessdata });
@@ -960,7 +1251,8 @@ const renderOrderPrint = async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
 
-    var orderid = (req.body && req.body.orderid) || req.query.orderid || req.params.id;
+    var orderid =
+      (req.body && req.body.orderid) || req.query.orderid || req.params.id;
     var { deliverydate, extradiscount, paid_amount, note } = req.body || {};
 
     paid_amount = paid_amount ? Number(paid_amount) : 0;
@@ -992,12 +1284,15 @@ const renderOrderPrint = async (req, res) => {
 
     const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
     if (isStaff && staffStoreId && orderdata[0].store_id != staffStoreId) {
-      req.flash("errors", "You are not authorized to view orders from other stores");
+      req.flash(
+        "errors",
+        "You are not authorized to view orders from other stores",
+      );
       return res.redirect("/order/list");
     }
 
     var shope = await DataFind(
-      "SELECT * FROM tbl_store WHERE id=" + orderdata[0].store_id + ""
+      "SELECT * FROM tbl_store WHERE id=" + orderdata[0].store_id + "",
     );
 
     let addonslist = [];
@@ -1007,16 +1302,16 @@ const renderOrderPrint = async (req, res) => {
         addonslist = await Promise.all(
           addon.filter(Boolean).map(async (data) => {
             var addondata = await DataFind(
-              "SELECT * FROM tbl_addons WHERE id=" + data + ""
+              "SELECT * FROM tbl_addons WHERE id=" + data + "",
             );
             return addondata && addondata.length > 0
               ? {
-                id: addondata[0].id,
-                name: addondata[0].addon,
-                price: addondata[0].price,
-              }
+                  id: addondata[0].id,
+                  name: addondata[0].addon,
+                  price: addondata[0].price,
+                }
               : null;
-          })
+          }),
         );
         addonslist = addonslist.filter(Boolean);
       }
@@ -1026,24 +1321,29 @@ const renderOrderPrint = async (req, res) => {
     if (orderdata[0].service_list) {
       orderServiceList = await DataFind(
         "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        orderdata[0].service_list +
-        "')"
+          orderdata[0].service_list +
+          "')",
       );
     }
 
     const customer = await DataFind(
-      "SELECT * FROM tbl_customer WHERE id=" + orderdata[0].customer_id + ""
+      "SELECT * FROM tbl_customer WHERE id=" + orderdata[0].customer_id + "",
     );
 
     let oate = new Date(orderdata[0].order_date).toLocaleDateString("en-CA");
-    let ddate = new Date(orderdata[0].delivery_date).toLocaleDateString("en-CA");
+    let ddate = new Date(orderdata[0].delivery_date).toLocaleDateString(
+      "en-CA",
+    );
 
     res.render("orderprint", {
       cartservice: orderServiceList,
       shope: shope && shope.length > 0 ? shope[0] : {},
       order: orderdata[0],
       addonslist,
-      customer: customer && customer.length > 0 ? customer : [{ name: "Walk in customer" }],
+      customer:
+        customer && customer.length > 0
+          ? customer
+          : [{ name: "Walk in customer" }],
       master: accessdata.masterstore,
       oate,
       ddate,

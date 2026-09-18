@@ -54,14 +54,22 @@
                                 </div>
 
                                 <div class="mt-4">
-                                    <h5 class="text-uppercase fw-500">
-                                        <span>
-                                            <%= language.Order_ID %> :
-                                        </span>
-                                        <span>
-                                            <%=order.order_id %>
-                                        </span>
-                                    </h5>
+                                    <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                                        <h5 class="text-uppercase fw-500 mb-0">
+                                            <span>
+                                                <%= language.Order_ID %> :
+                                            </span>
+                                            <span>
+                                                <%=order.order_id %>
+                                            </span>
+                                        </h5>
+                                        <% if (order.transferred_from_store_id && transferredFromStore) { %>
+                                            <span class="badge bg-warning text-dark d-inline-flex align-items-center gap-1 py-1 px-2 rounded-pill fs-12 fw-semibold" title="Transferred from <%= transferredFromStore.name %>">
+                                                <i class="fas fa-random"></i>
+                                                <span>Transferred from: <%= transferredFromStore.name %></span>
+                                            </span>
+                                        <% } %>
+                                    </div>
                                     <p class="text-sm mb-1">
                                         <span>
                                             <%= language.Order_Date %> :
@@ -120,6 +128,13 @@
                                                             </a>
                                                         </li>
                                                         <% }); %>
+                                                        <li><hr class="dropdown-divider my-1"></li>
+                                                        <li>
+                                                            <a class="dropdown-item text-primary fw-semibold" href="javascript:void(0)"
+                                                                onclick="openTransferStoreModal()">
+                                                                <i class="fas fa-truck-moving me-2"></i> Deliver to Store
+                                                            </a>
+                                                        </li>
                                                 </ul>
                                                 <% } %>
                                         </div>
@@ -894,6 +909,94 @@
             </div>
         </div>
 
+        <!-- Transfer Store Modal (Step 1: Select Active Store) -->
+        <div class="modal fade" id="transferStoreModal" tabindex="-1" aria-labelledby="transferStoreModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="transferStoreModalLabel">
+                            <i class="fas fa-truck-moving text-primary me-2"></i>Deliver to Store
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted fs-13 mb-3">
+                            Select the destination store where you want to transfer order <strong class="text-dark"><%= order.order_id %></strong>:
+                        </p>
+                        <% if (typeof availableStores !== 'undefined' && availableStores && availableStores.length > 0) { %>
+                            <div class="list-group gap-2">
+                                <% availableStores.forEach(function(store, idx) { %>
+                                    <label class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3 border rounded cursor-pointer mb-0">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <input class="form-check-input flex-shrink-0 m-0" type="radio" name="target_store_radio" id="store_radio_<%= store.id %>" value="<%= store.id %>" data-store-name="<%= store.name %>" <%= idx === 0 ? 'checked' : '' %>>
+                                            <div>
+                                                <div class="fw-bold text-dark"><%= store.name %></div>
+                                                <div class="text-muted fs-12">
+                                                    <% if (store.city) { %>
+                                                        <i class="fas fa-map-marker-alt me-1 text-secondary"></i><%= store.city %>
+                                                    <% } %>
+                                                    <% if (store.mobile_number) { %>
+                                                        <span class="ms-2"><i class="fas fa-phone me-1 text-secondary"></i><%= store.mobile_number %></span>
+                                                    <% } %>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-light text-primary border">Store #<%= store.id %></span>
+                                    </label>
+                                <% }); %>
+                            </div>
+                        <% } else { %>
+                            <div class="alert alert-warning d-flex align-items-center mb-0" role="alert">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <div>No other active stores available to transfer this order.</div>
+                            </div>
+                        <% } %>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal"><%= language.Cancel || 'Cancel' %></button>
+                        <button type="button" class="btn btn-primary" id="btnProceedTransfer" onclick="proceedToTransferConfirm()" <%= (typeof availableStores !== 'undefined' && availableStores && availableStores.length > 0) ? '' : 'disabled' %>>
+                            <%= language.OK || 'OK' %>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirm Transfer Modal (Step 2: Confirmation Warning) -->
+        <div class="modal fade" id="confirmTransferModal" tabindex="-1" aria-labelledby="confirmTransferModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+                <div class="modal-content text-center p-3">
+                    <div class="modal-body pt-3 pb-2">
+                        <div class="mb-3">
+                            <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); display: inline-flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 26px;">
+                                <i class="fas fa-exchange-alt"></i>
+                            </div>
+                        </div>
+                        <h4 class="mb-2 fw-bold text-dark">Confirm Order Transfer</h4>
+                        <div class="alert alert-warning text-start mb-3 py-2 px-3 fs-13">
+                            <i class="fas fa-info-circle me-1"></i> this order will tranfer to other store and will not show here
+                        </div>
+                        <div class="p-3 bg-light rounded text-start mb-3">
+                            <div class="d-flex justify-content-between mb-1 fs-13">
+                                <span class="text-muted">Order ID:</span>
+                                <strong class="text-dark"><%= order.order_id %></strong>
+                            </div>
+                            <div class="d-flex justify-content-between fs-13">
+                                <span class="text-muted">Destination Store:</span>
+                                <strong class="text-primary" id="confirmTargetStoreName">-</strong>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal"><%= language.Cancel || 'Cancel' %></button>
+                            <button type="button" class="btn btn-warning px-4 fw-bold" id="btnExecuteTransfer" onclick="executeOrderTransfer()">
+                                <i class="fas fa-check me-1"></i> Confirm Transfer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!--**********************************
             Footer start
         ***********************************-->
@@ -917,6 +1020,113 @@
                             allowClear: true
                         });
                     });
+
+                    // Order Transfer Workflow
+                    var selectedTargetStoreId = null;
+                    var selectedTargetStoreName = '';
+
+                    function openTransferStoreModal() {
+                        var transferModalEl = document.getElementById('transferStoreModal');
+                        if (transferModalEl) {
+                            var modal = bootstrap.Modal.getOrCreateInstance(transferModalEl);
+                            modal.show();
+                        }
+                    }
+
+                    function proceedToTransferConfirm() {
+                        var checkedRadio = document.querySelector('input[name="target_store_radio"]:checked');
+                        if (!checkedRadio) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.warning('Please select a destination store');
+                            } else {
+                                alert('Please select a destination store');
+                            }
+                            return;
+                        }
+
+                        selectedTargetStoreId = checkedRadio.value;
+                        selectedTargetStoreName = checkedRadio.getAttribute('data-store-name') || ('Store #' + selectedTargetStoreId);
+
+                        // Set target name in confirm modal
+                        var nameEl = document.getElementById('confirmTargetStoreName');
+                        if (nameEl) {
+                            nameEl.textContent = selectedTargetStoreName;
+                        }
+
+                        // Hide selection modal and show confirm modal
+                        var transferModalEl = document.getElementById('transferStoreModal');
+                        var confirmModalEl = document.getElementById('confirmTransferModal');
+
+                        var transferModal = bootstrap.Modal.getInstance(transferModalEl);
+                        if (transferModal) {
+                            transferModal.hide();
+                        }
+
+                        setTimeout(function () {
+                            var confirmModal = bootstrap.Modal.getOrCreateInstance(confirmModalEl);
+                            confirmModal.show();
+                        }, 300);
+                    }
+
+                    function executeOrderTransfer() {
+                        if (!selectedTargetStoreId) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error('Invalid destination store selected');
+                            }
+                            return;
+                        }
+
+                        var btnConfirm = document.getElementById('btnExecuteTransfer');
+                        if (btnConfirm) {
+                            btnConfirm.disabled = true;
+                            btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Transferring...';
+                        }
+
+                        $.ajax({
+                            type: 'POST',
+                            url: '/order/transfer_store',
+                            data: {
+                                order_id: '<%= order.id %>',
+                                target_store_id: selectedTargetStoreId
+                            },
+                            dataType: 'json',
+                            success: function (res) {
+                                if (res.status === 'success') {
+                                    if (typeof toastr !== 'undefined') {
+                                        toastr.success(res.message || 'Order successfully transferred');
+                                    }
+                                    setTimeout(function () {
+                                        window.location.href = res.redirectUrl || '/order/list';
+                                    }, 1200);
+                                } else {
+                                    if (btnConfirm) {
+                                        btnConfirm.disabled = false;
+                                        btnConfirm.innerHTML = '<i class="fas fa-check me-1"></i> Confirm Transfer';
+                                    }
+                                    if (typeof toastr !== 'undefined') {
+                                        toastr.error(res.message || 'Failed to transfer order');
+                                    } else {
+                                        alert(res.message || 'Failed to transfer order');
+                                    }
+                                }
+                            },
+                            error: function (xhr) {
+                                if (btnConfirm) {
+                                    btnConfirm.disabled = false;
+                                    btnConfirm.innerHTML = '<i class="fas fa-check me-1"></i> Confirm Transfer';
+                                }
+                                var errorMsg = 'An error occurred while transferring the order';
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    errorMsg = xhr.responseJSON.message;
+                                }
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.error(errorMsg);
+                                } else {
+                                    alert(errorMsg);
+                                }
+                            }
+                        });
+                    }
                 </script>
 </body>
 
