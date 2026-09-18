@@ -2771,3 +2771,241 @@ table.dataTable td.text-center {
 [data-theme-version="dark"] .tab-content {
   background-color: transparent !important;
 }
+
+/* ==========================================================================
+   THEME-AWARE TOASTER NOTIFICATIONS (LIGHT & DARK MODE + CLOSE BUTTON)
+   ========================================================================== */
+#toast-container {
+  position: fixed !important;
+  z-index: 999999 !important;
+  pointer-events: none !important;
+}
+
+#toast-container > div {
+  pointer-events: auto !important;
+  position: relative !important;
+  overflow: hidden !important;
+  width: 340px !important;
+  max-width: calc(100vw - 32px) !important;
+  padding: 14px 44px 14px 50px !important;
+  margin: 0 0 10px !important;
+  border-radius: 12px !important;
+  font-family: var(--app-font-family, 'Inter', sans-serif) !important;
+  font-size: 0.88rem !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+  box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(226, 232, 240, 0.8) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  background-position: 16px 14px !important;
+  background-repeat: no-repeat !important;
+  background-size: 22px 22px !important;
+  opacity: 1 !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+#toast-container > div:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.24), 0 0 0 1px rgba(203, 213, 225, 1) !important;
+}
+
+/* Toast Title & Message */
+.toast-title {
+  font-weight: 700 !important;
+  font-size: 0.92rem !important;
+  letter-spacing: -0.015em !important;
+  margin-bottom: 2px !important;
+}
+
+.toast-message {
+  font-size: 0.84rem !important;
+  line-height: 1.4 !important;
+  word-wrap: break-word !important;
+}
+
+/* Close Button (Cross Button) Redesign */
+#toast-container .toast-close-button {
+  position: absolute !important;
+  top: 10px !important;
+  right: 12px !important;
+  width: 26px !important;
+  height: 26px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 20px !important;
+  font-family: Arial, sans-serif !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  border-radius: 6px !important;
+  border: none !important;
+  background: transparent !important;
+  opacity: 0.65 !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  text-shadow: none !important;
+}
+
+#toast-container .toast-close-button:hover,
+#toast-container .toast-close-button:focus {
+  opacity: 1 !important;
+  background: rgba(0, 0, 0, 0.08) !important;
+  transform: scale(1.08) !important;
+}
+
+/* RTL Support for Close Button */
+#toast-container > div.rtl {
+  direction: rtl !important;
+  padding: 14px 50px 14px 44px !important;
+  background-position: right 16px top 14px !important;
+}
+
+#toast-container > div.rtl .toast-close-button {
+  right: auto !important;
+  left: 12px !important;
+}
+
+/* Progress Bar */
+#toast-container .toast-progress {
+  position: absolute !important;
+  left: 0 !important;
+  bottom: 0 !important;
+  height: 3px !important;
+  border-bottom-left-radius: 12px !important;
+  border-bottom-right-radius: 12px !important;
+  opacity: 0.55 !important;
+}
+
+/* --------------------------------------------------------------------------
+   A. LIGHT MODE THEME TOASTS
+   -------------------------------------------------------------------------- */
+/* Success */
+#toast-container > .toast-success {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #065f46 !important;
+  border-left: 4px solid #10b981 !important;
+  box-shadow: 0 10px 28px -4px rgba(16, 185, 129, 0.16), 0 0 0 1px rgba(16, 185, 129, 0.25) !important;
+}
+#toast-container > .toast-success .toast-close-button {
+  color: #047857 !important;
+}
+#toast-container > .toast-success .toast-progress {
+  background-color: #10b981 !important;
+}
+
+/* Error */
+#toast-container > .toast-error {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #991b1b !important;
+  border-left: 4px solid #ef4444 !important;
+  box-shadow: 0 10px 28px -4px rgba(239, 68, 68, 0.16), 0 0 0 1px rgba(239, 68, 68, 0.25) !important;
+}
+#toast-container > .toast-error .toast-close-button {
+  color: #b91c1c !important;
+}
+#toast-container > .toast-error .toast-progress {
+  background-color: #ef4444 !important;
+}
+
+/* Warning */
+#toast-container > .toast-warning {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #92400e !important;
+  border-left: 4px solid #f59e0b !important;
+  box-shadow: 0 10px 28px -4px rgba(245, 158, 11, 0.16), 0 0 0 1px rgba(245, 158, 11, 0.25) !important;
+}
+#toast-container > .toast-warning .toast-close-button {
+  color: #b45309 !important;
+}
+#toast-container > .toast-warning .toast-progress {
+  background-color: #f59e0b !important;
+}
+
+/* Info */
+#toast-container > .toast-info {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #075985 !important;
+  border-left: 4px solid #0284c7 !important;
+  box-shadow: 0 10px 28px -4px rgba(2, 132, 199, 0.16), 0 0 0 1px rgba(2, 132, 199, 0.25) !important;
+}
+#toast-container > .toast-info .toast-close-button {
+  color: #0369a1 !important;
+}
+#toast-container > .toast-info .toast-progress {
+  background-color: #0284c7 !important;
+}
+
+/* --------------------------------------------------------------------------
+   B. DARK MODE THEME TOASTS
+   -------------------------------------------------------------------------- */
+[data-theme-version="dark"] #toast-container > div {
+  backdrop-filter: blur(18px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
+  box-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme-version="dark"] #toast-container .toast-close-button:hover,
+[data-theme-version="dark"] #toast-container .toast-close-button:focus {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Dark Mode Success */
+[data-theme-version="dark"] #toast-container > .toast-success {
+  background-color: rgba(15, 23, 42, 0.92) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  border-left: 4px solid #10b981 !important;
+  box-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.6), 0 0 16px rgba(16, 185, 129, 0.2) !important;
+}
+[data-theme-version="dark"] #toast-container > .toast-success .toast-close-button {
+  color: #a7f3d0 !important;
+}
+[data-theme-version="dark"] #toast-container > .toast-success .toast-progress {
+  background-color: #34d399 !important;
+}
+
+/* Dark Mode Error */
+[data-theme-version="dark"] #toast-container > .toast-error {
+  background-color: rgba(15, 23, 42, 0.92) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  border-left: 4px solid #ef4444 !important;
+  box-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.6), 0 0 16px rgba(239, 68, 68, 0.2) !important;
+}
+[data-theme-version="dark"] #toast-container > .toast-error .toast-close-button {
+  color: #fecaca !important;
+}
+[data-theme-version="dark"] #toast-container > .toast-error .toast-progress {
+  background-color: #f87171 !important;
+}
+
+/* Dark Mode Warning */
+[data-theme-version="dark"] #toast-container > .toast-warning {
+  background-color: rgba(15, 23, 42, 0.92) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  border-left: 4px solid #f59e0b !important;
+  box-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.6), 0 0 16px rgba(245, 158, 11, 0.2) !important;
+}
+[data-theme-version="dark"] #toast-container > .toast-warning .toast-close-button {
+  color: #fde68a !important;
+}
+[data-theme-version="dark"] #toast-container > .toast-warning .toast-progress {
+  background-color: #fbbf24 !important;
+}
+
+/* Dark Mode Info */
+[data-theme-version="dark"] #toast-container > .toast-info {
+  background-color: rgba(15, 23, 42, 0.92) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  border-left: 4px solid #0284c7 !important;
+  box-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.6), 0 0 16px rgba(56, 189, 248, 0.2) !important;
+}
+[data-theme-version="dark"] #toast-container > .toast-info .toast-close-button {
+  color: #bae6fd !important;
+}
+[data-theme-version="dark"] #toast-container > .toast-info .toast-progress {
+  background-color: #38bdf8 !important;
+}
