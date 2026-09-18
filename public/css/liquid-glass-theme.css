@@ -3009,3 +3009,13 @@ table.dataTable td.text-center {
 [data-theme-version="dark"] #toast-container > .toast-info .toast-progress {
   background-color: #38bdf8 !important;
 }
+
+/* Ensure dropdown menus inside card-headers always layer on top of card bodies */
+.card-header .dropdown,
+.card-header .btn-group {
+  position: relative;
+  z-index: 5;
+}
+.card-header .dropdown-menu {
+  z-index: 1060 !important;
+}

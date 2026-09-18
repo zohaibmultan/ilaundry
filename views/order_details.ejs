@@ -18,7 +18,7 @@
                 <div class="row">
                     <div class="col-xl-9">
                         <div class="card">
-                            <div class="card-header py-3">
+                            <div class="card-header py-3 position-relative z-1">
                                 <div class="d-none">
                                     <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
                                     <input type="hiden" name="pls" value="<%= accessdata.plac %>">
@@ -109,17 +109,17 @@
                                         <div>
                                             <%= language.Order_Status %> :
                                         </div>
-                                        <div class="btn-group m-2" role="group">
+                                        <div class="btn-group m-2 position-relative z-3" role="group">
                                             <button type="button"
                                                 class="btn btn-primary btn-xs <%= (accessdata.logas != 'custmor' && accessdata.roll.orders.includes('edit')) ? 'dropdown-toggle' : '' %>"
-                                                data-bs-toggle="dropdown" <%=(accessdata.logas !='custmor' &&
+                                                data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" <%=(accessdata.logas !='custmor' &&
                                                 accessdata.roll.orders.includes('edit')) ? '' : 'disabled' %>>
                                                 <%= order.status %>
                                             </button>
 
                                             <% if (accessdata.logas !='custmor' &&
                                                 accessdata.roll.orders.includes('edit')) { %>
-                                                <ul class="dropdown-menu">
+                                                <ul class="dropdown-menu shadow-lg border-0" style="z-index: 1060;">
                                                     <% Ordersatus.forEach(function(data) { %>
                                                         <li>
                                                             <a class="dropdown-item" href="javascript:void(0)"
