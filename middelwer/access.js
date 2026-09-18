@@ -7,7 +7,7 @@ const access = async (user) => {
     const { id, roll, store, loginas } = user;
 
 let staff_roll = await mySqlQury(`
-  SELECT sr.*, r.rollType
+  SELECT sr.*, r.rollType, r.roll AS roll_name
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
@@ -34,6 +34,7 @@ const dataroll = staff_roll[0];
   staff_id: staff_roll[0].staff_id,
   is_staff: staff_roll[0].is_staff,
   rollType: staff_roll[0].rollType,
+  roll: staff_roll[0].roll_name || staff_roll[0].rollType || '',
  
  
 };
@@ -96,7 +97,7 @@ console.log(rolldetail);
       var isstore = false;
     } else {
       var topbardata = await mySqlQury(
-        `SELECT tbl_admin.id,tbl_admin.name,tbl_admin.number,tbl_admin.email,tbl_admin.username,tbl_admin.password,tbl_admin.store_ID,tbl_admin.roll_id,tbl_admin.approved,tbl_admin.delet_flage,tbl_admin.img,tbl_admin.is_staff FROM tbl_admin WHERE  tbl_admin.id = "${id}"`
+        `SELECT tbl_admin.id,tbl_admin.name,tbl_admin.number,tbl_admin.email,tbl_admin.username,tbl_admin.password,tbl_admin.store_ID,tbl_admin.roll_id,tbl_admin.approved,tbl_admin.delet_flage,tbl_admin.img,tbl_admin.is_staff, IFNULL(tbl_store.name, '') AS store_name FROM tbl_admin LEFT JOIN tbl_store ON tbl_admin.store_ID = tbl_store.id WHERE tbl_admin.id = "${id}"`
       );
 
       console.log("else topbardata", topbardata);

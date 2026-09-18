@@ -19,13 +19,6 @@
   <div class="nav-header">
     <a href="/index" class="brand-logo">
       <img style="width: 100%" src="/uploads/<%= accessdata.masterstore.app_logo %>" alt="imagess">
-
-      <h1 class="brand-title" width="101.5px" height="29.5px">
-        <span class="svg-logo-text-path" fill-rule="evenodd" stroke="rgb(0, 0, 0)" stroke-width="1px"
-          stroke-linecap="butt" stroke-linejoin="miter" fill="rgb(64, 24, 157)">
-          <%= accessdata?.masterstore?.app_name %>
-        </span>
-      </h1>
     </a>
     <div class="nav-control">
       <div class="hamburger">
@@ -45,6 +38,12 @@
             <div class="dashboard_bar text-truncate" style="max-width: min(50vw, 320px);">
               <%= titel %>
             </div>
+            <% if (accessdata?.topbardata?.is_staff != 0 && (accessdata?.topbardata?.store_name || accessdata?.topbardata?.store)) { %>
+              <div class="badge badge-primary bg-primary text-white ms-2 d-inline-flex align-items-center gap-1 py-1 px-2 rounded-pill fs-12 fw-semibold">
+                <i class="fas fa-store"></i>
+                <span><%= accessdata?.topbardata?.store_name || accessdata?.topbardata?.store %></span>
+              </div>
+            <% } %>
           </div>
 
           <ul class="navbar-nav header-right">
@@ -197,13 +196,25 @@
                       <% } %>
               </a>
               <div class="dropdown-menu dropdown-menu-end profile-glass-menu shadow-lg">
-                <% let userDisplayName=accessdata?.topbardata?.name || 'Administrator' ; let userRoleName='Admin' ; let
-                  userAvatarImg='/images/default.png' ; if (accessdata?.logas==='custmor' ) { userRoleName='Customer' ;
-                  userAvatarImg='/images/profile-default.png' ; } else if (accessdata?.isstore===true) {
-                  userRoleName=accessdata?.roll?.roll || 'Store Manager' ; userAvatarImg=accessdata?.topbardata?.img ?
-                  ('/uploads/' + accessdata.topbardata.img) : '/images/default.png' ; } else {
-                  userRoleName=accessdata?.roll?.roll || 'Master Admin' ; userAvatarImg=accessdata?.topbardata?.img ?
-                  ('/uploads/' + accessdata.topbardata.img) : '/images/default.png' ; } %>
+                <% 
+                  let userDisplayName = accessdata?.topbardata?.name || 'Administrator';
+                  let userRoleName = accessdata?.roll?.roll || '';
+                  let userAvatarImg = '/images/default.png';
+
+                  if (accessdata?.logas === 'custmor') {
+                    userRoleName = userRoleName || 'Customer';
+                    userAvatarImg = '/images/profile-default.png';
+                  } else if (accessdata?.topbardata?.is_staff != 0) {
+                    userRoleName = userRoleName || 'Staff';
+                    userAvatarImg = accessdata?.topbardata?.img ? ('/uploads/' + accessdata.topbardata.img) : '/images/default.png';
+                  } else if (accessdata?.isstore === true || accessdata?.logas === 'store') {
+                    userRoleName = userRoleName || 'Store Manager';
+                    userAvatarImg = accessdata?.topbardata?.img ? ('/uploads/' + accessdata.topbardata.img) : '/images/default.png';
+                  } else {
+                    userRoleName = userRoleName || 'Master Admin';
+                    userAvatarImg = accessdata?.topbardata?.img ? ('/uploads/' + accessdata.topbardata.img) : '/images/default.png';
+                  }
+                %>
                   <!-- Profile Header -->
                   <div class="profile-card-header">
                     <div class="profile-header-avatar">
