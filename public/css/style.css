@@ -34394,6 +34394,7 @@ button:focus {
 
 .dropdown-menu.show {
   right: 0;
+  width: 215px;
 }
 
 .dropdown-toggle-split {

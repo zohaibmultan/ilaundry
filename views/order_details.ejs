@@ -25,35 +25,7 @@
                                     <input type="hiden" name="thousands_separator"
                                         value="<%= accessdata.thousands_separator %>">
                                 </div>
-
-                                <div>
-                                    <h3 class="text-uppercase mb-3">
-                                        <%=storedata.name.toUpperCase() %>
-                                    </h3>
-
-                                    <p class="mb-0">
-                                        <%= language.Phone_No %> : <span>
-                                                <%=storedata.mobile_number %>
-                                            </span>
-                                    </p>
-                                    <p class="mb-0">
-                                        <%= language.Email %> : <span>
-                                                <%=storedata.store_email %>
-                                            </span>
-                                    </p>
-                                    <p class="mb-0 text-break w-100">
-                                        <%= language.Address %> : <span>
-                                                <%=storedata.address %>
-                                            </span>
-                                    </p>
-                                    <p class="mb-0">
-                                        <%= language.TAX %> : <span>
-                                                <%= storedata.store_tax_number.toUpperCase() %>
-                                            </span>
-                                    </p>
-                                </div>
-
-                                <div class="mt-4">
+<div class="mt-4">
                                     <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
                                         <h5 class="text-uppercase fw-500 mb-0">
                                             <span>
@@ -142,6 +114,34 @@
                                     </div>
 
                                 </div>
+                                <div>
+                                    <h3 class="text-uppercase mb-3">
+                                        <%=storedata.name.toUpperCase() %>
+                                    </h3>
+
+                                    <p class="mb-0">
+                                        <%= language.Phone_No %> : <span>
+                                                <%=storedata.mobile_number %>
+                                            </span>
+                                    </p>
+                                    <p class="mb-0">
+                                        <%= language.Email %> : <span>
+                                                <%=storedata.store_email %>
+                                            </span>
+                                    </p>
+                                    <p class="mb-0 text-break w-100">
+                                        <%= language.Address %> : <span>
+                                                <%=storedata.address %>
+                                            </span>
+                                    </p>
+                                    <p class="mb-0">
+                                        <%= language.TAX %> : <span>
+                                                <%= storedata.store_tax_number.toUpperCase() %>
+                                            </span>
+                                    </p>
+                                </div>
+
+                                
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
