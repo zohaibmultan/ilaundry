@@ -35,3 +35,22 @@ The application uses global helper functions (defined in `database/` or `middlew
 ## 4. EJS Template Compilation & Validation
 Run the validator anytime EJS templates are created or modified:
 `node .agents/skills/ilaundry-core/scripts/validate-ejs.js`
+
+## 5. Store Scoping & Cascading Deletions
+When deleting a store or major parent entity, ensure all related child records are cleaned up in order to maintain referential integrity:
+* `tbl_order_payment` -> based on orders matching `store_id` or `transferred_from_store_id`.
+* `tbl_cart_servicelist` -> based on item IDs referenced in `tbl_order.service_list` and `tbl_cart.service_list_id`.
+* `tbl_order` -> `store_id` or `transferred_from_store_id`.
+* `tbl_cart` -> `store_id`.
+* Services & Addons: `tbl_services`, `tbl_services_type`, `tbl_addons`, `tbl_coupon`.
+* Financials: `tbl_expense`, `tbl_exp_cat`, `tbl_exp_cat_type`, `tbl_transections`, `tbl_account`, `tbl_commision`, `tbl_email`.
+* Users: `tbl_customer` (`store_ID` or `reffstore`), `tbl_admin` (`store_ID`).
+* Parent Store: `tbl_store`.
+
+## 6. Destructive Action Confirmation Modal Standard
+Always prompt for confirmation using a centered Bootstrap modal (`#delete<Entity>Modal`) before executing permanent deletions:
+* Red circular warning icon (`.fas .fa-exclamation-triangle` in red light circle `rgba(239, 68, 68, 0.12)`).
+* Distinct entity name display container (e.g. `#delete<Entity>ModalName`).
+* Alert warning highlighting affected cascaded data (`.alert .alert-danger .py-2 .px-3`).
+* Cancel button (`.btn .btn-light`) and Confirm action button (`.btn .btn-danger`).
+
