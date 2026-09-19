@@ -880,6 +880,135 @@ router.get("/storelist/data", auth, async (req, res) => {
   }
 });
 
+// Delete store and cascade delete all related store data (master only)
+router.get("/deletestore/:id", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === 'true') {
+      req.flash('error', 'For demo purpose we disabled crud operations!!');
+      return res.redirect(req.get("Referrer") || "/tool/storelist");
+    }
+
+    const { id, roll, store, loginas } = req.user;
+    if (loginas == 0) {
+      req.flash("error", "You are not authorized for this action");
+      return res.redirect(req.get("Referrer") || "/tool/storelist");
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT 
+        sr.*, 
+        r.roll_status, 
+        r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (!rolldetail || rolldetail.length === 0 || rolldetail[0].rollType !== "master") {
+      req.flash("error", "You are not authorized for this action");
+      return res.redirect(req.get("Referrer") || "/tool/storelist");
+    }
+
+    const storeId = parseInt(req.params.id);
+    if (!storeId || isNaN(storeId)) {
+      req.flash("error", "Invalid Store ID");
+      return res.redirect("/tool/storelist");
+    }
+
+    const existingStore = await DataFind(`SELECT * FROM tbl_store WHERE id = ${storeId}`);
+    if (!existingStore || existingStore.length === 0) {
+      req.flash("error", "Store not found or already deleted");
+      return res.redirect("/tool/storelist");
+    }
+
+    // 1. Find all orders belonging to this store
+    const storeOrders = await DataFind(`SELECT id, service_list FROM tbl_order WHERE store_id = '${storeId}' OR transferred_from_store_id = '${storeId}'`);
+    if (storeOrders && storeOrders.length > 0) {
+      const orderIds = storeOrders.map(o => `'${o.id}'`).join(',');
+
+      // Delete payments for these orders
+      await DataDelete('tbl_order_payment', `order_id IN (${orderIds})`, req.hostname, req.protocol);
+
+      // Collect service list item IDs from orders
+      let cartServiceIds = [];
+      storeOrders.forEach(o => {
+        if (o.service_list && typeof o.service_list === 'string') {
+          o.service_list.split(',').forEach(sid => {
+            const trimmed = sid.trim();
+            if (trimmed && !isNaN(trimmed)) {
+              cartServiceIds.push(trimmed);
+            }
+          });
+        }
+      });
+
+      if (cartServiceIds.length > 0) {
+        const uniqueCartServiceIds = [...new Set(cartServiceIds)].map(id => `'${id}'`).join(',');
+        await DataDelete('tbl_cart_servicelist', `id IN (${uniqueCartServiceIds})`, req.hostname, req.protocol);
+      }
+
+      // Delete orders
+      await DataDelete('tbl_order', `store_id = '${storeId}' OR transferred_from_store_id = '${storeId}'`, req.hostname, req.protocol);
+    }
+
+    // 2. Find carts belonging to this store
+    const storeCarts = await DataFind(`SELECT id, service_list_id FROM tbl_cart WHERE store_id = '${storeId}'`);
+    if (storeCarts && storeCarts.length > 0) {
+      let cartServiceListIds = [];
+      storeCarts.forEach(c => {
+        if (c.service_list_id && typeof c.service_list_id === 'string') {
+          c.service_list_id.split(',').forEach(sid => {
+            const trimmed = sid.trim();
+            if (trimmed && !isNaN(trimmed)) {
+              cartServiceListIds.push(trimmed);
+            }
+          });
+        }
+      });
+      if (cartServiceListIds.length > 0) {
+        const uniqueCartServiceListIds = [...new Set(cartServiceListIds)].map(id => `'${id}'`).join(',');
+        await DataDelete('tbl_cart_servicelist', `id IN (${uniqueCartServiceListIds})`, req.hostname, req.protocol);
+      }
+      await DataDelete('tbl_cart', `store_id = '${storeId}'`, req.hostname, req.protocol);
+    }
+
+    // 3. Delete services and service types for this store
+    await DataDelete('tbl_services', `store_ID = '${storeId}'`, req.hostname, req.protocol);
+    await DataDelete('tbl_services_type', `store_ID = '${storeId}'`, req.hostname, req.protocol);
+
+    // 4. Delete addons and coupons
+    await DataDelete('tbl_addons', `store_ID = '${storeId}'`, req.hostname, req.protocol);
+    await DataDelete('tbl_coupon', `store_list_id = '${storeId}'`, req.hostname, req.protocol);
+
+    // 5. Delete expenses and expense categories
+    await DataDelete('tbl_expense', `store_ID = '${storeId}'`, req.hostname, req.protocol);
+    await DataDelete('tbl_exp_cat_type', `store_ID = '${storeId}'`, req.hostname, req.protocol);
+    await DataDelete('tbl_exp_cat', `store_ID = '${storeId}'`, req.hostname, req.protocol);
+
+    // 6. Delete transactions, accounts, commissions, emails
+    await DataDelete('tbl_transections', `store_ID = '${storeId}'`, req.hostname, req.protocol);
+    await DataDelete('tbl_account', `store_ID = '${storeId}'`, req.hostname, req.protocol);
+    await DataDelete('tbl_commision', `store_id = '${storeId}'`, req.hostname, req.protocol);
+    await DataDelete('tbl_email', `store_id = '${storeId}'`, req.hostname, req.protocol);
+
+    // 7. Delete customers associated with this store
+    await DataDelete('tbl_customer', `store_ID = '${storeId}' OR reffstore = '${storeId}'`, req.hostname, req.protocol);
+
+    // 8. Delete admin/staff users assigned to this store
+    await DataDelete('tbl_admin', `store_ID = '${storeId}'`, req.hostname, req.protocol);
+
+    // 9. Delete the store record itself
+    await DataDelete('tbl_store', `id = '${storeId}'`, req.hostname, req.protocol);
+
+    req.flash("success", "Store and all related data deleted successfully");
+    return res.redirect("/tool/storelist");
+  } catch (error) {
+    console.error("Delete store error:", error);
+    req.flash("error", "Error deleting store: " + error.message);
+    return res.redirect("/tool/storelist");
+  }
+});
+
 //  branch store data render page master only
 router.get("/approvedshop/:id", auth, async (req, res) => {
   try {

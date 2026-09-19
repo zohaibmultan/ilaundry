@@ -71,24 +71,20 @@
             <div class="auth-hero-brand">
                 <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-hero-brand-logo"
                     alt="<%= data?.app_name || '' %> Logo">
-                <h2 class="auth-hero-brand-title">
-                    <%= data?.app_name || '' %>
-                </h2>
+                
             </div>
 
             <div class="auth-hero-content">
-                <div class="auth-hero-badge">
-                    <i class="fas fa-building"></i> Store &amp; Branch Partner
-                </div>
+                
                 <h1 class="auth-hero-heading">
-                    Scale Your Laundromat<br>Business With Ease.
+                    Scale Your Laundromat business With Ease.
                 </h1>
                 <p class="auth-hero-lead">
                     Register your branch or franchise store to unlock our high-speed POS terminal, garment wash barcode
                     tracking, automated cashier roles, and centralized accounting.
                 </p>
 
-                <div class="auth-hero-pills">
+                <!-- <div class="auth-hero-pills">
                     <div class="auth-hero-pill">
                         <div class="auth-pill-icon"><i class="fas fa-cash-register"></i></div>
                         <div>
@@ -117,14 +113,13 @@
                             <div class="fs-11 text-muted">Branch Sales &amp; Expense Ledgers</div>
                         </div>
                     </div>
-                </div>
+                </div> -->
             </div>
 
             <div class="auth-hero-footer">
                 <span>
-                    <%= data?.footer_text || 'Copyright &copy; 2026 iLaundry Inc.' %>
+                    Copyright &copy; 2026 <%= data?.app_name || '' %> All rights reserved.
                 </span>
-                <span><i class="fas fa-circle text-success me-1 fs-9"></i> Partner Gateway</span>
             </div>
         </div>
 

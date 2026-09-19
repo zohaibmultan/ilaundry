@@ -78,6 +78,45 @@
 
         </div>
 
+        <!-- Delete Store Confirmation Modal -->
+        <div class="modal fade" id="deleteStoreModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+                <div class="modal-content text-center p-3" style="border-radius: 16px;">
+                    <div class="modal-body pt-4">
+                        <div class="mb-3">
+                            <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; justify-content: center; color: #ef4444; font-size: 28px;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                        </div>
+                        <h4 class="mb-2 fw-bold text-dark">
+                            <%= language.Delete_Store || 'Delete Store' %>
+                        </h4>
+                        <p class="text-muted mb-1">
+                            <%= language.Are_you_sure_delete_store || 'Are you sure you want to delete this store?' %>
+                        </p>
+                        <p class="fw-bold text-danger fs-5 mb-2" id="deleteStoreModalName"></p>
+                        <div class="alert alert-danger py-2 px-3 mb-3 text-start small">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong><%= language.Warning || 'Warning' %>:</strong>
+                            <%= language.Delete_store_warning || 'All related data including orders, transactions, accounts, expenses, services, and staff for this store will be permanently removed.' %>
+                        </div>
+                        <p class="text-muted mb-4 small">
+                            <%= language.Action_cannot_be_undone || 'This action cannot be undone.' %>
+                        </p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal">
+                                <%= language.Cancel || 'Cancel' %>
+                            </button>
+                            <a href="#" id="deleteStoreConfirmBtn" class="btn btn-danger px-4 py-2">
+                                <i class="fas fa-trash me-1"></i>
+                                <%= language.Delete || 'Yes, Delete' %>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!--********** Content body end **********-->
 
         <!--**********************************
@@ -169,6 +208,12 @@
                                         <a href="/tool/approvedshop/${row.id}" class="btn-dt-action btn-edit" title="<%= language.Edit || 'Edit' %>">
                                             <i class="fas fa-pencil-alt"></i>
                                         </a>
+                                        <button type="button" class="btn-dt-action btn-delete btn-delete-store"
+                                                data-bs-toggle="modal" data-bs-target="#deleteStoreModal"
+                                                data-id="${row.id}" data-name="${escapeHtml(row.name)}"
+                                                title="<%= language.Delete || 'Delete' %>">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     </div>
                                 `;
                             }
@@ -180,6 +225,13 @@
                     filterElements: {
                         status_filter: '#dtStoreStatus'
                     }
+                });
+
+                $(document).on('click', '.btn-delete-store', function () {
+                    const storeId = $(this).attr('data-id');
+                    const storeName = $(this).attr('data-name');
+                    $('#deleteStoreModalName').text(storeName ? ('"' + storeName + '"') : '');
+                    $('#deleteStoreConfirmBtn').attr('href', '/tool/deletestore/' + storeId);
                 });
             });
         </script>
