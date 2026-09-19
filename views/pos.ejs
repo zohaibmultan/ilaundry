@@ -118,7 +118,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="pos-services-grid" id="pos_service">
+                                <div class="pos-services-grid mt-2" id="pos_service">
                                     <% if(service_list.length < 1 && login=='master' && cart.store_id==0){ %>
                                         <div class="p-3 text-center w-100">
                                             <h5 class="text-center text-danger">
@@ -135,23 +135,26 @@
                                             </div>
                                             <% }else{ %>
                                                 <% service_list.forEach(function(data){ %>
-                                                    <a href="#" class="pos-service-item services"
+                                                    <a href="#" class="pos-service-item services text-decoration-none"
                                                         data-name="<%= (data.name || '').toLowerCase() %>"
                                                         data-bs-toggle="modal" data-bs-target="#service_type_model"
                                                         data-id="<%= data.id %>">
-                                                        <div class="pos-service-tile">
-                                                            <div class="pos-service-icon-box">
+                                                        <div class="card h-100 shadow-sm border rounded-3 text-center overflow-hidden pos-service-card">
+                                                            <div class="ratio ratio-1x1 bg-light position-relative">
                                                                 <img src="../../uploads/<%= data.image %>"
-                                                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                                                    class="card-img-top w-100 h-100"
+                                                                    style="object-fit: cover;"
+                                                                    onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none'); this.nextElementSibling.classList.add('d-flex');"
                                                                     alt="<%= data.name %>">
-                                                                <div class="pos-service-fallback-icon"
-                                                                    style="display:none;">
+                                                                <div class="pos-service-fallback-icon position-absolute top-0 start-0 w-100 h-100 align-items-center justify-content-center text-primary fs-3 d-none">
                                                                     <i class="fa fa-tshirt"></i>
                                                                 </div>
                                                             </div>
-                                                            <span class="pos-service-name" title="<%= data.name %>">
-                                                                <%= data.name %>
-                                                            </span>
+                                                            <div class="card-body p-2 d-flex align-items-center justify-content-center">
+                                                                <h6 class="card-title m-0 fw-bold text-dark fs-7 pos-service-name" title="<%= data.name %>">
+                                                                    <%= data.name %>
+                                                                </h6>
+                                                            </div>
                                                         </div>
                                                     </a>
                                                     <% }) %>

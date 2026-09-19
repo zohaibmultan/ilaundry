@@ -207,11 +207,12 @@
 
 .pos-services-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(102px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(127px, 1fr));
   gap: 8px;
   max-height: calc(100vh - 175px);
   overflow-y: auto;
   padding-right: 4px;
+  padding-top:4px;
 }
 
 /* Custom slim scrollbar */
@@ -232,70 +233,37 @@
   display: block;
 }
 
-.pos-service-tile {
+.pos-service-card {
   background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 10px !important;
-  padding: 8px 5px !important;
-  min-height: 96px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
+  border-color: #e2e8f0 !important;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
   cursor: pointer !important;
-  position: relative !important;
 }
 
-.pos-service-tile:hover {
+.pos-service-card:hover {
   border-color: #3b82f6 !important;
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.12) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15) !important;
   transform: translateY(-2px) !important;
 }
 
-.pos-service-icon-box {
-  width: 42px;
-  height: 42px;
-  border-radius: 8px;
-  background: #f1f5f9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 5px;
-  border: 1px solid #e2e8f0;
-  color: #3b82f6;
-  font-size: 18px;
-  overflow: hidden;
-}
-
-.pos-service-icon-box img {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-}
-
-.pos-service-fallback-icon {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #3b82f6;
-  font-size: 18px;
+.pos-service-card .card-body {
+  background: #ffffff;
+  min-height: 42px;
 }
 
 .pos-service-name {
   font-size: 12.5px !important;
   font-weight: 600 !important;
   color: #1e293b !important;
-  line-height: 1.25 !important;
+  line-height: 1.3 !important;
   margin: 0 !important;
   display: -webkit-box !important;
   -webkit-line-clamp: 2 !important;
   -webkit-box-orient: vertical !important;
   overflow: hidden !important;
   text-align: center !important;
+  height: 2.6em !important; /* Exactly 2 lines of vertical space */
+  word-break: break-word !important;
 }
 
 /* ==========================================================================
