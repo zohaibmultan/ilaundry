@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+public/uploads/
 
 # Logs
 logs/
@@ -27,3 +28,7 @@ scratch/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+
+config.env
+web.config
