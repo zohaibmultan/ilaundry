@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Receipt - <%= order.order_id %>
   </title>
+  <script src="/JsBarcode.all.min.js"></script>
   <style>
     @page {
       size: 80mm auto;
@@ -203,6 +204,18 @@
       font-size: 9.5px;
       margin-top: 4px;
       line-height: 1.2;
+    }
+
+    /* Receipt Barcode (above Thank You) */
+    .receipt-barcode-wrap {
+      text-align: center;
+      margin: 4px 0 2px;
+    }
+
+    .receipt-barcode-wrap svg {
+      max-width: 70%;
+      height: 36px;
+      display: inline-block;
     }
   </style>
 </head>
@@ -481,6 +494,11 @@
       </div>
       <% } %>
 
+        <!-- Order Barcode -->
+        <div class="receipt-barcode-wrap">
+          <svg id="receiptBarcodeSvg"></svg>
+        </div>
+
         <div class="receipt-footer">
           <div>*** Thank You For Your Business! ***</div>
           <div>Powered By <b>
@@ -493,6 +511,21 @@
   <script type="text/javascript">
     "use strict";
     window.onload = async function () {
+      // Render receipt barcode (Order ID)
+      if (typeof JsBarcode === "function") {
+        try {
+          JsBarcode("#receiptBarcodeSvg", "<%= order.order_id %>", {
+            format: "CODE128",
+            width: 1.5,
+            height: 36,
+            displayValue: false,
+            margin: 2
+          });
+        } catch (e) {
+          console.warn("Receipt barcode render error:", e);
+        }
+      }
+
       const serverUrl = "<%= (master && master.printing_server_url) ? master.printing_server_url : 'http://127.0.0.1:4321' %>";
       const silentEnabled = <%= (master && master.silent_print_enabled === 0) ? 'false' : 'true' %>;
       const targetPrinter = "<%= (master && master.invoice_printer_name) ? master.invoice_printer_name : '' %>";

@@ -604,6 +604,11 @@ router.get("/view/:id", auth, async (req, res) => {
         " ORDER BY name ASC",
     );
 
+    // Fetch all active stores for 'Ready for Collection'
+    const allStores = await DataFind(
+      "SELECT id, name, mobile_number, city FROM tbl_store WHERE status = '1' AND delete_flage = '0' ORDER BY name ASC",
+    );
+
     let transferredFromStore = null;
     if (order[0].transferred_from_store_id) {
       const origStore = await DataFind(
@@ -612,6 +617,17 @@ router.get("/view/:id", auth, async (req, res) => {
       );
       if (origStore && origStore.length > 0) {
         transferredFromStore = origStore[0];
+      }
+    }
+
+    let collectionStore = null;
+    if (order[0].collection_store_id) {
+      const colStore = await DataFind(
+        "SELECT id, name, mobile_number, city FROM tbl_store WHERE id = " +
+          order[0].collection_store_id,
+      );
+      if (colStore && colStore.length > 0) {
+        collectionStore = colStore[0];
       }
     }
 
@@ -626,7 +642,9 @@ router.get("/view/:id", auth, async (req, res) => {
       account,
       accessdata,
       availableStores: availableStores || [],
+      allStores: allStores || [],
       transferredFromStore,
+      collectionStore,
       language: req.language_data,
       language_name: req.language_name,
       splite_id,
@@ -1050,6 +1068,139 @@ router.post("/transfer_store", auth, async (req, res) => {
   }
 });
 
+router.post("/set_collection_store", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      return res.status(200).json({
+        status: "error",
+        message: "For demo purpose CRUD operations are disabled!",
+      });
+    }
+
+    const { order_id, collection_store_id } = req.body;
+    const { id, roll, loginas } = req.user;
+
+    if (loginas == 0) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not authorized for this operation",
+      });
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT 
+        sr.*, 
+        r.roll_status, 
+        r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (!rolldetail || rolldetail.length === 0 || !rolldetail[0].orders.includes("edit")) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not authorized to edit orders",
+      });
+    }
+
+    if (!order_id || !collection_store_id) {
+      return res.status(400).json({
+        status: "error",
+        message: "Order ID and Collection Store ID are required",
+      });
+    }
+
+    const existingOrder = await DataFind(
+      `SELECT * FROM tbl_order WHERE id = ${parseInt(order_id, 10)}`,
+    );
+
+    if (!existingOrder || existingOrder.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "Order not found",
+      });
+    }
+
+    const targetStore = await DataFind(
+      `SELECT * FROM tbl_store WHERE id = ${parseInt(collection_store_id, 10)} AND status = '1' AND delete_flage = '0'`,
+    );
+
+    if (!targetStore || targetStore.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "Selected collection store is invalid or inactive",
+      });
+    }
+
+    // Retrieve or ensure 'Ready for Collection' status
+    let statusRecord = await DataFind(
+      "SELECT id FROM tbl_orderstatus WHERE id = 8 OR status = 'Ready for Collection' ORDER BY id DESC",
+    );
+    let collectionStatusId = 8;
+    if (statusRecord && statusRecord.length > 0) {
+      collectionStatusId = statusRecord[0].id;
+    }
+
+    const storeName = targetStore[0].name;
+
+    // Build audit note
+    const now = new Date();
+    const dateStr = now.toISOString().replace("T", " ").substring(0, 19);
+    const collectionNote = `[Ready for collection at "${storeName}" set on ${dateStr}]`;
+    const updatedNote = existingOrder[0].note
+      ? `${existingOrder[0].note} | ${collectionNote}`
+      : collectionNote;
+    const safeNote = updatedNote.replace(/'/g, "\\'");
+
+    // Update tbl_order
+    const updateResult = await DataUpdate(
+      "tbl_order",
+      `collection_store_id = ${parseInt(collection_store_id, 10)}, order_status = ${collectionStatusId}, note = '${safeNote}', stutus_change_date = CURRENT_TIMESTAMP`,
+      `id = ${parseInt(order_id, 10)}`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (updateResult == -1) {
+      return res.status(500).json({
+        status: "error",
+        message: "Failed to update order collection store",
+      });
+    }
+
+    // Add notification to collection store
+    try {
+      const accessdata = await access(req.user);
+      const day = (now.getDate() < 10 ? "0" : "") + now.getDate();
+      const month = (now.getMonth() + 1 < 10 ? "0" : "") + (now.getMonth() + 1);
+      const year = now.getFullYear();
+      const fullDate = `${year}-${month}-${day}`;
+
+      await DataInsert(
+        "tbl_notification",
+        "invoice, date, sender, received, notification",
+        `'${existingOrder[0].order_id}', '${fullDate}', '${accessdata.topbardata.id}', '${collection_store_id}', 'Order ${existingOrder[0].order_id} is ready for collection at ${storeName}.'`,
+        req.hostname,
+        req.protocol,
+      );
+    } catch (notifErr) {
+      console.error("Collection notification error:", notifErr);
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: `Order marked as Ready for Collection at ${storeName}`,
+    });
+  } catch (error) {
+    console.error("Error in /order/set_collection_store:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "An internal server error occurred while setting collection store",
+    });
+  }
+});
+
 router.post("/addpayment", auth, async (req, res) => {
   try {
     if (process.env.DISABLE_DB_WRITE === "true") {
@@ -1358,6 +1509,107 @@ const renderOrderPrint = async (req, res) => {
 router.post("/orderprint", auth, renderOrderPrint);
 router.get("/orderprint", auth, renderOrderPrint);
 router.get("/orderprint/:id", auth, renderOrderPrint);
+
+// GET /order/pos_invoice/:id — render POS receipt for an existing order
+router.get("/pos_invoice/:id", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    const orderid = req.params.id;
+
+    if (!orderid) {
+      req.flash("errors", "Order ID is required");
+      return res.redirect("/order/list");
+    }
+
+    const orderdata = await DataFind(`
+      SELECT 
+        o.*, 
+        s.status AS order_status_name
+      FROM 
+        tbl_order o
+      LEFT JOIN 
+        tbl_orderstatus s 
+      ON 
+        o.order_status = s.id
+      WHERE 
+        o.order_id = '${orderid}' OR o.id = '${orderid}'
+    `);
+
+    if (!orderdata || orderdata.length === 0) {
+      req.flash("errors", "Order not found");
+      return res.redirect("/order/list");
+    }
+
+    const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
+    if (isStaff && staffStoreId && orderdata[0].store_id != staffStoreId) {
+      req.flash("errors", "You are not authorized to view orders from other stores");
+      return res.redirect("/order/list");
+    }
+
+    var shope = await DataFind(
+      "SELECT * FROM tbl_store WHERE id=" + orderdata[0].store_id + ""
+    );
+
+    let addonslist = [];
+    if (orderdata[0].addon_data) {
+      const addon = orderdata[0].addon_data.toString().split(",");
+      if (addon[0] && addon[0] != "0") {
+        addonslist = await Promise.all(
+          addon.filter(Boolean).map(async (data) => {
+            var addondata = await DataFind(
+              "SELECT * FROM tbl_addons WHERE id=" + data + ""
+            );
+            return addondata && addondata.length > 0
+              ? { id: addondata[0].id, name: addondata[0].addon, price: addondata[0].price }
+              : null;
+          })
+        );
+        addonslist = addonslist.filter(Boolean);
+      }
+    }
+
+    let cartservice = [];
+    if (orderdata[0].service_list) {
+      cartservice = await DataFind(
+        "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
+          orderdata[0].service_list + "')"
+      );
+    }
+
+    const customer = await DataFind(
+      "SELECT * FROM tbl_customer WHERE id=" + orderdata[0].customer_id + ""
+    );
+
+    // Payment type name
+    let paymenttype = "N/A";
+    if (orderdata[0].payment_data && orderdata[0].payment_data !== "0") {
+      const payment = await DataFind(
+        "SELECT ac_name FROM tbl_account WHERE id=" + orderdata[0].payment_data
+      );
+      if (payment && payment.length > 0) paymenttype = payment[0].ac_name;
+    }
+
+    let oate = new Date(orderdata[0].order_date).toLocaleDateString("en-CA");
+    let ddate = new Date(orderdata[0].delivery_date).toLocaleDateString("en-CA");
+
+    res.render("posprint", {
+      cartservice,
+      shope: shope && shope.length > 0 ? shope[0] : {},
+      order: orderdata[0],
+      addonslist,
+      paymenttype,
+      customer: customer && customer.length > 0 ? customer : [{ name: "Walk in customer" }],
+      master: accessdata.masterstore,
+      oate,
+      ddate,
+      accessdata,
+    });
+  } catch (error) {
+    console.error("Error in pos_invoice:", error);
+    res.redirect("/order/list");
+  }
+});
 
 const handleListStatus = async (req, res) => {
   try {

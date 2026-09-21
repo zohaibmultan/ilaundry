@@ -41,6 +41,12 @@
                                                 <span>Transferred from: <%= transferredFromStore.name %></span>
                                             </span>
                                         <% } %>
+                                        <% if (order.collection_store_id && typeof collectionStore !== 'undefined' && collectionStore) { %>
+                                            <span class="badge bg-info text-white d-inline-flex align-items-center gap-1 py-1 px-2 rounded-pill fs-12 fw-semibold" title="Collection at <%= collectionStore.name %>">
+                                                <i class="fas fa-box-open"></i>
+                                                <span>Collection at: <%= collectionStore.name %></span>
+                                            </span>
+                                        <% } %>
                                     </div>
                                     <p class="text-sm mb-1">
                                         <span>
@@ -93,18 +99,26 @@
                                                 accessdata.roll.orders.includes('edit')) { %>
                                                 <ul class="dropdown-menu shadow-lg border-0" style="z-index: 1060;">
                                                     <% Ordersatus.forEach(function(data) { %>
+                                                        <% if (data.id != 7 && data.id != 8) { %>
                                                         <li>
                                                             <a class="dropdown-item" href="javascript:void(0)"
                                                                 onclick="changeOrderStatus('<%= data.id %>', '<%= order.id %>')">
                                                                 <%= data.status %>
                                                             </a>
                                                         </li>
+                                                        <% } %>
                                                         <% }); %>
                                                         <li><hr class="dropdown-divider my-1"></li>
                                                         <li>
                                                             <a class="dropdown-item text-primary fw-semibold" href="javascript:void(0)"
                                                                 onclick="openTransferStoreModal()">
                                                                 <i class="fas fa-truck-moving me-2"></i> Deliver to Store
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item text-success fw-semibold" href="javascript:void(0)"
+                                                                onclick="openCollectionStoreModal()">
+                                                                <i class="fas fa-box-open me-2"></i> Ready for Collection
                                                             </a>
                                                         </li>
                                                 </ul>
@@ -997,6 +1011,99 @@
             </div>
         </div>
 
+        <!-- Collection Store Modal (Step 1: Select Active Store) -->
+        <div class="modal fade" id="collectionStoreModal" tabindex="-1" aria-labelledby="collectionStoreModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="collectionStoreModalLabel">
+                            <i class="fas fa-box-open text-success me-2"></i>Ready for Collection
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted fs-13 mb-3">
+                            Select the store where order <strong class="text-dark"><%= order.order_id %></strong> will be ready for collection:
+                        </p>
+                        <% if (typeof allStores !== 'undefined' && allStores && allStores.length > 0) { %>
+                            <div class="list-group gap-2">
+                                <% allStores.forEach(function(store, idx) { %>
+                                    <label class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3 border rounded cursor-pointer mb-0">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <input class="form-check-input flex-shrink-0 m-0" type="radio" name="collection_store_radio" id="col_store_radio_<%= store.id %>" value="<%= store.id %>" data-store-name="<%= store.name %>" <%= (order.collection_store_id ? (order.collection_store_id == store.id) : (order.store_id == store.id)) ? 'checked' : (idx === 0 ? 'checked' : '') %>>
+                                            <div>
+                                                <div class="fw-bold text-dark">
+                                                    <%= store.name %>
+                                                    <% if (order.store_id == store.id) { %>
+                                                        <span class="badge bg-secondary ms-1">Current Store</span>
+                                                    <% } %>
+                                                </div>
+                                                <div class="text-muted fs-12">
+                                                    <% if (store.city) { %>
+                                                        <i class="fas fa-map-marker-alt me-1 text-secondary"></i><%= store.city %>
+                                                    <% } %>
+                                                    <% if (store.mobile_number) { %>
+                                                        <span class="ms-2"><i class="fas fa-phone me-1 text-secondary"></i><%= store.mobile_number %></span>
+                                                    <% } %>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-light text-primary border">Store #<%= store.id %></span>
+                                    </label>
+                                <% }); %>
+                            </div>
+                        <% } else { %>
+                            <div class="alert alert-warning d-flex align-items-center mb-0" role="alert">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <div>No active stores available.</div>
+                            </div>
+                        <% } %>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal"><%= language.Cancel || 'Cancel' %></button>
+                        <button type="button" class="btn btn-success" id="btnProceedCollection" onclick="proceedToCollectionConfirm()" <%= (typeof allStores !== 'undefined' && allStores && allStores.length > 0) ? '' : 'disabled' %>>
+                            <%= language.OK || 'OK' %>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirm Collection Modal (Step 2: Confirmation) -->
+        <div class="modal fade" id="confirmCollectionModal" tabindex="-1" aria-labelledby="confirmCollectionModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+                <div class="modal-content text-center p-3">
+                    <div class="modal-body pt-3 pb-2">
+                        <div class="mb-3">
+                            <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); display: inline-flex; align-items: center; justify-content: center; color: #10b981; font-size: 26px;">
+                                <i class="fas fa-box-open"></i>
+                            </div>
+                        </div>
+                        <h4 class="mb-2 fw-bold text-dark">Confirm Ready for Collection</h4>
+                        <div class="alert alert-success text-start mb-3 py-2 px-3 fs-13">
+                            <i class="fas fa-info-circle me-1"></i> Order status will be updated to "Ready for Collection" at the selected store.
+                        </div>
+                        <div class="p-3 bg-light rounded text-start mb-3">
+                            <div class="d-flex justify-content-between mb-1 fs-13">
+                                <span class="text-muted">Order ID:</span>
+                                <strong class="text-dark"><%= order.order_id %></strong>
+                            </div>
+                            <div class="d-flex justify-content-between fs-13">
+                                <span class="text-muted">Collection Store:</span>
+                                <strong class="text-success" id="confirmCollectionStoreName">-</strong>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal"><%= language.Cancel || 'Cancel' %></button>
+                            <button type="button" class="btn btn-success px-4 fw-bold" id="btnExecuteCollection" onclick="executeSetCollection()">
+                                <i class="fas fa-check me-1"></i> Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!--**********************************
             Footer start
         ***********************************-->
@@ -1116,6 +1223,113 @@
                                     btnConfirm.innerHTML = '<i class="fas fa-check me-1"></i> Confirm Transfer';
                                 }
                                 var errorMsg = 'An error occurred while transferring the order';
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    errorMsg = xhr.responseJSON.message;
+                                }
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.error(errorMsg);
+                                } else {
+                                    alert(errorMsg);
+                                }
+                            }
+                        });
+                    }
+
+                    // Ready for Collection Workflow
+                    var selectedCollectionStoreId = null;
+                    var selectedCollectionStoreName = '';
+
+                    function openCollectionStoreModal() {
+                        var colModalEl = document.getElementById('collectionStoreModal');
+                        if (colModalEl) {
+                            var modal = bootstrap.Modal.getOrCreateInstance(colModalEl);
+                            modal.show();
+                        }
+                    }
+
+                    function proceedToCollectionConfirm() {
+                        var checkedRadio = document.querySelector('input[name="collection_store_radio"]:checked');
+                        if (!checkedRadio) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.warning('Please select a collection store');
+                            } else {
+                                alert('Please select a collection store');
+                            }
+                            return;
+                        }
+
+                        selectedCollectionStoreId = checkedRadio.value;
+                        selectedCollectionStoreName = checkedRadio.getAttribute('data-store-name') || ('Store #' + selectedCollectionStoreId);
+
+                        // Set target name in confirm modal
+                        var nameEl = document.getElementById('confirmCollectionStoreName');
+                        if (nameEl) {
+                            nameEl.textContent = selectedCollectionStoreName;
+                        }
+
+                        // Hide selection modal and show confirm modal
+                        var colModalEl = document.getElementById('collectionStoreModal');
+                        var confirmModalEl = document.getElementById('confirmCollectionModal');
+
+                        var colModal = bootstrap.Modal.getInstance(colModalEl);
+                        if (colModal) {
+                            colModal.hide();
+                        }
+
+                        setTimeout(function () {
+                            var confirmModal = bootstrap.Modal.getOrCreateInstance(confirmModalEl);
+                            confirmModal.show();
+                        }, 300);
+                    }
+
+                    function executeSetCollection() {
+                        if (!selectedCollectionStoreId) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error('Invalid collection store selected');
+                            }
+                            return;
+                        }
+
+                        var btnConfirm = document.getElementById('btnExecuteCollection');
+                        if (btnConfirm) {
+                            btnConfirm.disabled = true;
+                            btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Saving...';
+                        }
+
+                        $.ajax({
+                            type: 'POST',
+                            url: '/order/set_collection_store',
+                            data: {
+                                order_id: '<%= order.id %>',
+                                collection_store_id: selectedCollectionStoreId
+                            },
+                            dataType: 'json',
+                            success: function (res) {
+                                if (res.status === 'success') {
+                                    if (typeof toastr !== 'undefined') {
+                                        toastr.success(res.message || 'Order set to Ready for Collection');
+                                    }
+                                    setTimeout(function () {
+                                        window.location.reload();
+                                    }, 1000);
+                                } else {
+                                    if (btnConfirm) {
+                                        btnConfirm.disabled = false;
+                                        btnConfirm.innerHTML = '<i class="fas fa-check me-1"></i> Confirm';
+                                    }
+                                    if (typeof toastr !== 'undefined') {
+                                        toastr.error(res.message || 'Failed to update order');
+                                    } else {
+                                        alert(res.message || 'Failed to update order');
+                                    }
+                                }
+                            },
+                            error: function (xhr) {
+                                if (btnConfirm) {
+                                    btnConfirm.disabled = false;
+                                    btnConfirm.innerHTML = '<i class="fas fa-check me-1"></i> Confirm';
+                                }
+                                var errorMsg = 'An error occurred while updating the order';
                                 if (xhr.responseJSON && xhr.responseJSON.message) {
                                     errorMsg = xhr.responseJSON.message;
                                 }

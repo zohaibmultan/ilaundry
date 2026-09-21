@@ -482,6 +482,18 @@
       margin-top: 4px;
       line-height: 1.2;
     }
+
+    /* Receipt Barcode (above Thank You) */
+    .receipt-barcode-wrap {
+      text-align: center;
+      margin: 4px 0 2px;
+    }
+
+    .receipt-barcode-wrap svg {
+      max-width: 70%;
+      height: 36px;
+      display: inline-block;
+    }
   </style>
 </head>
 
@@ -813,6 +825,11 @@
       </div>
       <% } %>
 
+        <!-- Order Barcode -->
+        <div class="receipt-barcode-wrap">
+          <svg id="receiptBarcodeSvg"></svg>
+        </div>
+
         <div class="receipt-footer">
           <div>*** Thank You For Your Business! ***</div>
           <div>Powered By <b>
@@ -1097,13 +1114,28 @@
     }
 
     window.onload = function () {
-      // 1. Pre-render cloth tags so barcodes are ready in memory
+      // 1. Render receipt barcode (Order ID)
+      if (typeof JsBarcode === "function") {
+        try {
+          JsBarcode("#receiptBarcodeSvg", String(orderData.order_id || ""), {
+            format: "CODE128",
+            width: 1.5,
+            height: 36,
+            displayValue: false,
+            margin: 2
+          });
+        } catch (e) {
+          console.warn("Receipt barcode render error:", e);
+        }
+      }
+
+      // 2. Pre-render cloth tags so barcodes are ready in memory
       renderClothTagsDOM();
 
-      // 2. Check printing server connectivity (does NOT trigger print window)
+      // 3. Check printing server connectivity (does NOT trigger print window)
       updateServerStatus(false);
 
-      // 3. Keep status monitored in background
+      // 4. Keep status monitored in background
       setInterval(() => updateServerStatus(true), 25000);
     };
   </script>

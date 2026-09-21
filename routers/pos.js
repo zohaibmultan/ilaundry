@@ -3513,7 +3513,7 @@ router.post("/posprint", auth, async (req, res) => {
       "SELECT * FROM tbl_email WHERE store_id=" + cart[0].store_id + ""
     );
     console.log("data", data);
-    console.log("coust[0].email", coust[0].email);
+    console.log("coust[0].email", coust.length > 0 ? coust[0].email : '(no customer)');
     console.log("shope[0].email", shope[0]);
     console.log("orderid", orderid);
     console.log("order_fullDate", order_fullDate);
