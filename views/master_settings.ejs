@@ -146,6 +146,16 @@
                                             placeholder="e.g. EPSON TM-T88VI or POS-80"
                                             title="Configured Windows printer name">
                                     </div>
+                                    <div class="col-12 mt-2">
+                                        <label class="form-label mb-1" for="invoice_footer_text" style="font-size: 11px;">
+                                            <i class="fas fa-comment-alt me-1 text-primary"></i> Receipt Footer / Thank You Message
+                                        </label>
+                                        <textarea class="form-control form-control-sm" name="invoice_footer_text" id="invoice_footer_text" rows="2"
+                                            placeholder="e.g. *** Thank You For Your Business! ***&#10;Follow us on Instagram @ourlaundry"><%= masterstore.invoice_footer_text || '' %></textarea>
+                                        <div class="form-text text-muted" style="font-size: 10px;">
+                                            Printed at the bottom of customer receipts. Leave empty for a blank footer.
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

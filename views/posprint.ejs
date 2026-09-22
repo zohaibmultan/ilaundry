@@ -830,12 +830,9 @@
           <svg id="receiptBarcodeSvg"></svg>
         </div>
 
-        <div class="receipt-footer">
-          <div>*** Thank You For Your Business! ***</div>
-          <div>Powered By <b>
-              <%= (master && master.app_name) ? master.app_name : '' %>
-            </b></div>
-        </div>
+        <% if (master && master.invoice_footer_text && master.invoice_footer_text.trim()) { %>
+        <div class="receipt-footer" style="white-space: pre-line;"><%= master.invoice_footer_text.trim() %></div>
+        <% } %>
   </div>
 
   <!-- Cloth Tag Container (Populated by JsBarcode, used for tag print) -->

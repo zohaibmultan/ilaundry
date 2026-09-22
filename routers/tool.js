@@ -2022,6 +2022,7 @@ router.post(
           twilio_auth_token,
           twilio_phone_no,
           footer,
+          invoice_footer_text,
           invoice_printer_format,
           invoice_printer_name,
           tag_printer_format,
@@ -2051,6 +2052,7 @@ router.post(
 
         let invFormat = invoice_printer_format !== undefined ? parseInt(invoice_printer_format) : 1;
         let invName = (invoice_printer_name || "").trim().replace(/'/g, "\\'");
+        let invFooterText = (invoice_footer_text || "").trim().replace(/'/g, "\\'");
         let tagFormat = tag_printer_format !== undefined ? parseInt(tag_printer_format) : 0;
         let tagName = (tag_printer_name || "").trim().replace(/'/g, "\\'");
 
@@ -2127,6 +2129,7 @@ router.post(
    printer=${invFormat},
    invoice_printer_format=${invFormat},
    invoice_printer_name='${invName}',
+   invoice_footer_text='${invFooterText}',
    tag_printer_format=${tagFormat},
    tag_printer_name='${tagName}',
    printing_server_url='${printServerUrl}',
