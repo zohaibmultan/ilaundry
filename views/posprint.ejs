@@ -830,8 +830,15 @@
           <svg id="receiptBarcodeSvg"></svg>
         </div>
 
-        <% if (master && master.invoice_footer_text && master.invoice_footer_text.trim()) { %>
-        <div class="receipt-footer" style="white-space: pre-line;"><%= master.invoice_footer_text.trim() %></div>
+        <% if ((master && master.invoice_footer_text && master.invoice_footer_text.trim()) || (master && master.footer && master.footer.trim())) { %>
+        <div class="receipt-footer">
+          <% if (master && master.invoice_footer_text && master.invoice_footer_text.trim()) { %>
+            <div style="white-space: pre-line;"><%= master.invoice_footer_text.trim() %></div>
+          <% } %>
+          <% if (master && master.footer && master.footer.trim()) { %>
+            <div style="margin-top: 2px;"><%= master.footer.trim() %></div>
+          <% } %>
+        </div>
         <% } %>
   </div>
 
