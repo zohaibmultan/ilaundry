@@ -160,19 +160,19 @@
                             <i class="fas fa-crown text-warning me-1"></i> Admin
                         </button>
                         <button type="button" class="auth-demo-pill" id="demo_store_manager"
-                            title="Store Manager: metro / 123456">
+                            title="Store Manager: manager / 123456">
                             <i class="fas fa-user-tie text-info me-1"></i> Manager
                         </button>
                         <button type="button" class="auth-demo-pill" id="demo_order_delete"
-                            title="Order Delete Supervisor: lead_metro / 123456">
+                            title="Order Delete: orderdelete / 123456">
                             <i class="fas fa-shield-alt text-danger me-1"></i> Order Delete
                         </button>
                         <button type="button" class="auth-demo-pill" id="demo_cashier"
-                            title="POS / Cashier Staff: staff_metro / 123456">
+                            title="Cashier: cashier / 123456">
                             <i class="fas fa-cash-register text-success me-1"></i> Cashier
                         </button>
                         <button type="button" class="auth-demo-pill" id="demo_customer"
-                            title="Customer: emma.w_metro / 123456">
+                            title="Customer: customer / 123456">
                             <i class="fas fa-user text-primary me-1"></i> Customer
                         </button>
                     </div>
@@ -297,31 +297,31 @@
             $('#demo_master_admin').on('click', function () {
                 $('input[name=username]').val('admin');
                 $('#login_password').val('123456');
-                toastr.info('Loaded credentials for <b>Super Admin</b> (admin)', { timeOut: 2500, escapeHtml: false });
+                toastr.info('Loaded credentials for <b>Admin</b> (admin)', { timeOut: 2500, escapeHtml: false });
             });
 
             $('#demo_store_manager').on('click', function () {
-                $('input[name=username]').val('metro');
+                $('input[name=username]').val('manager');
                 $('#login_password').val('123456');
-                toastr.info('Loaded credentials for <b>Store Manager</b> (metro)', { timeOut: 2500, escapeHtml: false });
+                toastr.info('Loaded credentials for <b>Manager</b> (manager)', { timeOut: 2500, escapeHtml: false });
             });
 
             $('#demo_order_delete').on('click', function () {
-                $('input[name=username]').val('lead_metro');
+                $('input[name=username]').val('orderdelete');
                 $('#login_password').val('123456');
-                toastr.info('Loaded credentials for <b>Order Delete Supervisor</b> (lead_metro)', { timeOut: 2500, escapeHtml: false });
+                toastr.info('Loaded credentials for <b>Order Delete</b> (orderdelete)', { timeOut: 2500, escapeHtml: false });
             });
 
             $('#demo_cashier').on('click', function () {
-                $('input[name=username]').val('staff_metro');
+                $('input[name=username]').val('cashier');
                 $('#login_password').val('123456');
-                toastr.info('Loaded credentials for <b>Cashier / Operator</b> (staff_metro)', { timeOut: 2500, escapeHtml: false });
+                toastr.info('Loaded credentials for <b>Cashier</b> (cashier)', { timeOut: 2500, escapeHtml: false });
             });
 
             $('#demo_customer').on('click', function () {
-                $('input[name=username]').val('emma.w_metro');
+                $('input[name=username]').val('customer');
                 $('#login_password').val('123456');
-                toastr.info('Loaded credentials for <b>Customer</b> (emma.w_metro)', { timeOut: 2500, escapeHtml: false });
+                toastr.info('Loaded credentials for <b>Customer</b> (customer)', { timeOut: 2500, escapeHtml: false });
             });
         });
     </script>

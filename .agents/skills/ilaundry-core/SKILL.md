@@ -73,4 +73,34 @@ The global header is rendered by `views/templet/preloder_topbar_sidebar.ejs` and
 * `.notif-item` / `.notif-item-icon` / `.notif-item-body` / `.notif-item-text` / `.notif-item-time` — Notification item layout.
 * `.lang-grid` / `.lang-grid-item` — 2-column language selector grid.
 
+## 8. Database Delivery Standards & Staff Authentication Invariants
 
+### A. Staff Authentication & Permission Join Invariant
+* In `middelwer/access.js`, permissions are resolved by joining `tbl_staff_roll` on `WHERE sr.id = ${user.roll}`.
+* In `routers/login.js`, `user.roll` is populated directly from `tbl_admin.roll_id`.
+* **CRITICAL INVARIANT**: `tbl_admin.roll_id` **must always store the Primary Key (`id`) of `tbl_staff_roll`** (never `tbl_roll.id`).
+* `tbl_staff_roll.staff_id` links back to `tbl_admin.id`, and `tbl_staff_roll.main_roll_id` links to `tbl_roll.id`.
+
+### B. Standard Main Store Accounts (Password `123456`)
+When provisioning a clean delivery database or demo store, maintain these 5 default accounts:
+1. **Admin**: `admin` &bull; Role: `Master` (`tbl_roll.id = 12`, `store_ID: ''`, `is_staff: '0'`).
+2. **Manager**: `manager` &bull; Role: `Store` (`tbl_roll.id = 13`, `store_ID: '4'`, `is_staff: '0'`).
+3. **Order Delete**: `orderdelete` &bull; Role: `Order Delete` (`tbl_roll.id = 15`, `store_ID: '4'`, `is_staff: '1'`).
+4. **Cashier**: `cashier` &bull; Role: `Cashier` (`tbl_roll.id = 16`, `store_ID: '4'`, `is_staff: '1'`).
+5. **Customer**: `customer` &bull; Table: `tbl_customer` (`store_ID: '4'`, `main_roll_id: 14`).
+* *Synchronization Rule*: Whenever default accounts change, always update both the credentials table in `README.md` and the one-click demo pills in `views/login.ejs`.
+
+### C. UTF-8 Database Export Standard on Windows
+* ❌ **Never use PowerShell redirection (`> file.sql`)**: Windows PowerShell defaults to UTF-16LE, which corrupts SQL dump imports on Linux, cPanel, and MySQL command line clients.
+* ✅ **Always use native `--result-file`**:
+  ```powershell
+  mysqldump --default-character-set=utf8mb4 --result-file=database/lndry.sql -u root <dbname>
+  ```
+
+### D. Clean Delivery Preserved Tables
+When truncating transactional tables (`tbl_order`, `tbl_order_payment`, `tbl_cart`, `tbl_customer`, `tbl_expense`, `tbl_transections`, `tbl_notification`), the following core tables must **never** be truncated:
+* `tbl_validate`: Required by `app.js` (lines 27–40) for global scripts and verification tokens.
+* `tbl_orderstatus`: The 7 system order workflow stages.
+* `tbl_roll` & `tbl_staff_roll`: System and role permission maps.
+* `tbl_master_shop`: Global branding, currency, timezone, and thermal printer hardware settings.
+* `tbl_services_type`, `tbl_services`, `tbl_addons`: Starter laundry/dry cleaning catalog.

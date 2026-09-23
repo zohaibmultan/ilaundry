@@ -81,10 +81,11 @@ mysql -u root -p -P 3306 lndry < database/lndry.sql
 
 | Role | Username | Password | Notes |
 |---|---|---|---|
-| **Master Admin** | `admin` | `12344556` (or `1234`) | Full platform and multi-store control |
-| **Store Manager** | `meera` | `123` | Store branch operational management |
-| **Store Branch** | `trinity` | `123` | Branch order processing & counter POS |
-| **Customer** | `watson` | `123` | Customer self-service portal |
+| **Admin** | `admin` | `123456` | Master Super Admin (full multi-store platform control) |
+| **Manager** | `manager` | `123456` | Main Store Manager (full branch operations & reports) |
+| **Order Delete** | `orderdelete` | `123456` | Main Store Staff with order deletion permissions |
+| **Cashier** | `cashier` | `123456` | Main Store Counter Staff (POS billing & customer management) |
+| **Customer** | `customer` | `123456` | Customer self-service order tracking portal |
 
 ---
 
