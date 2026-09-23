@@ -50,6 +50,18 @@ router.get("/list", auth, async (req, res) => {
     }
   }
 
+  const isStoreUser = adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID).trim() !== "" && String(adminData[0].store_ID).trim() !== "0";
+  let assignedStoreId = "";
+  if (isStaff && staffStoreId) {
+    assignedStoreId = staffStoreId;
+  } else if (isStoreUser) {
+    assignedStoreId = adminData[0].store_ID;
+  } else if (store && String(store).trim() !== "" && String(store).trim() !== "0") {
+    assignedStoreId = store;
+  } else if (storeList && storeList.length > 0) {
+    assignedStoreId = storeList[0].id;
+  }
+
   res.render("coustomer", {
     coustormdata: [],
     login,
@@ -59,6 +71,7 @@ router.get("/list", auth, async (req, res) => {
     is_staff: isStaff,
     staff_store_id: staffStoreId,
     staff_store_name: staffStoreName,
+    assigned_store_id: assignedStoreId,
     language: req.language_data,
     language_name: req.language_name,
   });
@@ -114,9 +127,7 @@ router.get("/list/data", auth, async (req, res) => {
         rolldetail[0].customers.includes("read")
       ) {
         login = "store";
-        if (multiy && multiy.length > 0 && multiy[0].customer_selection != 1) {
-          scopeConditions.push(`tbl_customer.store_ID = '${store}'`);
-        }
+        scopeConditions.push(`tbl_customer.store_ID = '${store}'`);
       } else {
         return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
       }
@@ -247,15 +258,25 @@ router.post("/register", auth, async (req, res) => {
         req.body;
       const verfiyStore = await DataFind(`SELECT * FROM tbl_admin WHERE id=${id}`);
       const isStaff = verfiyStore.length > 0 && verfiyStore[0].is_staff != 0;
+      const isStoreUser = verfiyStore.length > 0 && verfiyStore[0].store_ID && String(verfiyStore[0].store_ID).trim() !== "" && String(verfiyStore[0].store_ID).trim() !== "0";
 
       let storeid = req.body.storeid;
-      if (isStaff) {
-        // Staff member can ONLY create customers for their assigned store
+      if (isStaff || isStoreUser) {
+        // Staff member or Store User can ONLY create customers for their assigned store
         storeid = verfiyStore[0].store_ID;
       }
 
       if (!storeid || storeid.toString().trim() === "" || storeid === "0") {
-        req.flash("error", "Please select a store for this customer!");
+        if (store && String(store).trim() !== "" && String(store).trim() !== "0") {
+          storeid = store;
+        } else {
+          const firstStore = await DataFind("SELECT id FROM tbl_store WHERE status=1 AND delete_flage=0 LIMIT 1");
+          if (firstStore.length > 0) storeid = firstStore[0].id;
+        }
+      }
+
+      if (!storeid || storeid.toString().trim() === "" || storeid === "0") {
+        req.flash("error", "No active store found to assign this customer!");
         return res.redirect(req.get("Referrer") || "/");
       }
           

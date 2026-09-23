@@ -17,11 +17,11 @@
             <div class="container-fluid pt-3" style="min-height: 100vh;">
                 <div class="row">
                     <div class="col-12">
-                        <div class="card ">
-                            <div class="card-header">
-                                <h3 class="card-title">
+                        <div class="card border-0 shadow-sm rounded-3">
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h4 class="card-title mb-0 fw-bold">
                                     <%= language.Transaction_List %>
-                                </h3>
+                                </h4>
                             </div>
                             <div class="d-none">
                                 <input type="hiden" name="sym" value="<%= accessdata?.symbol %>">
@@ -29,7 +29,7 @@
                                 <input type="hiden" name="thousands_separator"
                                     value="<%= accessdata?.thousands_separator %>">
                             </div>
-                            <div class="card-body">
+                            <div class="card-body p-4">
                                 <form id="transform" action="/account/transefilter" method="post">
 
                                     <div class="row g-2 mb-2">
@@ -71,14 +71,14 @@
 
                                 
                                 <div class="d-flex justify-content-center flex-wrap gap-2 mt-2">
-                                    <button class="btn btn-rounded btn-info btn-sm px-4 text-nowrap" id="atransection" type="submit">
-                                        <%= language.Filter %>
+                                    <button class="btn btn-primary px-4 text-nowrap" id="atransection" type="submit">
+                                        <i class="fa fa-filter me-2"></i><%= language.Filter %>
                                     </button>
-                                    <a href="/account/transection" class="btn btn-rounded btn-danger btn-sm px-4 text-nowrap">
-                                        <%= language.Reset %>
+                                    <a href="/account/transection" class="btn btn-secondary px-4 text-nowrap">
+                                        <i class="fa fa-undo me-2"></i><%= language.Reset %>
                                     </a>
-                                    <button type="button" class="btn btn-rounded btn-success btn-sm px-4 text-nowrap" id="tdownload">
-                                        <%= language.Download %>
+                                    <button type="button" class="btn btn-info px-4 text-nowrap" id="tdownload">
+                                        <i class="fa fa-download me-2"></i><%= language.Download %>
                                     </button>
                                 </div>
                                   </form>

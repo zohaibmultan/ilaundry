@@ -35,19 +35,19 @@
             <div class="container-fluid" style="min-height: 100vh;">
                 <div class="row">
                     <div class="col-12">
-                        <div class="card ">
-                            <div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <h3 class="card-title mb-0">
+                        <div class="card border-0 shadow-sm rounded-3">
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h4 class="card-title mb-0 fw-bold">
                                     <%= language.Service_Type %>
-                                </h3>
+                                </h4>
                                 <button
-                                    class="btn btn-sm btn-rounded btn-primary <%= accessdata.roll.service.includes('write') ? '' : 'd-none' %>"
+                                    class="btn btn-primary <%= accessdata.roll.service.includes('write') ? '' : 'd-none' %>"
                                     data-bs-toggle="modal" data-bs-target="#service_types">
-                                    <i class="fa fa-plus color-info me-2"></i>
+                                    <i class="fa fa-plus me-2"></i>
                                     <%= language.Add_New_Service_Type %>
                                 </button>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body p-4">
                                 <!-- Server-side DataTable Toolbar -->
                                 <div class="row g-2 mb-3">
                                     <div class="<%= ismulty ? 'col-12 col-md-4 col-lg-4' : 'col-12 col-md-6 col-lg-6' %>">
@@ -147,11 +147,11 @@
                     </div>
 
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-                                    <%= language.Cancel %>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fa fa-times me-2"></i><%= language.Cancel %>
                                 </button>
-                                <button type="submit" class="btn btn-sm  btn-primary">
-                                    <%= language.Save %>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa fa-save me-2"></i><%= language.Save %>
                                 </button>
                             </div>
                         </form>
@@ -226,11 +226,11 @@
 
                         <!-- Modal Footer -->
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-                                <%= language.Cancel %>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel %>
                             </button>
-                            <button type="submit" class="btn btn-sm btn-primary">
-                                <%= language.Save %>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-2"></i><%= language.Save %>
                             </button>
                         </div>
                     </form>

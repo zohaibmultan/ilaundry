@@ -169,42 +169,39 @@
                         <div class="pos-card pos-cart-card">
                             <div class="pos-card-body">
                                 <div class="row g-2 mb-3">
-                                    <div
-                                        class="col-6 <%= (ismulty && login == 'master') || (ismulty && accessdata.logas != 'store' && accessdata.masterstore.customer_selection =='1' || accessdata.topbardata.store =='' ) || (typeof isStaff !== 'undefined' && isStaff) ? '': 'd-none' %>">
-                                        <div class="pos-date-group">
-                                            <label class="pos-field-label">Select Store <span
-                                                    class="text-danger">*</span></label>
-                                            <% if (typeof isStaff !=='undefined' && isStaff) { %>
-                                                <select class="default-select wide w-100" name="store" id="pos_store_id"
-                                                    disabled style="background-color: #e9ecef; cursor: not-allowed;"
-                                                    required>
-                                                    <option value="<%= staffStoreId %>" selected>
-                                                        <%= staffStoreName || 'Assigned Store' %>
-                                                    </option>
+                                    <% if (typeof showStoreSelect !== 'undefined' && showStoreSelect) { %>
+                                        <div class="col-12 col-md-6">
+                                            <div class="pos-date-group">
+                                                <label class="pos-field-label">Select Store <span
+                                                        class="text-danger">*</span></label>
+                                                <select class="default-select wide w-100" name="store"
+                                                    id="pos_store_id" data-live-search="true" required>
+                                                    <option value="0" <%=(!cart.store_id || cart.store_id==0)
+                                                        ? 'selected' : '' %> disabled>Select Store *</option>
+                                                    <% storeList.forEach(function(x){ %>
+                                                        <option value="<%= x.id %>" <%=(cart.store_id==x.id)
+                                                            ? 'selected' : '' %>><%= x.name %>
+                                                        </option>
+                                                        <% }) %>
                                                 </select>
-                                                <input type="hidden" id="pos_staff_store_id"
-                                                    value="<%= staffStoreId %>">
-                                                <% } else { %>
-                                                    <select class="default-select wide w-100" name="store"
-                                                        id="pos_store_id" data-live-search="true" required>
-                                                        <option value="0" <%=(!cart.store_id || cart.store_id==0)
-                                                            ? 'selected' : '' %> disabled>Select Store *</option>
-                                                        <% storeList.forEach(function(x){ %>
-                                                            <option value="<%= x.id %>" <%=(cart.store_id==x.id)
-                                                                ? 'selected' : '' %>><%= x.name %>
-                                                            </option>
-                                                            <% }) %>
-                                                    </select>
-                                                    <% } %>
+                                            </div>
                                         </div>
-                                    </div>
+                                    <% } else { %>
+                                        <input type="hidden" name="store" id="pos_store_id" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
+                                        <input type="hidden" id="pos_staff_store_id" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
+                                    <% } %>
 
-                                    <div class="col-6 <%= login === 'customer'? 'd-none': '' %>">
+                                    <div class="<%= (typeof showStoreSelect !== 'undefined' && showStoreSelect) ? 'col-12 col-md-6' : 'col-12' %> <%= login === 'customer'? 'd-none': '' %>">
                                         <div class="pos-date-group">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <label class="pos-field-label">Select Customer
-                                                    <span class="text-danger">*</span>
-                                                </label>
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <div class="d-flex align-items-center">
+                                                    <label class="pos-field-label mb-0">Select Customer
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    <% if (typeof showStoreSelect !== 'undefined' && !showStoreSelect && typeof assignedStoreName !== 'undefined' && assignedStoreName) { %>
+                                                        <span class="badge bg-light text-primary border ms-2"><i class="fa fa-store me-1"></i><%= assignedStoreName %></span>
+                                                    <% } %>
+                                                </div>
                                                 <a href="javascript:void(0)" style="color: blue" data-bs-toggle="modal"
                                                     data-bs-target="#addcustomer">
                                                     <i class="fa fa-plus"></i> Add
@@ -213,47 +210,39 @@
                                             <% if (accessdata.logas==='custmor' ) { %>
                                                 <input type="hidden" id="single-select" name="customer"
                                                     value="<%= customerList[0]?.id || 0 %>">
-                                                <% } else { %>
-                                                    <select id="single-select" name="customer"
-                                                        class="default-select wide w-100" data-live-search="true"
-                                                        required <%=(!isStaff && (!cart.store_id || cart.store_id==0))
-                                                        ? 'disabled' : '' %>>
-                                                        <option value="0" disabled <%=(!cart.customer_id ||
-                                                            cart.customer_id==0) ? 'selected' : '' %>>
-                                                            <%= (!isStaff && (!cart.store_id || cart.store_id==0))
-                                                                ? 'Select Store First *' : 'Select Customer *' %>
+                                            <% } else { %>
+                                                <select id="single-select" name="customer"
+                                                    class="default-select wide w-100" data-live-search="true"
+                                                    required <%= (typeof showStoreSelect !== 'undefined' && showStoreSelect && (!cart.store_id || cart.store_id==0)) ? 'disabled' : '' %>>
+                                                    <option value="0" disabled <%= (!cart.customer_id || cart.customer_id==0) ? 'selected' : '' %>>
+                                                        <%= (typeof showStoreSelect !== 'undefined' && showStoreSelect && (!cart.store_id || cart.store_id==0))
+                                                            ? 'Select Store First *' : 'Select Customer *' %>
+                                                    </option>
+                                                    <% customerList.forEach(function(x) { %>
+                                                        <% let showExtra="" ; %>
+                                                        <% if ((x.username=='' || x.username==null) &&
+                                                            (x.email==null || x.email=='' ) && (x.number==null
+                                                            || x.number=='' )) { %>
+                                                            <% if (accessdata.logas !='store' ) {
+                                                                showExtra=x.store_name; } %>
+                                                        <% } else { %>
+                                                            <% showExtra=x.number; %>
+                                                        <% } %>
+                                                        <% let isWalkIn=(x.username=='' ||
+                                                            x.username==null || (x.name &&
+                                                            x.name.toLowerCase().includes('walkin')));
+                                                            let selected=(cart.customer_id==x.id
+                                                            || ((typeof showStoreSelect !== 'undefined' && !showStoreSelect) &&
+                                                            (!cart.customer_id ||
+                                                            cart.customer_id==0) &&
+                                                            isWalkIn)) ? 'selected' : '' ;
+                                                        %>
+                                                        <option value="<%= x.id %>" <%=selected %>>
+                                                            <%= x.name %><% if (showExtra) { %> (<%= showExtra %>)<% } %>
                                                         </option>
-                                                        <% customerList.forEach(function(x) { %>
-                                                            <% let showExtra="" ; %>
-                                                                <% if ((x.username=='' || x.username==null) &&
-                                                                    (x.email==null || x.email=='' ) && (x.number==null
-                                                                    || x.number=='' )) { %>
-                                                                    <% if (accessdata.logas !='store' ) {
-                                                                        showExtra=x.store_name; } %>
-                                                                        <% } else { %>
-                                                                            <% showExtra=x.number; %>
-                                                                                <% } %>
-                                                                                    <% let isWalkIn=(x.username=='' ||
-                                                                                        x.username==null || (x.name &&
-                                                                                        x.name.toLowerCase().includes('walkin')));
-                                                                                        let
-                                                                                        selected=(cart.customer_id==x.id
-                                                                                        || (isStaff &&
-                                                                                        (!cart.customer_id ||
-                                                                                        cart.customer_id==0) &&
-                                                                                        isWalkIn)) ? 'selected' : '' ;
-                                                                                        %>
-                                                                                        <option value="<%= x.id %>"
-                                                                                            <%=selected %>>
-                                                                                            <%= x.name %>
-                                                                                                <% if (showExtra) { %> (
-                                                                                                    <%= showExtra %>)<%
-                                                                                                            } %>
-                                                                                        </option>
-                                                                                        <% }); %>
-                                                    </select>
-
-                                                    <% } %>
+                                                    <% }); %>
+                                                </select>
+                                            <% } %>
                                         </div>
                                     </div>
                                 </div>
@@ -656,11 +645,10 @@
 
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <%= language.Cancel %>
+                                <i class="fa fa-times me-2"></i><%= language.Cancel %>
                             </button>
-                            <!-- <button class="btn btn-success" type="submit" value="submit" id="cart_submit_for_order" ><%= language.Save %>  & <%= language.Print %> </button> -->
-                            <button class="btn btn-success" type="submit" value="submit" id="printcheck">
-                                <%= language.Save %> & <%= language.Print %>
+                            <button class="btn btn-primary" type="submit" value="submit" id="printcheck">
+                                <i class="fa fa-print me-2"></i><%= language.Save %> & <%= language.Print %>
                             </button>
                         </div>
                         </form>
@@ -670,8 +658,8 @@
             </div>
 
             <!-- Modal add customer -->
-            <div class="modal fade" id="addcustomer">
-                <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
+            <div class="modal fade" id="addcustomer" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg modal-fullscreen-sm-down" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">
@@ -679,106 +667,99 @@
                             </h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                        <div class="modal-body">
-                            <form action="/coustomer/register" method="post" class="need-validation">
+                        <form action="/coustomer/register" method="post" class="need-validation">
+                            <div class="modal-body">
+                                <% if (typeof showStoreSelect !== 'undefined' && !showStoreSelect) { %>
+                                    <input type="hidden" name="storeid" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
+                                <% } %>
 
-                                <div class="row g-1 align-items-center">
-                                    <div class="form-group">
-                                        <label><strong>
-                                                <%= language.Name %>
-                                            </strong></label>
-                                        <input type="text" class="form-control " name="name" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label><strong>
-                                                <%= language.Phone_Number %>
-                                            </strong></label>
-                                        <input type="text" class="form-control" name="number" minlength="10"
-                                            maxlength="10" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label><strong>
-                                                <%= language.Email %>
-                                            </strong></label>
-                                        <input type="email" class="form-control" name="email" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label><strong>
-                                                <%= language.Tax_Number %>
-                                            </strong></label>
-                                        <input type="text" class="form-control" name="taxnumber">
-                                    </div>
-                                    <div class="form-group">
-                                        <label><strong>
-                                                <%= language.Address %>
-                                            </strong></label>
-                                        <input type="text" class="form-control" name="address">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">
+                                            <%= language.Name %> <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" name="name" placeholder="Enter customer name" required>
                                     </div>
 
-                                    <% if (typeof isStaff !=='undefined' && isStaff) { %>
-                                        <div class="col-md-12 mb-3">
-                                            <div class="form-group">
-                                                <label class="form-label"><strong>
-                                                        <%= language.Store_List || 'Assigned Store' %>
-                                                    </strong></label>
-                                                <input type="text" class="form-control"
-                                                    value="<%= (typeof staffStoreName !== 'undefined' && staffStoreName) ? staffStoreName : 'Assigned Store' %>"
-                                                    readonly disabled
-                                                    style="background-color: #e9ecef; cursor: not-allowed;">
-                                                <input type="hidden" name="storeid" value="<%= staffStoreId %>">
-                                            </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">
+                                            <%= language.Phone_Number %> <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="number" class="form-control" name="number" placeholder="Enter phone number" required>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">
+                                            <%= language.Email %> <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="email" class="form-control" name="email" placeholder="Enter email address" required>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">
+                                            <%= language.Tax_Number %>
+                                        </label>
+                                        <input type="text" class="form-control" name="taxnumber" placeholder="Enter tax number">
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">
+                                            <%= language.Username %>
+                                        </label>
+                                        <input type="text" class="form-control" name="username" placeholder="Enter username">
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">
+                                            <%= language.Password %>
+                                        </label>
+                                        <input type="password" class="form-control" name="password" placeholder="Enter password">
+                                    </div>
+
+                                    <% if (typeof showStoreSelect !== 'undefined' && showStoreSelect) { %>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">
+                                                <%= language.Store_List || 'Store' %> <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control form-select" name="storeid" id="coupon_storlist_update" required>
+                                                <option value="" disabled <%= (!cart.store_id || cart.store_id==0) ? 'selected' : '' %>>
+                                                    Select Store *
+                                                </option>
+                                                <% storeList.forEach(function(x){ %>
+                                                    <option value="<%= x.id %>" <%= (cart.store_id==x.id) ? 'selected' : '' %>>
+                                                        <%= x.name %>
+                                                    </option>
+                                                <% }) %>
+                                            </select>
                                         </div>
-                                        <% } else { %>
-                                            <div class="col-md-12 mb-3">
-                                                <div class="form-group">
-                                                    <label class="form-label"><strong>
-                                                            <%= language.Store_List || 'Store' %>
-                                                        </strong><span class="text-danger">*</span></label>
-                                                    <select class="form-control wide mb-3" name="storeid"
-                                                        id="coupon_storlist_update" required>
-                                                        <option value="" disabled <%=(!cart.store_id ||
-                                                            cart.store_id==0) ? 'selected' : '' %>> Select Store
-                                                        </option>
-                                                        <% storeList.forEach(function(x){ %>
-                                                            <option value="<%= x.id %>" <%=(cart.store_id==x.id)
-                                                                ? 'selected' : '' %>>
-                                                                <%= x.name %>
-                                                            </option>
-                                                            <% }) %>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <% } %>
 
-                                                <div class="form-group">
-                                                    <label><strong>
-                                                            <%= language.Username %>
-                                                        </strong></label>
-                                                    <input type="text" class="form-control" name="username">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label><strong>
-                                                            <%= language.Password %>
-                                                        </strong></label>
-                                                    <input type="text" class="form-control" name="password">
-                                                </div>
-
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">
+                                                <%= language.Address %>
+                                            </label>
+                                            <input type="text" class="form-control" name="address" placeholder="Enter address">
+                                        </div>
+                                    <% } else { %>
+                                        <div class="col-12">
+                                            <label class="form-label fw-bold">
+                                                <%= language.Address %>
+                                            </label>
+                                            <input type="text" class="form-control" name="address" placeholder="Enter address">
+                                        </div>
+                                    <% } %>
                                 </div>
-                        </div>
+                            </div>
 
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-                                <%= language.Cancel %>
-                            </button>
-                            <button type="submit" class="btn btn-sm  btn-primary">
-                                <%= language.Save %>
-                            </button>
-                        </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fa fa-times me-2"></i><%= language.Cancel %>
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa fa-save me-2"></i><%= language.Save %>
+                                </button>
+                            </div>
                         </form>
-
-
                     </div>
-
                 </div>
             </div>
 
@@ -800,12 +781,12 @@
                             </div>
 
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-                                    <%= language.Cancel %>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fa fa-times me-2"></i><%= language.Cancel %>
                                 </button>
                                 <button type="submit" value="submit" id="add_service_pos_cart_submit"
-                                    class="btn btn-sm  btn-primary">
-                                    <%= language.Save %>
+                                    class="btn btn-primary">
+                                    <i class="fa fa-save me-2"></i><%= language.Save %>
                                 </button>
                             </div>
                         </form>
@@ -863,12 +844,12 @@
                                 </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-                                <%= language.Cancel %>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel %>
                             </button>
                             <button type="submit" value="submit" id="add_addons_pos_cart_submit"
-                                class="btn btn-sm  btn-primary">
-                                <%= language.Save %>
+                                class="btn btn-primary">
+                                <i class="fa fa-save me-2"></i><%= language.Save %>
                             </button>
                         </div>
                         </form>
@@ -897,7 +878,7 @@
                                     <input type="text" class="form-control" placeholder="Enter Coupon Code"
                                         name="coupon_code">
                                     <button class="btn btn-primary" id="POS_coupon_code" type="button">
-                                        <%= language.Apply %>
+                                        <i class="fa fa-check me-2"></i><%= language.Apply %>
                                     </button>
                                 </div>
                             </div>
@@ -1129,12 +1110,12 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <footer class="m-3 d-flex justify-content-end">
-                                <button type="button" class="btn btn-primary mx-2" id="pri_invo">
-                                    <%= language.Print_Invoice %>
+                            <footer class="m-3 d-flex justify-content-end gap-2">
+                                <button type="button" class="btn btn-info" id="pri_invo">
+                                    <i class="fa fa-print me-2"></i><%= language.Print_Invoice %>
                                 </button>
-                                <button type="button" class="btn btn-danger mx-2" onclick="location.reload()">
-                                    <%= language.Go_Back %>
+                                <button type="button" class="btn btn-secondary" onclick="location.reload()">
+                                    <i class="fa fa-arrow-left me-2"></i><%= language.Go_Back %>
                                 </button>
                             </footer>
                         </div>
@@ -1174,13 +1155,21 @@
                 </script>
 
                 <script>
+                    $('#addcustomer').on('show.bs.modal', function () {
+                        const posStore = $('#pos_store_id').val();
+                        if ($('#coupon_storlist_update').length && posStore && posStore != '0') {
+                            $('#coupon_storlist_update').val(posStore).trigger('change');
+                        }
+                    });
                     $('#addcustomer').on('shown.bs.modal', function () {
-                        $('#coupon_storlist_update').select2({
-                            dropdownParent: $('#addcustomer'),
-                            placeholder: 'Select Store(s)',
-                            width: '100%',
-                            allowClear: true
-                        });
+                        if ($('#coupon_storlist_update').length) {
+                            $('#coupon_storlist_update').select2({
+                                dropdownParent: $('#addcustomer'),
+                                placeholder: 'Select Store *',
+                                width: '100%',
+                                allowClear: false
+                            });
+                        }
                     });
                 </script>
                 <script>

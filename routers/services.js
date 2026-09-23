@@ -12,9 +12,9 @@ var {
   DataDelete,
   DataUpdate,
   DataInsert,
-  DataFind
+  DataFind,
 } = require("../middelwer/databaseQurey");
-var mysql = require("mysql2")
+var mysql = require("mysql2");
 const { paginateDataTable } = require("../middelwer/dataTableHelper");
 // <<<<<<<<<<<<<<<<<<<SERVICE LIST ALL CRUD ROUTER>>>>>>>>>>>>>>>>>>>>>>
 
@@ -44,7 +44,9 @@ router.get("/list", auth, async (req, res) => {
       const multiy = await DataFind("SELECT type FROM tbl_master_shop");
       var ismulty = multiy[0].type == 1;
       if (ismulty) {
-        storeList = await DataFind("SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0");
+        storeList = await DataFind(
+          "SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0",
+        );
       }
 
       res.render("service", {
@@ -81,7 +83,14 @@ router.get("/list/data", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
     if (loginas == 0) {
-      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+      return res
+        .status(403)
+        .json({
+          draw: parseInt(req.query.draw) || 1,
+          recordsTotal: 0,
+          recordsFiltered: 0,
+          data: [],
+        });
     }
 
     const rolldetail = await DataFind(`
@@ -93,60 +102,94 @@ router.get("/list/data", auth, async (req, res) => {
 
     let scopeConditions = [];
     let isMaster = false;
-    if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && rolldetail[0].service && rolldetail[0].service.includes("read")) {
+    if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].rollType === "master" &&
+      rolldetail[0].service &&
+      rolldetail[0].service.includes("read")
+    ) {
       isMaster = true;
-    } else if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "store" && rolldetail[0].service && rolldetail[0].service.includes("read")) {
+    } else if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].rollType === "store" &&
+      rolldetail[0].service &&
+      rolldetail[0].service.includes("read")
+    ) {
       scopeConditions.push(`tbl_services.store_ID = '${store}'`);
     } else {
-      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+      return res
+        .status(403)
+        .json({
+          draw: parseInt(req.query.draw) || 1,
+          recordsTotal: 0,
+          recordsFiltered: 0,
+          data: [],
+        });
     }
 
     const filterConditions = [];
     const statusParam = req.query.status_filter || req.query.status;
-    if (statusParam !== undefined && statusParam !== null && !["all", "ALL", ""].includes(String(statusParam).trim())) {
+    if (
+      statusParam !== undefined &&
+      statusParam !== null &&
+      !["all", "ALL", ""].includes(String(statusParam).trim())
+    ) {
       const cleanStatus = String(statusParam).trim() === "0" ? "0" : "1";
       filterConditions.push(`tbl_services.status = '${cleanStatus}'`);
     }
 
     const storeParam = req.query.store_filter || req.query.store_id;
-    if (storeParam && isMaster && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+    if (
+      storeParam &&
+      isMaster &&
+      !["all", "ALL", "", "0"].includes(String(storeParam).trim())
+    ) {
       const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
       filterConditions.push(`tbl_services.store_ID = '${cleanStore}'`);
     }
 
-    const canEdit = Boolean(accessdata && accessdata.roll && accessdata.roll.service && accessdata.roll.service.includes("edit"));
-    const canDelete = Boolean(accessdata && accessdata.roll && accessdata.roll.service && accessdata.roll.service.includes("delete"));
+    const canEdit = Boolean(
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.service &&
+      accessdata.roll.service.includes("edit"),
+    );
+    const canDelete = Boolean(
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.service &&
+      accessdata.roll.service.includes("delete"),
+    );
 
     const result = await paginateDataTable(req, {
       select: `tbl_services.*, 
                COALESCE(tbl_store.name, '') as store, 
                (SELECT GROUP_CONCAT(tbl_services_type.services_type) FROM tbl_services_type WHERE FIND_IN_SET(tbl_services_type.id, tbl_services.services_type_id)) as serviceType`,
       from: `tbl_services LEFT JOIN tbl_store ON tbl_services.store_ID = tbl_store.id`,
-      searchColumns: [
-        'tbl_services.name',
-        'tbl_store.name'
-      ],
+      searchColumns: ["tbl_services.name", "tbl_store.name"],
       baseWhere: scopeConditions,
       filterWhere: filterConditions,
-      defaultOrder: 'tbl_services.id DESC',
+      defaultOrder: "tbl_services.id DESC",
       columnMap: {
-        0: 'tbl_services.id',
-        1: 'tbl_services.name',
-        2: 'tbl_store.name',
-        3: 'tbl_services.status'
+        0: "tbl_services.id",
+        1: "tbl_services.name",
+        2: "tbl_store.name",
+        3: "tbl_services.status",
       },
       postProcess: async (rows) => {
         return rows.map((s) => ({
           id: s.id,
-          name: s.name || '',
-          image: s.image || '',
-          serviceType: s.serviceType || '',
-          store: s.store || '',
+          name: s.name || "",
+          image: s.image || "",
+          serviceType: s.serviceType || "",
+          store: s.store || "",
           status: parseInt(s.status) || 0,
           canEdit,
-          canDelete
+          canDelete,
         }));
-      }
+      },
     });
 
     return res.json(result);
@@ -170,24 +213,27 @@ router.get("/addservice", auth, async (req, res) => {
   WHERE sr.id = ${roll}
 `);
 
-    if (
-      rolldetail[0].rollType === "master" &&
-      rolldetail[0].service.includes("read")
-    ) {
+    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const isStoreUser = adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID).trim() !== "" && String(adminData[0].store_ID).trim() !== "0";
+    const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
+    const isMaster = rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && !isStaff && (!adminData[0].store_ID || adminData[0].store_ID == 0);
+
+    let ismulty = false;
+    let storeList = [];
+
+    if (isMaster && rolldetail[0].service.includes("write")) {
       const multiy = await DataFind("SELECT type FROM tbl_master_shop");
 
       if (multiy[0].type == 1) {
-        var ismulty = true;
-        var storeList = await DataFind(
-          "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0"
+        ismulty = true;
+        storeList = await DataFind(
+          "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0",
         );
-      } else {
-        var ismulty = false;
-        var storeList = [];
       }
-    } else if (rolldetail[0].service.includes("write")) {
-      var ismulty = false;
-      var storeList = [];
+    } else if (rolldetail && rolldetail.length > 0 && rolldetail[0].service.includes("write")) {
+      ismulty = false;
+      storeList = [];
     } else {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
@@ -197,6 +243,7 @@ router.get("/addservice", auth, async (req, res) => {
       ismulty,
       storeList,
       accessdata,
+      assigned_store_id: assignedStore,
       language: req.language_data,
       language_name: req.language_name,
     });
@@ -207,10 +254,10 @@ router.get("/addservice", auth, async (req, res) => {
 
 router.post("/addservice", auth, upload.single("image"), async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store } = req.user;
     const rolldetail = await DataFind(`
   SELECT 
@@ -221,52 +268,50 @@ router.post("/addservice", auth, upload.single("image"), async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-    if (rolldetail[0].service.includes("write")) {
-      var img = req.file.filename;
+    if (rolldetail && rolldetail.length > 0 && rolldetail[0].service.includes("write")) {
+      var img = req.file ? req.file.filename : "";
 
       var { name, service_type, service_price, active, storeid } = req.body;
-      service_type
-        ? Array.isArray(service_type)
-          ? (service_type = service_type.join(","))
-          : service_type
-        : (service_type = "");
-      service_price
-        ? Array.isArray(service_price)
-          ? (service_price = service_price.join(","))
-          : service_price
-        : (service_price = 0);
-      active ? (active = 0) : (active = 1);
-      storeid ? storeid : (storeid = store);
-      // var qury =
-      //   "INSERT INTO tbl_services (name,image,services_type_id,services_type_price,store_ID,status) VALUE ('" +
-      //   name +
-      //   "','" +
-      //   img +
-      //   "','" +
-      //   service_type +
-      //   "','" +
-      //   service_price +
-      //   "','" +
-      //   storeid +
-      //   "','" +
-      //   active +
-      //   "')";
-      // const newservtype = await DataFind(qury);
+
+      const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+      const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+      const isStoreUser = adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID).trim() !== "" && String(adminData[0].store_ID).trim() !== "0";
+      const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
+      const isMaster = rolldetail[0].rollType === "master" && !isStaff && (!adminData[0].store_ID || adminData[0].store_ID == 0);
+
+      // A store default user or staff can ONLY add services to their assigned store
+      if (!isMaster || isStaff || isStoreUser) {
+        storeid = assignedStore;
+      }
+
+      if (!storeid || String(storeid).trim() === "" || String(storeid).trim() === "0") {
+        req.flash("error", "Please select a valid store for this service!");
+        return res.redirect(req.get("Referrer") || "/services/list");
+      }
+
+      service_type = service_type
+        ? (Array.isArray(service_type) ? service_type.join(",") : service_type)
+        : "";
+      service_price = service_price
+        ? (Array.isArray(service_price) ? service_price.join(",") : service_price)
+        : "0";
+      active = active ? "0" : "1";
 
       const newservtype = await DataInsert(
         `tbl_services`,
         `name,image,services_type_id,services_type_price,store_ID,status`,
         `'${name}', '${img}', '${service_type}', '${service_price}', '${storeid}', '${active}'`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (newservtype == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
-      req.flash("success", "New Services Type Added!");
-      res.redirect("back");
+      req.flash("success", "New Service Added Successfully!");
+      res.redirect("/services/list");
     } else {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
@@ -275,6 +320,7 @@ router.post("/addservice", auth, upload.single("image"), async (req, res) => {
     console.log(error);
   }
 });
+
 router.get("/deletservices/:id", auth, async (req, res) => {
   try {
     const { id, roll, store } = req.user;
@@ -287,15 +333,40 @@ router.get("/deletservices/:id", auth, async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-    if (rolldetail[0].service.includes("delete")) {
+    if (rolldetail && rolldetail.length > 0 && rolldetail[0].service.includes("delete")) {
       var dataid = req.params.id;
-      // const newservtype = await DataFind(
-      //   "DELETE FROM tbl_services WHERE id=" + dataid + ""
-      // );
 
- if(await DataDelete(`tbl_services`, `id = '${dataid}'`, req.hostname, req.protocol) == -1) {
-            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
-          }
+      const serviceCheck = await DataFind(`SELECT id, store_ID FROM tbl_services WHERE id = '${dataid}'`);
+      if (!serviceCheck || serviceCheck.length === 0) {
+        req.flash("error", "Service not found!");
+        return res.redirect(req.get("Referrer") || "/services/list");
+      }
+
+      const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+      const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+      const isStoreUser = adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID).trim() !== "" && String(adminData[0].store_ID).trim() !== "0";
+      const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
+      const isMaster = rolldetail[0].rollType === "master" && !isStaff && (!adminData[0].store_ID || adminData[0].store_ID == 0);
+
+      // Verify store ownership: store user or staff can ONLY delete services from their assigned store
+      if (!isMaster || isStaff || isStoreUser) {
+        if (String(serviceCheck[0].store_ID) !== String(assignedStore)) {
+          req.flash("error", "You are not authorized to delete services belonging to another store!");
+          return res.redirect(req.get("Referrer") || "/services/list");
+        }
+      }
+
+      if (
+        (await DataDelete(
+          `tbl_services`,
+          `id = '${dataid}'`,
+          req.hostname,
+          req.protocol,
+        )) == -1
+      ) {
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
+      }
 
       req.flash("success", "Services Deleted");
       res.redirect("back");
@@ -307,6 +378,7 @@ router.get("/deletservices/:id", auth, async (req, res) => {
     console.log(error);
   }
 });
+
 router.get("/updateService/:id", auth, async (req, res) => {
   try {
     const { id, roll, store } = req.user;
@@ -320,23 +392,38 @@ router.get("/updateService/:id", auth, async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-    if (rolldetail[0].service.includes("edit")) {
+    if (rolldetail && rolldetail.length > 0 && rolldetail[0].service.includes("edit")) {
       var dataid = req.params.id;
       const servicesdata = await DataFind(
-        "SELECT * FROM tbl_services WHERE id=" + dataid + ""
+        "SELECT * FROM tbl_services WHERE id=" + dataid + "",
       );
+      if (!servicesdata || servicesdata.length === 0) {
+        req.flash("error", "Service not found!");
+        return res.redirect(req.get("Referrer") || "/services/list");
+      }
+
+      const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+      const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+      const isStoreUser = adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID).trim() !== "" && String(adminData[0].store_ID).trim() !== "0";
+      const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
+      const isMaster = rolldetail[0].rollType === "master" && !isStaff && (!adminData[0].store_ID || adminData[0].store_ID == 0);
+
+      // Verify store ownership: store user or staff can ONLY edit services belonging to their assigned store
+      if (!isMaster || isStaff || isStoreUser) {
+        if (String(servicesdata[0].store_ID) !== String(assignedStore)) {
+          req.flash("error", "You are not authorized to edit services belonging to another store!");
+          return res.redirect(req.get("Referrer") || "/services/list");
+        }
+      }
+
       var servicestypedata = await DataFind(
         "SELECT * FROM tbl_services_type WHERE status=0 AND store_ID=" +
           servicesdata[0].store_ID +
-          ""
+          "",
       );
-      console.log(2222222222, servicesdata);
-      console.log(333333333, servicestypedata);
 
-      const typeID = servicesdata[0].services_type_id.split(",");
-      console.log(444444444, typeID);
-      const price = servicesdata[0].services_type_price.split(",");
-      console.log(5555555555, price);
+      const typeID = servicesdata[0].services_type_id ? servicesdata[0].services_type_id.split(",") : [];
+      const price = servicesdata[0].services_type_price ? servicesdata[0].services_type_price.split(",") : [];
 
       res.render("edit_service", {
         services: servicesdata[0],
@@ -362,10 +449,10 @@ router.post(
   upload.single("image_update"),
   async (req, res) => {
     try {
-        if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+      if (process.env.DISABLE_DB_WRITE === "true") {
+        req.flash("error", "For demo purpose we disabled crud operations!!");
+        return res.redirect(req.get("Referrer") || "/");
+      }
       const { id, roll, store } = req.user;
       const rolldetail = await DataFind(`
   SELECT 
@@ -376,30 +463,45 @@ router.post(
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-      if (rolldetail[0].service.includes("edit")) {
+      if (rolldetail && rolldetail.length > 0 && rolldetail[0].service.includes("edit")) {
+        const serviceCheck = await DataFind(`SELECT id, store_ID FROM tbl_services WHERE id = '${req.params.id}'`);
+        if (!serviceCheck || serviceCheck.length === 0) {
+          req.flash("error", "Service not found!");
+          return res.redirect(req.get("Referrer") || "/services/list");
+        }
+
+        const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+        const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+        const isStoreUser = adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID).trim() !== "" && String(adminData[0].store_ID).trim() !== "0";
+        const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
+        const isMaster = rolldetail[0].rollType === "master" && !isStaff && (!adminData[0].store_ID || adminData[0].store_ID == 0);
+
+        // Verify store ownership: store user or staff can ONLY update services in their assigned store
+        if (!isMaster || isStaff || isStoreUser) {
+          if (String(serviceCheck[0].store_ID) !== String(assignedStore)) {
+            req.flash("error", "You are not authorized to update services belonging to another store!");
+            return res.redirect(req.get("Referrer") || "/services/list");
+          }
+        }
+
         if (req.file) {
           var img = req.file.filename;
-          // const newdata = await DataFind(
-          //   "UPDATE tbl_services SET image='" +
-          //     img +
-          //     "'  WHERE id = " +
-          //     req.params.id +
-          //     ""
-          // );
 
+          const updateServiceImage = await DataUpdate(
+            "tbl_services",
+            `image = '${img}'`,
+            `id = ${req.params.id}`,
+            req.hostname,
+            req.protocol,
+          );
 
-const updateServiceImage = await DataUpdate(
-  "tbl_services",
-  `image = '${img}'`,
-  `id = ${req.params.id}`,
-  req.hostname,
-  req.protocol
-);
-
-if (updateServiceImage === -1) {
-  req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
-}
-
+          if (updateServiceImage === -1) {
+            req.flash(
+              "error",
+              "Action failed, please check input and try again",
+            );
+            return res.redirect("back");
+          }
         }
 
         var { name_update, service_type, service_price, active_update } =
@@ -416,24 +518,18 @@ if (updateServiceImage === -1) {
           : (service_price = 0);
         active_update ? (active_update = 0) : (active_update = 1);
 
+        const newservtype = await DataUpdate(
+          "tbl_services",
+          `name = '${name_update}', services_type_id = '${service_type}', services_type_price = '${service_price}', status = '${active_update}'`,
+          `id = ${req.params.id}`,
+          req.hostname,
+          req.protocol,
+        );
 
-
-        // var qury = `UPDATE tbl_services SET name='${name_update}',services_type_id='${service_type}',
-        //     services_type_price='${service_price}',status='${active_update}' WHERE id = ${req.params.id}`;
-            
-        // const newservtype = await DataFind(qury);
-
-          const newservtype = await DataUpdate(
-            "tbl_services",
-            `name = '${name_update}', services_type_id = '${service_type}', services_type_price = '${service_price}', status = '${active_update}'`,
-            `id = ${req.params.id}`,
-            req.hostname,
-            req.protocol
-          );
-          
-          if (newservtype === -1) {
-            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
-          }
+        if (newservtype === -1) {
+          req.flash("error", "Action failed, please check input and try again");
+          return res.redirect("back");
+        }
 
         req.flash("success", "Services Updated");
         res.redirect("/services/list");
@@ -444,7 +540,7 @@ if (updateServiceImage === -1) {
     } catch (error) {
       console.log(error);
     }
-  }
+  },
 );
 
 // >>>>>>>>>>>>SERVICES TYPE ALL CRUD ROUTER>>>>>>>>>>>>>>>>>>
@@ -454,7 +550,7 @@ router.get("/type", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
     const storeList = await DataFind(
-      "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0"
+      "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0",
     );
     const multiy = await DataFind("SELECT type FROM tbl_master_shop");
     if (multiy[0].type == 1) {
@@ -515,7 +611,14 @@ router.get("/type/data", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
     if (loginas == 0) {
-      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+      return res
+        .status(403)
+        .json({
+          draw: parseInt(req.query.draw) || 1,
+          recordsTotal: 0,
+          recordsFiltered: 0,
+          data: [],
+        });
     }
 
     const rolldetail = await DataFind(`
@@ -527,58 +630,95 @@ router.get("/type/data", auth, async (req, res) => {
 
     let scopeConditions = [];
     let isMaster = false;
-    if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && rolldetail[0].service && rolldetail[0].service.includes("read")) {
+    if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].rollType === "master" &&
+      rolldetail[0].service &&
+      rolldetail[0].service.includes("read")
+    ) {
       isMaster = true;
-    } else if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "store" && rolldetail[0].service && rolldetail[0].service.includes("read")) {
+    } else if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].rollType === "store" &&
+      rolldetail[0].service &&
+      rolldetail[0].service.includes("read")
+    ) {
       scopeConditions.push(`tbl_services_type.store_ID = '${store}'`);
     } else {
-      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+      return res
+        .status(403)
+        .json({
+          draw: parseInt(req.query.draw) || 1,
+          recordsTotal: 0,
+          recordsFiltered: 0,
+          data: [],
+        });
     }
 
     const filterConditions = [];
     const statusParam = req.query.status_filter || req.query.status;
-    if (statusParam !== undefined && statusParam !== null && !["all", "ALL", ""].includes(String(statusParam).trim())) {
+    if (
+      statusParam !== undefined &&
+      statusParam !== null &&
+      !["all", "ALL", ""].includes(String(statusParam).trim())
+    ) {
       const cleanStatus = String(statusParam).trim() === "0" ? "0" : "1";
       filterConditions.push(`tbl_services_type.status = '${cleanStatus}'`);
     }
 
     const storeParam = req.query.store_filter || req.query.store_id;
-    if (storeParam && isMaster && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+    if (
+      storeParam &&
+      isMaster &&
+      !["all", "ALL", "", "0"].includes(String(storeParam).trim())
+    ) {
       const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
       filterConditions.push(`tbl_services_type.store_ID = '${cleanStore}'`);
     }
 
-    const canEdit = Boolean(accessdata && accessdata.roll && accessdata.roll.service && accessdata.roll.service.includes("edit"));
-    const canDelete = Boolean(accessdata && accessdata.roll && accessdata.roll.service && accessdata.roll.service.includes("delete"));
+    const canEdit = Boolean(
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.service &&
+      accessdata.roll.service.includes("edit"),
+    );
+    const canDelete = Boolean(
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.service &&
+      accessdata.roll.service.includes("delete"),
+    );
 
     const result = await paginateDataTable(req, {
       select: `tbl_services_type.*, COALESCE(tbl_store.name, '') as store`,
       from: `tbl_services_type LEFT JOIN tbl_store ON tbl_services_type.store_ID = tbl_store.id`,
       searchColumns: [
-        'tbl_services_type.services_type',
-        'tbl_services_type.id',
-        'tbl_store.name'
+        "tbl_services_type.services_type",
+        "tbl_services_type.id",
+        "tbl_store.name",
       ],
       baseWhere: scopeConditions,
       filterWhere: filterConditions,
-      defaultOrder: 'tbl_services_type.id DESC',
+      defaultOrder: "tbl_services_type.id DESC",
       columnMap: {
-        0: 'tbl_services_type.id',
-        1: 'tbl_services_type.services_type',
-        2: 'tbl_services_type.id',
-        3: 'tbl_store.name',
-        4: 'tbl_services_type.status'
+        0: "tbl_services_type.id",
+        1: "tbl_services_type.services_type",
+        2: "tbl_services_type.id",
+        3: "tbl_store.name",
+        4: "tbl_services_type.status",
       },
       postProcess: async (rows) => {
         return rows.map((st) => ({
           id: st.id,
-          services_type: st.services_type || '',
-          store: st.store || '',
+          services_type: st.services_type || "",
+          store: st.store || "",
           status: parseInt(st.status) || 0,
           canEdit,
-          canDelete
+          canDelete,
         }));
-      }
+      },
     });
 
     return res.json(result);
@@ -590,10 +730,10 @@ router.get("/type/data", auth, async (req, res) => {
 
 router.post("/addtype", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store, loginas } = req.user;
 
     if (loginas == 0) {
@@ -630,11 +770,12 @@ router.post("/addtype", auth, async (req, res) => {
         `services_type,status,store_ID`,
         `${await mysql.escape(service_name)}, ${active}, ${storeid}`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (newservtype == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       req.flash("success", "New Services Type Added!");
@@ -650,10 +791,10 @@ router.post("/addtype", auth, async (req, res) => {
 
 router.get("/deletservicestype/:id", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store, loginas } = req.user;
 
     if (loginas == 0) {
@@ -676,9 +817,17 @@ router.get("/deletservicestype/:id", auth, async (req, res) => {
       //   "DELETE FROM tbl_services_type WHERE id=" + dataid + ""
       // );
 
- if(await DataDelete(`tbl_services_type`, `id = '${dataid}'`, req.hostname, req.protocol) == -1) {
-            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
-          }
+      if (
+        (await DataDelete(
+          `tbl_services_type`,
+          `id = '${dataid}'`,
+          req.hostname,
+          req.protocol,
+        )) == -1
+      ) {
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
+      }
 
       req.flash("success", "Services Type Deleted");
       res.redirect("back");
@@ -693,10 +842,10 @@ router.get("/deletservicestype/:id", auth, async (req, res) => {
 
 router.post("/updateservicestype/:id", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store, loginas } = req.user;
 
     if (loginas == 0) {
@@ -729,17 +878,17 @@ router.post("/updateservicestype/:id", auth, async (req, res) => {
       // );
 
       const updateServiceType = await DataUpdate(
-  "tbl_services_type",
-  `services_type = '${service_name}', status = ${active}`,
-  `id = ${dataid}`,
-  req.hostname,
-  req.protocol
-);
+        "tbl_services_type",
+        `services_type = '${service_name}', status = ${active}`,
+        `id = ${dataid}`,
+        req.hostname,
+        req.protocol,
+      );
 
-if (updateServiceType === -1) {
-  req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
-}
-
+      if (updateServiceType === -1) {
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
+      }
 
       req.flash("success", "Services Type Updated");
       res.redirect("back");
@@ -775,16 +924,16 @@ router.get("/typelist/:id", auth, async (req, res) => {
         const servicestypedata = await DataFind(
           "SELECT * FROM tbl_services_type WHERE status=0 AND store_ID=" +
             dataid +
-            " "
+            " ",
         );
         return res.status(200).json({ data: servicestypedata });
       } else {
         var storeID = await DataFind(
-          `SELECT * FROM tbl_admin WHERE  id= ${id}`
+          `SELECT * FROM tbl_admin WHERE  id= ${id}`,
         );
 
         const servicestypedata = await DataFind(
-          `SELECT * FROM tbl_services_type WHERE status=0 AND store_ID=${storeID[0].store_ID}`
+          `SELECT * FROM tbl_services_type WHERE status=0 AND store_ID=${storeID[0].store_ID}`,
         );
         return res.status(200).json({ data: servicestypedata });
       }
@@ -795,7 +944,7 @@ router.get("/typelist/:id", auth, async (req, res) => {
       const servicestypedata = await DataFind(
         "SELECT * FROM tbl_services_type WHERE status=0 AND store_ID=" +
           store +
-          ""
+          "",
       );
       res.status(200).json({ data: servicestypedata });
     } else {
@@ -826,7 +975,7 @@ router.get("/addon", auth, async (req, res) => {
     }
 
     const storeList = await DataFind(
-      "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0"
+      "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0",
     );
 
     const rolldetail = await DataFind(`
@@ -876,7 +1025,14 @@ router.get("/addon/data", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
     if (loginas == 0) {
-      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+      return res
+        .status(403)
+        .json({
+          draw: parseInt(req.query.draw) || 1,
+          recordsTotal: 0,
+          recordsFiltered: 0,
+          data: [],
+        });
     }
 
     const rolldetail = await DataFind(`
@@ -888,59 +1044,92 @@ router.get("/addon/data", auth, async (req, res) => {
 
     let scopeConditions = [];
     let isMaster = false;
-    if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && rolldetail[0].service && rolldetail[0].service.includes("read")) {
+    if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].rollType === "master" &&
+      rolldetail[0].service &&
+      rolldetail[0].service.includes("read")
+    ) {
       isMaster = true;
-    } else if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "store" && rolldetail[0].service && rolldetail[0].service.includes("read")) {
+    } else if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].rollType === "store" &&
+      rolldetail[0].service &&
+      rolldetail[0].service.includes("read")
+    ) {
       scopeConditions.push(`tbl_addons.store_ID = '${store}'`);
     } else {
-      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+      return res
+        .status(403)
+        .json({
+          draw: parseInt(req.query.draw) || 1,
+          recordsTotal: 0,
+          recordsFiltered: 0,
+          data: [],
+        });
     }
 
     const filterConditions = [];
     const statusParam = req.query.status_filter || req.query.status;
-    if (statusParam !== undefined && statusParam !== null && !["all", "ALL", ""].includes(String(statusParam).trim())) {
+    if (
+      statusParam !== undefined &&
+      statusParam !== null &&
+      !["all", "ALL", ""].includes(String(statusParam).trim())
+    ) {
       const cleanStatus = String(statusParam).trim() === "0" ? "0" : "1";
       filterConditions.push(`tbl_addons.status = '${cleanStatus}'`);
     }
 
     const storeParam = req.query.store_filter || req.query.store_id;
-    if (storeParam && isMaster && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+    if (
+      storeParam &&
+      isMaster &&
+      !["all", "ALL", "", "0"].includes(String(storeParam).trim())
+    ) {
       const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
       filterConditions.push(`tbl_addons.store_ID = '${cleanStore}'`);
     }
 
-    const canEdit = Boolean(accessdata && accessdata.roll && accessdata.roll.service && accessdata.roll.service.includes("edit"));
-    const canDelete = Boolean(accessdata && accessdata.roll && accessdata.roll.service && accessdata.roll.service.includes("delete"));
+    const canEdit = Boolean(
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.service &&
+      accessdata.roll.service.includes("edit"),
+    );
+    const canDelete = Boolean(
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.service &&
+      accessdata.roll.service.includes("delete"),
+    );
 
     const result = await paginateDataTable(req, {
       select: `tbl_addons.*, COALESCE(tbl_store.name, '') as store`,
       from: `tbl_addons LEFT JOIN tbl_store ON tbl_addons.store_ID = tbl_store.id`,
-      searchColumns: [
-        'tbl_addons.addon',
-        'tbl_addons.price',
-        'tbl_store.name'
-      ],
+      searchColumns: ["tbl_addons.addon", "tbl_addons.price", "tbl_store.name"],
       baseWhere: scopeConditions,
       filterWhere: filterConditions,
-      defaultOrder: 'tbl_addons.id DESC',
+      defaultOrder: "tbl_addons.id DESC",
       columnMap: {
-        0: 'tbl_addons.id',
-        1: 'tbl_addons.addon',
-        2: 'tbl_addons.price',
-        3: 'tbl_store.name',
-        4: 'tbl_addons.status'
+        0: "tbl_addons.id",
+        1: "tbl_addons.addon",
+        2: "tbl_addons.price",
+        3: "tbl_store.name",
+        4: "tbl_addons.status",
       },
       postProcess: async (rows) => {
         return rows.map((a) => ({
           id: a.id,
-          addon: a.addon || '',
+          addon: a.addon || "",
           price: parseFloat(a.price) || 0,
-          store: a.store || '',
+          store: a.store || "",
           status: parseInt(a.status) || 0,
           canEdit,
-          canDelete
+          canDelete,
         }));
-      }
+      },
     });
 
     return res.json(result);
@@ -952,10 +1141,10 @@ router.get("/addon/data", auth, async (req, res) => {
 
 router.post("/addaddon", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store, loginas } = req.user;
 
     if (loginas == 0) {
@@ -994,11 +1183,12 @@ router.post("/addaddon", auth, async (req, res) => {
         `addon,price,status,store_ID`,
         `'${addon_name}', ${addon_price}, ${active}, ${storeid}`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (newaddons == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       req.flash("success", "New ADDONS Added!");
@@ -1014,10 +1204,10 @@ router.post("/addaddon", auth, async (req, res) => {
 
 router.get("/deletaddon/:id", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store, loginas } = req.user;
 
     if (loginas == 0) {
@@ -1040,9 +1230,17 @@ router.get("/deletaddon/:id", auth, async (req, res) => {
       //   "DELETE FROM tbl_addons WHERE id=" + dataid + ""
       // );
 
-      if(await DataDelete(`tbl_addons`, `id = '${dataid}'`, req.hostname, req.protocol) == -1) {
-            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
-          }
+      if (
+        (await DataDelete(
+          `tbl_addons`,
+          `id = '${dataid}'`,
+          req.hostname,
+          req.protocol,
+        )) == -1
+      ) {
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
+      }
 
       req.flash("success", "Addons Deleted");
       res.redirect("back");
@@ -1057,10 +1255,10 @@ router.get("/deletaddon/:id", auth, async (req, res) => {
 
 router.post("/updateaddon/:id", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store, loginas } = req.user;
 
     if (loginas == 0) {
@@ -1093,19 +1291,18 @@ router.post("/updateaddon/:id", auth, async (req, res) => {
       //   " ";
       // const newaddons = await DataFind(qury);
 
-const newaddons = await DataUpdate(
-  "tbl_addons",
-  `addon = '${addon_name_update}', price = ${addon_price_update}, status = ${active_update}`,
-  `id = ${req.params.id}`,
-  req.hostname,
-  req.protocol
-);
+      const newaddons = await DataUpdate(
+        "tbl_addons",
+        `addon = '${addon_name_update}', price = ${addon_price_update}, status = ${active_update}`,
+        `id = ${req.params.id}`,
+        req.hostname,
+        req.protocol,
+      );
 
-if (newaddons === -1) {
-  req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
-}
-
-
+      if (newaddons === -1) {
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
+      }
 
       req.flash("success", "Addons Updated");
       res.redirect("back");
@@ -1166,11 +1363,11 @@ router.get("/demo_csv", auth, async (req, res) => {
 
     res.setHeader(
       "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     res.setHeader(
       "Content-Disposition",
-      "attachment; filename=" + "Service_list.csv"
+      "attachment; filename=" + "Service_list.csv",
     );
     return workbook.csv.write(res).then(function () {
       res.status(200).end;
@@ -1189,7 +1386,7 @@ router.post(
       const accessdata = await access(req.user);
       var filename = path.join(
         __dirname,
-        "../public/uploads/" + req.file.filename
+        "../public/uploads/" + req.file.filename,
       );
       console.log(req.file.filename);
 
@@ -1229,7 +1426,7 @@ router.post(
               console.log("data_split", data_split);
 
               const results = await DataFind(
-                `SELECT COUNT(*) AS count FROM tbl_services_type WHERE id IN (${data_split})`
+                `SELECT COUNT(*) AS count FROM tbl_services_type WHERE id IN (${data_split})`,
               );
               const count = results[0].count;
 
@@ -1242,11 +1439,15 @@ router.post(
                   `name, image, services_type_id, services_type_price, store_ID`,
                   `'${row.name}', '${row.image}', '${row.services_type_id}', '${row.services_type_price}', '${row.store_ID}'`,
                   req.hostname,
-                  req.protocol
+                  req.protocol,
                 );
 
                 if (data == -1) {
-                  req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+                  req.flash(
+                    "error",
+                    "Action failed, please check input and try again",
+                  );
+                  return res.redirect("back");
                 }
               }
 
@@ -1281,7 +1482,7 @@ router.post(
               console.log("data_split", data_split);
 
               const results = await DataFind(
-                `SELECT COUNT(*) AS count FROM tbl_services_type WHERE id IN (${data_split})`
+                `SELECT COUNT(*) AS count FROM tbl_services_type WHERE id IN (${data_split})`,
               );
               const count = results[0].count;
 
@@ -1294,11 +1495,15 @@ router.post(
                   `name, image, services_type_id, services_type_price, store_ID`,
                   `'${row.name}', '${row.image}', '${row.services_type_id}', '${row.services_type_price}', '${accessdata.topbardata.store_ID}'`,
                   req.hostname,
-                  req.protocol
+                  req.protocol,
                 );
 
                 if (data == -1) {
-                  req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+                  req.flash(
+                    "error",
+                    "Action failed, please check input and try again",
+                  );
+                  return res.redirect("back");
                 }
               }
 
@@ -1315,7 +1520,7 @@ router.post(
     } catch (error) {
       console.log(44444, error);
     }
-  }
+  },
 );
 
 module.exports = router;

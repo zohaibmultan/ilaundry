@@ -1172,9 +1172,29 @@ router.post(
           //     ""
           // );
 
+          let finalRollId = roll;
+          const existingStaffRoll = await DataFind(`SELECT id FROM tbl_staff_roll WHERE staff_id = '${adminid[0].admin_id}'`);
+          if (existingStaffRoll.length > 0) {
+            finalRollId = existingStaffRoll[0].id;
+          } else {
+            const RollFind = await DataFind(`SELECT * FROM tbl_roll WHERE id='${roll}'`);
+            if (RollFind.length > 0) {
+              const RollAdd = await DataInsert(
+                `tbl_staff_roll`,
+                `customers, orders, expense, service, reports, tools, mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id, is_staff`,
+                `'${RollFind[0].customers || "read,write,edit,delete"}', '${RollFind[0].orders || "read,write,edit,delete"}', '${RollFind[0].expense || "read,write,edit,delete"}', '${RollFind[0].service || "read,write,edit,delete"}', '${RollFind[0].reports || "read"}', '${RollFind[0].tools || "read"}', '${RollFind[0].mail || "read,edit"}', '${RollFind[0].master || "read,edit"}', '${RollFind[0].sms || "read,write,edit,delete"}', '${RollFind[0].staff || "read,write,edit,delete"}', '${RollFind[0].pos || "read,write,edit"}', '', '${RollFind[0].account || "read,write,edit,delete"}', '${RollFind[0].coupon || "read,write,edit,delete"}', '', '', '', '${RollFind[0].id}', '${adminid[0].admin_id}', '0'`,
+                req.hostname,
+                req.protocol
+              );
+              if (RollAdd && RollAdd != -1) {
+                finalRollId = RollAdd.insertId;
+              }
+            }
+          }
+
           const adminDataUpdate1 = await DataUpdate(
             "tbl_admin",
-            `store_ID=${dataid}, roll_id=${roll}, approved=1`,
+            `store_ID=${dataid}, roll_id=${finalRollId}, approved=1`,
             `id=${adminid[0].admin_id}`,
             req.hostname,
             req.protocol
@@ -1395,7 +1415,7 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
         `tbl_staff_roll`,
         `customers, orders, expense, service, reports, tools, mail,master, sms, staff, pos, rollaccess, account, coupon,
                                          branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id,is_staff`,
-        `'${RollFind[0].customer}', '${RollFind[0].orders}', '${RollFind[0].expense}', '${RollFind[0].service}', '${RollFind[0].reports}', '${RollFind[0].tools}', '${RollFind[0].mail}','${RollFind[0].master}', '${RollFind[0].sms}', '${RollFind[0].staff}', '${RollFind[0].pos}', '${RollFind[0].rollaccess}', '${RollFind[0].account}', '${RollFind[0].coupon}','${RollFind[0].branch_n_store}', '${RollFind[0].master_setting}', '${RollFind[0].Pay_Out}','${RollFind[0].id}','${newid}','0'`,
+        `'${RollFind[0].customers || RollFind[0].customer || "read,write,edit,delete"}', '${RollFind[0].orders}', '${RollFind[0].expense}', '${RollFind[0].service}', '${RollFind[0].reports}', '${RollFind[0].tools}', '${RollFind[0].mail}','${RollFind[0].master}', '${RollFind[0].sms}', '${RollFind[0].staff}', '${RollFind[0].pos}', '${RollFind[0].rollaccess}', '${RollFind[0].account}', '${RollFind[0].coupon || "read,write,edit,delete"}','${RollFind[0].branch_n_store}', '${RollFind[0].master_setting}', '${RollFind[0].Pay_Out}','${RollFind[0].id}','${newid}','0'`,
         req.hostname,
         req.protocol
       );

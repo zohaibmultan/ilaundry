@@ -15,13 +15,13 @@
             <div class="container-fluid" style="min-height: 100vh;">
                 <div class="row">
                     <div class="col-12">
-                        <div class="card ">
-                            <div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <h3 class="card-title mb-0">
+                        <div class="card border-0 shadow-sm rounded-3">
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h4 class="card-title mb-0 fw-bold">
                                     <%= language.Order_List %>
-                                </h3>
-                                <a href="/admin/pos" class="btn btn-rounded btn-primary btn-sm">
-                                    <i class="fa fa-plus color-info text-white me-2"></i>
+                                </h4>
+                                <a href="/admin/pos" class="btn btn-primary">
+                                    <i class="fa fa-plus me-2"></i>
                                     <%= language.Add_New_Orders %>
                                 </a>
                             </div>
@@ -31,7 +31,7 @@
                                 <input type="hiden" name="thousands_separator"
                                     value="<%= accessdata.thousands_separator %>">
                             </div>
-                            <div class="card-body">
+                            <div class="card-body p-4">
                                 <div class="row g-2 mb-3">
                                     <div class="<%= (login==='master' && typeof storeList !=='undefined' && storeList.length > 0) ? 'col-12 col-md-4 col-lg-3' : 'col-12 col-md-5 col-lg-4' %>">
                                         <div class="input-group">
@@ -219,10 +219,10 @@
 
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <%= language.Cancel %>
+                            <i class="fa fa-times me-2"></i><%= language.Cancel %>
                         </button>
                         <button type="submit" value="submit" class="btn btn-primary" id="add_order_payment_submit">
-                            <%= language.Save %>
+                            <i class="fa fa-save me-2"></i><%= language.Save %>
                         </button>
                     </div>
                     </form>
@@ -247,8 +247,8 @@
                         <!-- <svg id="barcode"></svg> -->
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-danger light" id="print_label" data-bs-dismiss="modal">
-                            <%= language.Print_Barcode %>
+                        <button type="button" class="btn btn-info" id="print_label" data-bs-dismiss="modal">
+                            <i class="fa fa-print me-2"></i><%= language.Print_Barcode %>
                         </button>
                     </div>
                 </div>
@@ -281,11 +281,11 @@
                                 %>
                         </p>
                         <div class="d-flex gap-2 justify-content-center">
-                            <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal">
-                                <%= language.Cancel || 'Cancel' %>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
                             </button>
-                            <a href="#" id="deleteOrderConfirmBtn" class="btn btn-danger px-4 py-2">
-                                <i class="fa fa-trash me-1"></i>
+                            <a href="#" id="deleteOrderConfirmBtn" class="btn btn-danger">
+                                <i class="fa fa-trash me-2"></i>
                                 <%= language.Delete || 'Yes, Delete' %>
                             </a>
                         </div>

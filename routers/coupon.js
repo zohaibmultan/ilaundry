@@ -42,6 +42,9 @@ router.get("/list", auth, async (req, res) => {
       res.render("coupon", {
         mlty,
         isadmin: true,
+        canAdd: rolldetail[0].coupon.includes("write"),
+        canEdit: rolldetail[0].coupon.includes("edit"),
+        canDelete: rolldetail[0].coupon.includes("delete"),
         storeList,
         couponList: [],
         accessdata,
@@ -58,6 +61,9 @@ router.get("/list", auth, async (req, res) => {
       res.render("coupon", {
         mlty: false,
         isadmin: false,
+        canAdd: rolldetail[0].coupon.includes("write"),
+        canEdit: rolldetail[0].coupon.includes("edit"),
+        canDelete: rolldetail[0].coupon.includes("delete"),
         storeList: storeList,
         couponList: [],
         accessdata,
@@ -92,8 +98,8 @@ router.get("/list/data", auth, async (req, res) => {
     }
 
     const isMaster = rolldetail[0].rollType === "master";
-    const canEdit = isMaster && rolldetail[0].coupon.includes("edit");
-    const canDelete = isMaster && rolldetail[0].coupon.includes("delete");
+    const canEdit = rolldetail[0].coupon.includes("edit");
+    const canDelete = rolldetail[0].coupon.includes("delete");
 
     const scopeConditions = [];
     if (!isMaster) {
@@ -203,11 +209,13 @@ router.post("/add", auth, async (req, res) => {
         coupon_discount_amount,
         storelist,
       } = req.body;
-      storelist
-        ? Array.isArray(storelist)
-          ? (storelist = storelist.join(","))
-          : storelist
-        : (storelist = 1);
+      if (rolldetail[0].rollType === "store") {
+        storelist = String(store);
+      } else {
+        storelist = storelist
+          ? (Array.isArray(storelist) ? storelist.join(",") : storelist)
+          : "1";
+      }
 
       const samecoupon = await DataFind(
         "SELECT * FROM tbl_coupon WHERE code = '" + coupon_code + "' "
@@ -268,9 +276,12 @@ router.get("/delete/:id", auth, async (req, res) => {
 
     if (rolldetail[0].coupon.includes("delete")) {
       var dataid = req.params.id;
-      // var qury = ` DELETE FROM  tbl_coupon WHERE id = ${dataid}`;
+      let deleteWhere = `id = '${dataid}'`;
+      if (rolldetail[0].rollType === "store") {
+        deleteWhere += ` AND FIND_IN_SET('${store}', store_list_id)`;
+      }
 
-    if(await DataDelete(`tbl_coupon`, `id = '${dataid}'`, req.hostname, req.protocol) == -1) {
+      if(await DataDelete(`tbl_coupon`, deleteWhere, req.hostname, req.protocol) == -1) {
             req.flash('error', "Failed to delete coupon, please try again");
             return res.redirect("back");
         }
@@ -322,21 +333,25 @@ router.post("/update/:id", auth, async (req, res) => {
         coupon_discount_amount_update,
         status,
       } = req.body;
-      storelist
-        ? Array.isArray(storelist)
-          ? (storelist = storelist.join(","))
-          : storelist
-        : (storelist = 1);
+      if (rolldetail[0].rollType === "store") {
+        storelist = String(store);
+      } else {
+        storelist = storelist
+          ? (Array.isArray(storelist) ? storelist.join(",") : storelist)
+          : "1";
+      }
       status ? (status = 0) : (status = 1);
 
-      
-
+      let updateWhere = `id=${dataid}`;
+      if (rolldetail[0].rollType === "store") {
+        updateWhere += ` AND FIND_IN_SET('${store}', store_list_id)`;
+      }
 
       const coupondata = await DataUpdate(
         `tbl_coupon`,
         `titel='${coupon_titel_update}',min_purchase='${coupon_purchase_update}',discount='${coupon_discount_amount_update}',start_date='${coupon_start_date_update}',end_date='${coupon_end_date_update}',
          store_list_id='${storelist}',coupon_type='${coupon_type_update}',limit_forsame_user='${coupon_limit_update}',status='${status}'`,
-        `id=${dataid}`,
+        updateWhere,
         req.hostname,
         req.protocol
       );

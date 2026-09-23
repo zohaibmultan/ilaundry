@@ -8,15 +8,17 @@ const countryCodes = require("country-codes-list");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
-var { DataDelete, DataUpdate, DataInsert, DataFind } = require("../middelwer/databaseQurey")
-
-
-
+var {
+  DataDelete,
+  DataUpdate,
+  DataInsert,
+  DataFind,
+} = require("../middelwer/databaseQurey");
 
 router.get("/", async (req, res) => {
   try {
     const masterstore = await DataFind(
-      "SELECT * FROM tbl_master_shop where id=1"
+      "SELECT * FROM tbl_master_shop where id=1",
     );
 
     let data = await DataFind("SELECT id FROM tbl_admin WHERE delet_flage=0");
@@ -28,12 +30,12 @@ router.get("/", async (req, res) => {
           `name,number,email,username,password,store_ID,roll_id,approved,is_staff`,
           `'admin','12344556','admin@mail.com','admin','$2b$10$oxlEhLqJE80Z5L/4EsSRp.09xT6qs.qPbY9RyGyePryrBiyftHgRe',' ','','active','0'`,
           req.hostname,
-          req.protocol
+          req.protocol,
         );
 
         if (newroll && newroll != -1) {
           const rollFind = await DataFind(
-            `SELECT * FROM tbl_roll WHERE rollType = 'master' `
+            `SELECT * FROM tbl_roll WHERE rollType = 'master' `,
           );
 
           if (rollFind && rollFind.length > 0) {
@@ -44,7 +46,7 @@ router.get("/", async (req, res) => {
               '${rollFind[0].master}', '${rollFind[0].sms}', '${rollFind[0].staff}', '${rollFind[0].pos}', '${rollFind[0].rollaccess}', '${rollFind[0].account}', '${rollFind[0].coupon}', 
               '${rollFind[0].branch_n_store}', '${rollFind[0].master_setting}', '${rollFind[0].Pay_Out}', '${rollFind[0].id}', '${newroll.insertId}', '0'`,
               req.hostname,
-              req.protocol
+              req.protocol,
             );
 
             if (RollAdd && RollAdd != -1) {
@@ -57,15 +59,18 @@ router.get("/", async (req, res) => {
           }
         }
       } catch (seedErr) {
-        console.warn("Auto-seeding default admin non-fatal error:", seedErr.message);
+        console.warn(
+          "Auto-seeding default admin non-fatal error:",
+          seedErr.message,
+        );
       }
     }
 
     let rollverify = await DataFind(`SELECT * FROM tbl_roll`);
 
     res.render("login", {
-      data: (masterstore && masterstore.length > 0) ? masterstore[0] : {},
-      rollverify: rollverify || []
+      data: masterstore && masterstore.length > 0 ? masterstore[0] : {},
+      rollverify: rollverify || [],
     });
   } catch (err) {
     console.error("Root / route error:", err);
@@ -77,15 +82,16 @@ router.get("/validate", async (req, res) => {
   return res.redirect("/");
 });
 
-
 // <<<<<<<<<<<<<<<<<<<< Forgot Password & Reset Password Routes >>>>>>>>>>>>>>>>>>>>
 router.get("/forgot-password", async (req, res) => {
   try {
-    const masterstore = await DataFind("SELECT * FROM tbl_master_shop WHERE id=1");
+    const masterstore = await DataFind(
+      "SELECT * FROM tbl_master_shop WHERE id=1",
+    );
     res.render("forgot_password", {
-      data: (masterstore && masterstore.length > 0) ? masterstore[0] : {},
+      data: masterstore && masterstore.length > 0 ? masterstore[0] : {},
       success: req.flash("success"),
-      error: req.flash("error")
+      error: req.flash("error"),
     });
   } catch (error) {
     console.log(error);
@@ -105,20 +111,23 @@ router.post("/forgot-password", async (req, res) => {
 
     // 1. Search in tbl_customer
     let user = await DataFind(
-      `SELECT id, username, email, name FROM tbl_customer WHERE (username='${cleanIdentifier}' OR email='${cleanIdentifier}') AND delet_flage=0`
+      `SELECT id, username, email, name FROM tbl_customer WHERE (username='${cleanIdentifier}' OR email='${cleanIdentifier}') AND delet_flage=0`,
     );
     let table = "tbl_customer";
 
     // 2. If not found in tbl_customer, search in tbl_admin
     if (user.length === 0) {
       user = await DataFind(
-        `SELECT id, username, email, name FROM tbl_admin WHERE (username='${cleanIdentifier}' OR email='${cleanIdentifier}') AND delet_flage=0`
+        `SELECT id, username, email, name FROM tbl_admin WHERE (username='${cleanIdentifier}' OR email='${cleanIdentifier}') AND delet_flage=0`,
       );
       table = "tbl_admin";
     }
 
     if (user.length === 0) {
-      req.flash("error", "No account found registered with that Username or Email.");
+      req.flash(
+        "error",
+        "No account found registered with that Username or Email.",
+      );
       return res.redirect("/forgot-password");
     }
 
@@ -126,7 +135,7 @@ router.post("/forgot-password", async (req, res) => {
     const token = crypto.randomBytes(32).toString("hex");
 
     await DataFind(
-      `UPDATE ${table} SET reset_token='${token}', reset_token_expires=DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id=${user[0].id}`
+      `UPDATE ${table} SET reset_token='${token}', reset_token_expires=DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id=${user[0].id}`,
     );
 
     const resetUrl = `${req.protocol}://${req.get("host")}/reset-password?token=${token}`;
@@ -174,16 +183,22 @@ router.post("/forgot-password", async (req, res) => {
         });
         emailSent = true;
       } catch (mailErr) {
-        console.log("Mail dispatch error (fallback will be shown):", mailErr.message);
+        console.log(
+          "Mail dispatch error (fallback will be shown):",
+          mailErr.message,
+        );
       }
     }
 
     if (emailSent) {
-      req.flash("success", `A password reset link has been dispatched to ${user[0].email}. Please check your inbox.`);
+      req.flash(
+        "success",
+        `A password reset link has been dispatched to ${user[0].email}. Please check your inbox.`,
+      );
     } else {
       req.flash(
         "success",
-        `Password reset link generated! <a href="/reset-password?token=${token}" class="fw-bold text-primary text-decoration-underline ms-1">Click here to set your new password &rarr;</a>`
+        `Password reset link generated! <a href="/reset-password?token=${token}" class="fw-bold text-primary text-decoration-underline ms-1">Click here to set your new password &rarr;</a>`,
       );
     }
 
@@ -205,24 +220,29 @@ router.get("/reset-password", async (req, res) => {
 
     const cleanToken = token.trim().replace(/'/g, "\\'");
     let user = await DataFind(
-      `SELECT id, username, email, name FROM tbl_customer WHERE reset_token='${cleanToken}' AND reset_token_expires > NOW() AND delet_flage=0`
+      `SELECT id, username, email, name FROM tbl_customer WHERE reset_token='${cleanToken}' AND reset_token_expires > NOW() AND delet_flage=0`,
     );
 
     if (user.length === 0) {
       user = await DataFind(
-        `SELECT id, username, email, name FROM tbl_admin WHERE reset_token='${cleanToken}' AND reset_token_expires > NOW() AND delet_flage=0`
+        `SELECT id, username, email, name FROM tbl_admin WHERE reset_token='${cleanToken}' AND reset_token_expires > NOW() AND delet_flage=0`,
       );
     }
 
     if (user.length === 0) {
-      req.flash("error", "This password reset link is invalid or has expired. Please request a new one.");
+      req.flash(
+        "error",
+        "This password reset link is invalid or has expired. Please request a new one.",
+      );
       return res.redirect("/forgot-password");
     }
 
-    const masterstore = await DataFind("SELECT * FROM tbl_master_shop WHERE id=1");
+    const masterstore = await DataFind(
+      "SELECT * FROM tbl_master_shop WHERE id=1",
+    );
 
     res.render("reset_password", {
-      data: (masterstore && masterstore.length > 0) ? masterstore[0] : {},
+      data: masterstore && masterstore.length > 0 ? masterstore[0] : {},
       token: cleanToken,
       user: user[0],
       success: req.flash("success"),
@@ -256,29 +276,35 @@ router.post("/reset-password", async (req, res) => {
     const cleanToken = token.trim().replace(/'/g, "\\'");
 
     let user = await DataFind(
-      `SELECT id FROM tbl_customer WHERE reset_token='${cleanToken}' AND reset_token_expires > NOW() AND delet_flage=0`
+      `SELECT id FROM tbl_customer WHERE reset_token='${cleanToken}' AND reset_token_expires > NOW() AND delet_flage=0`,
     );
     let table = "tbl_customer";
 
     if (user.length === 0) {
       user = await DataFind(
-        `SELECT id FROM tbl_admin WHERE reset_token='${cleanToken}' AND reset_token_expires > NOW() AND delet_flage=0`
+        `SELECT id FROM tbl_admin WHERE reset_token='${cleanToken}' AND reset_token_expires > NOW() AND delet_flage=0`,
       );
       table = "tbl_admin";
     }
 
     if (user.length === 0) {
-      req.flash("error", "Password reset session has expired or is invalid. Please submit a new request.");
+      req.flash(
+        "error",
+        "Password reset session has expired or is invalid. Please submit a new request.",
+      );
       return res.redirect("/forgot-password");
     }
 
     const hashedPassword = bcrypt.hashSync(password, 10);
 
     await DataFind(
-      `UPDATE ${table} SET password='${hashedPassword}', reset_token=NULL, reset_token_expires=NULL WHERE id=${user[0].id}`
+      `UPDATE ${table} SET password='${hashedPassword}', reset_token=NULL, reset_token_expires=NULL WHERE id=${user[0].id}`,
     );
 
-    req.flash("success", "Password updated successfully! You can now sign in with your new password.");
+    req.flash(
+      "success",
+      "Password updated successfully! You can now sign in with your new password.",
+    );
     return res.redirect("/");
   } catch (error) {
     console.log(error);
@@ -308,8 +334,12 @@ router.post("/login", async (req, res) => {
 
     let data = await DataFind(
       "SELECT * FROM tbl_customer WHERE username='" +
-      username +
-      "' OR email = '" + username + "' OR number = '" + username + "' AND delet_flage=0 AND approved=1"
+        username +
+        "' OR email = '" +
+        username +
+        "' OR number = '" +
+        username +
+        "' AND delet_flage=0 AND approved=1",
     );
     // console.log(111111, data);
 
@@ -317,8 +347,12 @@ router.post("/login", async (req, res) => {
       loginas = 1;
       data = await DataFind(
         "SELECT * FROM tbl_admin WHERE username='" +
-        username +
-        "' OR email = '" + username + "' OR number = '" + username + "'  AND delet_flage=0"
+          username +
+          "' OR email = '" +
+          username +
+          "' OR number = '" +
+          username +
+          "'  AND delet_flage=0",
       );
       console.log(data);
 
@@ -329,7 +363,7 @@ router.post("/login", async (req, res) => {
 
       if (data.length > 0) {
         rollFind = await DataFind(
-          `SELECT r.* FROM tbl_staff_roll sr JOIN tbl_roll AS r ON r.id = sr.main_roll_id WHERE sr.staff_id = '${data[0].id}' `
+          `SELECT r.* FROM tbl_staff_roll sr JOIN tbl_roll AS r ON r.id = sr.main_roll_id WHERE sr.staff_id = '${data[0].id}' `,
         );
 
         console.log("rollFind", rollFind);
@@ -337,9 +371,10 @@ router.post("/login", async (req, res) => {
         if (rollFind.length > 0 && rollFind[0].roll_status === "deactive") {
           req.flash(
             "error",
-            `${rollFind[0].roll.charAt(0).toUpperCase() +
-            rollFind[0].roll.slice(1)
-            } is deactive`
+            `${
+              rollFind[0].roll.charAt(0).toUpperCase() +
+              rollFind[0].roll.slice(1)
+            } is deactive`,
           );
           return res.redirect(req.get("Referrer") || "/");
         }
@@ -353,7 +388,6 @@ router.post("/login", async (req, res) => {
       console.log("isValidPass", isValidPass);
       console.log("password", password);
       console.log("data[0].password", data[0].password);
-
 
       if (!isValidPass) {
         req.flash("error", "Wrong Password!!!!");
@@ -372,7 +406,6 @@ router.post("/login", async (req, res) => {
     }
 
     if (data[0].password.length > 0) {
-
       let isValidPass = bcrypt.compareSync(password, data[0].password);
       console.log("isValidPass", isValidPass);
       console.log("password", password);
@@ -382,11 +415,10 @@ router.post("/login", async (req, res) => {
         req.flash("error", "Wrong Password!!!!");
         return res.redirect(req.get("Referrer") || "/");
       }
-
     }
     if (loginas == 0) {
       rollFind = await DataFind(
-        `SELECT * FROM  tbl_roll  WHERE id = ${data[0].main_roll_id}`
+        `SELECT * FROM  tbl_roll  WHERE id = ${data[0].main_roll_id}`,
       );
 
       console.log("rollFind", rollFind);
@@ -394,14 +426,15 @@ router.post("/login", async (req, res) => {
       if (rollFind.length > 0 && rollFind[0].roll_status === "deactive") {
         req.flash(
           "error",
-          `${rollFind[0].roll.charAt(0).toUpperCase() + rollFind[0].roll.slice(1)
-          } is deactive`
+          `${
+            rollFind[0].roll.charAt(0).toUpperCase() + rollFind[0].roll.slice(1)
+          } is deactive`,
         );
         return res.redirect(req.get("Referrer") || "/");
       }
       var token = await jwt.sign(
         { id: data[0].id, roll: 0, store: data[0].store_ID, loginas },
-        process.env.TOKEN_KEY
+        process.env.TOKEN_KEY,
       );
     } else {
       var token = await jwt.sign(
@@ -411,7 +444,7 @@ router.post("/login", async (req, res) => {
           store: data[0].store_ID,
           loginas,
         },
-        process.env.TOKEN_KEY
+        process.env.TOKEN_KEY,
       );
     }
 
@@ -450,9 +483,11 @@ router.post("/login", async (req, res) => {
 
 // customer register render router
 router.get("/register", async (req, res) => {
-  const data = await DataFind("SELECT type , customer_selection FROM tbl_master_shop");
+  const data = await DataFind(
+    "SELECT type , customer_selection FROM tbl_master_shop",
+  );
   const masterstore = await DataFind(
-    "SELECT * FROM tbl_master_shop where id=1"
+    "SELECT * FROM tbl_master_shop where id=1",
   );
 
   const Country_name = countryCodes.customList("countryCode", "{countryCode}");
@@ -460,24 +495,24 @@ router.get("/register", async (req, res) => {
 
   const myCountryCodesObject = countryCodes.customList(
     "countryCode",
-    "+{countryCallingCode}"
+    "+{countryCallingCode}",
   );
   const CountryCode = Object.values(myCountryCodesObject);
 
   if (data[0].type == 1) {
     const storeList = await DataFind(
-      "SELECT id,name FROM tbl_store WHERE status= 1"
+      "SELECT id,name FROM tbl_store WHERE status= 1",
     );
 
     if (storeList.length == 0) {
       req.flash("error", "Currently, no stores are available.");
       return res.redirect(req.get("Referrer") || "/");
     }
-    let multiy = ''
+    let multiy = "";
     if (data[0].customer_selection == 1) {
-      multiy = true
+      multiy = true;
     } else {
-      multiy = false
+      multiy = false;
     }
     console.log(multiy);
 
@@ -502,14 +537,14 @@ router.get("/register", async (req, res) => {
 // store register render router
 router.get("/shopregister", async (req, res) => {
   const masterstore = await DataFind(
-    "SELECT * FROM tbl_master_shop where id=1"
+    "SELECT * FROM tbl_master_shop where id=1",
   );
   const Country_name = countryCodes.customList("countryCode", "{countryCode}");
   const nameCode = Object.values(Country_name);
 
   const myCountryCodesObject = countryCodes.customList(
     "countryCode",
-    "+{countryCallingCode}"
+    "+{countryCallingCode}",
   );
   const CountryCode = Object.values(myCountryCodesObject);
   res.render("shop_self_register", {
@@ -533,7 +568,7 @@ router.post("/register", async (req, res) => {
       store,
     } = req.body;
     const check_number = await DataFind(
-      "SELECT * FROM tbl_customer WHERE number='" + number + "'"
+      "SELECT * FROM tbl_customer WHERE number='" + number + "'",
     );
     if (check_number.length > 0) {
       req.flash("error", "This Mobile Number Alredy Register!!!!");
@@ -541,7 +576,7 @@ router.post("/register", async (req, res) => {
     }
 
     const check_username = await DataFind(
-      "SELECT * FROM tbl_customer WHERE username='" + username + "'"
+      "SELECT * FROM tbl_customer WHERE username='" + username + "'",
     );
     if (check_username.length > 0) {
       req.flash("error", "This UserName Alredy Register!!!!");
@@ -549,7 +584,7 @@ router.post("/register", async (req, res) => {
     }
 
     const autoApproval = await DataFind(
-      "SELECT customer_autoapprove FROM tbl_master_shop where id=1"
+      "SELECT customer_autoapprove FROM tbl_master_shop where id=1",
     );
     if (autoApproval[0].customer_autoapprove == 1) {
       var approved = 1;
@@ -557,7 +592,9 @@ router.post("/register", async (req, res) => {
       var approved = 0;
     }
 
-    let customerId = await DataFind(`SELECT * FROM tbl_roll WHERE rollType='customer'`)
+    let customerId = await DataFind(
+      `SELECT * FROM tbl_roll WHERE rollType='customer'`,
+    );
 
     if (store) {
       // var qury =
@@ -588,14 +625,16 @@ router.post("/register", async (req, res) => {
         `name,number,email,address,taxnumber,username,password,main_roll_id,approved,store_ID`,
         `'${name}','${number}','${email}','${address}','${taxnumber}','${username}','${password}','${customerId[0].id}',${approved},'${store}'`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (customerInsert == -1) {
-        req.flash('error', "Registration failed, please check input and try again");
+        req.flash(
+          "error",
+          "Registration failed, please check input and try again",
+        );
         return res.redirect("back");
       }
-
     } else {
       // var qury =
       //   "INSERT INTO tbl_customer (name,number,email,address,taxnumber,username,password,main_roll_id,approved) VALUE ('" +
@@ -623,21 +662,22 @@ router.post("/register", async (req, res) => {
         `name,number,email,address,taxnumber,username,password,main_roll_id,approved`,
         `'${name}','${number}','${email}','${address}','${taxnumber}','${username}','${password}','${customerId[0].id}',${approved}`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (customerInsert == -1) {
-        req.flash('error', "Registration failed, please check input and try again");
+        req.flash(
+          "error",
+          "Registration failed, please check input and try again",
+        );
         return res.redirect("back");
       }
-
-
     }
 
     // const data = await DataFind(qury);
     req.flash(
       "success",
-      "Your information will be sent to the administration for approval.!"
+      "Your information will be sent to the administration for approval.!",
     );
     res.redirect("/");
   } catch (error) {
@@ -665,7 +705,7 @@ router.post("/shopregister", upload.single("logo"), async (req, res) => {
       address,
     } = req.body;
     const checkname = await DataFind(
-      "SELECT * FROM tbl_store WHERE name='" + name + "'"
+      "SELECT * FROM tbl_store WHERE name='" + name + "'",
     );
     if (checkname.length > 0) {
       req.flash("error", "This Store Name Alredy Register!!!!");
@@ -673,7 +713,7 @@ router.post("/shopregister", upload.single("logo"), async (req, res) => {
     }
 
     const checknumber = await DataFind(
-      "SELECT * FROM tbl_store WHERE mobile_number='" + number + "'"
+      "SELECT * FROM tbl_store WHERE mobile_number='" + number + "'",
     );
     if (checknumber.length > 0) {
       req.flash("error", "This Number Alredy Register!!!!");
@@ -681,124 +721,141 @@ router.post("/shopregister", upload.single("logo"), async (req, res) => {
     }
 
     const checkstore_email = await DataFind(
-      "SELECT * FROM tbl_store WHERE store_email='" + store_email + "'"
+      "SELECT * FROM tbl_store WHERE store_email='" + store_email + "'",
     );
     if (checkstore_email.length > 0) {
       req.flash("error", "This Email Alredy Register!!!!");
       return res.redirect(req.get("Referrer") || "/");
     }
 
-    var logo = req.file.filename;
+    var logo = req.file ? req.file.filename : "";
     const autoApproval = await DataFind(
-      "SELECT store_autoapprove,storeroll FROM tbl_master_shop where id=1"
+      "SELECT store_autoapprove,storeroll FROM tbl_master_shop where id=1",
     );
-    if (autoApproval[0].store_autoapprove == 1) {
-      var roll = autoApproval[0].storeroll;
-      var approved = 1;
-    } else {
-      var approved = 0;
-      var roll = 0;
+    const isAutoApproved =
+      autoApproval.length > 0 && autoApproval[0].store_autoapprove == 1;
+    const approvedStatus = isAutoApproved ? 1 : 0;
+
+    let targetRoll = null;
+    if (autoApproval.length > 0 && autoApproval[0].storeroll) {
+      const customRoll = await DataFind(
+        `SELECT * FROM tbl_roll WHERE id = '${autoApproval[0].storeroll}' AND delet_flage = 0`,
+      );
+      if (customRoll.length > 0 && customRoll[0].rollType === "store") {
+        targetRoll = customRoll[0];
+      }
     }
+    if (!targetRoll) {
+      const defaultStoreRoll = await DataFind(
+        `SELECT * FROM tbl_roll WHERE rollType = 'store' AND delet_flage = 0 ORDER BY id ASC LIMIT 1`,
+      );
+      if (defaultStoreRoll.length > 0) {
+        targetRoll = defaultStoreRoll[0];
+      }
+    }
+    const targetRollId = targetRoll ? targetRoll.id : 13;
 
-    // const admindata = await DataFind(
-    //   "INSERT INTO tbl_admin (name,number,email,username,password,roll_id) VALUE ('" +
-    //     name +
-    //     "','" +
-    //     number +
-    //     "','" +
-    //     store_email +
-    //     "','" +
-    //     username +
-    //     "','" +
-    //     password +
-    //     "'," +
-    //     roll +
-    //     ")"
-    // );
-
+    const salt = bcrypt.genSaltSync(10);
+    const hashpass = bcrypt.hashSync(password, salt);
 
     const admindata = await DataInsert(
       `tbl_admin`,
-      `name,number,email,username,password,roll_id`,
-      `'${name}','${number}','${store_email}','${username}','${password}',${roll}`,
+      `name,number,email,username,password,store_ID,roll_id,approved,is_staff`,
+      `'${name}','${number}','${store_email}','${username}','${hashpass}','',0,${approvedStatus},'0'`,
       req.hostname,
-      req.protocol
+      req.protocol,
     );
 
     if (admindata == -1) {
-      req.flash('error', "Failed to create shop admin, please check input and try again");
+      req.flash(
+        "error",
+        "Failed to create shop admin, please check input and try again",
+      );
       return res.redirect("back");
     }
 
-
     var newid = admindata.insertId;
-    /*const qury = `INSERT INTO tbl_store (name,logo,mobile_number,username,password,shop_commission,tax_percent,country,state,city,district,zipcode,store_email,store_tax_number,address,admin_id,status) 
-        VALUE ('${name}','${logo}','${number}','${username}','${password}',${0},${0},' ','${state}','${city}',' ',' ','${store_email}',
-        '${tax_number}',' ',${newid},'${approved}')`*/
-
-
-    // const qury = `INSERT INTO tbl_store (name,logo,mobile_number,username,password,shop_commission,tax_percent,country,state,city,district,zipcode,store_email,store_tax_number,address,admin_id,status,roll_id) 
-    //     VALUE ('${name}','${logo}','${number}','${username}','${password}',${0},${0},' ','${state}','${city}',' ',' ','${store_email}',
-    //     '${tax_number}',' ',${newid},'${approved}','${roll}')`;
-    // const storedata = await DataFind(qury);
 
     const storedata = await DataInsert(
       `tbl_store`,
       `name,logo,mobile_number,username,password,shop_commission,tax_percent,country,state,city,district,zipcode,store_email,store_tax_number,address,admin_id,status,roll_id`,
-      `'${name}','${logo}','${number}','${username}','${password}',0,0,' ','${state}','${city}',' ',' ','${store_email}','${tax_number}',' ',${newid},'${approved}','${roll}'`,
+      `'${name}','${logo}','${number}','${username}','${hashpass}',0,0,'${country || " "}','${state || " "}','${city || " "}','${district || " "}','${zip_code || " "}','${store_email}','${tax_number || " "}','${address || " "}',${newid},${approvedStatus},${targetRollId}`,
       req.hostname,
-      req.protocol
+      req.protocol,
     );
 
     if (storedata == -1) {
-      req.flash('error', "Failed to create store record, please check input and try again");
+      req.flash(
+        "error",
+        "Failed to create store record, please check input and try again",
+      );
       return res.redirect("back");
     }
 
+    // Create staff_roll record for complete store management permissions
+    const customersPerm = targetRoll?.customers || "read,write,edit,delete";
+    const ordersPerm = targetRoll?.orders || "read,write,edit,delete";
+    const expensePerm = targetRoll?.expense || "read,write,edit,delete";
+    const servicePerm = targetRoll?.service || "read,write,edit,delete";
+    const reportsPerm = targetRoll?.reports || "read";
+    const toolsPerm = targetRoll?.tools || "read";
+    const mailPerm = targetRoll?.mail || "read,edit";
+    const masterPerm = targetRoll?.master || "read,edit";
+    const smsPerm = targetRoll?.sms || "read,write,edit,delete";
+    const staffPerm = targetRoll?.staff || "read,write,edit,delete";
+    const posPerm = targetRoll?.pos || "read,write,edit";
+    const accountPerm = targetRoll?.account || "read,write,edit,delete";
+    const couponPerm = "read,write,edit,delete";
 
-
-
-    const admndata = await DataFind(
-      "UPDATE tbl_admin SET store_ID=" +
-      storedata.insertId +
-      " ,roll_id=" +
-      roll +
-      ",approved= 1 WHERE id=" +
-      newid +
-      ""
+    const staffRollInsert = await DataInsert(
+      `tbl_staff_roll`,
+      `customers, orders, expense, service, reports, tools, mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id, is_staff`,
+      `'${customersPerm}', '${ordersPerm}', '${expensePerm}', '${servicePerm}', '${reportsPerm}', '${toolsPerm}', '${mailPerm}', '${masterPerm}', '${smsPerm}', '${staffPerm}', '${posPerm}', '', '${accountPerm}', '${couponPerm}', '', '', '', '${targetRollId}', '${newid}', '0'`,
+      req.hostname,
+      req.protocol,
     );
 
-    const customer_data = await DataFind(
-      `SELECT * FROM tbl_store WHERE name = '${name}'`
+    const staffRollId =
+      staffRollInsert && staffRollInsert != -1
+        ? staffRollInsert.insertId
+        : targetRollId;
+
+    await DataUpdate(
+      "tbl_admin",
+      `store_ID=${storedata.insertId}, roll_id=${staffRollId}, approved=${approvedStatus}`,
+      `id=${newid}`,
+      req.hostname,
+      req.protocol,
     );
 
-    console.log("customer_data", customer_data);
-
-    // await DataFind(
-    //   `INSERT INTO tbl_customer (name, store_ID, reffstore, approved, delet_flage) VALUE ('Walk in customer', '${customer_data[0].id}', '1', '1', '0')`
-    // );
-
-    const walkInInsert = await DataInsert(
+    // Create Walk-in customer for the new store
+    await DataInsert(
       `tbl_customer`,
       `name,store_ID,reffstore,approved,delet_flage`,
-      `'Walk in customer','${customer_data[0].id}','1','1','0'`,
+      `'Walk in customer','${storedata.insertId}','1','1','0'`,
       req.hostname,
-      req.protocol
+      req.protocol,
     );
 
-    if (walkInInsert == -1) {
-      req.flash('error', "Failed to create walk-in customer, please check input and try again");
-      return res.redirect("back");
+    if (isAutoApproved) {
+      req.flash(
+        "success",
+        "Store registration successful! You can now sign in with your credentials.",
+      );
+    } else {
+      req.flash(
+        "success",
+        "Your store registration has been received and will be sent to the administration for approval!",
+      );
     }
-
-
-    req.flash(
-      "success",
-      "Your information will be sent to the administration for approval.!"
-    );
     res.redirect("/");
   } catch (error) {
     console.log(error);
+    req.flash(
+      "error",
+      "An error occurred during registration. Please try again.",
+    );
+    res.redirect("back");
   }
 });
 
@@ -824,23 +881,42 @@ router.get("/index", auth, async (req, res) => {
       return res.redirect("/");
     }
 
-    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    const adminData = await DataFind(
+      `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
+    );
+    const userStoreId =
+      adminData.length > 0 &&
+      adminData[0].store_ID &&
+      String(adminData[0].store_ID).trim() !== "" &&
+      String(adminData[0].store_ID).trim() !== "0"
+        ? String(adminData[0].store_ID).trim()
+        : store && String(store).trim() !== "" && String(store).trim() !== "0"
+          ? String(store).trim()
+          : null;
+
     const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
-    const staffStoreId = isStaff ? (adminData[0].store_ID || store) : null;
-    let staffStoreName = "";
-    if (isStaff && staffStoreId) {
-      const sName = await DataFind(`SELECT name FROM tbl_store WHERE id = '${staffStoreId}'`);
-      if (sName.length > 0) staffStoreName = sName[0].name;
+    const isStoreRole =
+      rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "store";
+    const isStoreScoped =
+      Boolean(userStoreId) && (isStaff || isStoreRole || Boolean(userStoreId));
+    const activeStoreId = isStoreScoped ? userStoreId : null;
+
+    let storeName = "";
+    if (activeStoreId) {
+      const sName = await DataFind(
+        `SELECT name FROM tbl_store WHERE id = '${activeStoreId}'`,
+      );
+      if (sName.length > 0) storeName = sName[0].name;
     }
 
-    if (isStaff) {
-      // Staff view: strictly scoped to assigned store
-      const staffStats = await DataFind(`
+    if (isStoreScoped && activeStoreId) {
+      // Store view: strictly scoped to assigned store (both store user and staff)
+      const storeStats = await DataFind(`
         SELECT 
-          (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE store_id = '${staffStoreId}' AND order_status != '6') AS tottalsales,
-          (SELECT COUNT(*) FROM tbl_order WHERE store_id = '${staffStoreId}' AND order_status != '6') AS totalorder,
-          (SELECT COUNT(*) FROM tbl_services WHERE store_ID = '${staffStoreId}') AS totalservices,
-          (SELECT COUNT(*) FROM tbl_customer WHERE store_id = '${staffStoreId}' AND delet_flage != '1') AS totalcustomer
+          (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE store_id = '${activeStoreId}' AND order_status != '6') AS tottalsales,
+          (SELECT COUNT(*) FROM tbl_order WHERE store_id = '${activeStoreId}' AND order_status != '6') AS totalorder,
+          (SELECT COUNT(*) FROM tbl_services WHERE store_ID = '${activeStoreId}') AS totalservices,
+          (SELECT COUNT(*) FROM tbl_customer WHERE store_ID = '${activeStoreId}' AND approved = '1' AND delet_flage != '1' AND name != 'Walk in Customer') AS totalcustomer
       `);
 
       const recentOrder = await DataFind(`
@@ -849,7 +925,7 @@ router.get("/index", auth, async (req, res) => {
         JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id  
         JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
         JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
-        WHERE tbl_order.store_id = '${staffStoreId}'
+        WHERE tbl_order.store_id = '${activeStoreId}'
         ORDER BY tbl_order.id DESC 
         LIMIT 10
       `);
@@ -857,7 +933,7 @@ router.get("/index", auth, async (req, res) => {
       const chartOrders = await DataFind(`
         SELECT id, order_date, gross_total 
         FROM tbl_order 
-        WHERE store_id = '${staffStoreId}' AND YEAR(order_date) = YEAR(CURDATE()) AND order_status != '6'
+        WHERE store_id = '${activeStoreId}' AND YEAR(order_date) = YEAR(CURDATE()) AND order_status != '6'
       `);
 
       let orderfunction = await groupOrdersByYearAndMonth(chartOrders);
@@ -866,21 +942,28 @@ router.get("/index", auth, async (req, res) => {
 
       return res.render("index", {
         accessdata,
-        data: staffStats[0] || { tottalsales: 0, totalorder: 0, totalservices: 0, totalcustomer: 0 },
+        data: storeStats[0] || {
+          tottalsales: 0,
+          totalorder: 0,
+          totalservices: 0,
+          totalcustomer: 0,
+        },
         recentOrder,
         roll: rolldetail[0],
         language: req.language_data,
         language_name: req.language_name,
         countorder,
         countsales,
-        isStaff: true,
-        staffStoreId,
-        staffStoreName,
+        isStoreScoped: true,
+        isStaff,
+        staffStoreId: activeStoreId,
+        staffStoreName: storeName,
+        storeName,
         storeStatsList: [],
-        storeList: []
+        storeList: [],
       });
     } else {
-      // Admin view: overall totals across all stores + per-store stats + top 10 orders across all stores with store name
+      // Super Admin view: overall totals across all stores + per-store stats + top 10 orders across all stores with store name
       const overallStats = await DataFind(`
         SELECT 
           (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE order_status != '6') AS tottalsales,
@@ -889,7 +972,9 @@ router.get("/index", auth, async (req, res) => {
           (SELECT COUNT(*) FROM tbl_customer WHERE delet_flage != '1') AS totalcustomer
       `);
 
-      const storeList = await DataFind("SELECT id, name FROM tbl_store WHERE status = 1 AND delete_flage = 0 ORDER BY id ASC");
+      const storeList = await DataFind(
+        "SELECT id, name FROM tbl_store WHERE status = 1 AND delete_flage = 0 ORDER BY id ASC",
+      );
 
       const storeStatsList = await DataFind(`
         SELECT 
@@ -898,7 +983,7 @@ router.get("/index", auth, async (req, res) => {
           COALESCE(SUM(CASE WHEN o.order_status != '6' THEN o.gross_total ELSE 0 END), 0) AS tottalsales,
           COUNT(DISTINCT CASE WHEN o.order_status != '6' THEN o.id ELSE NULL END) AS totalorder,
           (SELECT COUNT(*) FROM tbl_services WHERE store_ID = s.id) AS totalservices,
-          (SELECT COUNT(*) FROM tbl_customer WHERE store_id = s.id AND delet_flage != '1') AS totalcustomer
+          (SELECT COUNT(*) FROM tbl_customer WHERE (store_ID = s.id OR reffstore = s.id) AND delet_flage != '1') AS totalcustomer
         FROM tbl_store s
         LEFT JOIN tbl_order o ON s.id = o.store_id
         WHERE s.status = 1 AND s.delete_flage = 0
@@ -928,18 +1013,25 @@ router.get("/index", auth, async (req, res) => {
 
       return res.render("index", {
         accessdata,
-        data: overallStats[0] || { tottalsales: 0, totalorder: 0, totalservices: 0, totalcustomer: 0 },
+        data: overallStats[0] || {
+          tottalsales: 0,
+          totalorder: 0,
+          totalservices: 0,
+          totalcustomer: 0,
+        },
         recentOrder,
         roll: rolldetail[0],
         language: req.language_data,
         language_name: req.language_name,
         countorder,
         countsales,
+        isStoreScoped: false,
         isStaff: false,
         staffStoreId: null,
         staffStoreName: "",
+        storeName: "",
         storeStatsList,
-        storeList
+        storeList,
       });
     }
   } catch (err) {
@@ -952,14 +1044,40 @@ router.get("/index", auth, async (req, res) => {
 router.get("/api/dashboard-stats", auth, async (req, res) => {
   try {
     const { id, roll, store } = req.user;
-    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
-    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
-    const staffStoreId = isStaff ? (adminData[0].store_ID || store) : null;
+    const adminData = await DataFind(
+      `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
+    );
+    const userStoreId =
+      adminData.length > 0 &&
+      adminData[0].store_ID &&
+      String(adminData[0].store_ID).trim() !== "" &&
+      String(adminData[0].store_ID).trim() !== "0"
+        ? String(adminData[0].store_ID).trim()
+        : store && String(store).trim() !== "" && String(store).trim() !== "0"
+          ? String(store).trim()
+          : null;
 
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+
+    let isStoreRole = false;
+    if (roll) {
+      const rolldetail = await DataFind(`
+        SELECT r.rollType 
+        FROM tbl_staff_roll sr
+        JOIN tbl_roll r ON sr.main_roll_id = r.id
+        WHERE sr.id = ${roll}
+      `);
+      if (rolldetail.length > 0 && rolldetail[0].rollType === "store") {
+        isStoreRole = true;
+      }
+    }
+
+    const isStoreScoped =
+      Boolean(userStoreId) && (isStaff || isStoreRole || Boolean(userStoreId));
     let targetStore = req.query.store_id;
 
-    if (isStaff) {
-      targetStore = staffStoreId;
+    if (isStoreScoped) {
+      targetStore = userStoreId;
     }
 
     let statsQuery;
@@ -969,7 +1087,7 @@ router.get("/api/dashboard-stats", auth, async (req, res) => {
           (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE store_id = '${targetStore}' AND order_status != '6') AS tottalsales,
           (SELECT COUNT(*) FROM tbl_order WHERE store_id = '${targetStore}' AND order_status != '6') AS totalorder,
           (SELECT COUNT(*) FROM tbl_services WHERE store_ID = '${targetStore}') AS totalservices,
-          (SELECT COUNT(*) FROM tbl_customer WHERE store_id = '${targetStore}' AND delet_flage != '1') AS totalcustomer
+          (SELECT COUNT(*) FROM tbl_customer WHERE (store_ID = '${targetStore}' OR reffstore = '${targetStore}') AND delet_flage != '1') AS totalcustomer
       `;
     } else {
       statsQuery = `
@@ -982,10 +1100,13 @@ router.get("/api/dashboard-stats", auth, async (req, res) => {
     }
 
     const totalsele = await DataFind(statsQuery);
-    const stats = totalsele && totalsele[0] ? totalsele[0] : { tottalsales: 0, totalorder: 0, totalservices: 0, totalcustomer: 0 };
+    const stats =
+      totalsele && totalsele[0]
+        ? totalsele[0]
+        : { tottalsales: 0, totalorder: 0, totalservices: 0, totalcustomer: 0 };
 
     let storeStatsList = [];
-    if (!isStaff) {
+    if (!isStoreScoped) {
       storeStatsList = await DataFind(`
         SELECT 
           s.id AS store_id,
@@ -993,7 +1114,7 @@ router.get("/api/dashboard-stats", auth, async (req, res) => {
           COALESCE(SUM(CASE WHEN o.order_status != '6' THEN o.gross_total ELSE 0 END), 0) AS tottalsales,
           COUNT(DISTINCT CASE WHEN o.order_status != '6' THEN o.id ELSE NULL END) AS totalorder,
           (SELECT COUNT(*) FROM tbl_services WHERE store_ID = s.id) AS totalservices,
-          (SELECT COUNT(*) FROM tbl_customer WHERE store_id = s.id AND delet_flage != '1') AS totalcustomer
+          (SELECT COUNT(*) FROM tbl_customer WHERE (store_ID = s.id OR reffstore = s.id) AND delet_flage != '1') AS totalcustomer
         FROM tbl_store s
         LEFT JOIN tbl_order o ON s.id = o.store_id
         WHERE s.status = 1 AND s.delete_flage = 0
@@ -1004,15 +1125,16 @@ router.get("/api/dashboard-stats", auth, async (req, res) => {
 
     return res.json({
       success: true,
+      isStoreScoped,
       isStaff,
-      targetStore: targetStore || 'all',
+      targetStore: targetStore || "all",
       data: {
         tottalsales: Number(stats.tottalsales || 0),
         totalorder: Number(stats.totalorder || 0),
         totalservices: Number(stats.totalservices || 0),
-        totalcustomer: Number(stats.totalcustomer || 0)
+        totalcustomer: Number(stats.totalcustomer || 0),
       },
-      storeStatsList
+      storeStatsList,
     });
   } catch (err) {
     console.error("Error in /api/dashboard-stats:", err);
@@ -1137,8 +1259,8 @@ router.get("/profile", auth, async (req, res) => {
 
 router.post("/updatecustompro", auth, async (req, res) => {
   try {
-    if (process.env.DISABLE_DB_WRITE === 'true') {
-      req.flash('error', 'For demo purpose we disabled crud operations!!');
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/");
     }
     const { id, roll, store, loginas } = req.user;
@@ -1146,10 +1268,10 @@ router.post("/updatecustompro", auth, async (req, res) => {
 
     const check_number = await DataFind(
       "SELECT * FROM tbl_customer WHERE number='" +
-      number +
-      "' AND id !=" +
-      id +
-      ""
+        number +
+        "' AND id !=" +
+        id +
+        "",
     );
     if (check_number.length > 0) {
       req.flash("error", "This Mobile Number Alredy Register!!!!");
@@ -1158,41 +1280,40 @@ router.post("/updatecustompro", auth, async (req, res) => {
 
     const check_username = await DataFind(
       "SELECT * FROM tbl_customer WHERE username='" +
-      username +
-      "' AND id !=" +
-      id +
-      ""
+        username +
+        "' AND id !=" +
+        id +
+        "",
     );
     if (check_username.length > 0) {
       req.flash("error", "This UserName Alredy Register!!!!");
       return res.redirect(req.get("Referrer") || "/");
     }
     let OldData = await DataFind(`SELECT * FROM tbl_customer WHERE id=${id}`);
-    let haspass = ''
+    let haspass = "";
 
     if (password.length > 0) {
       const salt = bcrypt.genSaltSync(10);
-      haspass = bcrypt.hashSync(password, salt)
+      haspass = bcrypt.hashSync(password, salt);
     } else {
-      haspass = OldData[0].password
+      haspass = OldData[0].password;
     }
 
-
-    // await DataFind(`UPDATE tbl_customer SET name='${name}',number='${number}',email='${email}',username='${username}',password='${haspass}' 
+    // await DataFind(`UPDATE tbl_customer SET name='${name}',number='${number}',email='${email}',username='${username}',password='${haspass}'
     //     WHERE id=${id}`);
 
     const data = await DataUpdate(
       `tbl_customer`,
       `name='${name}',number='${number}',email='${email}',username='${username}',password='${haspass}'`,
       `id=${id}`,
-      req.hostname, req.protocol);
-
+      req.hostname,
+      req.protocol,
+    );
 
     if (data == -1) {
       req.flash("error", "Action failed, please check input and try again");
       return res.redirect("back");
     }
-
 
     res.redirect("back");
   } catch (error) {
@@ -1202,8 +1323,8 @@ router.post("/updatecustompro", auth, async (req, res) => {
 
 router.post("/updatestaff", auth, upload.single("image"), async (req, res) => {
   try {
-    if (process.env.DISABLE_DB_WRITE === 'true') {
-      req.flash('error', 'For demo purpose we disabled crud operations!!');
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/");
     }
     const { id, roll, store, loginas } = req.user;
@@ -1211,10 +1332,10 @@ router.post("/updatestaff", auth, upload.single("image"), async (req, res) => {
 
     const checkname = await DataFind(
       "SELECT * FROM tbl_admin WHERE username='" +
-      username +
-      "' AND id !=" +
-      id +
-      ""
+        username +
+        "' AND id !=" +
+        id +
+        "",
     );
     if (checkname.length > 0) {
       req.flash("error", "This User Name Alredy Register!!!!");
@@ -1223,10 +1344,10 @@ router.post("/updatestaff", auth, upload.single("image"), async (req, res) => {
 
     const checknumber = await DataFind(
       "SELECT * FROM tbl_admin WHERE number='" +
-      number +
-      "' AND id !=" +
-      id +
-      ""
+        number +
+        "' AND id !=" +
+        id +
+        "",
     );
 
     if (checknumber.length > 0) {
@@ -1235,7 +1356,7 @@ router.post("/updatestaff", auth, upload.single("image"), async (req, res) => {
     }
 
     const checkstore_email = await DataFind(
-      "SELECT * FROM tbl_admin WHERE email='" + email + "' AND id !=" + id + ""
+      "SELECT * FROM tbl_admin WHERE email='" + email + "' AND id !=" + id + "",
     );
     if (checkstore_email.length > 0) {
       req.flash("error", "This Email Alredy Register!!!!");
@@ -1243,46 +1364,48 @@ router.post("/updatestaff", auth, upload.single("image"), async (req, res) => {
     }
 
     let OldData = await DataFind(`SELECT * FROM tbl_admin WHERE id='${id}'`);
-    let hashpass = ''
+    let hashpass = "";
 
     if (password.length > 0) {
       const salt = bcrypt.genSaltSync(10);
-      hashpass = bcrypt.hashSync(password, salt)
+      hashpass = bcrypt.hashSync(password, salt);
     } else {
-      hashpass = OldData[0].password
+      hashpass = OldData[0].password;
     }
 
-
     if (req.file) {
-
-
       // await DataFind(`UPDATE tbl_admin SET name='${name}',number='${number}',email='${email}',username='${username}',
       //       password='${hashpass}',img='${req.file.filename}' WHERE id='${id}'`);
 
-
-      const data = await DataUpdate(`tbl_admin`, `name='${name}',number='${number}',email='${email}',username='${username}', password='${hashpass}',img='${req.file.filename}'`,
-        `id=${id}`, req.hostname, req.protocol);
+      const data = await DataUpdate(
+        `tbl_admin`,
+        `name='${name}',number='${number}',email='${email}',username='${username}', password='${hashpass}',img='${req.file.filename}'`,
+        `id=${id}`,
+        req.hostname,
+        req.protocol,
+      );
 
       if (data == -1) {
         req.flash("error", "Action failed, please check input and try again");
         return res.redirect("back");
       }
-
     } else {
-
       // await DataFind(`UPDATE tbl_admin SET name='${name}',number='${number}',email='${email}',username='${username}',
       //       password='${hashpass}' WHERE id='${id}'`);
 
-
-      const data = await DataUpdate(`tbl_admin`, `name='${name}',number='${number}',email='${email}',username='${username}',
+      const data = await DataUpdate(
+        `tbl_admin`,
+        `name='${name}',number='${number}',email='${email}',username='${username}',
             password='${hashpass}'`,
-        `id=${id}`, req.hostname, req.protocol);
+        `id=${id}`,
+        req.hostname,
+        req.protocol,
+      );
 
       if (data == -1) {
         req.flash("error", "Action failed, please check input and try again");
         return res.redirect("back");
       }
-
     }
 
     req.flash("success", "Profile Detail Update!!!!");

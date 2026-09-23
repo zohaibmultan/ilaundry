@@ -41,11 +41,11 @@
                     </div>
 
                     <div class="col-12">
-                        <div class="card ">
-                            <div class="card-header">
-                                <h3 class="card-title">
+                        <div class="card border-0 shadow-sm rounded-3">
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h4 class="card-title mb-0 fw-bold">
                                     <%= language.Transection_List %>
-                                </h3>
+                                </h4>
                             </div>
                             <div class="d-none">
                                 <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
@@ -53,7 +53,7 @@
                                 <input type="hiden" name="thousands_separator"
                                     value="<%= accessdata.thousands_separator %>">
                             </div>
-                            <div class="card-body">
+                            <div class="card-body p-4">
                                 <form id="cashform" action="/account/payouttransefilter" method="post">
                                     <div class="row g-2 mb-2">
                                         <div class="col-12 col-md-4">
@@ -94,17 +94,17 @@
                                     </div>
 
                                     <div class="d-flex justify-content-center flex-wrap gap-2 mt-2">
-                                         <button class="btn btn-sm btn-primary px-4 text-nowrap" id="cashclick" type="submit">
-                                            <%= language.Filter %>
+                                         <button class="btn btn-primary px-4 text-nowrap" id="cashclick" type="submit">
+                                            <i class="fa fa-filter me-2"></i><%= language.Filter %>
                                          </button>
 
                                          <a href="/account/payoutransections/<%= storeid %>"
-                                            class="btn btn-sm btn-danger px-4 text-nowrap">
-                                            <%= language.Reset %>
+                                            class="btn btn-secondary px-4 text-nowrap">
+                                            <i class="fa fa-undo me-2"></i><%= language.Reset %>
                                          </a>
 
-                                         <button class="btn btn-sm btn-success px-4 text-nowrap" id="cashdownloadbtn" type="button">
-                                            <%= language.Download %>
+                                         <button class="btn btn-info px-4 text-nowrap" id="cashdownloadbtn" type="button">
+                                            <i class="fa fa-download me-2"></i><%= language.Download %>
                                          </button>
                                     </div>
                                    

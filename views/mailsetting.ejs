@@ -17,14 +17,13 @@
             <div class="container-fluid" style="min-height: 100vh;">
                 <div class="row">
                     <div class="col-12">
-                        <div class="card ">
-                            <div class="card-header">
-                                <h3 class="card-title">
+                        <div class="card border-0 shadow-sm rounded-3">
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h4 class="card-title mb-0 fw-bold">
                                     <%= language.Email_Setting %>
-                                </h3>
-
+                                </h4>
                             </div>
-                            <div class="card-body ">
+                            <div class="card-body p-4">
                                 <div class="p-5">
                                     <% if(data.length> 0){%>
                                         <% data.forEach(function(data){ %>
@@ -101,7 +100,7 @@
 
                                                     <hr>
                                                     <button type="submit" class="btn btn-primary mt-5 col-6 <%= accessdata.roll.mail.includes('edit') ?'':'d-none' %>">
-                                                        <%= language.Save_Data %>
+                                                        <i class="fa fa-save me-2"></i><%= language.Save_Data %>
                                                     </button>
                                                 </div>
                                             </form>
@@ -181,7 +180,7 @@
                                                             <hr>
 
                                                             <button type="submit" class="btn btn-primary mt-5 col-6 <%= accessdata.roll.mail.includes('edit') ?'':'d-none' %>">
-                                                                <%= language.Save_Data %>
+                                                                <i class="fa fa-save me-2"></i><%= language.Save_Data %>
                                                             </button>   
                                                         </div>
                                                     </form>

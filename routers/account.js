@@ -30,169 +30,105 @@ router.get("/list", auth, async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-    console.log("accessdata", accessdata);
 
-    if (accessdata.mutibranch !== false && rolldetail[0].rollType == "master") {
-      var comi = await DataFind(
-        `SELECT SUM(master_comission) as amount FROM tbl_order WHERE commission_status ='1'`
-      );
-      var paidcomi = await DataFind(
-        `SELECT SUM(amount) as amount FROM tbl_commision`
-      );
-      var comission;
-      var paidcomission;
+    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
+    const isMaster = rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && !isStaff && (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === '0');
 
-      comi.length > 0
-        ? (comission = Number(comi[0].amount).toFixed(2))
-        : (comission = 0);
-      paidcomi.length > 0
-        ? (paidcomission = Number(paidcomi[0].amount).toFixed(2))
-        : (paidcomission = 0);
-      var due = parseFloat(comission) - parseFloat(paidcomission);
-      var qury = `SELECT tbl_account.*, sum('credit_amount') as credit, sum('debit_amount') as debit FROM tbl_account JOIN tbl_transections on tbl_account.id=tbl_transections.account_id WHERE tbl_account.store_ID= "" AND delet_flage=0 GROUP BY tbl_account.id`;
-      const storeList = await DataFind(qury);
-      res.render("account_list", {
-        account_list: storeList,
-        accessdata,
-        comission,
-        paidcomission,
-        due,
-        toaccount: [],
-        fromaccount: [],
-        language: req.language_data,
-        language_name: req.language_name,
-      });
-    } else if (
-      rolldetail[0].rollType === "store" &&
-      rolldetail[0].account.includes("read")
-    ) {
-      var findID = await DataFind(`SELECT * FROM tbl_admin WHERE id='${id}'`);
-      var comi = await DataFind(
-        "SELECT SUM(master_comission) as amount FROM tbl_order WHERE store_id=" +
-          findID[0].store_ID +
-          " AND commission_status='1' "
-      );
-      var paidcomi = await DataFind(
-        "SELECT SUM(amount) as amount FROM tbl_commision WHERE store_id=" +
-          findID[0].store_ID +
-          ""
-      );
-      console.log("findID", findID);
-      console.log("comi", comi);
-      console.log("paidcomi", paidcomi);
+    // Permissions:
+    // Store owner (!isStaff) has write, edit, delete access for their store.
+    // Staff user (isStaff) must have corresponding permission in rolldetail.
+    const canRead = isMaster || !isStaff || (rolldetail && rolldetail.length > 0 && rolldetail[0].account.includes("read"));
+    const canWrite = isMaster || !isStaff || (rolldetail && rolldetail.length > 0 && rolldetail[0].account.includes("write"));
+    const canEdit = isMaster || !isStaff || (rolldetail && rolldetail.length > 0 && rolldetail[0].account.includes("edit"));
+    const canDelete = isMaster || !isStaff || (rolldetail && rolldetail.length > 0 && rolldetail[0].account.includes("delete"));
 
-      var comission;
-      var paidcomission;
-
-      comi.length > 0
-        ? (comission = Number(comi[0].amount).toFixed(2))
-        : (comission = 0);
-      paidcomi.length > 0
-        ? (paidcomission = Number(paidcomi[0].amount).toFixed(2))
-        : (paidcomission = 0);
-      var due = parseFloat(comission) - parseFloat(paidcomission);
-
-      var toaccount = await DataFind(
-        "SELECT * FROM tbl_account WHERE store_ID=''"
-      );
-      console.log("toaccount", toaccount);
-
-      var fromaccount = await DataFind(
-        "SELECT * FROM tbl_account WHERE store_ID=" + findID[0].store_ID + ""
-      );
-      console.log("fromaccount", fromaccount);
-
-      var qury =
-        "SELECT tbl_account.*, sum(`credit_amount`) as credit, sum(`debit_amount`) as debit FROM tbl_account JOIN tbl_transections on tbl_account.id=tbl_transections.account_id WHERE tbl_account.store_ID= " +
-        findID[0].store_ID +
-        " AND delet_flage=0 GROUP BY tbl_account.id";
-
-      const account_list = await DataFind(qury);
-      console.log("account_list", account_list);
-
-      res.render("account_list", {
-        account_list,
-        accessdata,
-        comission,
-        paidcomission,
-        due,
-        toaccount,
-        fromaccount,
-        language: req.language_data,
-        language_name: req.language_name,
-      });
-    } else if (
-      accessdata.mutibranch == false &&
-      rolldetail[0].rollType == "master"
-    ) {
-      const accessdata = await access(req.user);
-
-      var findRoll = await DataFind(`SELECT ad.* FROM tbl_staff_roll sr 
-                                          JOIN tbl_roll r ON sr.main_roll_id = r.id
-                                          JOIN tbl_admin ad ON sr.staff_id = ad.id
-                                          WHERE r.rollType ='master' AND sr.is_staff='0'`);
-      var findID = await DataFind(
-        `SELECT ad.*, '${findRoll[0].store_ID}' as store_ID FROM tbl_admin ad WHERE id='${id}'`
-      );
-      //  var findID = await DataFind(`SELECT * FROM tbl_admin WHERE id='${id}'`);
-      var comi = await DataFind(
-        "SELECT SUM(master_comission) as amount FROM tbl_order WHERE store_id=" +
-          findID[0].store_ID +
-          " AND commission_status='1' "
-      );
-      var paidcomi = await DataFind(
-        "SELECT SUM(amount) as amount FROM tbl_commision WHERE store_id=" +
-          findID[0].store_ID +
-          ""
-      );
-      console.log("findID", findID);
-      console.log("comi", comi);
-      console.log("paidcomi", paidcomi);
-
-      var comission;
-      var paidcomission;
-
-      comi.length > 0
-        ? (comission = Number(comi[0].amount).toFixed(2))
-        : (comission = 0);
-      paidcomi.length > 0
-        ? (paidcomission = Number(paidcomi[0].amount).toFixed(2))
-        : (paidcomission = 0);
-      var due = parseFloat(comission) - parseFloat(paidcomission);
-
-      var toaccount = await DataFind(
-        "SELECT * FROM tbl_account WHERE store_ID=''"
-      );
-      console.log("toaccount", toaccount);
-
-      var fromaccount = await DataFind(
-        "SELECT * FROM tbl_account WHERE store_ID=" + findID[0].store_ID + ""
-      );
-      console.log("fromaccount", fromaccount);
-
-      var qury =
-        "SELECT tbl_account.*, sum(`credit_amount`) as credit, sum(`debit_amount`) as debit FROM tbl_account JOIN tbl_transections on tbl_account.id=tbl_transections.account_id WHERE tbl_account.store_ID= " +
-        findID[0].store_ID +
-        " AND delet_flage=0 GROUP BY tbl_account.id";
-
-      const account_list = await DataFind(qury);
-      console.log("account_list", account_list);
-
-      res.render("account_list", {
-        account_list,
-        accessdata,
-        comission,
-        paidcomission,
-        due,
-        toaccount,
-        fromaccount,
-        language: req.language_data,
-        language_name: req.language_name,
-      });
-    } else {
+    if (!canRead) {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
+
+    let ismulty = false;
+    let storeList = [];
+    let account_list = [];
+    let toaccount = [];
+    let fromaccount = [];
+    let comission = "0.00";
+    let paidcomission = "0.00";
+    let due = 0;
+
+    if (isMaster && accessdata.mutibranch !== false) {
+      ismulty = true;
+      storeList = await DataFind("SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0");
+
+      const comi = await DataFind(
+        `SELECT SUM(master_comission) as amount FROM tbl_order WHERE commission_status ='1'`
+      );
+      const paidcomi = await DataFind(
+        `SELECT SUM(amount) as amount FROM tbl_commision`
+      );
+      comission = (comi.length > 0 && comi[0].amount) ? Number(comi[0].amount).toFixed(2) : "0.00";
+      paidcomission = (paidcomi.length > 0 && paidcomi[0].amount) ? Number(paidcomi[0].amount).toFixed(2) : "0.00";
+      due = parseFloat(comission) - parseFloat(paidcomission);
+
+      const qury = `SELECT tbl_account.*, 
+                    COALESCE(SUM(tbl_transections.credit_amount), 0) as credit, 
+                    COALESCE(SUM(tbl_transections.debit_amount), 0) as debit 
+                    FROM tbl_account 
+                    LEFT JOIN tbl_transections ON tbl_account.id = tbl_transections.account_id 
+                    WHERE tbl_account.delet_flage = 0 
+                    GROUP BY tbl_account.id`;
+      account_list = await DataFind(qury);
+
+      toaccount = await DataFind("SELECT * FROM tbl_account WHERE (store_ID = '' OR store_ID IS NULL) AND delet_flage = 0");
+      fromaccount = [];
+    } else {
+      // Store default user, store staff, or single-store master
+      const targetStore = assignedStore;
+
+      const comi = await DataFind(
+        `SELECT SUM(master_comission) as amount FROM tbl_order WHERE store_id = '${targetStore}' AND commission_status = '1'`
+      );
+      const paidcomi = await DataFind(
+        `SELECT SUM(amount) as amount FROM tbl_commision WHERE store_id = '${targetStore}'`
+      );
+
+      comission = (comi.length > 0 && comi[0].amount) ? Number(comi[0].amount).toFixed(2) : "0.00";
+      paidcomission = (paidcomi.length > 0 && paidcomi[0].amount) ? Number(paidcomi[0].amount).toFixed(2) : "0.00";
+      due = parseFloat(comission) - parseFloat(paidcomission);
+
+      // Only show payment methods of the assigned store!
+      const qury = `SELECT tbl_account.*, 
+                    COALESCE(SUM(tbl_transections.credit_amount), 0) as credit, 
+                    COALESCE(SUM(tbl_transections.debit_amount), 0) as debit 
+                    FROM tbl_account 
+                    LEFT JOIN tbl_transections ON tbl_account.id = tbl_transections.account_id 
+                    WHERE tbl_account.store_ID = '${targetStore}' AND tbl_account.delet_flage = 0 
+                    GROUP BY tbl_account.id`;
+      account_list = await DataFind(qury);
+
+      toaccount = await DataFind("SELECT * FROM tbl_account WHERE (store_ID = '' OR store_ID IS NULL) AND delet_flage = 0");
+      fromaccount = await DataFind(`SELECT * FROM tbl_account WHERE store_ID = '${targetStore}' AND delet_flage = 0`);
+    }
+
+    res.render("account_list", {
+      account_list,
+      accessdata,
+      comission,
+      paidcomission,
+      due,
+      toaccount,
+      fromaccount,
+      storeList,
+      ismulty,
+      assigned_store_id: assignedStore,
+      canWrite,
+      canEdit,
+      canDelete,
+      language: req.language_data,
+      language_name: req.language_name,
+    });
   } catch (error) {
     console.log(error);
   }
@@ -200,10 +136,10 @@ router.get("/list", auth, async (req, res) => {
 
 router.post("/addaccount", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === 'true') {
+      req.flash('error', 'For demo purpose we disabled crud operations!!');
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store, loginas } = req.user;
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
@@ -219,90 +155,72 @@ router.post("/addaccount", auth, async (req, res) => {
   WHERE sr.id = ${roll}
 `);
 
-    const accessdata = await access(req.user);
+    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
+    const isMaster = rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && !isStaff && (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === '0');
 
-    let findStore = await DataFind(`SELECT * FROM tbl_admin WHERE id='${id}'`);
+    const canWrite = isMaster ? (rolldetail && rolldetail[0].account.includes("write")) : (!isStaff || (rolldetail && rolldetail[0].account.includes("write")));
 
-    if (
-      accessdata.rollType === "master" ||
-      rolldetail[0].account.includes("write")
-    ) {
-      const { ac_name, ac_number, balance, description } = req.body;
-      
-
-      const newaccount = await DataInsert(
-        `tbl_account`,
-        `ac_name,ac_number,ac_decrip,store_ID,balance,store_name`,
-        `'${ac_name}','${ac_number}',
-                   '${description}','${""}','${balance}','${"master"}'`,
-        req.hostname,
-        req.protocol
-      );
-
-      if (newaccount == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
-      }
-
-     
-      if (
-        (await DataInsert(
-          `tbl_transections`,
-          `account_id,store_ID,transec_detail,transec_type,credit_amount,balance_amount`,
-          `'${
-            newaccount.insertId
-          }','${""}','New Account Opening','INCOME',${balance},${balance}`,
-          req.hostname,
-          req.protocol
-        )) == -1
-      ) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
-      }
-
-      req.flash("success", "New Account Added !!!!");
-      res.redirect("back");
-    } else if (
-      accessdata.rollType === "store" ||
-      rolldetail[0].account.includes("write")
-    ) {
-      const { ac_name, ac_number, balance, description } = req.body;
-
-      const storename = await DataFind(
-        "SELECT name FROM tbl_store WHERE id=" + findStore[0].store_ID + " "
-      );
-
-      
-
-      const newaccount = await DataInsert(
-        `tbl_account`,
-        `ac_name,ac_number,ac_decrip,store_ID,balance,store_name`,
-        `'${ac_name}','${ac_number}','${description}','${findStore[0].store_ID}','${balance}','${storename[0].name}'`,
-        req.hostname,
-        req.protocol
-      );
-
-      if (newaccount == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
-      }
-
-      
-      if (
-        (await DataInsert(
-          `tbl_transections`,
-          `account_id,store_ID,transec_detail,transec_type,credit_amount,balance_amount`,
-          `${newaccount.insertId},${findStore[0].store_ID},'New Account Opening','INCOME',${balance},${balance}`,
-          req.hostname,
-          req.protocol
-        )) == -1
-      ) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
-      }
-
-      req.flash("success", "New Account Added !!!!");
-      res.redirect("back");
-    } else {
+    if (!canWrite) {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
+
+    const { ac_name, ac_number, balance, description } = req.body;
+    let targetStore = '';
+    let targetStoreName = 'master';
+
+    if (isMaster) {
+      const multiy = await DataFind("SELECT type FROM tbl_master_shop");
+      if (multiy && multiy.length > 0 && multiy[0].type == 1 && req.body.storeid && req.body.storeid !== 'master') {
+        targetStore = String(req.body.storeid).trim();
+        const storeInfo = await DataFind(`SELECT name FROM tbl_store WHERE id = '${targetStore}'`);
+        targetStoreName = (storeInfo && storeInfo.length > 0) ? storeInfo[0].name : '';
+      } else {
+        targetStore = '';
+        targetStoreName = 'master';
+      }
+    } else {
+      // Store default user or store staff: strictly use assignedStore!
+      if (!assignedStore) {
+        req.flash("error", "No assigned store found for your account.");
+        return res.redirect(req.get("Referrer") || "/");
+      }
+      targetStore = assignedStore;
+      const storeInfo = await DataFind(`SELECT name FROM tbl_store WHERE id = '${targetStore}'`);
+      targetStoreName = (storeInfo && storeInfo.length > 0) ? storeInfo[0].name : '';
+    }
+
+    const safeBalance = parseFloat(balance) || 0;
+    const safeName = (ac_name || '').replace(/'/g, "\\'");
+    const safeNumber = (ac_number || '').replace(/'/g, "\\'");
+    const safeDesc = (description || '').replace(/'/g, "\\'");
+    const safeStoreName = (targetStoreName || '').replace(/'/g, "\\'");
+
+    const newaccount = await DataInsert(
+      `tbl_account`,
+      `ac_name,ac_number,ac_decrip,store_ID,balance,store_name`,
+      `'${safeName}','${safeNumber}','${safeDesc}','${targetStore}','${safeBalance}','${safeStoreName}'`,
+      req.hostname,
+      req.protocol
+    );
+
+    if (newaccount == -1) {
+      req.flash("error", "Action failed, please check input and try again");
+      return res.redirect("back");
+    }
+
+    await DataInsert(
+      `tbl_transections`,
+      `account_id,store_ID,transec_detail,transec_type,credit_amount,balance_amount`,
+      `${newaccount.insertId},'${targetStore}','New Account Opening','INCOME',${safeBalance},${safeBalance}`,
+      req.hostname,
+      req.protocol
+    );
+
+    req.flash("success", "New Account Added Successfully!");
+    res.redirect("back");
   } catch (error) {
     console.log(error);
   }
@@ -310,10 +228,10 @@ router.post("/addaccount", auth, async (req, res) => {
 
 router.post("/updateaccount/:id", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === 'true') {
+      req.flash('error', 'For demo purpose we disabled crud operations!!');
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store, loginas } = req.user;
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
@@ -328,32 +246,57 @@ router.post("/updateaccount/:id", auth, async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-    const accessdata = await access(req.user);
-    if (
-      accessdata.mutibranch === false ||
-      rolldetail[0].account.includes("edit")
-    ) {
-      const { ac_name, ac_number, ac_decrip } = req.body;
-      var dataid = req.params.id;
-     
 
-      const rollList = await DataUpdate(
-        `tbl_account`,
-        `ac_name='${ac_name}',ac_number='${ac_number}',ac_decrip='${ac_decrip}'`,
-        `id=${dataid}`,
-        req.hostname,
-        req.protocol
-      );
-      if (rollList == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
-      }
+    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
+    const isMaster = rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && !isStaff && (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === '0');
 
-      req.flash("success", "Account Update success Fully !!!!");
-      res.redirect("back");
-    } else {
+    const canEdit = isMaster ? (rolldetail && rolldetail[0].account.includes("edit")) : (!isStaff || (rolldetail && rolldetail[0].account.includes("edit")));
+
+    if (!canEdit) {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
+
+    const dataid = parseInt(req.params.id);
+    if (!dataid || isNaN(dataid)) {
+      req.flash("error", "Invalid account ID");
+      return res.redirect("back");
+    }
+
+    const existingAcc = await DataFind(`SELECT * FROM tbl_account WHERE id = ${dataid} AND delet_flage = 0`);
+    if (!existingAcc || existingAcc.length === 0) {
+      req.flash("error", "Account not found");
+      return res.redirect("back");
+    }
+
+    // Cross-store protection: non-master users can only edit accounts of their assigned store!
+    if (!isMaster && String(existingAcc[0].store_ID).trim() !== String(assignedStore).trim()) {
+      req.flash("error", "You can only edit payment methods of your assigned store.");
+      return res.redirect("back");
+    }
+
+    const { ac_name, ac_number, ac_decrip } = req.body;
+    const safeName = (ac_name || '').replace(/'/g, "\\'");
+    const safeNumber = (ac_number || '').replace(/'/g, "\\'");
+    const safeDesc = (ac_decrip || '').replace(/'/g, "\\'");
+
+    const rollList = await DataUpdate(
+      `tbl_account`,
+      `ac_name='${safeName}',ac_number='${safeNumber}',ac_decrip='${safeDesc}'`,
+      `id=${dataid}`,
+      req.hostname,
+      req.protocol
+    );
+
+    if (rollList == -1) {
+      req.flash("error", "Action failed, please check input and try again");
+      return res.redirect("back");
+    }
+
+    req.flash("success", "Account Updated Successfully!");
+    res.redirect("back");
   } catch (error) {
     console.log(error);
   }
@@ -361,10 +304,10 @@ router.post("/updateaccount/:id", auth, async (req, res) => {
 
 router.get("/deletaccount/:id", auth, async (req, res) => {
   try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
-    return res.redirect(req.get("Referrer") || "/");
-}
+    if (process.env.DISABLE_DB_WRITE === 'true') {
+      req.flash('error', 'For demo purpose we disabled crud operations!!');
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const { id, roll, store, loginas } = req.user;
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
@@ -379,31 +322,52 @@ router.get("/deletaccount/:id", auth, async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-    const accessdata = await access(req.user);
-    if (
-      accessdata.mutibranch === false ||
-      rolldetail[0].account.includes("delete")
-    ) {
-      var dataid = req.params.id;
-      
 
-      const rollList = await DataUpdate(
-        `tbl_account`,
-        `delet_flage=1`,
-        `id=${dataid}`,
-        req.hostname,
-        req.protocol
-      );
-      if (rollList == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
-      }
+    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
+    const isMaster = rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && !isStaff && (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === '0');
 
-      req.flash("success", "Account Delete success Fully !!!!");
-      res.redirect("back");
-    } else {
+    const canDelete = isMaster ? (rolldetail && rolldetail[0].account.includes("delete")) : (!isStaff || (rolldetail && rolldetail[0].account.includes("delete")));
+
+    if (!canDelete) {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
+
+    const dataid = parseInt(req.params.id);
+    if (!dataid || isNaN(dataid)) {
+      req.flash("error", "Invalid account ID");
+      return res.redirect("back");
+    }
+
+    const existingAcc = await DataFind(`SELECT * FROM tbl_account WHERE id = ${dataid} AND delet_flage = 0`);
+    if (!existingAcc || existingAcc.length === 0) {
+      req.flash("error", "Account not found");
+      return res.redirect("back");
+    }
+
+    // Cross-store protection: non-master users can only delete accounts of their assigned store!
+    if (!isMaster && String(existingAcc[0].store_ID).trim() !== String(assignedStore).trim()) {
+      req.flash("error", "You can only delete payment methods of your assigned store.");
+      return res.redirect("back");
+    }
+
+    const rollList = await DataUpdate(
+      `tbl_account`,
+      `delet_flage=1`,
+      `id=${dataid}`,
+      req.hostname,
+      req.protocol
+    );
+
+    if (rollList == -1) {
+      req.flash("error", "Action failed, please check input and try again");
+      return res.redirect("back");
+    }
+
+    req.flash("success", "Account Deleted Successfully!");
+    res.redirect("back");
   } catch (error) {
     console.log(error);
   }
@@ -428,38 +392,32 @@ router.get("/transection", auth, async (req, res) => {
   WHERE sr.id = ${roll}
 `);
     const accessdata = await access(req.user);
-    console.log("accessdata", accessdata);
 
-    if (
-      accessdata.mutibranch == false ||
-      rolldetail[0].account.includes("read")
-    ) {
-      const accessdata = await access(req.user);
+    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
+    const isMaster = rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && !isStaff && (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === '0');
 
-      let qury = `SELECT tbl_transections.*, tbl_account.ac_name FROM tbl_transections 
-                  JOIN tbl_account ON tbl_transections.account_id=tbl_account.id 
-                  WHERE tbl_transections.store_ID='${store}' ORDER BY tbl_transections.id DESC  `;
+    const canRead = isMaster || !isStaff || (rolldetail && rolldetail.length > 0 && rolldetail[0].account.includes("read"));
+
+    if (canRead) {
+      let qury = "";
       let account_list = [];
 
-      if (accessdata.mutibranch == false) {
+      if (isMaster && accessdata.mutibranch !== false) {
         account_list = await DataFind(
-          "SELECT id,ac_name FROM tbl_account WHERE store_ID='" +
-            accessdata.topbardata.store_ID +
-            "' AND delet_flage=0 "
+          "SELECT id,ac_name FROM tbl_account WHERE delet_flage=0"
         );
-
         qury = `SELECT tbl_transections.*, tbl_account.ac_name FROM tbl_transections 
-                  JOIN tbl_account ON tbl_transections.account_id=tbl_account.id 
-                  WHERE tbl_transections.store_ID='${accessdata.topbardata.store_ID}' ORDER BY tbl_transections.id DESC  `;
+                JOIN tbl_account ON tbl_transections.account_id=tbl_account.id 
+                ORDER BY tbl_transections.id DESC`;
       } else {
         account_list = await DataFind(
-          "SELECT id,ac_name FROM tbl_account WHERE store_ID='" +
-            store +
-            "' AND delet_flage=0 "
+          `SELECT id,ac_name FROM tbl_account WHERE store_ID='${assignedStore}' AND delet_flage=0`
         );
         qury = `SELECT tbl_transections.*, tbl_account.ac_name FROM tbl_transections 
-                  JOIN tbl_account ON tbl_transections.account_id=tbl_account.id 
-                  WHERE tbl_transections.store_ID='${store}' ORDER BY tbl_transections.id DESC  `;
+                JOIN tbl_account ON tbl_transections.account_id=tbl_account.id 
+                WHERE tbl_transections.store_ID='${assignedStore}' ORDER BY tbl_transections.id DESC`;
       }
 
       const transection_list = await DataFind(qury);
@@ -501,24 +459,34 @@ router.post("/transefilter", auth, async (req, res) => {
   WHERE sr.id = ${roll}
 `);
 
-    if (
-      accessdata.mutibranch === false ||
-      rolldetail[0].account.includes("read")
-    ) {
+    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
+    const isMaster = rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && !isStaff && (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === '0');
+
+    const canRead = isMaster || !isStaff || (rolldetail && rolldetail.length > 0 && rolldetail[0].account.includes("read"));
+
+    if (canRead) {
       const { account, start_date, end_date } = req.body;
 
-     
+      let qury = "";
+      let account_list = [];
 
-      var qury = `SELECT tbl_transections.*, tbl_account.ac_name FROM tbl_transections JOIN tbl_account ON tbl_transections.account_id=tbl_account.id 
-            WHERE (tbl_transections.account_id='${account}') AND (DATE(tbl_transections.date) BETWEEN '${start_date}' AND '${end_date}') `;
+      if (isMaster && accessdata.mutibranch !== false) {
+        qury = `SELECT tbl_transections.*, tbl_account.ac_name FROM tbl_transections 
+                JOIN tbl_account ON tbl_transections.account_id=tbl_account.id 
+                WHERE (tbl_transections.account_id='${account}') AND (DATE(tbl_transections.date) BETWEEN '${start_date}' AND '${end_date}')`;
+        account_list = await DataFind("SELECT id,ac_name FROM tbl_account WHERE delet_flage=0");
+      } else {
+        qury = `SELECT tbl_transections.*, tbl_account.ac_name FROM tbl_transections 
+                JOIN tbl_account ON tbl_transections.account_id=tbl_account.id 
+                WHERE tbl_transections.store_ID='${assignedStore}' AND (tbl_transections.account_id='${account}') AND (DATE(tbl_transections.date) BETWEEN '${start_date}' AND '${end_date}')`;
+        account_list = await DataFind(
+          `SELECT id,ac_name FROM tbl_account WHERE store_ID='${assignedStore}' AND delet_flage=0`
+        );
+      }
+
       const transection_list = await DataFind(qury);
-      console.log(transection_list);
-
-      const account_list = await DataFind(
-        "SELECT id,ac_name FROM tbl_account WHERE store_ID=" +
-          store +
-          " AND delet_flage=0 "
-      );
 
       res.render("account_transection", {
         transection_list,

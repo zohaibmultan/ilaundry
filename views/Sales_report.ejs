@@ -17,14 +17,13 @@
             <div class="container-fluid" style="min-height: 100vh;">
                 <div class="row">
                     <div class="col-12">
-                        <div class="card ">
-                            <div class="card-header justify-content-between">
-                                <h3 class="card-title">
+                        <div class="card border-0 shadow-sm rounded-3">
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h4 class="card-title mb-0 fw-bold">
                                     <%= language.Sales_Report %>
-                                </h3>
-
+                                </h4>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body p-4">
                                 <div class="d-none">
                                     <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
                                     <input type="hiden" name="pls" value="<%= accessdata.plac %>">
@@ -175,13 +174,13 @@
                                         <strong> <span id="sales_report_tax" class="symbol invosymbol">0</span></strong>
                                     </div>
                                     <div class="col-12 col-md d-flex justify-content-md-end flex-wrap gap-2 mt-2 mt-md-0">
-                                        <button type="submit" class="btn btn-success text-nowrap"
+                                        <button type="submit" class="btn btn-info text-nowrap"
                                             onclick="downloadsalesreport()" id="Download_order_report">
-                                            <%= language.Download_Report %>
+                                            <i class="fa fa-download me-2"></i><%= language.Download_Report %>
                                         </button>
                                         <button type="submit" id="order_report_print"
-                                            class="btn btn-warning mb-0 text-nowrap">
-                                            <%= language.Print_Report %>
+                                            class="btn btn-info mb-0 text-nowrap">
+                                            <i class="fa fa-print me-2"></i><%= language.Print_Report %>
                                         </button>
                                     </div>
                                 </div>

@@ -109,18 +109,17 @@
             <div class="container-fluid" style="min-height: 100vh;">
                 <div class="row">
                     <div class="col-12">
-                        <div class="card ">
+                        <div class="card border-0 shadow-sm rounded-3">
 
-                            <div class="card-header">
-                                <h3 class="card-title">
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h4 class="card-title mb-0 fw-bold">
                                     <%= language.Edit_Services_Details %>
-                                </h3>
-                                <button type="button" class="btn btn-rounded btn-primary" onclick="history.back()"><i
-                                        class="la la-undo"></i>
-                                    <%= language.Go_Back %>
+                                </h4>
+                                <button type="button" class="btn btn-secondary" onclick="history.back()">
+                                    <i class="fa fa-arrow-left me-2"></i><%= language.Go_Back %>
                                 </button>
                             </div>
-                            <div class="card-body ">
+                            <div class="card-body p-4">
                                 <form action="/services/updateservices/<%=services.id %>" method="post"
                                     class="need-validation" enctype="multipart/form-data">
                                     <div class="row">
@@ -144,7 +143,7 @@
                                                 <div class="col-md-4 ">
                                                     <label class="btn btn-primary mt-4" for="file-1"
                                                         style="width: 100%;">
-                                                        <%= language.Upload_Image %>
+                                                        <i class="fa fa-camera me-2"></i><%= language.Upload_Image %>
                                                     </label>
                                                 </div>
                                             </div>
@@ -241,14 +240,14 @@
                                                 </div>
 
                                                 <!-- right side -->
-                                                <div class="col-xl-3">
+                                                <div class="col-xl-3 d-flex gap-2">
                                                     <button type="button" class="btn btn-secondary"
                                                         onclick="history.back()">
-                                                        <%= language.Cancel %>
+                                                        <i class="fa fa-times me-2"></i><%= language.Cancel %>
                                                     </button>
 
                                                     <button type="submit" id="add" class="btn btn-primary">
-                                                        <%= language.Submit %>
+                                                        <i class="fa fa-save me-2"></i><%= language.Submit %>
                                                     </button>
                                                 </div>
 

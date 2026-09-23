@@ -4,314 +4,293 @@
 <head>
     <!-- meta and links start -->
     <%- include('templet/meta')-%>
+    <style>
+        .service-preview-box {
+            border: 2px dashed rgba(148, 163, 184, 0.35);
+            border-radius: 1rem;
+            background: rgba(148, 163, 184, 0.05);
+            transition: all 0.25s ease;
+        }
+        .service-preview-box:hover {
+            border-color: var(--primary, #1d4ed8);
+            background: rgba(148, 163, 184, 0.08);
+        }
+        .service-preview-thumb-wrap {
+            width: 140px;
+            height: 140px;
+            border-radius: 0.85rem;
+            background: rgba(148, 163, 184, 0.1);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .service-preview-thumb-wrap img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        #tblPage tr td {
+            vertical-align: middle;
+        }
+        #tblPage #remove {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        #tblPage #remove:hover {
+            color: #fff;
+            background: #ef4444;
+            transform: scale(1.05);
+        }
+        .invalid-select {
+            border: 1px solid #ef4444 !important;
+        }
+    </style>
 </head>
 
 <body>
 
-    <style>
-        .form-control.is-invalid {
-            border-color: #FF6746 !important;
-            border-right: 1px #FF6746 solid !important;
-        }
-
-
-        .invalid-select {
-            border: 1px solid #FF6746 !important;
-            color: #484848 !important;
-            font-weight: 400;
-        }
-
-        .select2-container .select2-selection--single .invalid-select {
-            border: 1px solid #FF6746 !important;
-        }
-
-        .invalid-select:focus {
-            outline: none;
-            box-shadow: 0 0 0 0.15rem rgba(255, 103, 70, 0.25);
-        }
-
-
-        .select2-container .select2-selection--single {
-           
-            padding: 0.3125rem 1.25rem;
-            color: #080808;
-            height: 3.5rem;
-            width: 100%;
-            border-radius: 0.5rem;
-            font-weight: 400;
-            background-color: transparent;
-        }
-
-
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 41px;
-            color: #484848;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 40px;
-            width: 25px;
-            position: absolute;
-            top: 6px;
-            right: 12px;
-            font-size: 16px;
-
-        }
-
-
-        .select2-container--default .select2-selection--single .select2-selection__arrow b {
-            border-style: solid;
-            border-width: 7px 6px 0 6px;
-            border-color: #999 transparent transparent transparent;
-            display: block;
-            width: 0;
-            height: 0;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            margin-top: -4px;
-            margin-left: -6px;
-        }
-
-
-        .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
-            border-width: 0 6px 7px 6px;
-            border-color: transparent transparent #999 transparent;
-        }
-
-
-        .select2-container--bootstrap4 .select2-results__option {
-            padding: 6px 12px;
-            font-size: 14px;
-            color: #484848;
-        }
-
-        .select2-container--bootstrap4 .select2-results__option--highlighted {
-            background-color: #f0f1f5;
-            color: #000;
-        }
-    </style>
-
-
     <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
 
-        <!--********** Content body start **********-->
-
-        <div class="content-body">
-
-            <div class="container-fluid" style="min-height: 100vh;">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card ">
-
-                            <div class="card-header">
-                                <div>
-                                    <h3 class="card-title">
-                                        <%= language.Add_Services_Details %>
-                                    </h3>
-                                </div>
-                                <div>
-                                    <a href="/services/csv_file" class="btn btn-rounded btn-primary mx-3">
-                                        <%= language.Bulk_Upload_Services %>
-                                    </a>
-                                    <button type="button" class="btn btn-rounded btn-primary"
-                                        onclick="history.back()"><i class="la la-undo"></i>
-                                        <%= language.Go_Back %>
-                                    </button>
-                                </div>
+    <!--********** Content body start **********-->
+    <div class="content-body">
+        <div class="container-fluid" style="min-height: 100vh;">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <!-- Card Header -->
+                        <div class="card-header border-bottom py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div>
+                                <h4 class="card-title mb-0 d-flex align-items-center fw-bold">
+                                    <i class="fas fa-layer-group text-primary me-2"></i>
+                                    <%= language.Add_Services_Details %>
+                                </h4>
+                                <small class="text-muted"><%= language.Configure_laundry_services || 'Configure laundry service name, media, and pricing tiers' %></small>
                             </div>
-                            <div class="card-body ">
-                                <form action="/services/addservice" method="post" class="need-validation"
-                                    enctype="multipart/form-data" onsubmit="return validateForm()">
-                                    <div class="row">
+                            <div class="d-flex align-items-center gap-2">
+                                <a href="/services/csv_file" class="btn btn-info d-inline-flex align-items-center">
+                                    <i class="fa fa-upload me-2"></i>
+                                    <%= language.Bulk_Upload_Services %>
+                                </a>
+                                <button type="button" class="btn btn-secondary d-inline-flex align-items-center" onclick="history.back()">
+                                    <i class="fa fa-arrow-left me-2"></i>
+                                    <%= language.Go_Back %>
+                                </button>
+                            </div>
+                        </div>
 
-                                        <!-- left side -->
+                        <!-- Card Body -->
+                        <div class="card-body p-4">
+                            <form action="/services/addservice" method="post" class="need-validation" enctype="multipart/form-data" onsubmit="return validateForm()">
+                                <div class="row g-4">
+                                    
+                                    <!-- Left Section: Basic Information -->
+                                    <div class="col-lg-8">
+                                        <div class="p-3 border rounded">
+                                            <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                                <i class="fas fa-info-circle text-primary me-2"></i>
+                                                <%= language.Service_Information || 'Service Information' %>
+                                            </h6>
 
-                                        <div class="col-xl-9">
-                                            <div class="col-md-7 mb-1 <%= ismulty ? '': 'd-none' %>">
-                                                <div class="form-group">
-                                                    <label class="form-label">
-                                                        <strong>
-                                                            <%= language.Store_List %>
-                                                        </strong>
-                                                        <span class="text-danger">*</span>
+                                            <% if (ismulty) { %>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">
+                                                    <i class="fas fa-store text-primary me-1"></i>
+                                                    <%= language.Store_List %> <span class="text-danger">*</span>
+                                                </label>
+                                                <select class="default-select form-control wide" name="storeid" id="add_servie_storelist">
+                                                    <option value="" selected disabled> Select Store </option>
+                                                    <% storeList.forEach(function(x){ %>
+                                                        <option value="<%= x.id %>"><%= x.name %></option>
+                                                    <% }) %>
+                                                </select>
+                                            </div>
+                                            <% } else { %>
+                                            <input type="hidden" name="storeid" id="add_servie_storelist" value="<%= (typeof assigned_store_id !== 'undefined' && assigned_store_id) ? assigned_store_id : '1' %>">
+                                            <% } %>
+
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">
+                                                    <i class="fas fa-tag text-primary me-1"></i>
+                                                    <%= language.Service_Name %> <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="text" placeholder="Enter Service Name (e.g. Dry Cleaning, Wash & Fold)" class="form-control" name="name" required>
+                                                <input type="hidden" id="servalid" value="0" min="1" required>
+                                            </div>
+
+                                            <div class="pt-2">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="active" name="active" value="0" checked>
+                                                    <label class="form-check-label fw-bold" for="active">
+                                                        <%= language.Is_Active %> ?
                                                     </label>
-                                                    <select class="default-select form-control wide mb-3" name="storeid"
-                                                        id="add_servie_storelist">
-                                                        <option value="1" selected disabled> Select Store </option>
-                                                        <% storeList.forEach(function(x){ %>
-                                                            <option value="<%= x.id %>">
-                                                                <%= x.name %>
-                                                            </option>
-                                                            <% }) %>
-
-                                                    </select>
                                                 </div>
-                                            </div>
-
-                                            <div class="row mt-3">
-                                                <div class="col-md-7">
-                                                    <label class="form-label">
-                                                        <%= language.Service_Name %>
-                                                    </label>
-                                                    <input type="text" placeholder="Enter Service Name"
-                                                        class="form-control" name="name" required>
-                                                    <input type="hidden" id="servalid" value="0" min="1" required>
-                                                </div>
-
-                                                <!-- Image Upload Button -->
-                                                <div class="col-md-4 mt-2">
-                                                    <label class="btn btn-primary mt-4" for="file-1" id="Uploadfile-1"
-                                                        onclick="resetPreview()" style="width: 100%;">
-                                                        <%= language.Upload_Image %>
-                                                    </label>
-                                                </div>
-                                            </div>
-
-                                        </div>
-
-                                        <!-- right side -->
-                                        <div class="col-xl-3">
-                                            <div class="center">
-                                                <div class="form-input">
-                                                    <div class="preview m-4 mt-0">
-                                                        <img id="file-preview" width="160" src="../images/one.png"
-                                                            alt="image">
-                                                    </div>
-
-                                                    <input class="d-none" type="file" id="file-1" name="image" onchange="showPreview(event)">
-
-                                                    <span class="text-center d-none text-danger fw-bold" id="ImgRequired">
-                                                        <strong>⚠ Image is required!</strong>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- table -->
-
-                                        <div class="col-xl-12 mt-4">
-
-                                            <div class="table-responsive" style="overflow-x:unset !important;">
-                                                <table class="table table-responsive-sm">
-                                                    <thead>
-                                                        <tr>
-                                                            <!-- <th>#</th> -->
-                                                            <th>
-                                                                <%= language.Service_Type %>
-                                                            </th>
-                                                            <th>
-                                                                <%= language.Service_Price %>
-                                                            </th>
-                                                            <th>
-                                                                <%= language.Action %>
-                                                            </th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody id="tblPage">
-
-                                                    </tbody>
-                                                </table>
-
-                                                <div class="d-flex justify-content-end m-1">
-                                                    <button type="button" class="btn btn-outline-secondary btn-xs"
-                                                        id="add_service">
-                                                        <%= language.Add_Service_Type %>
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                        </div>
-
-                                        <div class="card-footer mt-4">
-                                            <div class="row">
-                                                <!-- left side -->
-                                                <div class="col-xl-9">
-                                                    <div class="form-group">
-                                                        <div class="form-check form-switch">
-                                                            <input class="form-check-input" type="checkbox" id="active"
-                                                                name="active" value="0">
-                                                            <label class="form-check-label" for="active">
-                                                                <%= language.Is_Active %>
-                                                                    ?
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <!-- right side -->
-                                                <div class="col-xl-3">
-                                                    <button type="button" class="btn btn-secondary"
-                                                        onclick="history.back()">
-                                                        <%= language.Cancel %>
-                                                    </button>
-
-                                                    <button type="submit" id="add" class="btn btn-primary">
-                                                        <%= language.Submit %>
-                                                    </button>
-                                                </div>
-
+                                                <small class="text-muted d-block mt-1">
+                                                    Enable or disable this service across POS and online ordering
+                                                </small>
                                             </div>
                                         </div>
                                     </div>
-                                </form>
-                            </div>
+
+                                    <!-- Right Section: Image Upload & Preview -->
+                                    <div class="col-lg-4">
+                                        <div class="service-preview-box p-3 text-center d-flex flex-column align-items-center justify-content-center h-100">
+                                            <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                                <i class="fas fa-image text-primary me-2"></i>
+                                                <%= language.Service_Image || 'Service Image' %> <span class="text-danger">*</span>
+                                            </h6>
+
+                                            <div class="service-preview-thumb-wrap mb-3 shadow-sm">
+                                                <img id="file-preview" src="../images/one.png" alt="Service Preview">
+                                            </div>
+
+                                            <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                                                <label class="btn btn-primary mb-0 d-inline-flex align-items-center shadow-sm" for="file-1" id="Uploadfile-1">
+                                                    <i class="fa fa-camera me-2"></i>
+                                                    <%= language.Upload_Image %>
+                                                </label>
+                                                <button type="button" class="btn btn-danger d-inline-flex align-items-center" onclick="resetPreview()" title="<%= language.Reset || 'Reset' %>">
+                                                    <i class="fa fa-undo me-2"></i>
+                                                    <%= language.Reset || 'Reset' %>
+                                                </button>
+                                            </div>
+
+                                            <input class="d-none" type="file" id="file-1" name="image" accept="image/*" onchange="showPreview(event)">
+
+                                            <div class="text-danger small mt-1 fw-bold d-none" id="ImgRequired">
+                                                <i class="fas fa-exclamation-triangle me-1"></i> <%= language.Image_is_required || 'Service image is required!' %>
+                                            </div>
+                                            <small class="text-muted mt-2">Recommended: PNG or JPG (Square, 400x400)</small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bottom Section: Service Types & Pricing Table -->
+                                    <div class="col-12 mt-2">
+                                        <div class="card border mb-0">
+                                            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2 py-3">
+                                                <div>
+                                                    <h6 class="mb-0 fw-bold d-flex align-items-center">
+                                                        <i class="fas fa-list-ol text-primary me-2"></i>
+                                                        <%= language.Service_Type || 'Service Types & Pricing' %>
+                                                    </h6>
+                                                    <small class="text-muted"><%= language.Add_pricing_tiers || 'Add at least one service tier with pricing (e.g. Normal, Express, Urgent)' %></small>
+                                                </div>
+                                                <button type="button" class="btn btn-primary d-inline-flex align-items-center shadow-sm" id="add_service">
+                                                    <i class="fa fa-plus me-2"></i>
+                                                    <%= language.Add_Service_Type %>
+                                                </button>
+                                            </div>
+
+                                            <div class="card-body p-0">
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover align-middle mb-0">
+                                                        <thead>
+                                                            <tr>
+                                                                <th class="ps-3 py-3" style="min-width: 250px;">
+                                                                    <%= language.Service_Type %> <span class="text-danger">*</span>
+                                                                </th>
+                                                                <th class="py-3" style="min-width: 200px;">
+                                                                    <%= language.Service_Price %> <span class="text-danger">*</span>
+                                                                </th>
+                                                                <th class="text-center py-3" style="width: 100px;">
+                                                                    <%= language.Action %>
+                                                                </th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="tblPage">
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Footer Form Actions -->
+                                    <div class="col-12">
+                                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-3 border-top">
+                                            <button type="button" class="btn btn-secondary d-inline-flex align-items-center" onclick="history.back()">
+                                                <i class="fa fa-arrow-left me-2"></i>
+                                                <%= language.Go_Back || 'Back' %>
+                                            </button>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <button type="button" class="btn btn-secondary d-inline-flex align-items-center" onclick="history.back()">
+                                                    <i class="fa fa-times me-2"></i>
+                                                    <%= language.Cancel %>
+                                                </button>
+                                                <button type="submit" id="add" class="btn btn-primary d-inline-flex align-items-center shadow-sm">
+                                                    <i class="fa fa-save me-2"></i>
+                                                    <%= language.Submit %>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
-
-
         </div>
+    </div>
+    <!--********** Content body end **********-->
 
-        <!--********** Content body end **********-->
+    <!--**********************************Footer start***********************************-->
+    <%- include('templet/footer')-%>
+    <!--**********************************Footer end***********************************-->
 
+    </div>
+    <!--********** Main wrapper end **********-->
+    
+    <%- include('templet/script')-%>
 
-        </div>
-        <!--**********************************Footer start***********************************-->
-        <%- include('templet/footer')-%>
+    <script>
+        function validateForm() {
+            const fileInput = document.getElementById('file-1');
+            const errorSpan = document.getElementById('ImgRequired');
 
-            <!--**********************************Footer end***********************************-->
+            if (!fileInput.files.length) {
+                errorSpan.classList.remove('d-none');
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Please upload a service image', {
+                        timeOut: 3000,
+                        closeButton: true,
+                        progressBar: true
+                    });
+                }
+                return false;
+            } else {
+                errorSpan.classList.add('d-none');
+                return true;
+            }
+        }
 
-            </div>
+        function showPreview(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const preview = document.getElementById('file-preview');
+                preview.src = URL.createObjectURL(file);
+                document.getElementById('ImgRequired').classList.add('d-none');
+            }
+        }
 
-            <!--********** Main wrapper end **********-->
-            <%- include('templet/script')-%>
-
-                <script>
-                    function validateForm() {
-                        const fileInput = document.getElementById('file-1');
-                        const errorSpan = document.getElementById('ImgRequired');
-
-                        if (!fileInput.files.length) {
-                            errorSpan.classList.remove('d-none');
-                            return false;
-                        } else {
-                            errorSpan.classList.add('d-none');
-                            return true;
-                        }
-
-                    }
-
-                    function showPreview(event) {
-                        const file = event.target.files[0];
-                        if (file) {
-                            const preview = document.getElementById('file-preview');
-                            preview.src = URL.createObjectURL(file);
-                            document.getElementById('ImgRequired').classList.add('d-none');
-                        }
-                    }
-
-                    function resetPreview() {
-                        document.getElementById('file-preview').src = '../images/one.png';
-                        const fileInput = document.getElementById('file-1');
-                        fileInput.value = '';
-                        document.getElementById('ImgRequired').classList.add('d-none');
-                    }
-                </script>
+        function resetPreview() {
+            document.getElementById('file-preview').src = '../images/one.png';
+            const fileInput = document.getElementById('file-1');
+            fileInput.value = '';
+            document.getElementById('ImgRequired').classList.add('d-none');
+        }
+    </script>
 
 </body>
-
 
 </html>

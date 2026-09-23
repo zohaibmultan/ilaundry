@@ -109,22 +109,22 @@
             <!-- HEADER & FILTERS CARD -->
             <div class="row">
                 <div class="col-12">
-                    <div class="card shadow-sm border-0 mb-3 pl-statement-card">
-                        <div class="card-header d-flex flex-wrap justify-content-between align-items-center py-3">
+                    <div class="card border-0 shadow-sm rounded-3 mb-3 pl-statement-card">
+                        <div class="card-header border-bottom py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
                             <div>
-                                <h3 class="card-title mb-1 fw-bold text-primary">
+                                <h4 class="card-title mb-1 fw-bold text-primary">
                                     <i class="fa fa-chart-line me-2"></i>Profit &amp; Loss Statement
-                                </h3>
+                                </h4>
                                 <p class="text-muted mb-0 fs-12" id="pl_period_display">
                                     Period: <strong><%= startdate %></strong> to <strong><%= enddate %></strong>
                                 </p>
                             </div>
                             <div class="d-flex gap-2 align-items-center mt-2 mt-md-0">
-                                <button type="button" class="btn btn-outline-success btn-sm d-flex align-items-center gap-1" id="pl_export_btn">
-                                    <i class="fa fa-file-excel fs-14"></i> Export to Excel
+                                <button type="button" class="btn btn-info d-flex align-items-center" id="pl_export_btn">
+                                    <i class="fa fa-file-excel me-2"></i> Export to Excel
                                 </button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
-                                    <i class="fa fa-print fs-14"></i> Print
+                                <button type="button" class="btn btn-info d-flex align-items-center" onclick="window.print()">
+                                    <i class="fa fa-print me-2"></i> Print
                                 </button>
                             </div>
                         </div>
@@ -134,17 +134,17 @@
                             <div class="row g-2 align-items-end mb-2">
                                 <div class="col-6 col-sm-6 col-md-3">
                                     <label class="form-label fs-12 fw-semibold mb-1">Start Date</label>
-                                    <input type="date" class="form-control form-control-sm" id="pl_start_date" value="<%= startdate %>">
+                                    <input type="date" class="form-control" id="pl_start_date" value="<%= startdate %>">
                                 </div>
                                 <div class="col-6 col-sm-6 col-md-3">
                                     <label class="form-label fs-12 fw-semibold mb-1">End Date</label>
-                                    <input type="date" class="form-control form-control-sm" id="pl_end_date" value="<%= enddate %>">
+                                    <input type="date" class="form-control" id="pl_end_date" value="<%= enddate %>">
                                 </div>
                                 
                                 <% if (isMaster) { %>
                                 <div class="col-12 col-sm-6 col-md-3">
                                     <label class="form-label fs-12 fw-semibold mb-1">Store Scope</label>
-                                    <select class="form-select form-select-sm" id="pl_store">
+                                    <select class="form-select" id="pl_store">
                                         <option value="0" <%= store == '0' ? 'selected' : '' %>>All Stores (Consolidated)</option>
                                         <% storeList.forEach(function(s) { %>
                                             <option value="<%= s.id %>" <%= store == s.id ? 'selected' : '' %>><%= s.name %></option>
@@ -156,11 +156,11 @@
                                 <% } %>
 
                                 <div class="col-12 col-sm-6 col-md-3 d-flex gap-2">
-                                    <button type="button" class="btn btn-primary btn-sm flex-fill" id="pl_filter_btn">
-                                        <i class="fa fa-filter me-1"></i> Apply Filter
+                                    <button type="button" class="btn btn-primary flex-fill" id="pl_filter_btn">
+                                        <i class="fa fa-filter me-2"></i> Apply Filter
                                     </button>
-                                    <button type="button" class="btn btn-light btn-sm" id="pl_reset_btn" title="Reset to current month">
-                                        <i class="fa fa-undo"></i>
+                                    <button type="button" class="btn btn-secondary" id="pl_reset_btn" title="Reset to current month">
+                                        <i class="fa fa-undo me-2"></i> Reset
                                     </button>
                                 </div>
                             </div>
@@ -248,8 +248,8 @@
             <!-- FINANCIAL STATEMENT TABLE -->
             <div class="row mb-4">
                 <div class="col-12">
-                    <div class="card shadow-sm border-0 pl-statement-card">
-                        <div class="card-header py-3">
+                    <div class="card border-0 shadow-sm rounded-3 pl-statement-card">
+                        <div class="card-header border-bottom py-3 px-4">
                             <h4 class="card-title mb-0 fw-bold">
                                 <i class="fa fa-balance-scale text-secondary me-2"></i>Income Statement Summary
                             </h4>
@@ -336,8 +336,8 @@
             <!-- DRILLDOWN TABS: ORDERS & EXPENSES -->
             <div class="row">
                 <div class="col-12">
-                    <div class="card shadow-sm border-0 pl-statement-card">
-                        <div class="card-header p-2">
+                    <div class="card border-0 shadow-sm rounded-3 pl-statement-card">
+                        <div class="card-header border-bottom py-3 px-4">
                             <ul class="nav nav-tabs card-header-tabs" role="tablist">
                                 <li class="nav-item">
                                     <button class="nav-link active fw-bold fs-13 py-2 px-3" data-bs-toggle="tab" data-bs-target="#tab_orders" type="button" role="tab">

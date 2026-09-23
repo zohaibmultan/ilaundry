@@ -21,18 +21,18 @@
       <div class="container-fluid" style="min-height: 100vh;">
         <div class="row">
           <div class="col-12">
-            <div class="card ">
-              <div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <h3 class="card-title mb-0">
+            <div class="card border-0 shadow-sm rounded-3">
+              <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h4 class="card-title mb-0 fw-bold">
                   <%= language.Customer_List %>
-                </h3>
-                <button class="btn btn-rounded btn-sm btn-primary <%= login == " customer" ||
+                </h4>
+                <button class="btn btn-primary <%= login == 'customer' ||
                   !accessdata?.roll?.customers?.includes('write') ? 'd-none' : '' %>" data-bs-toggle="modal"
-                  data-bs-target="#addcoustomer" ><i class="fa fa-plus color-info me-2 text-white"></i>
-                  <%= language.Add_Customer %>
+                  data-bs-target="#addcoustomer">
+                  <i class="fa fa-plus me-2"></i><%= language.Add_Customer %>
                 </button>
               </div>
-              <div class="card-body">
+              <div class="card-body p-4">
                 <!-- Server-side DataTable Toolbar -->
 
                 <div class="row g-2 mb-3">
@@ -111,8 +111,8 @@
       <!--********** Content body end **********-->
 
       <!-- Modal update -->
-      <div class="modal fade" id="coustomer">
-        <div class="modal-dialog  modal-dialog-scrollable" role="document">
+      <div class="modal fade" id="coustomer" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg modal-fullscreen-sm-down" role="document">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title">
@@ -120,74 +120,70 @@
               </h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-              <form action="/coustomer/update/" id="coustomer_form" method="post" class="need-validation">
-
-                <div class="row g-1 align-items-center">
-                  <div class="col-md-12 mb-1">
-                    <label class="form-label">
+            <form action="/coustomer/update/" id="coustomer_form" method="post" class="need-validation">
+              <div class="modal-body">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
                       <%= language.Customer_Name %> <span class="text-danger">*</span>
                     </label>
-                    <input type="text" class="form-control" name="name" id="name" value="" required>
+                    <input type="text" class="form-control" name="name" id="name" placeholder="Enter customer name" required>
                   </div>
 
-                  <div class="col-md-12 mb-1">
-                    <label class="form-label">
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
                       <%= language.Phone_Number %> <span class="text-danger">*</span>
                     </label>
-                    <input type="number" class="form-control" name="number" id="number" value="" required>
-                  </div>
-                  <div class="col-md-12 mb-1">
-                    <label class="form-label">
-                      <%= language.Email %>
-                    </label>
-                    <input type="text" class="form-control" name="email" value="" id="email" required>
-                  </div>
-                  <div class="col-md-12 mb-1">
-                    <label class="form-label">
-                      <%= language.Tax_Number %>
-                    </label>
-                    <input type="text" class="form-control" name="tax" value="" id="tax">
-                  </div>
-                  <div class="col-md-12 mb-3">
-                    <label class="form-label">
-                      <%= language.Address %>
-                    </label>
-                    <input type="text" class="form-control" name="address" value="" id="address">
+                    <input type="number" class="form-control" name="number" id="number" placeholder="Enter phone number" required>
                   </div>
 
-                  <div class="col-md-12 mb-1 d-inline-flex justify-content-between <%= login == " customer" ? 'd-none'
-                    : '' %>">
-                    <div class="form-check form-switch">
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <%= language.Email %> <span class="text-danger">*</span>
+                    </label>
+                    <input type="email" class="form-control" name="email" id="email" placeholder="Enter email address" required>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <%= language.Tax_Number %>
+                    </label>
+                    <input type="text" class="form-control" name="tax" id="tax" placeholder="Enter tax number">
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label fw-bold">
+                      <%= language.Address %>
+                    </label>
+                    <input type="text" class="form-control" name="address" id="address" placeholder="Enter address">
+                  </div>
+
+                  <div class="col-12 <%= login == 'customer' ? 'd-none' : '' %>">
+                    <div class="form-check form-switch pt-1">
                       <input class="form-check-input" type="checkbox" id="Approved" name="approved" value="1">
-                      <label class="form-check-label" for="Approved  ">
+                      <label class="form-check-label fw-bold" for="Approved">
                         <%= language.Is_Approved %> ?
                       </label>
                     </div>
-                    <!-- <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="active" name="active" value="0" >
-                                                <label class="form-check-label"
-                                                    for="employee"><%= language.Is_Active %>  ?</label>
-                                            </div> -->
                   </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-                <%= language.Cancel %>
-              </button>
-              <button type="submit" class="btn btn-sm  btn-primary">
-                <%= language.Save %>
-              </button>
-            </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                  <i class="fa fa-times me-2"></i><%= language.Cancel %>
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  <i class="fa fa-save me-2"></i><%= language.Save %>
+                </button>
+              </div>
             </form>
           </div>
         </div>
       </div>
 
       <!-- Modal add -->
-      <div class="modal fade" id="addcoustomer">
-        <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
+      <div class="modal fade" id="addcoustomer" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg modal-fullscreen-sm-down" role="document">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title">
@@ -195,100 +191,71 @@
               </h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-              <form action="/coustomer/register" method="post" class="need-validation">
+            <form action="/coustomer/register" method="post" class="need-validation">
+              <div class="modal-body">
+                <input type="hidden" name="storeid" value="<%= (typeof assigned_store_id !== 'undefined' && assigned_store_id) ? assigned_store_id : (typeof staff_store_id !== 'undefined' && staff_store_id ? staff_store_id : ((typeof storeList !== 'undefined' && storeList.length > 0) ? storeList[0].id : '')) %>">
 
-                <div class="row g-1 align-items-center">
-                  <div class="form-group">
-                    <label><strong>
-                        <%= language.Name %>
-                      </strong></label>
-                    <input type="text" class="form-control " name="name" required>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <%= language.Name %> <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" name="name" placeholder="Enter customer name" required>
                   </div>
-                  <div class="form-group">
-                    <label><strong>
-                        <%= language.Phone_Number %>
-                      </strong></label>
-                    <input type="number" class="form-control" name="number" required>
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <%= language.Phone_Number %> <span class="text-danger">*</span>
+                    </label>
+                    <input type="number" class="form-control" name="number" placeholder="Enter phone number" required>
                   </div>
-                  <div class="form-group">
-                    <label><strong>
-                        <%= language.Email %>
-                      </strong></label>
-                    <input type="email" class="form-control" name="email" required>
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <%= language.Email %> <span class="text-danger">*</span>
+                    </label>
+                    <input type="email" class="form-control" name="email" placeholder="Enter email address" required>
                   </div>
-                  <% if (typeof is_staff !=='undefined' && is_staff) { %>
-                    <div class="col-md-12 mb-3">
-                      <div class="form-group">
-                        <label class="form-label"><strong>
-                            <%= language.Store_List || 'Assigned Store' %>
-                          </strong></label>
-                        <input type="text" class="form-control"
-                          value="<%= (typeof staff_store_name !== 'undefined' && staff_store_name) ? staff_store_name : 'Assigned Store' %>"
-                          readonly disabled style="background-color: #e9ecef; cursor: not-allowed;">
-                        <input type="hidden" name="storeid" value="<%= staff_store_id %>">
-                      </div>
-                    </div>
-                    <% } else { %>
-                      <div class="col-md-12 mb-3">
-                        <div class="form-group">
-                          <label class="form-label"><strong>
-                              <%= language.Store_List || 'Store' %>
-                            </strong><span class="text-danger">*</span></label>
-                          <select class="form-control wide mb-3" name="storeid" id="Customer_add" required>
-                            <option value="" selected disabled> Select Store </option>
-                            <% storeList.forEach(function(x){ %>
-                              <option value="<%= x.id %>">
-                                <%= x.name %>
-                              </option>
-                              <% }) %>
-                          </select>
-                        </div>
-                      </div>
-                      <% } %>
-                        <div class="form-group">
-                          <label><strong>
-                              <%= language.Tax_Number %>
-                            </strong></label>
-                          <input type="text" class="form-control" name="taxnumber">
-                        </div>
-                        <div class="form-group">
-                          <label><strong>
-                              <%= language.Address %>
-                            </strong></label>
-                          <input type="text" class="form-control" name="address">
-                        </div>
 
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <%= language.Tax_Number %>
+                    </label>
+                    <input type="text" class="form-control" name="taxnumber" placeholder="Enter tax number">
+                  </div>
 
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <%= language.Username %>
+                    </label>
+                    <input type="text" class="form-control" name="username" placeholder="Enter username">
+                  </div>
 
-                        <div class="form-group">
-                          <label><strong>
-                              <%= language.Username %>
-                            </strong></label>
-                          <input type="text" class="form-control" name="username">
-                        </div>
-                        <div class="form-group">
-                          <label><strong>
-                              <%= language.Password %>
-                            </strong></label>
-                          <input type="text" class="form-control" name="password">
-                        </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <%= language.Password %>
+                    </label>
+                    <input type="password" class="form-control" name="password" placeholder="Enter password">
+                  </div>
 
+                  <div class="col-12">
+                    <label class="form-label fw-bold">
+                      <%= language.Address %>
+                    </label>
+                    <input type="text" class="form-control" name="address" placeholder="Enter address">
+                  </div>
                 </div>
-            </div>
+              </div>
 
-            <div class="modal-footer">
-              <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-                <%= language.Cancel %>
-              </button>
-              <button type="submit" class="btn btn-sm  btn-primary">
-                <%= language.Save %>
-              </button>
-            </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                  <i class="fa fa-times me-2"></i><%= language.Cancel %>
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  <i class="fa fa-save me-2"></i><%= language.Save %>
+                </button>
+              </div>
             </form>
-
-
-
           </div>
         </div>
       </div>
@@ -316,12 +283,11 @@
               <%= language.Action_cannot_be_undone || 'This action cannot be undone.' %>
             </p>
             <div class="d-flex gap-2 justify-content-center">
-              <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal">
-                <%= language.Cancel || 'Cancel' %>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
               </button>
-              <a href="#" id="deleteCustomerConfirmBtn" class="btn btn-danger px-4 py-2">
-                <i class="fa fa-trash me-1"></i>
-                <%= language.Delete || 'Yes, Delete' %>
+              <a href="#" id="deleteCustomerConfirmBtn" class="btn btn-danger">
+                <i class="fa fa-trash me-2"></i><%= language.Delete || 'Yes, Delete' %>
               </a>
             </div>
           </div>
@@ -465,12 +431,14 @@
           });
 
           $('#addcoustomer').on('shown.bs.modal', function () {
-            $('#Customer_add').select2({
-              dropdownParent: $('#addcoustomer'),
-              placeholder: 'Select Store(s)',
-              width: '100%',
-              allowClear: true
-            });
+            if ($('#Customer_add').length) {
+              $('#Customer_add').select2({
+                dropdownParent: $('#addcoustomer'),
+                placeholder: 'Select Store(s)',
+                width: '100%',
+                allowClear: true
+              });
+            }
           });
 
           $(document).on('click', '.btn-edit-customer', function () {

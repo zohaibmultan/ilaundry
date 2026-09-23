@@ -15,18 +15,18 @@
                 <div class="row">
 
                     <div class="col-lg-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h4 class="card-title text-nowrap">
+                        <div class="card border-0 shadow-sm rounded-3">
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h4 class="card-title mb-0 fw-bold text-nowrap">
                                     <%= language.Bulk_Upload_Services %>
                                 </h4>
-                                <a href="/services/demo_csv" class="btn btn-sm btn-primary text-center text-nowrap">
-                                    <i class="fa fa-download me-2 color-info"></i>
+                                <a href="/services/demo_csv" class="btn btn-info text-center text-nowrap">
+                                    <i class="fa fa-download me-2"></i>
                                     <%= language.Demo_Excel_File %>
                                 </a>
                             </div>
 
-                            <div class="card-body">
+                            <div class="card-body p-4">
                                 <div class="form-validation">
 
                                     <form class="needs-validation" action="/services/add_csv" method="post"
@@ -55,8 +55,8 @@
                                                     <% } %>
                                         </div>
 
-                                        <button class="btn btn-primary w-25 text-nowrap" type="submit" id="submit">
-                                            <%= language.Submit %>
+                                        <button class="btn btn-primary text-nowrap" type="submit" id="submit">
+                                            <i class="fa fa-upload me-2"></i><%= language.Submit %>
                                         </button>
                                 </div>
 

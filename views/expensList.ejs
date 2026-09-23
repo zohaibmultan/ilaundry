@@ -17,16 +17,15 @@
             <div class="container-fluid" style="min-height: 100vh;">
                 <div class="row">
                     <div class="col-12">
-                        <div class="card ">
-                            <div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <h3 class="card-title mb-0">
+                        <div class="card border-0 shadow-sm rounded-3">
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h4 class="card-title mb-0 fw-bold">
                                     <%= language.Expence_List %>
-                                </h3>
+                                </h4>
                                 <button
-                                    class="btn btn-rounded btn-sm btn-primary <%= accessdata.roll.expense.includes('write') ?'':'d-none' %>"
-                                    data-bs-toggle="modal" data-bs-target="#expense_list"><i
-                                        class="fa fa-plus color-info me-2 text-white"></i>
-                                    <%= language.Add_Expence %>
+                                    class="btn btn-primary <%= accessdata.roll.expense.includes('write') ?'':'d-none' %>"
+                                    data-bs-toggle="modal" data-bs-target="#expense_list">
+                                    <i class="fa fa-plus me-2"></i><%= language.Add_Expence %>
                                 </button>
                             </div>
                             <div class="d-none">
@@ -35,7 +34,7 @@
                                 <input type="hiden" name="thousands_separator"
                                     value="<%= accessdata.thousands_separator %>">
                             </div>
-                            <div class="card-body">
+                            <div class="card-body p-4">
                                 <!-- Server-side DataTable Toolbar -->
                                 <div class="row g-2 mb-3">
                                     <div class="<%= ismulty ? 'col-12 col-md-4 col-lg-3' : 'col-12 col-md-4 col-lg-3' %>">
@@ -125,103 +124,101 @@
                         </div>
                         <div class="modal-body">
                             <form action="/expense/updateexp" method="post" class="need-validation" id="expupdat_form">
-
-                                <div class="row g-1 align-items-center">
-                                    <div class="form-group">
-                                        <label><strong>
-                                                <%= language.Date %>
-                                            </strong><span class="text-danger">*</span></label>
-                                        <input type="date" class="form-control " id="date_update" name="date_update"
-                                            required>
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-12 mb-2">
+                                        <div class="form-group">
+                                            <label class="form-label fw-bold">
+                                                <%= language.Date %> <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="date" class="form-control" id="date_update" name="date_update" required>
+                                        </div>
                                     </div>
 
-                                    <div class="form-group">
-                                        <label><strong>
-                                                <%= language.Expence_Category %>
-                                            </strong><span class="text-danger">*</span></label>
-                                        <!-- <input type="text" class="form-control" name="towards" required> -->
-                                        <select class="form-control wide mb-1" name="expense_category"
-                                            id="category_update">
-                                            <% categ.forEach(function(data){ %>
-                                                <option value="<%=data.id%>">
-                                                    <%=data.cat_name%>
-                                                </option>
+                                    <div class="col-12 mb-2">
+                                        <div class="form-group">
+                                            <label class="form-label fw-bold">
+                                                <%= language.Expence_Category %> <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control wide" name="expense_category" id="category_update" required>
+                                                <% (categ || []).forEach(function(data){ %>
+                                                    <option value="<%=data.id%>">
+                                                        <%=data.cat_name%>
+                                                    </option>
                                                 <% }) %>
-                                        </select>
-
+                                            </select>
+                                        </div>
                                     </div>
 
-                                    <div class="form-group">
-                                        <label><strong>
-                                                <%= language.EXPENCE_AMOUNT %>
-                                            </strong><span class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" id="amount_update"
-                                            name="amount_update" placeholder="Enter Amount" step="0.01" required>
+                                    <div class="col-12 mb-2">
+                                        <div class="form-group">
+                                            <label class="form-label fw-bold">
+                                                <%= language.EXPENCE_AMOUNT %> <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="number" class="form-control" id="amount_update"
+                                                name="amount_update" placeholder="Enter Amount" step="0.01" required>
+                                        </div>
                                     </div>
 
-                                    <div class="form-group">
-                                        <label><strong>
-                                                <%= language.PAYMENT_MODE %>
-                                            </strong></label>
-                                        <select class="form-control wide mb-1" name="payment_update"
-                                            id="payment_update">
-                                            <% acountlist.forEach(function(data){ %>
-                                                <option value="<%= data.id %>">
-                                                    <%= data.ac_name %>
-                                                </option>
+                                    <div class="col-12 mb-2">
+                                        <div class="form-group">
+                                            <label class="form-label fw-bold">
+                                                <%= language.PAYMENT_MODE %> <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control wide" name="payment_update" id="payment_update" required>
+                                                <% (acountlist || []).forEach(function(data){ %>
+                                                    <option value="<%= data.id %>">
+                                                        <%= data.ac_name %>
+                                                    </option>
                                                 <% }) %>
-                                        </select>
-
+                                            </select>
+                                        </div>
                                     </div>
 
-                                    <div class="form-group">
-                                        <div class="d-flex align-items-center justify-content-between">
-                                            <label class="form-label"><strong>
+                                    <div class="col-12 mb-2">
+                                        <div class="form-group">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <label class="form-label fw-bold mb-0">
                                                     <%= language.Tax_included %> ?
-                                                </strong></label>
-                                            <div class="form-check ms-3">
-                                                <input class="form-check-input" type="radio" id="no_tax_included_update"
-                                                    name="tax" value="no">
-                                                <label class="form-check-label" for="no_tax_included_update"> No</label>
-                                            </div>
-                                            <div class="form-check ms-2">
-                                                <input class="form-check-input" type="radio"
-                                                    id="yes_tax_   included_update" name="tax" value="yes">
-                                                <label class="form-check-label" for="yes_tax_included_update">
-                                                    Yes</label>
-                                            </div>
-                                            <div class=" col-4 form-group ms-2 justify-content-end">
-
-                                                <input type="number" class="form-control d-none" name="tax_percent"
-                                                    placeholder="Tax Percent" id="tex_perce_update" value="0">
+                                                </label>
+                                                <div class="form-check ms-3">
+                                                    <input class="form-check-input" type="radio" id="no_tax_included_update"
+                                                        name="tax" value="no" checked>
+                                                    <label class="form-check-label" for="no_tax_included_update"> No</label>
+                                                </div>
+                                                <div class="form-check ms-2">
+                                                    <input class="form-check-input" type="radio"
+                                                        id="yes_tax_included_update" name="tax" value="yes">
+                                                    <label class="form-check-label" for="yes_tax_included_update"> Yes</label>
+                                                </div>
+                                                <div class="col-4 form-group ms-2 justify-content-end">
+                                                    <input type="number" class="form-control d-none" name="tax_percent"
+                                                        placeholder="Tax Percent" id="tex_perce_update" value="0">
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="form-group">
-                                        <label><strong>
+                                    <div class="col-12 mb-2">
+                                        <div class="form-group">
+                                            <label class="form-label fw-bold">
                                                 <%= language.Notes %>
-                                            </strong></label>
-                                        <!-- <input type="text" class="form-control" name="created_by" required> -->
-                                        <input type="text" class="form-control" name="notes_update" id="notes_update"
-                                            placeholder="Enter Notes">
+                                            </label>
+                                            <input type="text" class="form-control" name="notes_update" id="notes_update"
+                                                placeholder="Enter Notes">
+                                        </div>
                                     </div>
-
                                 </div>
                         </div>
 
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-                                <%= language.Cancel %>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel %>
                             </button>
-                            <button type="submit" class="btn btn-sm  btn-primary">
-                                <%= language.Save %>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-2"></i><%= language.Save %>
                             </button>
                         </div>
                         </form>
-
-
-
                     </div>
                 </div>
             </div>
@@ -238,129 +235,137 @@
                         </div>
                         <div class="modal-body">
                             <form action="/expense/addexpense" method="post" class="need-validation" id="myexpen">
-
-                                <div class="row g-1 align-items-center">
-                                    <div class="col-md-12  <%= ismulty ? '': 'd-none' %>">
-                                        <div class="form-group">
-                                            <label class="form-label"><strong>
-                                                    <%= language.Store_List %>
-                                                </strong><span class="text-danger">*</span></label>
-                                            <select class=" form-control wide mb-1" name="storeid"
-                                                id="expense_add_admin" required>
-                                                <option value="" selected disabled> Select Store </option>
-                                                <% storeList.forEach(function(x){ %>
-                                                    <option value="<%= x.id %>">
-                                                        <%= x.name %>
-                                                    </option>
+                                <div class="row g-2 align-items-center">
+                                    <% if (ismulty) { %>
+                                        <div class="col-12 mb-2">
+                                            <div class="form-group">
+                                                <label class="form-label fw-bold">
+                                                    <%= language.Store_List %> <span class="text-danger">*</span>
+                                                </label>
+                                                <select class="form-control wide" name="storeid"
+                                                    id="expense_add_admin" required>
+                                                    <option value="" selected disabled><%= language.Select_Store || 'Select Store' %></option>
+                                                    <% (storeList || []).forEach(function(x){ %>
+                                                        <option value="<%= x.id %>">
+                                                            <%= x.name %>
+                                                        </option>
                                                     <% }) %>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    <% } else { %>
+                                        <input type="hidden" name="storeid" value="<%= (typeof assigned_store_id !== 'undefined' && assigned_store_id) ? assigned_store_id : '' %>">
+                                    <% } %>
 
-                                            </select>
+                                    <div class="col-12 mb-2">
+                                        <div class="form-group">
+                                            <label class="form-label fw-bold">
+                                                <%= language.Date %> <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="date" class="form-control" name="date" required>
                                         </div>
                                     </div>
 
-                                    <div class="form-group">
-                                        <label><strong>
-                                                <%= language.Date %>
-                                            </strong><span class="text-danger">*</span></label>
-                                        <input type="date" class="form-control " name="date" required>
+                                    <div class="col-12 mb-2">
+                                        <div class="form-group">
+                                            <label class="form-label fw-bold">
+                                                <%= language.Expence_Category %> <span class="text-danger">*</span>
+                                            </label>
+                                            <% if (ismulty) { %>
+                                                <select class="form-control wide" name="category" id="exp_add_category" required disabled>
+                                                    <option value="" selected disabled><%= language.Select_Store_First || 'Select a store first' %></option>
+                                                </select>
+                                            <% } else { %>
+                                                <select class="form-control wide" name="category" id="exp_add_category" required>
+                                                    <option value="" selected disabled><%= language.Select_Category || 'Select Category' %></option>
+                                                    <% (categ || []).forEach(function(data){ %>
+                                                        <option value="<%=data.id%>">
+                                                            <%=data.cat_name%>
+                                                        </option>
+                                                    <% }) %>
+                                                </select>
+                                            <% } %>
+                                        </div>
                                     </div>
 
-                                    <div class="form-group">
-                                        <label><strong>
-                                                <%= language.Expence_Category %>
-                                            </strong><span class="text-danger">*</span></label>
-                                        <!-- <input type="text" class="form-control" name="towards" required> -->
-                                        <select class="form-control wide mb-1" name="category" id="exp_add_category"
-                                            required>
-                                            <option value="0" selected disabled>Select category</option>
-                                            <% categ.forEach(function(data){ %>
-                                                <option value="<%=data.id%>">
-                                                    <%=data.cat_name%>
-                                                </option>
-                                                <% }) %>
-                                        </select>
-
+                                    <div class="col-12 mb-2">
+                                        <div class="form-group">
+                                            <label class="form-label fw-bold">
+                                                <%= language.EXPENCE_AMOUNT %> <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="number" class="form-control" name="amount"
+                                                placeholder="Enter Amount" step="0.01" required>
+                                        </div>
                                     </div>
 
-                                    <div class="form-group">
-                                        <label><strong>
-                                                <%= language.EXPENCE_AMOUNT %>
-                                            </strong><span class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" name="amount"
-                                            placeholder="Enter Amount" step=0.01 required>
+                                    <div class="col-12 mb-2">
+                                        <div class="form-group">
+                                            <label class="form-label fw-bold">
+                                                <%= language.PAYMENT_MODE %> <span class="text-danger">*</span>
+                                            </label>
+                                            <% if (ismulty) { %>
+                                                <select class="form-control wide" name="payment" id="exp_add_payment" required disabled>
+                                                    <option value="" selected disabled><%= language.Select_Store_First || 'Select a store first' %></option>
+                                                </select>
+                                            <% } else { %>
+                                                <select class="form-control wide" name="payment" id="exp_add_payment" required>
+                                                    <option value="" selected disabled><%= language.Select_Payment || 'Select Payment Method' %></option>
+                                                    <% (acountlist || []).forEach(function(data){ %>
+                                                        <option value="<%= data.id %>">
+                                                            <%= data.ac_name %>
+                                                        </option>
+                                                    <% }) %>
+                                                </select>
+                                            <% } %>
+                                        </div>
                                     </div>
 
-                                    <div class="form-group">
-                                        <label><strong>
-                                                <%= language.PAYMENT_MODE %>
-                                            </strong></label>
-                                        <select class="form-control wide mb-1" name="payment" id="exp_add_payment"
-                                            required>
-                                            <option value="0" selected disabled>Select Payment</option>
-                                            <% acountlist.forEach(function(data){ %>
-                                                <option value="<%= data.id %>">
-                                                    <%= data.ac_name %>
-                                                </option>
-                                                <% }) %>
-
-                                        </select>
-                                    </div>
-
-                                    <div class="form-group">
-
-                                        <div class="d-flex align-items-center justify-content-between">
-                                            <label class="form-label"><strong>
+                                    <div class="col-12 mb-2">
+                                        <div class="form-group">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <label class="form-label fw-bold mb-0">
                                                     <%= language.Tax_included %> ?
-                                                </strong></label>
-                                            <div class="form-check ms-3">
-                                                <input class="form-check-input" type="radio" id="no_tax_included"
-                                                    name="tax" value="no" required checked>
-                                                <label class="form-check-label" for="no_tax_included"> No</label>
-                                            </div>
-                                            <div class="form-check ms-2">
-                                                <input class="form-check-input" type="radio" id="yes_tax_included"
-                                                    name="tax" value="yes" required>
-                                                <label class="form-check-label" for="yes_tax_included"> Yes</label>
-                                            </div>
-                                            <div class=" col-4 form-group ms-2 justify-content-end">
-
-                                                <input type="number" class="form-control d-none" name="tax_percent"
-                                                    placeholder="Tax Percent" id="tex_perce" value="0">
+                                                </label>
+                                                <div class="form-check ms-3">
+                                                    <input class="form-check-input" type="radio" id="no_tax_included"
+                                                        name="tax" value="no" required checked>
+                                                    <label class="form-check-label" for="no_tax_included"> No</label>
+                                                </div>
+                                                <div class="form-check ms-2">
+                                                    <input class="form-check-input" type="radio" id="yes_tax_included"
+                                                        name="tax" value="yes" required>
+                                                    <label class="form-check-label" for="yes_tax_included"> Yes</label>
+                                                </div>
+                                                <div class="col-4 form-group ms-2 justify-content-end">
+                                                    <input type="number" class="form-control d-none" name="tax_percent"
+                                                        placeholder="Tax Percent" id="tex_perce" value="0">
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="form-group">
-                                        <label><strong>
+                                    <div class="col-12 mb-2">
+                                        <div class="form-group">
+                                            <label class="form-label fw-bold">
                                                 <%= language.Notes %>
-                                            </strong></label>
-                                        <!-- <input type="text" class="form-control" name="created_by" required> -->
-                                        <textarea class="form-control" name="notes" id="notes" placeholder="Enter Notes"
-                                            required></textarea>
+                                            </label>
+                                            <textarea class="form-control" name="notes" id="notes" placeholder="Enter Notes" rows="2"></textarea>
+                                        </div>
                                     </div>
-                                    <!-- <div class="form-group">
-                                    <label><strong>Password</strong></label>
-                                    <input type="text" class="form-control" name="password" required>
-                                </div> -->
                                 </div>
                         </div>
 
-
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-                                <%= language.Cancel %>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel %>
                             </button>
-                            <button type="submit" value="submit" class="btn btn-sm  btn-primary">
-                                <%= language.Save %>
+                            <button type="submit" value="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-2"></i><%= language.Save %>
                             </button>
                         </div>
                         </form>
-
-
-
                     </div>
                 </div>
-
             </div>
         </div>
         <!--**********************************
@@ -379,57 +384,52 @@
 
                 <script>
                     $('#expense_list').on('shown.bs.modal', function () {
+                        if ($('#expense_add_admin').length) {
+                            $('#expense_add_admin').select2({
+                                dropdownParent: $('#expense_list'),
+                                placeholder: 'Select Store',
+                                width: '100%',
+                                allowClear: true
+                            });
+                        }
 
-                        $('#expense_add_admin').select2({
-                            dropdownParent: $('#expense_list'),
-                            placeholder: 'Select Store(s)',
-                            width: '100%',
-                            allowClear: true
-                        });
-                    });
-                </script>
-                <script>
-                    $('#expense_list').on('shown.bs.modal', function () {
+                        if ($('#exp_add_category').length) {
+                            $('#exp_add_category').select2({
+                                dropdownParent: $('#expense_list'),
+                                placeholder: 'Select Category',
+                                width: '100%',
+                                allowClear: true
+                            });
+                        }
 
-                        $('#exp_add_category').select2({
-                            dropdownParent: $('#expense_list'),
-                            placeholder: 'Select Category(c)',
-                            width: '100%',
-                            allowClear: true
-                        });
+                        if ($('#exp_add_payment').length) {
+                            $('#exp_add_payment').select2({
+                                dropdownParent: $('#expense_list'),
+                                placeholder: 'Select Payment Method',
+                                width: '100%',
+                                allowClear: true
+                            });
+                        }
                     });
-                </script>
-                <script>
-                    $('#expense_list').on('shown.bs.modal', function () {
 
-                        $('#exp_add_payment').select2({
-                            dropdownParent: $('#expense_list'),
-                            placeholder: 'Select Paymen t Method(p)',
-                            width: '100%',
-                            allowClear: true
-                        });
-                    });
-                </script>
-                <script>
                     $('#expense_edit').on('shown.bs.modal', function () {
+                        if ($('#category_update').length) {
+                            $('#category_update').select2({
+                                dropdownParent: $('#expense_edit'),
+                                placeholder: 'Select Category',
+                                width: '100%',
+                                allowClear: true
+                            });
+                        }
 
-                        $('#category_update').select2({
-                            dropdownParent: $('#expense_edit'),
-                            placeholder: 'Select Category(c)',
-                            width: '100%',
-                            allowClear: true
-                        });
-                    }); 
-                </script>
-                <script>
-                    $('#expense_edit').on('shown.bs.modal', function () {
-
-                        $('#payment_update').select2({
-                            dropdownParent: $('#expense_edit'),
-                            placeholder: 'Select Payment Method(p)',
-                            width: '100%',
-                            allowClear: true
-                        });
+                        if ($('#payment_update').length) {
+                            $('#payment_update').select2({
+                                dropdownParent: $('#expense_edit'),
+                                placeholder: 'Select Payment Method',
+                                width: '100%',
+                                allowClear: true
+                            });
+                        }
                     });
                 </script>
                 <script>

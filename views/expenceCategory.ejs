@@ -16,18 +16,18 @@
             <div class="container-fluid" style="min-height: 100vh;">
                 <div class="row">
                     <div class="col-12">
-                        <div class="card ">
-                            <div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <h3 class="card-title mb-0">
+                        <div class="card border-0 shadow-sm rounded-3">
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h4 class="card-title mb-0 fw-bold">
                                     <%= language.Expence_Category_List %>
-                                </h3>
+                                </h4>
                                 <button
-                                    class="btn btn-rounded btn-sm btn-primary <%= accessdata.roll.expense.includes('write') ?'':'d-none' %>"
-                                    data-bs-toggle="modal" data-bs-target="#addexpcat"><i class="fa fa-plus color-info me-2 text-white"></i>
-                                    <%= language.Add_Category %>
+                                    class="btn btn-primary <%= accessdata.roll.expense.includes('write') ?'':'d-none' %>"
+                                    data-bs-toggle="modal" data-bs-target="#addexpcat">
+                                    <i class="fa fa-plus me-2"></i><%= language.Add_Category %>
                                 </button>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body p-4">
                                 <!-- Server-side DataTable Toolbar -->
                                 <div class="row g-2 mb-3">
                                     <div class="<%= ismulty ? 'col-12 col-md-4 col-lg-4' : 'col-12 col-md-6 col-lg-6' %>">
@@ -100,55 +100,51 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            <%= language.Coustomer_Detail %>
+                            <%= language.Edit_Expense_Category || 'Edit Expense Category' %>
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
-                        <form action="/coustomer/update/" id="updateexpcat_form" method="post" class="need-validation">
-
-                            <div class="row g-1 align-items-center">
-                                <div class="row g-1 align-items-center">
+                    <form action="/expense/updateexpcat/" id="updateexpcat_form" method="post" class="need-validation">
+                        <div class="modal-body">
+                            <div class="row g-3">
+                                <div class="col-12">
                                     <div class="form-group">
-                                        <label><strong>
-                                                <%= language.Category_Name %>
-                                            </strong></label>
-                                        <input type="text" class="form-control " id="name" name="name" required>
+                                        <label class="form-label fw-bold">
+                                            <%= language.Category_Name %> <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" id="name" name="name" required>
                                     </div>
+                                </div>
+                                <div class="col-12">
                                     <div class="form-group">
-                                        <label for="type"><strong>
-                                                <%= language.Category_Type %>
-                                            </strong></label>
-                                        <select class="form-control wide mb-3" id="cttyid" name="type_id" required>
-                                            <% type.forEach(function(data){ %>
+                                        <label class="form-label fw-bold" for="cttyid">
+                                            <%= language.Category_Type %> <span class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-control wide" id="cttyid" name="type_id" required>
+                                            <% (type || []).forEach(function(data){ %>
                                                 <option value="<%=data.id%>">
                                                     <%= data.type_name%>
                                                 </option>
-                                                <% }) %>
-
+                                            <% }) %>
                                         </select>
                                     </div>
-
                                 </div>
                             </div>
-                    </div>
-
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-                                    <%= language.Cancel %>
-                                </button>
-                                <button type="submit" class="btn btn-sm  btn-primary">
-                                    <%= language.Save %>
-                                </button>
-                            </div>
-                        </form>
-
-
-
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel %>
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-2"></i><%= language.Save %>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
         <!-- <<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
+
         <!-- Modal add -->
         <div class="modal fade" id="addexpcat">
             <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
@@ -159,68 +155,67 @@
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
-                        <form action="/expense/addexpcate" method="post" class="need-validation">
-
-                            <div class="row g-1 align-items-center">
-                                <div class="col-md-12 mb-1 <%= ismulty ? '': 'd-none' %>">
-                                    <div class="form-group">
-                                        <label class="form-label"><strong>
-                                                <%= language.Store_List %>
-                                            </strong><span class="text-danger">*</span></label>
-                                        <select class="form-control wide mb-3" name="storeid"
-                                            id="expense_cat_add_admin" required >
-                                            <option value="" selected disabled> Select Store </option>
-                                            <% storeList.forEach(function(x){ %>
-                                                <option value="<%= x.id %>">
-                                                    <%= x.name %>
-                                                </option>
+                    <form action="/expense/addexpcate" method="post" class="need-validation">
+                        <div class="modal-body">
+                            <div class="row g-3">
+                                <% if (ismulty) { %>
+                                    <div class="col-12">
+                                        <div class="form-group">
+                                            <label class="form-label fw-bold">
+                                                <%= language.Store_List %> <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control wide" name="storeid"
+                                                id="expense_cat_add_admin" required>
+                                                <option value="" selected disabled><%= language.Select_Store || 'Select Store' %></option>
+                                                <% (storeList || []).forEach(function(x){ %>
+                                                    <option value="<%= x.id %>">
+                                                        <%= x.name %>
+                                                    </option>
                                                 <% }) %>
-
-
+                                            </select>
+                                        </div>
+                                    </div>
+                                <% } else { %>
+                                    <input type="hidden" name="storeid" value="<%= (typeof assigned_store_id !== 'undefined' && assigned_store_id) ? assigned_store_id : '' %>">
+                                <% } %>
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label class="form-label fw-bold">
+                                            <%= language.Category_Name %> <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" name="name" required placeholder="<%= language.Category_Name %>">
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label class="form-label fw-bold" for="type_id">
+                                            <%= language.Category_Type %> <span class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-control wide" id="type_id" name="type_id" required>
+                                            <option value="" selected disabled><%= language.Select_One || 'Select Category Type' %></option>
+                                            <% (type || []).forEach(function(data){ %>
+                                                <option value="<%=data.id%>">
+                                                    <%= data.type_name%>
+                                                </option>
+                                            <% }) %>
                                         </select>
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label><strong>
-                                            <%= language.Category_Name %>
-                                        </strong></label>
-                                    <input type="text" class="form-control " name="name" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="type_id"><strong>
-                                            <%= language.Category_Type %>
-                                        </strong></label>
-                                    <select class="form-control wide" id="type_id" name="type_id" required>
-                                        <% type.forEach(function(data){ %>
-                                            <option value="<%=data.id%>">
-                                                <%= data.type_name%>
-                                            </option>
-                                            <% }) %>
-
-                                    </select>
-                                </div>
-
                             </div>
-                    </div>
-
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-                                    <%= language.Cancel %>
-                                </button>
-                                <button type="submit" class="btn btn-sm  btn-primary">
-                                    <%= language.Save %>
-                                </button>
-                            </div>
-                        </form>
-
-
-
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel %>
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-2"></i><%= language.Save %>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
-
-
         </div>
+        
         <!--**********************************
             Footer start
         ***********************************-->
@@ -237,34 +232,34 @@
 
                 <script>
                     $('#addexpcat').on('shown.bs.modal', function () {
+                        if ($('#expense_cat_add_admin').length) {
+                            $('#expense_cat_add_admin').select2({
+                                dropdownParent: $('#addexpcat'),
+                                placeholder: 'Select Store(s)',
+                                width: '100%',
+                                allowClear: true
+                            });
+                        }
 
-                        $('#expense_cat_add_admin').select2({
-                            dropdownParent: $('#addexpcat'),
-                            placeholder: 'Select Store(s)',
-                            width: '100%',
-                            allowClear: true
-                        });
-                    });
-
-
-                    $('#addexpcat').on('shown.bs.modal', function () {
-
-                        $('#type_id').select2({
-                            dropdownParent: $('#addexpcat'),
-                            placeholder: 'Select Category(cat)',
-                            width: '100%',
-                            allowClear: true
-                        });
+                        if ($('#type_id').length) {
+                            $('#type_id').select2({
+                                dropdownParent: $('#addexpcat'),
+                                placeholder: 'Select Category(cat)',
+                                width: '100%',
+                                allowClear: true
+                            });
+                        }
                     });
 
                     $('#updateexpcat').on('shown.bs.modal', function () {
-
-                        $('#cttyid').select2({
-                            dropdownParent: $('#updateexpcat'),
-                            placeholder: 'Select Category(cat)',
-                            width: '100%',
-                            allowClear: true
-                        });
+                        if ($('#cttyid').length) {
+                            $('#cttyid').select2({
+                                dropdownParent: $('#updateexpcat'),
+                                placeholder: 'Select Category(cat)',
+                                width: '100%',
+                                allowClear: true
+                            });
+                        }
                     });
                 </script>
 

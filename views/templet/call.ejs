@@ -110,131 +110,158 @@
    })
 
 
-   $(document).on('click', '#expcataction', function () {
+   $(document).on('click', '#expcataction, .btn-tbl-edit', function () {
       var baseUrl = window.location.origin;
       var storeid = $(this).attr('data-storeid');
-      var cattypeid = $(this).attr('data-exp_cat_type_id')
+      var cattypeid = $(this).attr('data-exp_cat_type_id');
+      var id = $(this).attr('data-id');
+      var catname = $(this).attr('data-catname') || '';
 
-      $.ajax({
-         type: 'get',
-         url: baseUrl + "/expense/cattypelist/" + storeid,
-         dataType: 'json',
-         success: function (res) {
-            $('#cttyid').html('')
-            $.each(res.data, function (index, value) {
+      if (id) {
+         var cleanId = String(id).replace(/['"]/g, '').trim();
+         var act = "/expense/updateexpcat/" + cleanId;
+         $("#updateexpcat_form").attr('action', act);
+         $('#name').val(catname).attr('value', catname);
 
-               $('#cttyid').append('<option value="' + value.id + '">' + value.type_name + '</option>')
+         if (storeid && storeid !== 'undefined' && storeid !== 'null') {
+            $.ajax({
+               type: 'get',
+               url: baseUrl + "/expense/cattypelist/" + storeid,
+               dataType: 'json',
+               success: function (res) {
+                  $('#cttyid').html('');
+                  if (res && res.data && res.data.length > 0) {
+                     $.each(res.data, function (index, value) {
+                        $('#cttyid').append('<option value="' + value.id + '">' + value.type_name + '</option>');
+                     });
+                  }
+                  $('#cttyid').val(cattypeid).trigger('change');
+                  if ($.fn.selectpicker) {
+                     $('.default-select').selectpicker('refresh');
+                  }
+               }
+            });
+         } else if (cattypeid) {
+            $('#cttyid').val(cattypeid).trigger('change');
+            if ($.fn.selectpicker) {
                $('.default-select').selectpicker('refresh');
-            })
-            // $('#cttyid').val(cattypeid);
-            $('select[name=type_id]').val(cattypeid);
-            $('.default-select').selectpicker('refresh');
+            }
          }
-      })
-
-
-      var id = $(this).attr('data-id')
-      var act = "/expense/updateexpcat/'" + id + "'"
-      $('#name').attr('value', ($(this).attr('data-catname')))
-      $("#updateexpcat_form").attr('action', act)
-
+      }
    })
 
 
    $('body').on("change", "#expense_add_admin", function () {
-
       var baseUrl = window.location.origin;
-      var id = this.value
+      var id = this.value;
+      if (!id) return;
       $.ajax({
          type: 'get',
          url: baseUrl + "/expense/expcatlist/" + id,
          dataType: 'json',
          success: function (res) {
-            $('#exp_add_category').html('<option value selected disabled>Select One</option>')
+            $('#exp_add_category').prop('disabled', false).html('<option value="" selected disabled>Select Category</option>');
+            if (res.data && res.data.length > 0) {
+               $.each(res.data, function (index, value) {
+                  $('#exp_add_category').append('<option value="' + value.id + '">' + value.cat_name + '</option>');
+               });
+            } else {
+               $('#exp_add_category').html('<option value="" selected disabled>No categories available for this store</option>');
+            }
+            $('#exp_add_category').trigger('change');
 
-            $.each(res.data, function (index, value) {
-               $('#exp_add_category').append('<option value=' + value.id + '>' + value.cat_name + '</option>')
-            })
+            $('#exp_add_payment').prop('disabled', false).html('<option value="" selected disabled>Select Payment</option>');
+            if (res.acountlist && res.acountlist.length > 0) {
+               $.each(res.acountlist, function (index, value) {
+                  $('#exp_add_payment').append('<option value="' + value.id + '">' + value.ac_name + '</option>');
+               });
+            } else {
+               $('#exp_add_payment').html('<option value="" selected disabled>No payment methods available for this store</option>');
+            }
+            $('#exp_add_payment').trigger('change');
 
-            $('#exp_add_payment').html('<option value selected disabled>Select One</option>')
-            $.each(res.acountlist, function (index, value) {
-               $('#exp_add_payment').append('<option value=' + value.id + '>' + value.ac_name + '</option>')
-            })
-
-            $('.default-select').selectpicker('refresh');
-
-
+            if ($.fn.selectpicker) {
+               $('.default-select').selectpicker('refresh');
+            }
          }
-      })
-   })
-
+      });
+   });
 
    $('#myexpen input[type=radio]').click(function () {
-
       if (this.value == "no") {
-         $('#tex_perce').addClass('d-none')
-         $('#tex_perce').prop('required', false)
+         $('#tex_perce').addClass('d-none');
+         $('#tex_perce').prop('required', false);
       } else {
-         $('#tex_perce').removeClass('d-none')
-         $('#tex_perce').prop('required', true)
+         $('#tex_perce').removeClass('d-none');
+         $('#tex_perce').prop('required', true);
       }
-   })
+   });
 
-
-
-
-   $(document).on('click', '#expaction', function () {
+   $(document).on('click', '#expaction, .btn-tbl-edit', function () {
       var baseUrl = window.location.origin;
       var storeid = $(this).attr('data-storeid');
-      var cat = $(this).attr('data-category')
-      var payment = $(this).attr('data-payment')
-      $.ajax({
-         type: 'get',
-         url: baseUrl + "/expense/expcatlist/" + storeid,
-         dataType: 'json',
-         success: function (res) {
-            $('#category_update').html('')
-            $.each(res.data, function (index, value) {
-               $('#category_update').append('<option value=' + value.id + '>' + value.cat_name + '</option>')
-               $('.default-select').selectpicker('refresh');
-            })
+      var cat = $(this).attr('data-category');
+      var payment = $(this).attr('data-payment');
+      var id = $(this).attr('data-id');
+      if (!id) return;
 
-            $('#payment_update').html(' ')
-            $.each(res.acountlist, function (index, value) {
-               $('#payment_update').append('<option value=' + value.id + '>' + value.ac_name + '</option>')
-            })
-            // $('#cttyid').val(cattypeid);
-            $('select[name=expense_category]').val(cat);
-            $('select[name=payment_update]').val(payment);
-            $('.default-select').selectpicker('refresh');
-         }
-      })
+      var cleanId = String(id).replace(/['"]/g, '').trim();
+      var act = "/expense/updateexp/" + cleanId;
+      $("#expupdat_form").attr('action', act);
 
+      var tax = $(this).attr('data-tex');
+      var amount = Number($(this).attr('data-amount')) || 0;
+      var date = $(this).attr('data-date');
+      var notes = $(this).attr('data-toward') || '';
+      var taxpercent = Number($(this).attr('data-texpercent')) || 0;
 
-      var id = $(this).attr('data-id')
-      var act = "/expense/updateexp/'" + id + "'"
-      var pay = $(this).attr('data-payment')
-      var tax = $(this).attr('data-tex')
-      const amount = Number($(this).attr('data-amount'))
-      var date = ($(this).attr('data-date'))
-      if (tax == "yes") {
-         $('#yes_taxincluded_update').prop('checked', true)
-         $('#tex_perce_update').removeClass('d-none')
-         $('#tex_perce_update').prop('required', true)
-      } else {
-         $('#no_tax_included_update').prop('checked', true)
-         $('#tex_perce_update').addClass('d-none')
-         $('#tex_perce_update').prop('required', false)
+      $('#amount_update').val(amount);
+      $('#notes_update').val(notes).attr('value', notes);
+      if (date) {
+         $('#date_update').val(new Date(date).toLocaleDateString('en-CA'));
       }
-      $('#category_update').val(cat);
-      $('.default-select').selectpicker('refresh');
-      $('#amount_update').val(amount)
-      $('#tex_perce_update').val(Number($(this).attr('data-texpercent')))
 
-      $('#notes_update').attr('value', ($(this).attr('data-toward')))
-      $("#expupdat_form").attr('action', act)
-      $('#date_update').val(new Date(date).toLocaleDateString('en-CA'))
-   })
+      if (tax == "yes") {
+         $('#yes_tax_included_update').prop('checked', true);
+         $('#tex_perce_update').removeClass('d-none').prop('required', true).val(taxpercent);
+      } else {
+         $('#no_tax_included_update').prop('checked', true);
+         $('#tex_perce_update').addClass('d-none').prop('required', false).val(0);
+      }
+
+      // Dynamically load categories and accounts for this specific store
+      if (storeid && storeid !== 'undefined' && storeid !== 'null') {
+         $.ajax({
+            type: 'get',
+            url: baseUrl + "/expense/expcatlist/" + storeid + "?include_cat_id=" + (cat || '') + "&include_account_id=" + (payment || ''),
+            dataType: 'json',
+            success: function (res) {
+               $('#category_update').html('');
+               if (res.data && res.data.length > 0) {
+                  $.each(res.data, function (index, value) {
+                     $('#category_update').append('<option value="' + value.id + '">' + value.cat_name + '</option>');
+                  });
+               }
+               $('#category_update').val(cat).trigger('change');
+
+               $('#payment_update').html('');
+               if (res.acountlist && res.acountlist.length > 0) {
+                  $.each(res.acountlist, function (index, value) {
+                     $('#payment_update').append('<option value="' + value.id + '">' + value.ac_name + '</option>');
+                  });
+               }
+               $('#payment_update').val(payment).trigger('change');
+
+               if ($.fn.selectpicker) {
+                  $('.default-select').selectpicker('refresh');
+               }
+            }
+         });
+      } else {
+         if (cat) $('#category_update').val(cat).trigger('change');
+         if (payment) $('#payment_update').val(payment).trigger('change');
+      }
+   });
 
 
    $('#expupdat_form input[type=radio]').click(function () {
@@ -746,16 +773,15 @@
    })
 
 
-   $(document).on('click', '#update_Account', function () {
+   $(document).on('click', '#update_Account, .update_Account', function () {
       var id = $(this).attr('data-id')
       var act = "/account/updateaccount/" + id
-      var number = Number($(this).attr('data-number'))
+      var number = $(this).attr('data-number') || ''
 
       $("#account_form").attr('action', act)
-      $('#ac_name_update').attr('value', ($(this).attr('data-titel')))
-      $('#ac_number_update').attr('value', number)
-      $('#ac_description_update').attr('value', ($(this).attr('data-descrip')))
-
+      $('#ac_name_update').val($(this).attr('data-titel') || '')
+      $('#ac_number_update').val(number)
+      $('#ac_description_update').val($(this).attr('data-descrip') || '')
    })
 
 

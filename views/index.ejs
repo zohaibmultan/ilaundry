@@ -13,6 +13,10 @@
         <div class="content-body">
             <div class="container-fluid" style="min-height: 100vh;">
                 <div class="row">
+                    <% 
+                        const isScopedUser = (typeof isStoreScoped !== 'undefined' && isStoreScoped) || (typeof isStaff !== 'undefined' && isStaff);
+                        const currentStoreName = (typeof storeName !== 'undefined' && storeName) ? storeName : ((typeof staffStoreName !== 'undefined' && staffStoreName) ? staffStoreName : 'Assigned Store');
+                    %>
                     <div class="d-none">
                         <input type="hidden" name="sym" value="<%= accessdata?.symbol %>">
                         <input type="hidden" name="pls" value="<%= accessdata?.plac %>">
@@ -62,17 +66,16 @@
                                             class="cc-snapshot-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                                             <div class="d-flex align-items-center gap-2">
                                                 <span class="cc-snapshot-title">LIVE SNAPSHOT</span>
-                                                <% if (typeof isStaff !=='undefined' && isStaff) { %>
+                                                <% if (isScopedUser) { %>
                                                     <span class="badge bg-primary text-white"
                                                         style="font-size: 0.75rem;">
                                                         <i class="fas fa-store me-1"></i>
-                                                        <%= staffStoreName || 'Assigned Store' %>
+                                                        <%= currentStoreName %>
                                                     </span>
                                                     <% } %>
                                             </div>
                                             <div class="d-flex align-items-center gap-2">
-                                                <% if (typeof isStaff !=='undefined' && !isStaff && typeof storeList
-                                                    !=='undefined' && storeList.length> 0) { %>
+                                                <% if (!isScopedUser && typeof storeList !== 'undefined' && storeList.length > 0) { %>
                                                     <div class="cc-store-filter-wrap">
                                                         <select id="dashboard-store-filter"
                                                             class="form-select form-select-sm py-1 px-2 border-0 shadow-sm"
@@ -142,8 +145,7 @@
                         </div>
                     </div>
 
-                    <% if (typeof isStaff !=='undefined' && !isStaff && typeof storeStatsList !=='undefined' &&
-                        storeStatsList.length> 0) { %>
+                    <% if (!isScopedUser && typeof storeStatsList !== 'undefined' && storeStatsList.length > 0) { %>
                         <!-- Per-Store Counters & Performance Breakdown for Admin -->
                         <div class="col-12">
                             <div class="card shadow-sm border-0" style="border-radius: 16px; overflow: hidden;">
@@ -245,9 +247,9 @@
                         <% } %>
 
                             <div class="col-xl-12 col-lg-12 col-xxl-12 col-sm-12">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h4 class="card-title">
+                                <div class="card border-0 shadow-sm rounded-3">
+                                    <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                        <h4 class="card-title mb-0 fw-bold">
                                             <%= language.Recent_Order %> (Top 10)
                                         </h4>
                                     </div>
@@ -271,8 +273,7 @@
                                                         <th scope="col">
                                                             <%= language.Payment_Amount %>
                                                         </th>
-                                                        <% if (typeof isStaff==='undefined' || !isStaff ||
-                                                            accessdata.mutibranch===true) { %>
+                                                        <% if (!isScopedUser && accessdata?.mutibranch === true) { %>
                                                             <th scope="col">
                                                                 <%= language.Store_Name || 'Store Name' %>
                                                             </th>
@@ -338,8 +339,7 @@
                                                             <td class="symbol">
                                                                 <%= data.paid_amount %>
                                                             </td>
-                                                            <% if (typeof isStaff==='undefined' || !isStaff ||
-                                                                accessdata.mutibranch===true) { %>
+                                                            <% if (!isScopedUser && accessdata?.mutibranch === true) { %>
                                                                 <td>
                                                                     <span
                                                                         class="badge bg-light text-dark fw-bold border">
@@ -368,11 +368,11 @@
                             </div>
 
                             <div class="col-xl-6 col-lg-12 col-sm-12">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h4 class="card-title">Total Order Chart</h4>
+                                <div class="card border-0 shadow-sm rounded-3">
+                                    <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                        <h4 class="card-title mb-0 fw-bold">Total Order Chart</h4>
                                     </div>
-                                    <div class="card-body">
+                                    <div class="card-body p-4">
                                         <canvas id="barChart_2"></canvas>
                                     </div>
                                 </div>
@@ -380,11 +380,11 @@
                             <input type="hidden" id="indextotorder" value="<%=countorder%>">
 
                             <div class="col-xl-6 col-lg-12 col-sm-12">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h4 class="card-title">Total Sales Chart ( <span class="symbol">)</span></h4>
+                                <div class="card border-0 shadow-sm rounded-3">
+                                    <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                        <h4 class="card-title mb-0 fw-bold">Total Sales Chart ( <span class="symbol">)</span></h4>
                                     </div>
-                                    <div class="card-body">
+                                    <div class="card-body p-4">
                                         <canvas id="areaChart_2"></canvas>
                                     </div>
                                 </div>

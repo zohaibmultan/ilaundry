@@ -41,15 +41,14 @@
             <div class="container-fluid" style="min-height: 100vh;">
                 <div class="row">
                     <div class="col-12">
-                        <div class="card ">
-                            <div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <h3 class="card-title mb-0">
+                        <div class="card border-0 shadow-sm rounded-3">
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h4 class="card-title mb-0 fw-bold">
                                     <%= language.Coupon_List %>
-                                </h3>
-                                <button class="btn btn-rounded btn-sm btn-primary <%= isadmin ? '': 'd-none' %>"
-                                    data-bs-toggle="modal" data-bs-target="#coupon_add"><i
-                                        class="fa fa-plus color-info me-2 text-white"></i></span>
-                                    <%= language.Add_New_Coupon %>
+                                </h4>
+                                <button class="btn btn-primary <%= ((typeof canAdd !== 'undefined' && canAdd) || isadmin) ? '': 'd-none' %>"
+                                    data-bs-toggle="modal" data-bs-target="#coupon_add">
+                                    <i class="fa fa-plus me-2"></i><%= language.Add_New_Coupon %>
                                 </button>
                             </div>
                             <div class="d-none">
@@ -58,7 +57,7 @@
                                 <input type="hiden" name="thousands_separator"
                                     value="<%= accessdata?.thousands_separator %>">
                             </div>
-                            <div class="card-body">
+                            <div class="card-body p-4">
                                 <!-- Server-side DataTable Toolbar -->
                                 <div class="row g-2 mb-3">
                                     <div class="<%= mlty ? 'col-12 col-md-4 col-lg-3' : 'col-12 col-md-5 col-lg-4' %>">
@@ -116,7 +115,7 @@
                                                 <th><%= language.Start_Date %></th>
                                                 <th><%= language.End_Date %></th>
                                                 <th style="width: 110px;"><%= language.Status %></th>
-                                                <th class="<%= isadmin ? '': 'd-none' %> text-center" style="width: 110px;"><%= language.Action %></th>
+                                                <th class="<%= (isadmin || (typeof canEdit !== 'undefined' && canEdit) || (typeof canDelete !== 'undefined' && canDelete)) ? '': 'd-none' %> text-center" style="width: 110px;"><%= language.Action %></th>
                                             </tr>
                                         </thead>
                                         <tbody></tbody>
@@ -155,7 +154,8 @@
                                             id="coupon_titel_update" placeholder="Enter Coupon Titel" required>
                                     </div>
                                 </div>
-                                <div class="col-6 <%= mlty ? '': 'd-none' %>">
+                                <% if (mlty) { %>
+                                <div class="col-6">
                                     <div class="form-group">
                                         <label class="form-label"><strong>
                                                 <%= language.Store_List %>
@@ -171,6 +171,9 @@
                                         </select>
                                     </div>
                                 </div>
+                                <% } else { %>
+                                    <input type="hidden" name="storelist" value="<%= (storeList && storeList[0]) ? storeList[0].id : '' %>">
+                                <% } %>
                             </div>
 
                             <div class="row coupon-type-row">
@@ -256,11 +259,11 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-                            <%= language.Cancel %>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fa fa-times me-2"></i><%= language.Cancel %>
                         </button>
-                        <button type="submit" class="btn btn-sm  btn-primary">
-                            <%= language.Save %>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-save me-2"></i><%= language.Save %>
                         </button>
                     </div>
                 </div>
@@ -305,9 +308,8 @@
                                 <div class="col">
                                     <div class="form-group">
                                         <label> </label><br>
-                                        <button type="button" class="btn btn-primary btn-sm mt-2" id="gen_code"><i
-                                                class="fa fa-refresh"></i>
-                                            <%= language.Generate_code %>
+                                        <button type="button" class="btn btn-primary mt-2" id="gen_code">
+                                            <i class="fa fa-sync me-2"></i><%= language.Generate_code %>
                                         </button>
 
                                     </div>
@@ -381,7 +383,8 @@
                                 </div>
                             </div>
 
-                            <div class="row <%= mlty ? '': 'd-none' %>">
+                            <% if (mlty) { %>
+                            <div class="row">
                                 <div class="col-6">
                                     <div class="form-group">
                                         <label class="form-label"><strong>
@@ -397,17 +400,19 @@
                                         </select>
                                     </div>
                                 </div>
-
                             </div>
+                            <% } else { %>
+                                <input type="hidden" name="storelist" value="<%= (storeList && storeList[0]) ? storeList[0].id : '' %>">
+                            <% } %>
 
                     </div>
 
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-                            <%= language.Cancel %>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fa fa-times me-2"></i><%= language.Cancel %>
                         </button>
-                        <button type="submit" class="btn btn-sm  btn-primary">
-                            <%= language.Save %>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-save me-2"></i><%= language.Save %>
                         </button>
                     </div>
                 </div>
@@ -437,9 +442,11 @@
                         <p class="fw-bold text-danger fs-5 mb-3" id="deleteCouponModalTitle"></p>
                         <p class="text-xs text-muted mb-4"><%= language.Action_cannot_be_undone || 'This action cannot be undone.' %></p>
                         <div class="d-flex gap-2 justify-content-center">
-                            <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal"><%= language.Cancel || 'Cancel' %></button>
-                            <a href="#" id="deleteCouponConfirmBtn" class="btn btn-danger px-4 py-2">
-                                <i class="fa fa-trash me-1"></i> <%= language.Delete || 'Yes, Delete' %>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+                            </button>
+                            <a href="#" id="deleteCouponConfirmBtn" class="btn btn-danger">
+                                <i class="fa fa-trash me-2"></i><%= language.Delete || 'Yes, Delete' %>
                             </a>
                         </div>
                     </div>
