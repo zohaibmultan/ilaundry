@@ -12,10 +12,13 @@ Ensures consistent visual design, clean templates, maintainability, and responsi
    - Use `.badge`, `.alert`, `.table`, `.table-responsive` for data and notifications.
    - Use `.row`, `.col-*`, `.container-fluid` for grid structures.
 
-2. **Prohibition of Custom CSS**:
-   - ❌ **No custom stylesheets**: Do not create or introduce new `.css` files.
+2. **Custom CSS Restriction (Two Established Files Only)**:
+   * The application has exactly **two** maintained CSS files for custom styling:
+     * `public/css/liquid-glass-theme.css` — Global glassmorphism design system, dark theme adaptations, component-level styling (header, notifications, reports, calendar icons, frosted menus).
+     * `public/css/server-datatable.css` — Server-side DataTables unified design system (badge pills, action buttons, pagination).
+   - ❌ **No additional CSS files**: Do not create or introduce new `.css` files beyond these two.
    - ❌ **No inline `<style>` tags**: Do not write `<style>` blocks in EJS view files.
-   - ❌ **No inline `style="..."` attributes**: Never use inline styles for margins, padding, colors, font sizes, or flexbox layouts.
+   - ❌ **No inline `style="..."` attributes**: Do not use inline styles for margins, padding, colors, font sizes, or flexbox layouts. Minimal exceptions allowed for fixed-dimension elements (icon circles, avatars) where Bootstrap utilities are insufficient.
 
 3. **Pure Bootstrap Utilities Replacement Guide**:
    Instead of custom CSS, always use Bootstrap's standard utility classes:

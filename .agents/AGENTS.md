@@ -56,9 +56,13 @@ This document establishes the universal rules and constraints for the **iLaundry
 ### F. Pure Bootstrap UI Standard & Custom CSS Prohibition
 1. **Always Use Bootstrap Components**:
    * All UI layouts, forms, buttons, cards, modals, tables, badges, and alerts must be constructed exclusively with standard Bootstrap components and classes.
-2. **Avoid Custom CSS**:
-   * Do **not** write custom CSS stylesheets, `<style>` blocks in views, or ad-hoc custom CSS classes.
-   * Do **not** write inline styles (`style="..."`) for layout, colors, margins, or padding.
+2. **Custom CSS Restriction (Two Established Files Only)**:
+   * The application has exactly **two** maintained CSS files for custom styling:
+     * `public/css/liquid-glass-theme.css` — Global glassmorphism design system, dark theme adaptations, component-level styling (header, notifications, reports, calendar icons, frosted menus).
+     * `public/css/server-datatable.css` — Server-side DataTables unified design system (badge pills, action buttons, pagination).
+   * ❌ Do **not** create any additional `.css` files.
+   * ❌ Do **not** write `<style>` blocks in EJS view files.
+   * ❌ Do **not** use inline `style="..."` attributes for layout, colors, margins, or padding (minimal exceptions allowed for fixed-dimension elements like icons or avatars where Bootstrap utilities are insufficient).
 3. **Purely Use Bootstrap Utility Classes**:
    * **Spacing**: `m-0`, `my-2`, `mb-3`, `p-2`, `px-3`, `py-4`, `gap-2`, `gap-3`.
    * **Flexbox & Grid**: `d-flex`, `align-items-center`, `justify-content-between`, `flex-wrap`, `row`, `col-12`, `col-md-6`.
@@ -67,3 +71,4 @@ This document establishes the universal rules and constraints for the **iLaundry
    * **Components**: `.btn`, `.btn-primary`, `.btn-outline-secondary`, `.btn-sm`, `.card`, `.card-body`, `.badge`, `.alert`, `.modal`.
 4. **Thermal Printer Exemption**:
    * Physical printer media queries and page dimensions (`@page { size: 80mm auto; margin: 0; }`) for 80mm / 58mm thermal receipts and 75mm / 50mm garment wash tags are exempt from this restriction.
+

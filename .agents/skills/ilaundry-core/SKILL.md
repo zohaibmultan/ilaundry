@@ -54,3 +54,23 @@ Always prompt for confirmation using a centered Bootstrap modal (`#delete<Entity
 * Alert warning highlighting affected cascaded data (`.alert .alert-danger .py-2 .px-3`).
 * Cancel button (`.btn .btn-light`) and Confirm action button (`.btn .btn-danger`).
 
+## 7. Global Topbar Header Architecture
+The global header is rendered by `views/templet/preloder_topbar_sidebar.ejs` and styled in `public/css/liquid-glass-theme.css`.
+
+### Critical JS Bindings (Do Not Rename or Remove)
+* **Theme Toggle**: `id="header_theme_toggle"`, `onclick="window.toggleAppTheme(event)"`, `.mode[data-id="dark"]`, `.lighticon`, `.darkicon`.
+* **Language Switcher**: `.more_lang .lang` elements with `data-value`, `data-lang`, and `<input type="hidden" id="hidden_lang">`. Handler in `views/templet/call.ejs`.
+* **POS Permission Gate**: `(accessdata?.logas == 'custmor' && accessdata?.roll?.pos?.includes('read')) || (accessdata?.roll?.pos && accessdata.roll.pos.includes('read'))`.
+* **Notification Data**: `accessdata.notification_data` (array from `tbl_notification`, LIMIT 5).
+* **Store Badge**: `accessdata.topbardata.store_name || accessdata.topbardata.store` (conditional on `accessdata.topbardata.is_staff != 0`).
+
+### Header Component Classes
+* `.header-store-badge` / `.header-store-dot` — Live store status frosted pill.
+* `.header-pos-btn` — Quick POS action gradient button.
+* `.header-icon-btn` — Frosted glass icon container (theme toggle, bell).
+* `.header-badge-dot` — Pulsing notification indicator.
+* `.notification-glass-menu` / `.lang-glass-menu` / `.profile-glass-menu` — Frosted glass dropdown menus.
+* `.notif-item` / `.notif-item-icon` / `.notif-item-body` / `.notif-item-text` / `.notif-item-time` — Notification item layout.
+* `.lang-grid` / `.lang-grid-item` — 2-column language selector grid.
+
+
