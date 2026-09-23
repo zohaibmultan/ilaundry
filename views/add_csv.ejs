@@ -17,13 +17,18 @@
                     <div class="col-lg-12">
                         <div class="card border-0 shadow-sm rounded-3">
                             <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <h4 class="card-title mb-0 fw-bold text-nowrap">
-                                    <%= language.Bulk_Upload_Services %>
-                                </h4>
-                                <a href="/services/demo_csv" class="btn btn-info text-center text-nowrap">
-                                    <i class="fa fa-download me-2"></i>
-                                    <%= language.Demo_Excel_File %>
-                                </a>
+                                <div>
+                                    <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
+                                        <i class="fa fa-file-excel text-primary me-2"></i><%= language.Bulk_Upload_Services %>
+                                    </h3>
+                                    <small class="text-muted"><%= language.Bulk_Upload_Services_Subtitle || 'Import bulk laundry service records and prices via spreadsheet template' %></small>
+                                </div>
+                                <div>
+                                    <a href="/services/demo_csv" class="btn btn-sm btn-info text-center text-nowrap">
+                                        <i class="fa fa-download me-2"></i>
+                                        <%= language.Demo_Excel_File %>
+                                    </a>
+                                </div>
                             </div>
 
                             <div class="card-body p-4">

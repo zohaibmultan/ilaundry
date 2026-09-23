@@ -18,15 +18,20 @@
                     <div class="col-12">
                         <div class="card border-0 shadow-sm rounded-3">
                             <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <h4 class="card-title mb-0 fw-bold">
-                                    <%= language.Expence_Category_Type_List %>
-                                </h4>
-                                <button
-                                    class="btn btn-primary <%= accessdata.roll.expense.includes('write') ?'':'d-none' %>"
-                                    data-bs-toggle="modal" data-bs-target="#addexpcattype">
-                                    <i class="fa fa-plus me-2"></i>
-                                    <%= language.Add_Category_Type %>
-                                </button>
+                                <div>
+                                    <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
+                                        <i class="fa fa-sitemap text-primary me-2"></i><%= language.Expence_Category_Type_List %>
+                                    </h3>
+                                    <small class="text-muted"><%= language.Expence_Category_Type_List_Subtitle || 'Manage expense types, tax deductibility, and high-level expenditure categories' %></small>
+                                </div>
+                                <div>
+                                    <button
+                                        class="btn btn-sm btn-primary <%= accessdata.roll.expense.includes('write') ?'':'d-none' %>"
+                                        data-bs-toggle="modal" data-bs-target="#addexpcattype">
+                                        <i class="fa fa-plus me-2"></i>
+                                        <%= language.Add_Category_Type %>
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body p-4">
                                 <!-- Server-side DataTable Toolbar -->

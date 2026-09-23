@@ -4,218 +4,641 @@
 <head>
     <!-- meta and links start -->
     <%- include('templet/meta')-%>
+    <style>
+        /* Stacking Context & Dropdown Layering */
+        .filter-section {
+            position: relative !important;
+            z-index: 1050 !important;
+            overflow: visible !important;
+            background-color: rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        [data-theme-version="dark"] .filter-section {
+            background-color: rgba(255, 255, 255, 0.03) !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        .filter-section .bootstrap-select {
+            width: 100% !important;
+            position: relative !important;
+            z-index: 1055 !important;
+        }
+        .filter-section .bootstrap-select .dropdown-menu {
+            z-index: 1060 !important;
+        }
+        .filter-section .bootstrap-select.show {
+            z-index: 1070 !important;
+        }
+        .kpi-row {
+            position: relative;
+            z-index: 1;
+        }
 
+        /* Metric Icon Avatars */
+        .daily-metric-icon {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 14px;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        .daily-metric-icon.icon-orders {
+            background-color: rgba(0, 129, 238, 0.12) !important;
+            color: #0081EE !important;
+            border: 1px solid rgba(0, 129, 238, 0.25) !important;
+        }
+        .daily-metric-icon.icon-sales {
+            background-color: rgba(99, 102, 241, 0.12) !important;
+            color: #6366f1 !important;
+            border: 1px solid rgba(99, 102, 241, 0.25) !important;
+        }
+        .daily-metric-icon.icon-delivered {
+            background-color: rgba(16, 185, 129, 0.12) !important;
+            color: #10b981 !important;
+            border: 1px solid rgba(16, 185, 129, 0.25) !important;
+        }
+        .daily-metric-icon.icon-pending {
+            background-color: rgba(245, 158, 11, 0.12) !important;
+            color: #d97706 !important;
+            border: 1px solid rgba(245, 158, 11, 0.25) !important;
+        }
+
+        /* Dark Mode Metric Icons */
+        [data-theme-version="dark"] .daily-metric-icon.icon-orders {
+            background-color: rgba(56, 189, 248, 0.2) !important;
+            color: #38bdf8 !important;
+            border-color: rgba(56, 189, 248, 0.4) !important;
+        }
+        [data-theme-version="dark"] .daily-metric-icon.icon-sales {
+            background-color: rgba(165, 180, 252, 0.2) !important;
+            color: #a5b4fc !important;
+            border-color: rgba(165, 180, 252, 0.4) !important;
+        }
+        [data-theme-version="dark"] .daily-metric-icon.icon-delivered {
+            background-color: rgba(52, 211, 153, 0.2) !important;
+            color: #34d399 !important;
+            border-color: rgba(52, 211, 153, 0.4) !important;
+        }
+        [data-theme-version="dark"] .daily-metric-icon.icon-pending {
+            background-color: rgba(251, 191, 36, 0.2) !important;
+            color: #fbbf24 !important;
+            border-color: rgba(251, 191, 36, 0.4) !important;
+        }
+
+        /* KPI Cards & Typography */
+        [data-theme-version="dark"] .daily-kpi-card {
+            background: rgba(18, 26, 44, 0.78) !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        [data-theme-version="dark"] .daily-val-text {
+            color: #f8fafc !important;
+        }
+        [data-theme-version="dark"] .daily-sub-text {
+            color: #94a3b8 !important;
+        }
+
+        /* Status Badge Pills */
+        .daily-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .daily-badge.badge-orders {
+            background: rgba(0, 129, 238, 0.1);
+            color: #0081ee;
+            border: 1px solid rgba(0, 129, 238, 0.25);
+        }
+        .daily-badge.badge-sales {
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366f1;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+        }
+        .daily-badge.badge-delivered {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+        .daily-badge.badge-pending {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+        [data-theme-version="dark"] .daily-badge.badge-orders {
+            background: rgba(56, 189, 248, 0.18) !important;
+            color: #38bdf8 !important;
+            border-color: rgba(56, 189, 248, 0.35) !important;
+        }
+        [data-theme-version="dark"] .daily-badge.badge-sales {
+            background: rgba(165, 180, 252, 0.18) !important;
+            color: #a5b4fc !important;
+            border-color: rgba(165, 180, 252, 0.35) !important;
+        }
+        [data-theme-version="dark"] .daily-badge.badge-delivered {
+            background: rgba(52, 211, 153, 0.18) !important;
+            color: #34d399 !important;
+            border-color: rgba(52, 211, 153, 0.35) !important;
+        }
+        [data-theme-version="dark"] .daily-badge.badge-pending {
+            background: rgba(251, 191, 36, 0.18) !important;
+            color: #fbbf24 !important;
+            border-color: rgba(251, 191, 36, 0.35) !important;
+        }
+
+        /* Modernize dynamically rendered status badges from call.ejs */
+        #order_report_table .badge-warning {
+            background: rgba(245, 158, 11, 0.1) !important;
+            color: #d97706 !important;
+            border: 1px solid rgba(245, 158, 11, 0.25) !important;
+            border-radius: 999px !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            padding: 4px 10px !important;
+        }
+        [data-theme-version="dark"] #order_report_table .badge-warning {
+            background: rgba(251, 191, 36, 0.18) !important;
+            color: #fbbf24 !important;
+            border-color: rgba(251, 191, 36, 0.35) !important;
+        }
+        #order_report_table .badge-info {
+            background: rgba(99, 102, 241, 0.1) !important;
+            color: #6366f1 !important;
+            border: 1px solid rgba(99, 102, 241, 0.25) !important;
+            border-radius: 999px !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            padding: 4px 10px !important;
+        }
+        [data-theme-version="dark"] #order_report_table .badge-info {
+            background: rgba(165, 180, 252, 0.18) !important;
+            color: #a5b4fc !important;
+            border-color: rgba(165, 180, 252, 0.35) !important;
+        }
+        #order_report_table .badge-secondary {
+            background: rgba(0, 129, 238, 0.1) !important;
+            color: #0081ee !important;
+            border: 1px solid rgba(0, 129, 238, 0.25) !important;
+            border-radius: 999px !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            padding: 4px 10px !important;
+        }
+        [data-theme-version="dark"] #order_report_table .badge-secondary {
+            background: rgba(56, 189, 248, 0.18) !important;
+            color: #38bdf8 !important;
+            border-color: rgba(56, 189, 248, 0.35) !important;
+        }
+        #order_report_table .badge-primary {
+            background: rgba(16, 185, 129, 0.1) !important;
+            color: #10b981 !important;
+            border: 1px solid rgba(16, 185, 129, 0.25) !important;
+            border-radius: 999px !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            padding: 4px 10px !important;
+        }
+        [data-theme-version="dark"] #order_report_table .badge-primary {
+            background: rgba(52, 211, 153, 0.18) !important;
+            color: #34d399 !important;
+            border-color: rgba(52, 211, 153, 0.35) !important;
+        }
+
+        /* Order Amount Right Alignment with Monospace */
+        #order_report_table th:nth-child(4),
+        #order_report_table td:nth-child(4) {
+            text-align: right !important;
+            font-family: var(--bs-font-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace) !important;
+            font-weight: 700 !important;
+        }
+        #order_report_table th:nth-child(5),
+        #order_report_table td:nth-child(5) {
+            text-align: center !important;
+        }
+
+        /* Dark Mode Native Date Inputs */
+        [data-theme-version="dark"] input[type="date"],
+        html[data-theme-version="dark"] input[type="date"],
+        body[data-theme-version="dark"] input[type="date"],
+        .dark-only input[type="date"] {
+            color-scheme: dark !important;
+        }
+        [data-theme-version="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+        html[data-theme-version="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+        body[data-theme-version="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+        .dark-only input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer !important;
+            opacity: 0.95 !important;
+            filter: invert(1) brightness(1.2) !important;
+            transition: opacity 0.2s ease, filter 0.2s ease, transform 0.15s ease !important;
+        }
+        [data-theme-version="dark"] input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1 !important;
+            filter: invert(1) brightness(1.4) !important;
+            transform: scale(1.1);
+        }
+
+        /* Dark Mode Table Styling */
+        [data-theme-version="dark"] #order_report_table thead.table-light,
+        [data-theme-version="dark"] #order_report_table thead.table-light th {
+            background-color: rgba(255, 255, 255, 0.04) !important;
+            color: #94a3b8 !important;
+            border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        [data-theme-version="dark"] #order_report_table tbody tr {
+            border-bottom-color: rgba(255, 255, 255, 0.05) !important;
+        }
+        [data-theme-version="dark"] #order_report_table tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.03) !important;
+        }
+
+        /* Order ID Pill */
+        .order-id-badge {
+            font-family: var(--bs-font-monospace, monospace);
+            font-weight: 600;
+            font-size: 12px;
+            padding: 3px 8px;
+            background: rgba(0, 129, 238, 0.08);
+            color: #0081ee;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 129, 238, 0.2);
+            display: inline-flex;
+            align-items: center;
+        }
+        [data-theme-version="dark"] .order-id-badge {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        /* Print styles */
+        @media print {
+            .nav-header,
+            .header,
+            .deznav,
+            .footer,
+            .filter-section,
+            .header-actions,
+            .bottom-summary-actions,
+            .btn {
+                display: none !important;
+            }
+            .content-body {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .container-fluid {
+                padding: 0 !important;
+            }
+            .card {
+                border: none !important;
+                box-shadow: none !important;
+                background: transparent !important;
+            }
+            .card-header {
+                border-bottom: 2px solid #000 !important;
+                padding: 8px 0 !important;
+            }
+            .kpi-row {
+                display: flex !important;
+                margin-bottom: 20px !important;
+            }
+            .table {
+                width: 100% !important;
+                border: 1px solid #dee2e6 !important;
+            }
+            .table thead th,
+            .table tbody td {
+                border-bottom: 1px solid #dee2e6 !important;
+                padding: 8px 12px !important;
+            }
+            body {
+                background: #fff !important;
+                color: #000 !important;
+            }
+        }
+    </style>
 </head>
 
 <body>
     <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
-        <!--********** Content body start **********-->
-
-        <div class="content-body">
-
-            <div class="container-fluid" style="min-height: 100vh;">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm rounded-3">
-                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <h4 class="card-title mb-0 fw-bold">
-                                    <%= language.Order_Reports %>
-                                </h4>
+    <!--********** Content body start **********-->
+    <div class="content-body">
+        <div class="container-fluid" style="min-height: 100vh;">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-3" style="height: auto;">
+                        <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div>
+                                <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
+                                    <i class="fa fa-clipboard-list text-primary me-2"></i><%= language.Order_Reports || 'Order Reports' %>
+                                </h3>
+                                <small class="text-muted"><%= language.Order_Reports_Subtitle || 'Generate detailed order history, status metrics, and fulfillment reports' %></small>
                             </div>
-                            <div class="card-body p-4">
-                                <div class="d-none">
-                                    <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
-                                    <input type="hiden" name="pls" value="<%= accessdata.plac %>">
-                                    <input type="hiden" name="thousands_separator"
-                                        value="<%= accessdata.thousands_separator %>">
-                                </div>
-                                <div class="row g-3">
-                                    <div
-                                        class="col-12 col-md-6 col-lg-3 <%= accessdata.logas == 'master' && accessdata.mutibranch  ? '' :'d-none' %>">
-                                        <label class="form-label">
-                                            <%= language.Store_Name %>
+                            <div class="d-flex align-items-center gap-2 header-actions">
+                                <button type="button" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" onclick="downloadreport()" id="Download_order_report">
+                                    <i class="fa fa-download me-1"></i><%= language.Download_Report || 'Download Report' %>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" id="order_report_print">
+                                    <i class="fa fa-print me-1"></i><%= language.Print_Report || 'Print' %>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="card-body p-4">
+                            <!-- Hidden inputs required for currency formatting -->
+                            <div class="d-none">
+                                <input type="hidden" name="sym" value="<%= accessdata.symbol %>">
+                                <input type="hidden" name="pls" value="<%= accessdata.plac %>">
+                                <input type="hidden" name="thousands_separator" value="<%= accessdata.thousands_separator %>">
+                            </div>
+
+                            <!-- Filter Section -->
+                            <div class="filter-section p-3 rounded-3 mb-4">
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-12 col-sm-6 col-md-3 <%= accessdata.logas == 'master' && accessdata.mutibranch ? '' : 'd-none' %>">
+                                        <label class="form-label fw-semibold text-secondary small mb-1" for="order_report_store">
+                                            <i class="fa fa-store text-primary me-1"></i><%= language.Store_Name || 'Store Name' %>
                                         </label>
-                                        <select class="default-select form-control wide " name="storeid"
-                                            id="order_report_store">
+                                        <select class="default-select form-control wide w-100" data-width="100%" name="storeid" id="order_report_store">
                                             <% storeList.forEach(function(x){ %>
-                                                <option value="<%= x.id %>" <%=x.id==store ? 'selected' :'' %> ><%=
-                                                        x.name %>
-                                                </option>
-                                                <% }) %>
+                                                <option value="<%= x.id %>" <%= x.id == store ? 'selected' : '' %>><%= x.name %></option>
+                                            <% }) %>
                                         </select>
-
-                                    </div>
-                                    <div class="col-6 col-md-6 col-lg-3">
-                                        <label class="form-label">
-                                            <%= language.Start_Date %>
-                                        </label>
-                                        <input type="date" class="form-control" name="start_date"
-                                            id="order_report_start_date">
                                     </div>
 
-                                    <div class="col-6 col-md-6 col-lg-3">
-                                        <label class="form-label">
-                                            <%= language.End_Date %>
+                                    <div class="col-6 col-md-3">
+                                        <label class="form-label fw-semibold text-secondary small mb-1" for="order_report_start_date">
+                                            <i class="fa fa-calendar-alt text-primary me-1"></i><%= language.Start_Date || 'Start Date' %>
                                         </label>
-                                        <input type="date" class="form-control" name="end_date"
-                                            id="order_report_end_date">
+                                        <input type="date" class="form-control" name="start_date" id="order_report_start_date">
                                     </div>
 
-                                    <div class="col-12 col-md-6 col-lg-3">
-                                        <label class="form-label">
-                                            <%= language.Status %>
+                                    <div class="col-6 col-md-3">
+                                        <label class="form-label fw-semibold text-secondary small mb-1" for="order_report_end_date">
+                                            <i class="fa fa-calendar-alt text-primary me-1"></i><%= language.End_Date || 'End Date' %>
                                         </label>
-                                        <select class="default-select form-control wide mb-3" name="status"
-                                            id="order_report_status">
+                                        <input type="date" class="form-control" name="end_date" id="order_report_end_date">
+                                    </div>
+
+                                    <div class="col-12 col-md-3">
+                                        <label class="form-label fw-semibold text-secondary small mb-1" for="order_report_status">
+                                            <i class="fa fa-tag text-primary me-1"></i><%= language.Status || 'Status' %>
+                                        </label>
+                                        <select class="default-select form-control wide w-100" data-width="100%" name="status" id="order_report_status">
                                             <option value="0" selected>All Orders</option>
                                             <% Ordersatus.forEach(function (data){ %>
-                                                <option value="<%=data.status %>">
-                                                    <%=data.status %>
-                                                </option>
-                                                <% }) %>
+                                                <option value="<%= data.status %>"><%= data.status %></option>
+                                            <% }) %>
                                         </select>
                                     </div>
                                 </div>
+                            </div>
 
-                                <div class="row">
-                                    <div class="card-body">
-                                        <div class="table-responsive" id="invoice_page">
-                                            <div class="tableFixHead">
-                                                <table class="table table-responsive-sm">
-                                                    <thead class="table_head">
-                                                        <tr>
-                                                            <th>
-                                                                <%= language.Date %>
-                                                            </th>
-                                                            <th>
-                                                                <%= language.Order_ID %>
-                                                            </th>
-                                                            <th>
-                                                                <%= language.Customers %>
-                                                            </th>
-                                                            <th class="text-nowrap">
-                                                                <%= language.Order_Amount %>
-                                                            </th>
-                                                            <th>
-                                                                <%= language.Status %>
-                                                            </th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody id="tb_row_order_report">
-                                                        <% orderdata.forEach(function (data){ %>
-                                                            <tr>
-                                                                <% let new_date=new Date(data.order_date) %>
-                                                                    <% let year=new_date.getFullYear() %>
-                                                                        <% let new_day=(new_date.getDate() < 10 ? '0'
-                                                                            : '' ) + new_date.getDate() %>
-                                                                            <% let new_month=((new_date.getMonth()+1) <
-                                                                                10 ? '0' : '' ) +
-                                                                                (new_date.getMonth()+1) %>
-                                                                                <% let
-                                                                                    fullDate=`${year}-${new_month}-${new_day}`
-                                                                                    %>
-                                                                                    <td class="text-nowrap">
-                                                                                        <%= fullDate %>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <%= data.order_id %>
-                                                                                    </td>
-                                                                                    <td class="text-nowrap">
-                                                                                        <%= data.custoname %>
-                                                                                    </td>
-                                                                                    <td class="symbol">
-                                                                                        <%= data.gross_total.toFixed(2)
-                                                                                            %>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <% if(data.status=='Pending' ){ %>
-                                                                                            <span class="badge bg-warning-subtle text-warning fw-semibold px-2 py-1">
-                                                                                                <%= data.status %>
-                                                                                            </span>
-                                                                                        </td>
-                                                                                        <% } else if (data.status=='Processing' ){ %>
-                                                                                            <span class="badge bg-info-subtle text-info fw-semibold px-2 py-1">
-                                                                                                <%= data.status %>
-                                                                                            </span></td>
-                                                                                        <% } else if (data.status=='Ready To deliver' ){ %>
-                                                                                            <span class="badge bg-primary-subtle text-primary fw-semibold px-2 py-1">
-                                                                                                <%= data.status %>
-                                                                                            </span></td>
-                                                                                        <% } else if (data.status=='Deliver' ){ %>
-                                                                                            <span class="badge bg-success-subtle text-success fw-semibold px-2 py-1">
-                                                                                                <%= data.status %>
-                                                                                            </span></td>
-                                                                                        <% } else { %>
-                                                                                            <span class="badge bg-secondary-subtle text-secondary fw-semibold px-2 py-1">
-                                                                                                <%= data.status %>
-                                                                                            </span></td>
-                                                                                        <% } %>
-
-
-                                                            </tr>
-                                                            <% }) %>
-                                                    </tbody>
-                                                </table>
+                            <!-- Top 4 KPI Summary Metric Cards -->
+                            <div class="row g-3 mb-4 kpi-row position-relative" style="z-index: 1;">
+                                <!-- Total Orders -->
+                                <div class="col-12 col-sm-6 col-xl-3">
+                                    <div class="card h-100 border shadow-none rounded-3 mb-0 daily-kpi-card">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <span class="daily-sub-text small fw-medium text-truncate"><%= language.Total_Orders || 'Total Orders' %></span>
+                                                <span class="daily-badge badge-orders">Volume</span>
+                                            </div>
+                                            <div class="d-flex align-items-baseline justify-content-between">
+                                                <h4 class="mb-0 fw-bold daily-val-text font-monospace" id="kpi_order_count"><%= orderdata.length %></h4>
+                                                <div class="daily-metric-icon icon-orders">
+                                                    <i class="fa fa-clipboard-list"></i>
+                                                </div>
                                             </div>
                                         </div>
-
-
                                     </div>
                                 </div>
-                                <div class="row g-3 align-items-center mt-2">
-                                    <div class="col-6 col-md-auto d-flex align-items-center gap-1">
-                                        <strong class="text-nowrap">
-                                            <%= language.Total_Orders %> :
-                                        </strong>
-                                        <strong><span id="orders_report">0</span></strong>
+
+                                <!-- Total Revenue -->
+                                <div class="col-12 col-sm-6 col-xl-3">
+                                    <div class="card h-100 border shadow-none rounded-3 mb-0 daily-kpi-card">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <span class="daily-sub-text small fw-medium text-truncate"><%= language.Total_Orders_Amount || 'Total Revenue' %></span>
+                                                <span class="daily-badge badge-sales">Revenue</span>
+                                            </div>
+                                            <div class="d-flex align-items-baseline justify-content-between">
+                                                <% 
+                                                    let initialSum = 0;
+                                                    orderdata.forEach(function(o){ initialSum += Number(o.gross_total || 0); });
+                                                %>
+                                                <h4 class="mb-0 fw-bold daily-val-text font-monospace text-success symbol invosymbol" id="kpi_order_revenue"><%= initialSum.toFixed(2) %></h4>
+                                                <div class="daily-metric-icon icon-sales">
+                                                    <i class="fa fa-chart-line"></i>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="col-6 col-md-auto d-flex align-items-center gap-1">
-                                        <strong class="text-nowrap">
-                                            <%= language.Total_Orders_Amount %> :
-                                        </strong>
-                                        <strong> <span id="order_report_amount"
-                                                class="symbol invosymbol text-nowrap">0</span></strong>
+                                </div>
+
+                                <!-- Delivered Orders -->
+                                <div class="col-12 col-sm-6 col-xl-3">
+                                    <div class="card h-100 border shadow-none rounded-3 mb-0 daily-kpi-card">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <span class="daily-sub-text small fw-medium text-truncate">Delivered</span>
+                                                <span class="daily-badge badge-delivered">Completed</span>
+                                            </div>
+                                            <div class="d-flex align-items-baseline justify-content-between">
+                                                <% 
+                                                    let initialDelivered = 0;
+                                                    orderdata.forEach(function(o){ if(o.status == 'Deliver') initialDelivered++; });
+                                                %>
+                                                <h4 class="mb-0 fw-bold daily-val-text font-monospace" id="kpi_order_delivered"><%= initialDelivered %></h4>
+                                                <div class="daily-metric-icon icon-delivered">
+                                                    <i class="fa fa-check-circle"></i>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="col-12 col-md d-flex justify-content-md-end flex-wrap gap-2 mt-2 mt-md-0">
-                                        <button type="submit" class="btn btn-info text-nowrap"
-                                            onclick="downloadreport()" id="Download_order_report">
-                                            <i class="fa fa-download me-2"></i><%= language.Download_Report %>
-                                        </button>
-                                        <button type="submit" id="order_report_print"
-                                            class="btn btn-info mb-0 text-nowrap">
-                                            <i class="fa fa-print me-2"></i><%= language.Print_Report %>
-                                        </button>
+                                </div>
+
+                                <!-- Pending / Active -->
+                                <div class="col-12 col-sm-6 col-xl-3">
+                                    <div class="card h-100 border shadow-none rounded-3 mb-0 daily-kpi-card">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <span class="daily-sub-text small fw-medium text-truncate">Pending / Active</span>
+                                                <span class="daily-badge badge-pending">In-Progress</span>
+                                            </div>
+                                            <div class="d-flex align-items-baseline justify-content-between">
+                                                <% 
+                                                    let initialPending = 0;
+                                                    orderdata.forEach(function(o){ if(o.status == 'Pending' || o.status == 'Processing' || o.status == 'Ready To deliver') initialPending++; });
+                                                %>
+                                                <h4 class="mb-0 fw-bold daily-val-text font-monospace" id="kpi_order_pending"><%= initialPending %></h4>
+                                                <div class="daily-metric-icon icon-pending">
+                                                    <i class="fa fa-clock"></i>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Detailed Order History Table -->
+                            <div class="card border rounded-3 overflow-hidden shadow-none mb-4 daily-kpi-card" id="invoice_page">
+                                <div class="card-header py-2 px-3 border-bottom d-flex align-items-center justify-content-between">
+                                    <h6 class="mb-0 fw-semibold text-secondary">
+                                        <i class="fa fa-list text-primary me-2"></i><%= language.Order_Reports || 'Order History' %>
+                                    </h6>
+                                    <span class="badge bg-secondary-subtle text-secondary border px-2 py-1">Standard Report</span>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0" id="order_report_table">
+                                        <thead class="table-light text-secondary border-bottom">
+                                            <tr>
+                                                <th class="ps-3 py-3" style="width: 15%;"><%= language.Date || 'Date' %></th>
+                                                <th class="py-3" style="width: 18%;"><%= language.Order_ID || 'Order ID' %></th>
+                                                <th class="py-3" style="width: 32%;"><%= language.Customers || 'Customer' %></th>
+                                                <th class="pe-3 py-3 text-end" style="width: 18%;"><%= language.Order_Amount || 'Order Amount' %></th>
+                                                <th class="pe-3 py-3 text-center" style="width: 17%;"><%= language.Status || 'Status' %></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tb_row_order_report">
+                                            <% if (orderdata && orderdata.length > 0) { %>
+                                                <% orderdata.forEach(function (data){ %>
+                                                    <tr>
+                                                        <% let new_date = new Date(data.order_date) %>
+                                                        <% let year = new_date.getFullYear() %>
+                                                        <% let new_day = (new_date.getDate() < 10 ? '0' : '' ) + new_date.getDate() %>
+                                                        <% let new_month = ((new_date.getMonth()+1) < 10 ? '0' : '' ) + (new_date.getMonth()+1) %>
+                                                        <% let fullDate = `${year}-${new_month}-${new_day}` %>
+                                                        <td class="ps-3 py-3 text-nowrap">
+                                                            <i class="fa fa-calendar-alt text-muted me-1 fs-12"></i><%= fullDate %>
+                                                        </td>
+                                                        <td class="py-3">
+                                                            <span class="order-id-badge">
+                                                                <i class="fa fa-receipt me-1"></i><%= data.order_id %>
+                                                            </span>
+                                                        </td>
+                                                        <td class="py-3 text-nowrap">
+                                                            <div class="d-flex align-items-center">
+                                                                <div class="bg-light rounded-circle p-1 me-2 d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px;">
+                                                                    <i class="fa fa-user text-muted fs-11"></i>
+                                                                </div>
+                                                                <span class="fw-medium daily-val-text"><%= data.custoname %></span>
+                                                            </div>
+                                                        </td>
+                                                        <td class="pe-3 py-3 text-end font-monospace fw-bold fs-6 symbol">
+                                                            <%= Number(data.gross_total || 0).toFixed(2) %>
+                                                        </td>
+                                                        <td class="pe-3 py-3 text-center">
+                                                            <% if(data.status == 'Pending'){ %>
+                                                                <span class="daily-badge badge-pending"><%= data.status %></span>
+                                                            <% } else if (data.status == 'Processing'){ %>
+                                                                <span class="daily-badge badge-sales"><%= data.status %></span>
+                                                            <% } else if (data.status == 'Ready To deliver'){ %>
+                                                                <span class="daily-badge badge-orders"><%= data.status %></span>
+                                                            <% } else if (data.status == 'Deliver'){ %>
+                                                                <span class="daily-badge badge-delivered"><%= data.status %></span>
+                                                            <% } else { %>
+                                                                <span class="daily-badge badge-orders"><%= data.status %></span>
+                                                            <% } %>
+                                                        </td>
+                                                    </tr>
+                                                <% }) %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="5" class="text-center py-4 text-muted">
+                                                        <i class="fa fa-inbox fs-2 mb-2 d-block text-secondary opacity-50"></i>
+                                                        No orders found for the selected criteria.
+                                                    </td>
+                                                </tr>
+                                            <% } %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Summary & Action Bar -->
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 p-3 rounded-3 border bg-light-subtle filter-section">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div>
+                                        <span class="text-muted small fw-medium"><%= language.Total_Orders || 'Total Orders' %>:</span>
+                                        <span class="fw-bold font-monospace daily-val-text ms-1" id="orders_report"><%= orderdata.length %></span>
+                                    </div>
+                                    <div class="vr"></div>
+                                    <div>
+                                        <span class="text-muted small fw-medium"><%= language.Total_Orders_Amount || 'Total Amount' %>:</span>
+                                        <span class="fw-bold font-monospace text-success ms-1 symbol invosymbol" id="order_report_amount"><%= initialSum.toFixed(2) %></span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 bottom-summary-actions">
+                                    <button type="button" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" onclick="downloadreport()">
+                                        <i class="fa fa-download me-1"></i><%= language.Download_Report || 'Download' %>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" onclick="$('#order_report_print').click()">
+                                        <i class="fa fa-print me-1"></i><%= language.Print_Report || 'Print' %>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-
         </div>
+    </div>
+    <!--********** Content body end **********-->
 
-        <!--********** Content body end **********-->
+    <!--********************************** Footer start ***********************************-->
+    <%- include('templet/footer')-%>
+    <!--********************************** Footer end ***********************************-->
 
-        </div>
-        <!--**********************************
-            Footer start
-        ***********************************-->
-        <%- include('templet/footer')-%>
+    <!--********** Main wrapper end **********-->
+    <%- include('templet/script')-%>
 
-            <!--**********************************
-            Footer end
-        ***********************************-->
+    <script>
+        $(document).ready(function () {
+            // Function to synchronize top KPI cards with the table and totals
+            function syncOrderKpiMetrics() {
+                var count = $('#orders_report').text().trim() || '0';
+                var amount = $('#order_report_amount').text().trim() || '0.00';
+                $('#kpi_order_count').text(count);
+                $('#kpi_order_revenue').text(amount);
 
-            </div>
+                // Compute breakdown of delivered vs active orders from table rows
+                var delivered = 0;
+                var pending = 0;
+                $('#tb_row_order_report tr').each(function () {
+                    var statusCell = $(this).find('td:nth-child(5)');
+                    if (statusCell.length > 0) {
+                        var statusText = statusCell.text().trim().toLowerCase();
+                        if (statusText.includes('deliver') && !statusText.includes('ready')) {
+                            delivered++;
+                        } else if (statusText.includes('pending') || statusText.includes('processing') || statusText.includes('ready')) {
+                            pending++;
+                        }
+                    }
+                });
+                $('#kpi_order_delivered').text(delivered);
+                $('#kpi_order_pending').text(pending);
+            }
 
-            <!--********** Main wrapper end **********-->
-            <%- include('templet/script')-%>
+            // Sync on load after currency formatting executes
+            setTimeout(syncOrderKpiMetrics, 200);
 
-
-
+            // Observe table DOM mutations (triggered by AJAX filtering in call.ejs)
+            var targetTbody = document.getElementById('tb_row_order_report');
+            if (targetTbody && window.MutationObserver) {
+                var observer = new MutationObserver(function () {
+                    setTimeout(syncOrderKpiMetrics, 50);
+                });
+                observer.observe(targetTbody, { childList: true, subtree: true, characterData: true });
+            }
+        });
+    </script>
 </body>
-
 
 </html>

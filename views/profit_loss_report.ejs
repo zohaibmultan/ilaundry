@@ -4,76 +4,203 @@
 <head>
     <%- include('templet/meta')-%>
     <style>
-        .pl-kpi-card {
+        /* Stacking Context & Filter Layering */
+        .filter-section {
+            position: relative !important;
+            z-index: 1050 !important;
+            overflow: visible !important;
+            background-color: rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        [data-theme-version="dark"] .filter-section {
+            background-color: rgba(255, 255, 255, 0.03) !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        .filter-section .bootstrap-select,
+        .filter-section select.form-select {
+            width: 100% !important;
+            position: relative !important;
+            z-index: 1055 !important;
+        }
+        .kpi-row {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Metric Icon Avatars */
+        .daily-metric-icon {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 15px;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        .daily-metric-icon.icon-revenue {
+            background-color: rgba(0, 129, 238, 0.12) !important;
+            color: #0081EE !important;
+            border: 1px solid rgba(0, 129, 238, 0.25) !important;
+        }
+        .daily-metric-icon.icon-expense {
+            background-color: rgba(239, 68, 68, 0.12) !important;
+            color: #ef4444 !important;
+            border: 1px solid rgba(239, 68, 68, 0.25) !important;
+        }
+        .daily-metric-icon.icon-profit {
+            background-color: rgba(16, 185, 129, 0.12) !important;
+            color: #10b981 !important;
+            border: 1px solid rgba(16, 185, 129, 0.25) !important;
+        }
+        .daily-metric-icon.icon-loss {
+            background-color: rgba(239, 68, 68, 0.12) !important;
+            color: #ef4444 !important;
+            border: 1px solid rgba(239, 68, 68, 0.25) !important;
+        }
+        .daily-metric-icon.icon-tax {
+            background-color: rgba(99, 102, 241, 0.12) !important;
+            color: #6366f1 !important;
+            border: 1px solid rgba(99, 102, 241, 0.25) !important;
+        }
+
+        /* Dark Mode Metric Icons */
+        [data-theme-version="dark"] .daily-metric-icon.icon-revenue {
+            background-color: rgba(56, 189, 248, 0.2) !important;
+            color: #38bdf8 !important;
+            border-color: rgba(56, 189, 248, 0.4) !important;
+        }
+        [data-theme-version="dark"] .daily-metric-icon.icon-expense {
+            background-color: rgba(248, 113, 113, 0.2) !important;
+            color: #f87171 !important;
+            border-color: rgba(248, 113, 113, 0.4) !important;
+        }
+        [data-theme-version="dark"] .daily-metric-icon.icon-profit {
+            background-color: rgba(52, 211, 153, 0.2) !important;
+            color: #34d399 !important;
+            border-color: rgba(52, 211, 153, 0.4) !important;
+        }
+        [data-theme-version="dark"] .daily-metric-icon.icon-tax {
+            background-color: rgba(165, 180, 252, 0.2) !important;
+            color: #a5b4fc !important;
+            border-color: rgba(165, 180, 252, 0.4) !important;
+        }
+
+        /* KPI Cards & Typography */
+        .daily-kpi-card {
             border-radius: 12px;
             transition: all 0.2s ease;
-            border: 1px solid rgba(0,0,0,0.06);
-            overflow: hidden;
             position: relative;
+            overflow: hidden;
         }
-        .pl-kpi-card:hover {
+        .daily-kpi-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.06);
         }
-        .pl-kpi-title {
+        [data-theme-version="dark"] .daily-kpi-card {
+            background: rgba(18, 26, 44, 0.78) !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        [data-theme-version="dark"] .daily-val-text {
+            color: #f8fafc !important;
+        }
+        [data-theme-version="dark"] .daily-sub-text {
+            color: #94a3b8 !important;
+        }
+
+        /* Status & Metric Badges */
+        .daily-badge {
             font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
         }
-        .pl-kpi-value {
-            font-size: 24px;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 4px;
+        .daily-badge.badge-revenue {
+            background: rgba(0, 129, 238, 0.1);
+            color: #0081ee;
+            border: 1px solid rgba(0, 129, 238, 0.25);
         }
-        .pl-kpi-sub {
-            font-size: 11px;
-            opacity: 0.85;
+        .daily-badge.badge-expense {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.25);
         }
+        .daily-badge.badge-profit {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+        .daily-badge.badge-tax {
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366f1;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+        }
+        [data-theme-version="dark"] .daily-badge.badge-revenue {
+            background: rgba(56, 189, 248, 0.18) !important;
+            color: #38bdf8 !important;
+            border-color: rgba(56, 189, 248, 0.35) !important;
+        }
+        [data-theme-version="dark"] .daily-badge.badge-expense {
+            background: rgba(248, 113, 113, 0.18) !important;
+            color: #f87171 !important;
+            border-color: rgba(248, 113, 113, 0.35) !important;
+        }
+        [data-theme-version="dark"] .daily-badge.badge-profit {
+            background: rgba(52, 211, 153, 0.18) !important;
+            color: #34d399 !important;
+            border-color: rgba(52, 211, 153, 0.35) !important;
+        }
+        [data-theme-version="dark"] .daily-badge.badge-tax {
+            background: rgba(165, 180, 252, 0.18) !important;
+            color: #a5b4fc !important;
+            border-color: rgba(165, 180, 252, 0.35) !important;
+        }
+
+        /* Preset Date Buttons */
         .pl-preset-btn {
             font-size: 11.5px;
             font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 6px;
+            padding: 4px 12px;
+            border-radius: 999px;
             transition: all 0.15s ease;
         }
+
+        /* Statement Table Polish */
         .pl-statement-table {
             width: 100%;
             margin-bottom: 0;
         }
         .pl-statement-table th, .pl-statement-table td {
-            padding: 9px 12px;
-            font-size: 12.5px;
+            padding: 10px 14px;
+            font-size: 13px;
         }
         .pl-statement-table .section-header {
-            font-weight: 800;
+            font-weight: 700;
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         .pl-net-row {
-            font-size: 14px;
-            font-weight: 800;
-        }
-        [data-theme-version="dark"] .pl-kpi-card {
-            background-color: #182235 !important;
-            border-color: #243048 !important;
+            font-size: 13.5px;
+            font-weight: 700;
         }
         [data-theme-version="dark"] .pl-statement-card {
-            background-color: #182235 !important;
-            border-color: #243048 !important;
+            background-color: rgba(18, 26, 44, 0.78) !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
         }
         [data-theme-version="dark"] .pl-statement-table tr {
-            border-bottom-color: #243048 !important;
+            border-bottom-color: rgba(255, 255, 255, 0.05) !important;
         }
         [data-theme-version="dark"] .nav-tabs .nav-link {
             color: #94a3b8;
         }
         [data-theme-version="dark"] .nav-tabs .nav-link.active {
-            background-color: #182235 !important;
-            border-color: #243048 #243048 #182235 !important;
+            background-color: rgba(18, 26, 44, 0.95) !important;
+            border-color: rgba(255, 255, 255, 0.08) rgba(255, 255, 255, 0.08) transparent !important;
             color: #38bdf8 !important;
         }
         .pl-table-head th {
@@ -84,12 +211,101 @@
             text-transform: uppercase;
             letter-spacing: 0.4px;
             border-bottom: 2px solid #e2e8f0;
-            padding: 8px 10px;
+            padding: 9px 12px;
         }
         [data-theme-version="dark"] .pl-table-head th {
-            background: linear-gradient(180deg, rgba(24, 34, 56, 0.98) 0%, rgba(15, 23, 42, 0.96) 100%) !important;
+            background: rgba(255, 255, 255, 0.04) !important;
             color: #94a3b8 !important;
             border-bottom: 2px solid rgba(56, 189, 248, 0.3) !important;
+        }
+
+        /* Order ID & Category Badges */
+        .order-id-badge {
+            font-family: var(--bs-font-monospace, monospace);
+            font-weight: 600;
+            font-size: 12px;
+            padding: 2px 7px;
+            background: rgba(0, 129, 238, 0.08);
+            color: #0081ee;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 129, 238, 0.2);
+            display: inline-flex;
+            align-items: center;
+        }
+        [data-theme-version="dark"] .order-id-badge {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        /* Dark Mode Native Date Inputs */
+        [data-theme-version="dark"] input[type="date"],
+        html[data-theme-version="dark"] input[type="date"],
+        body[data-theme-version="dark"] input[type="date"],
+        .dark-only input[type="date"] {
+            color-scheme: dark !important;
+        }
+        [data-theme-version="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+        html[data-theme-version="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+        body[data-theme-version="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+        .dark-only input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer !important;
+            opacity: 0.95 !important;
+            filter: invert(1) brightness(1.2) !important;
+            transition: opacity 0.2s ease, filter 0.2s ease, transform 0.15s ease !important;
+        }
+        [data-theme-version="dark"] input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1 !important;
+            filter: invert(1) brightness(1.4) !important;
+            transform: scale(1.1);
+        }
+
+        /* Print styles */
+        @media print {
+            .nav-header,
+            .header,
+            .deznav,
+            .footer,
+            .filter-section,
+            .header-actions,
+            .btn,
+            .nav-tabs,
+            .tab-content {
+                display: none !important;
+            }
+            .content-body {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .container-fluid {
+                padding: 0 !important;
+            }
+            .card {
+                border: none !important;
+                box-shadow: none !important;
+                background: transparent !important;
+            }
+            .card-header {
+                border-bottom: 2px solid #000 !important;
+                padding: 8px 0 !important;
+            }
+            .kpi-row {
+                display: flex !important;
+                margin-bottom: 20px !important;
+            }
+            .pl-statement-table {
+                width: 100% !important;
+                border: 1px solid #dee2e6 !important;
+            }
+            .pl-statement-table th,
+            .pl-statement-table td {
+                border-bottom: 1px solid #dee2e6 !important;
+                padding: 6px 10px !important;
+            }
+            body {
+                background: #fff !important;
+                color: #000 !important;
+            }
         }
     </style>
 </head>
@@ -109,318 +325,348 @@
             <!-- HEADER & FILTERS CARD -->
             <div class="row">
                 <div class="col-12">
-                    <div class="card border-0 shadow-sm rounded-3 mb-3 pl-statement-card">
+                    <div class="card border-0 shadow-sm rounded-3 mb-3 pl-statement-card" style="height: auto;">
                         <div class="card-header border-bottom py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
                             <div>
-                                <h4 class="card-title mb-1 fw-bold text-primary">
-                                    <i class="fa fa-chart-line me-2"></i>Profit &amp; Loss Statement
-                                </h4>
-                                <p class="text-muted mb-0 fs-12" id="pl_period_display">
+                                <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
+                                    <i class="fa fa-chart-line text-primary me-2"></i>Profit &amp; Loss Statement
+                                </h3>
+                                <small class="text-muted d-block"><%= language.Profit_Loss_Subtitle || 'Comprehensive net revenue, direct expenses, operating margins, and profit analytics' %></small>
+                                <p class="text-muted mb-0 fs-12 mt-1" id="pl_period_display">
                                     Period: <strong><%= startdate %></strong> to <strong><%= enddate %></strong>
                                 </p>
                             </div>
-                            <div class="d-flex gap-2 align-items-center mt-2 mt-md-0">
-                                <button type="button" class="btn btn-info d-flex align-items-center" id="pl_export_btn">
-                                    <i class="fa fa-file-excel me-2"></i> Export to Excel
+                            <div class="d-flex gap-2 align-items-center mt-2 mt-md-0 header-actions">
+                                <button type="button" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" id="pl_export_btn">
+                                    <i class="fa fa-file-excel me-1"></i><%= language.Download_Report || 'Export to Excel' %>
                                 </button>
-                                <button type="button" class="btn btn-info d-flex align-items-center" onclick="window.print()">
-                                    <i class="fa fa-print me-2"></i> Print
+                                <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" onclick="window.print()">
+                                    <i class="fa fa-print me-1"></i><%= language.Print_Report || 'Print' %>
                                 </button>
                             </div>
                         </div>
 
-                        <div class="card-body pt-2 pb-3">
+                        <div class="card-body p-4">
                             <!-- FILTER CONTROLS -->
-                            <div class="row g-2 align-items-end mb-2">
-                                <div class="col-6 col-sm-6 col-md-3">
-                                    <label class="form-label fs-12 fw-semibold mb-1">Start Date</label>
-                                    <input type="date" class="form-control" id="pl_start_date" value="<%= startdate %>">
-                                </div>
-                                <div class="col-6 col-sm-6 col-md-3">
-                                    <label class="form-label fs-12 fw-semibold mb-1">End Date</label>
-                                    <input type="date" class="form-control" id="pl_end_date" value="<%= enddate %>">
-                                </div>
-                                
-                                <% if (isMaster) { %>
-                                <div class="col-12 col-sm-6 col-md-3">
-                                    <label class="form-label fs-12 fw-semibold mb-1">Store Scope</label>
-                                    <select class="form-select" id="pl_store">
-                                        <option value="0" <%= store == '0' ? 'selected' : '' %>>All Stores (Consolidated)</option>
-                                        <% storeList.forEach(function(s) { %>
-                                            <option value="<%= s.id %>" <%= store == s.id ? 'selected' : '' %>><%= s.name %></option>
-                                        <% }); %>
-                                    </select>
-                                </div>
-                                <% } else { %>
-                                <input type="hidden" id="pl_store" value="<%= store %>">
-                                <% } %>
+                            <div class="filter-section p-3 rounded-3 mb-3">
+                                <div class="row g-3 align-items-end mb-2">
+                                    <div class="col-6 col-sm-6 col-md-3">
+                                        <label class="form-label fw-semibold text-secondary small mb-1" for="pl_start_date">
+                                            <i class="fa fa-calendar-alt text-primary me-1"></i><%= language.Start_Date || 'Start Date' %>
+                                        </label>
+                                        <input type="date" class="form-control" id="pl_start_date" value="<%= startdate %>">
+                                    </div>
+                                    <div class="col-6 col-sm-6 col-md-3">
+                                        <label class="form-label fw-semibold text-secondary small mb-1" for="pl_end_date">
+                                            <i class="fa fa-calendar-alt text-primary me-1"></i><%= language.End_Date || 'End Date' %>
+                                        </label>
+                                        <input type="date" class="form-control" id="pl_end_date" value="<%= enddate %>">
+                                    </div>
+                                    
+                                    <% if (isMaster) { %>
+                                    <div class="col-12 col-sm-6 col-md-3">
+                                        <label class="form-label fw-semibold text-secondary small mb-1" for="pl_store">
+                                            <i class="fa fa-store text-primary me-1"></i><%= language.Store_Scope || 'Store Scope' %>
+                                        </label>
+                                        <select class="form-select" id="pl_store">
+                                            <option value="0" <%= store == '0' ? 'selected' : '' %>>All Stores (Consolidated)</option>
+                                            <% storeList.forEach(function(s) { %>
+                                                <option value="<%= s.id %>" <%= store == s.id ? 'selected' : '' %>><%= s.name %></option>
+                                            <% }); %>
+                                        </select>
+                                    </div>
+                                    <% } else { %>
+                                    <input type="hidden" id="pl_store" value="<%= store %>">
+                                    <% } %>
 
-                                <div class="col-12 col-sm-6 col-md-3 d-flex gap-2">
-                                    <button type="button" class="btn btn-primary flex-fill" id="pl_filter_btn">
-                                        <i class="fa fa-filter me-2"></i> Apply Filter
-                                    </button>
-                                    <button type="button" class="btn btn-secondary" id="pl_reset_btn" title="Reset to current month">
-                                        <i class="fa fa-undo me-2"></i> Reset
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- QUICK PRESET BUTTONS -->
-                            <div class="d-flex flex-wrap gap-1 align-items-center pt-1 border-top">
-                                <span class="fs-11 text-muted fw-bold text-uppercase me-1">Presets:</span>
-                                <button type="button" class="btn btn-xs btn-outline-secondary pl-preset-btn" data-preset="today">Today</button>
-                                <button type="button" class="btn btn-xs btn-outline-secondary pl-preset-btn" data-preset="this_week">This Week</button>
-                                <button type="button" class="btn btn-xs btn-outline-primary pl-preset-btn active" data-preset="this_month">This Month</button>
-                                <button type="button" class="btn btn-xs btn-outline-secondary pl-preset-btn" data-preset="last_month">Last Month</button>
-                                <button type="button" class="btn btn-xs btn-outline-secondary pl-preset-btn" data-preset="this_year">This Year</button>
-                                <button type="button" class="btn btn-xs btn-outline-secondary pl-preset-btn" data-preset="all_time">All Time</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- KPI SUMMARY CARDS -->
-            <div class="row g-3 mb-3">
-                <!-- 1. Net Operating Revenue -->
-                <div class="col-12 col-sm-6 col-xl-3">
-                    <div class="card pl-kpi-card shadow-sm p-3 bg-white border-start border-primary border-4">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <span class="pl-kpi-title text-primary">Net Operating Revenue</span>
-                            <span class="badge bg-primary-subtle text-primary fw-bold" id="kpi_order_count"><%= metrics.orderCount %> Orders</span>
-                        </div>
-                        <div class="pl-kpi-value text-dark" id="kpi_net_revenue"><%= accessdata?.symbol || '$' %><%= metrics.netRevenue %></div>
-                        <div class="pl-kpi-sub text-muted" id="kpi_gross_sales">
-                            Gross Sales: <%= accessdata?.symbol || '$' %><%= metrics.grossSales %> | Disc: <%= accessdata?.symbol || '$' %><%= metrics.totalDiscounts %>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2. Operating Expenses -->
-                <div class="col-12 col-sm-6 col-xl-3">
-                    <div class="card pl-kpi-card shadow-sm p-3 bg-white border-start border-warning border-4">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <span class="pl-kpi-title text-warning">Operating Expenses</span>
-                            <span class="badge bg-warning-subtle text-warning fw-bold" id="kpi_expense_count"><%= metrics.expenseCount %> Entries</span>
-                        </div>
-                        <div class="pl-kpi-value text-dark" id="kpi_total_expense"><%= accessdata?.symbol || '$' %><%= metrics.totalExpense %></div>
-                        <div class="pl-kpi-sub text-muted" id="kpi_expense_sub">
-                            Categories Active: <%= categoryBreakdown.length %>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. Net Profit / Loss -->
-                <div class="col-12 col-sm-6 col-xl-3">
-                    <div class="card pl-kpi-card shadow-sm p-3 bg-white border-start <%= metrics.isProfit ? 'border-success' : 'border-danger' %> border-4" id="kpi_profit_card">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <span class="pl-kpi-title <%= metrics.isProfit ? 'text-success' : 'text-danger' %>" id="kpi_profit_title">
-                                <%= metrics.isProfit ? 'Net Profit' : 'Net Loss' %>
-                            </span>
-                            <span class="badge <%= metrics.isProfit ? 'bg-success text-white' : 'bg-danger text-white' %> fw-bold" id="kpi_margin">
-                                <%= metrics.profitMargin %>% Margin
-                            </span>
-                        </div>
-                        <div class="pl-kpi-value <%= metrics.isProfit ? 'text-success' : 'text-danger' %>" id="kpi_net_profit">
-                            <%= accessdata?.symbol || '$' %><%= metrics.netProfit %>
-                        </div>
-                        <div class="pl-kpi-sub text-muted" id="kpi_profit_sub">
-                            <%= metrics.isProfit ? 'Profitable operation' : 'Expenses exceed revenue' %>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 4. Tax Position (Informational) -->
-                <div class="col-12 col-sm-6 col-xl-3">
-                    <div class="card pl-kpi-card shadow-sm p-3 bg-white border-start border-info border-4">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <span class="pl-kpi-title text-info">Tax Overview</span>
-                            <span class="badge bg-info-subtle text-info fw-bold">Output / Input</span>
-                        </div>
-                        <div class="pl-kpi-value text-dark" id="kpi_sales_tax"><%= accessdata?.symbol || '$' %><%= metrics.totalSalesTax %></div>
-                        <div class="pl-kpi-sub text-muted" id="kpi_tax_sub">
-                            Sales Tax: <%= accessdata?.symbol || '$' %><%= metrics.totalSalesTax %> | Exp Tax: <%= accessdata?.symbol || '$' %><%= metrics.totalExpenseTax %>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- FINANCIAL STATEMENT TABLE -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card border-0 shadow-sm rounded-3 pl-statement-card">
-                        <div class="card-header border-bottom py-3 px-4">
-                            <h4 class="card-title mb-0 fw-bold">
-                                <i class="fa fa-balance-scale text-secondary me-2"></i>Income Statement Summary
-                            </h4>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover pl-statement-table align-middle">
-                                    <tbody>
-                                        <!-- REVENUE SECTION -->
-                                        <tr class="table-light">
-                                            <td colspan="2" class="section-header text-primary">
-                                                <i class="fa fa-arrow-down me-1"></i> 1. Operating Revenue
-                                            </td>
-                                            <td class="text-end fw-bold text-primary">Amount (<%= accessdata?.symbol || '$' %>)</td>
-                                        </tr>
-                                        <tr>
-                                            <td style="width: 35px;"><i class="fa fa-tshirt text-muted"></i></td>
-                                            <td>Base Service Charges (Subtotal)</td>
-                                            <td class="text-end fw-semibold" id="stmt_subtotal"><%= metrics.totalSubtotal %></td>
-                                        </tr>
-                                        <tr>
-                                            <td><i class="fa fa-plus-circle text-muted"></i></td>
-                                            <td>Addon Charges &amp; Premium Finishes</td>
-                                            <td class="text-end fw-semibold" id="stmt_addon"><%= metrics.totalAddon %></td>
-                                        </tr>
-                                        <tr class="fw-bold">
-                                            <td></td>
-                                            <td>Gross Billed Sales</td>
-                                            <td class="text-end" id="stmt_gross_sales"><%= metrics.grossSales %></td>
-                                        </tr>
-                                        <tr class="text-danger">
-                                            <td><i class="fa fa-tag text-danger"></i></td>
-                                            <td>Less Discounts (Coupons &amp; Order Discounts)</td>
-                                            <td class="text-end fw-semibold" id="stmt_discounts">-<%= metrics.totalDiscounts %></td>
-                                        </tr>
-                                        <tr class="fw-bold table-primary pl-net-row">
-                                            <td colspan="2">TOTAL NET OPERATING REVENUE</td>
-                                            <td class="text-end text-primary" id="stmt_net_revenue"><%= accessdata?.symbol || '$' %><%= metrics.netRevenue %></td>
-                                        </tr>
-
-                                        <!-- EXPENSES SECTION -->
-                                        <tr class="table-light">
-                                            <td colspan="2" class="section-header text-warning">
-                                                <i class="fa fa-arrow-up me-1"></i> 2. Operating Expenses (by Category)
-                                            </td>
-                                            <td class="text-end fw-bold text-warning">Amount (<%= accessdata?.symbol || '$' %>)</td>
-                                        </tr>
-                                        <tbody id="stmt_category_rows">
-                                            <% if (categoryBreakdown.length === 0) { %>
-                                                <tr>
-                                                    <td colspan="3" class="text-center text-muted py-3">No expenses recorded for this period.</td>
-                                                </tr>
-                                            <% } else { %>
-                                                <% categoryBreakdown.forEach(function(cat) { %>
-                                                    <tr>
-                                                        <td><i class="fa fa-folder text-warning"></i></td>
-                                                        <td><%= cat.category_name %> <span class="badge bg-light text-muted ms-1"><%= cat.count %></span></td>
-                                                        <td class="text-end fw-semibold"><%= parseFloat(cat.total_amount).toFixed(2) %></td>
-                                                    </tr>
-                                                <% }); %>
-                                            <% } %>
-                                        </tbody>
-                                        <tr class="fw-bold table-warning pl-net-row">
-                                            <td colspan="2">TOTAL OPERATING EXPENSES</td>
-                                            <td class="text-end text-warning" id="stmt_total_expense"><%= accessdata?.symbol || '$' %><%= metrics.totalExpense %></td>
-                                        </tr>
-
-                                        <!-- BOTTOM LINE -->
-                                        <tr class="fw-bold fs-16 <%= metrics.isProfit ? 'table-success text-success' : 'table-danger text-danger' %> pl-net-row" id="stmt_bottom_line">
-                                            <td colspan="2">
-                                                <span class="text-uppercase" id="stmt_profit_label"><%= metrics.isProfit ? 'NET PROFIT' : 'NET LOSS' %></span>
-                                                <span class="fs-12 fw-normal ms-2" id="stmt_margin_label">(Profit Margin: <%= metrics.profitMargin %>%)</span>
-                                            </td>
-                                            <td class="text-end" id="stmt_net_profit"><%= accessdata?.symbol || '$' %><%= metrics.netProfit %></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- DRILLDOWN TABS: ORDERS & EXPENSES -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="card border-0 shadow-sm rounded-3 pl-statement-card">
-                        <div class="card-header border-bottom py-3 px-4">
-                            <ul class="nav nav-tabs card-header-tabs" role="tablist">
-                                <li class="nav-item">
-                                    <button class="nav-link active fw-bold fs-13 py-2 px-3" data-bs-toggle="tab" data-bs-target="#tab_orders" type="button" role="tab">
-                                        <i class="fa fa-shopping-bag me-1 text-primary"></i> Orders Breakdown (<span id="tab_order_count"><%= ordersList.length %></span>)
-                                    </button>
-                                </li>
-                                <li class="nav-item">
-                                    <button class="nav-link fw-bold fs-13 py-2 px-3" data-bs-toggle="tab" data-bs-target="#tab_expenses" type="button" role="tab">
-                                        <i class="fa fa-receipt me-1 text-warning"></i> Operating Expenses Detail (<span id="tab_expense_count"><%= expensesList.length %></span>)
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div class="card-body p-3">
-                            <div class="tab-content">
-                                <!-- TAB 1: ORDERS -->
-                                <div class="tab-pane fade show active" id="tab_orders" role="tabpanel">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-striped table-hover align-middle w-100" id="pl_orders_table">
-                                            <thead class="pl-table-head">
-                                                <tr>
-                                                    <th>Date</th>
-                                                    <th>Order #</th>
-                                                    <th>Customer</th>
-                                                    <th>Store</th>
-                                                    <th class="text-end">Subtotal</th>
-                                                    <th class="text-end">Addon</th>
-                                                    <th class="text-end">Discount</th>
-                                                    <th class="text-end fw-bold text-primary">Net Revenue</th>
-                                                    <th class="text-end">Tax</th>
-                                                    <th class="text-end">Gross Total</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="pl_orders_tbody">
-                                                <% ordersList.forEach(function(o) { %>
-                                                    <tr>
-                                                        <td><%= o.order_date %></td>
-                                                        <td><strong><%= o.order_id %></strong></td>
-                                                        <td><%= o.customer_name %></td>
-                                                        <td><%= o.store_name %></td>
-                                                        <td class="text-end"><%= parseFloat(o.sub_total || 0).toFixed(2) %></td>
-                                                        <td class="text-end"><%= parseFloat(o.addon_price || 0).toFixed(2) %></td>
-                                                        <td class="text-end text-danger"><%= parseFloat(o.total_discount || 0).toFixed(2) %></td>
-                                                        <td class="text-end fw-bold text-primary"><%= parseFloat(o.net_amount || 0).toFixed(2) %></td>
-                                                        <td class="text-end"><%= parseFloat(o.tax_amount || 0).toFixed(2) %></td>
-                                                        <td class="text-end fw-semibold"><%= parseFloat(o.gross_total || 0).toFixed(2) %></td>
-                                                    </tr>
-                                                <% }); %>
-                                            </tbody>
-                                        </table>
+                                    <div class="col-12 col-sm-6 col-md-3 d-flex gap-2">
+                                        <button type="button" class="btn btn-primary flex-fill d-flex align-items-center justify-content-center gap-1" id="pl_filter_btn">
+                                            <i class="fa fa-filter me-1"></i><%= language.Apply_Filter || 'Apply Filter' %>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary d-flex align-items-center justify-content-center" id="pl_reset_btn" title="Reset to current month">
+                                            <i class="fa fa-undo"></i>
+                                        </button>
                                     </div>
                                 </div>
 
-                                <!-- TAB 2: EXPENSES -->
-                                <div class="tab-pane fade" id="tab_expenses" role="tabpanel">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-striped table-hover align-middle w-100" id="pl_expenses_table">
-                                            <thead class="pl-table-head">
-                                                <tr>
-                                                    <th>Date</th>
-                                                    <th>Category</th>
-                                                    <th>Towards / Description</th>
-                                                    <th>Payment Mode</th>
-                                                    <th>Store</th>
-                                                    <th class="text-end fw-bold text-warning">Amount (<%= accessdata?.symbol || '$' %>)</th>
-                                                    <th class="text-end">Tax</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="pl_expenses_tbody">
-                                                <% expensesList.forEach(function(e) { %>
+                                <!-- QUICK PRESET BUTTONS -->
+                                <div class="d-flex flex-wrap gap-1 align-items-center pt-2 border-top">
+                                    <span class="fs-11 text-muted fw-bold text-uppercase me-2">Presets:</span>
+                                    <button type="button" class="btn btn-xs btn-outline-secondary pl-preset-btn" data-preset="today">Today</button>
+                                    <button type="button" class="btn btn-xs btn-outline-secondary pl-preset-btn" data-preset="this_week">This Week</button>
+                                    <button type="button" class="btn btn-xs btn-outline-primary pl-preset-btn active" data-preset="this_month">This Month</button>
+                                    <button type="button" class="btn btn-xs btn-outline-secondary pl-preset-btn" data-preset="last_month">Last Month</button>
+                                    <button type="button" class="btn btn-xs btn-outline-secondary pl-preset-btn" data-preset="this_year">This Year</button>
+                                    <button type="button" class="btn btn-xs btn-outline-secondary pl-preset-btn" data-preset="all_time">All Time</button>
+                                </div>
+                            </div>
+
+                            <!-- KPI SUMMARY CARDS -->
+                            <div class="row g-3 mb-4 kpi-row position-relative" style="z-index: 1;">
+                                <!-- 1. Net Operating Revenue -->
+                                <div class="col-12 col-sm-6 col-xl-3">
+                                    <div class="card h-100 border shadow-none rounded-3 mb-0 daily-kpi-card">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <span class="daily-sub-text small fw-medium text-truncate">Net Operating Revenue</span>
+                                                <span class="daily-badge badge-revenue" id="kpi_order_count"><%= metrics.orderCount %> Orders</span>
+                                            </div>
+                                            <div class="d-flex align-items-baseline justify-content-between">
+                                                <h4 class="mb-0 fw-bold daily-val-text font-monospace text-primary" id="kpi_net_revenue"><%= accessdata?.symbol || '$' %><%= metrics.netRevenue %></h4>
+                                                <div class="daily-metric-icon icon-revenue">
+                                                    <i class="fa fa-chart-line"></i>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2 text-muted fs-11 text-truncate" id="kpi_gross_sales">
+                                                Gross: <%= accessdata?.symbol || '$' %><%= metrics.grossSales %> | Disc: <%= accessdata?.symbol || '$' %><%= metrics.totalDiscounts %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 2. Operating Expenses -->
+                                <div class="col-12 col-sm-6 col-xl-3">
+                                    <div class="card h-100 border shadow-none rounded-3 mb-0 daily-kpi-card">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <span class="daily-sub-text small fw-medium text-truncate">Operating Expenses</span>
+                                                <span class="daily-badge badge-expense" id="kpi_expense_count"><%= metrics.expenseCount %> Entries</span>
+                                            </div>
+                                            <div class="d-flex align-items-baseline justify-content-between">
+                                                <h4 class="mb-0 fw-bold daily-val-text font-monospace text-danger" id="kpi_total_expense"><%= accessdata?.symbol || '$' %><%= metrics.totalExpense %></h4>
+                                                <div class="daily-metric-icon icon-expense">
+                                                    <i class="fa fa-receipt"></i>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2 text-muted fs-11 text-truncate" id="kpi_expense_sub">
+                                                Categories Active: <%= categoryBreakdown.length %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 3. Net Profit / Loss -->
+                                <div class="col-12 col-sm-6 col-xl-3">
+                                    <div class="card h-100 border shadow-none rounded-3 mb-0 daily-kpi-card" id="kpi_profit_card">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <span class="daily-sub-text small fw-medium text-truncate" id="kpi_profit_title">
+                                                    <%= metrics.isProfit ? 'Net Profit' : 'Net Loss' %>
+                                                </span>
+                                                <span class="daily-badge <%= metrics.isProfit ? 'badge-profit' : 'badge-expense' %>" id="kpi_margin">
+                                                    <%= metrics.profitMargin %>% Margin
+                                                </span>
+                                            </div>
+                                            <div class="d-flex align-items-baseline justify-content-between">
+                                                <h4 class="mb-0 fw-bold daily-val-text font-monospace <%= metrics.isProfit ? 'text-success' : 'text-danger' %>" id="kpi_net_profit">
+                                                    <%= accessdata?.symbol || '$' %><%= metrics.netProfit %>
+                                                </h4>
+                                                <div class="daily-metric-icon <%= metrics.isProfit ? 'icon-profit' : 'icon-loss' %>">
+                                                    <i class="fa <%= metrics.isProfit ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' %>"></i>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2 text-muted fs-11 text-truncate" id="kpi_profit_sub">
+                                                <%= metrics.isProfit ? 'Profitable operation' : 'Expenses exceed revenue' %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 4. Tax Position (Informational) -->
+                                <div class="col-12 col-sm-6 col-xl-3">
+                                    <div class="card h-100 border shadow-none rounded-3 mb-0 daily-kpi-card">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <span class="daily-sub-text small fw-medium text-truncate">Tax Overview</span>
+                                                <span class="daily-badge badge-tax">Tax</span>
+                                            </div>
+                                            <div class="d-flex align-items-baseline justify-content-between">
+                                                <h4 class="mb-0 fw-bold daily-val-text font-monospace text-info" id="kpi_sales_tax"><%= accessdata?.symbol || '$' %><%= metrics.totalSalesTax %></h4>
+                                                <div class="daily-metric-icon icon-tax">
+                                                    <i class="fa fa-file-invoice-dollar"></i>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2 text-muted fs-11 text-truncate" id="kpi_tax_sub">
+                                                Sales Tax: <%= accessdata?.symbol || '$' %><%= metrics.totalSalesTax %> | Exp Tax: <%= accessdata?.symbol || '$' %><%= metrics.totalExpenseTax %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FINANCIAL STATEMENT TABLE -->
+                            <div class="card border rounded-3 overflow-hidden shadow-none mb-4 daily-kpi-card">
+                                <div class="card-header py-2 px-3 border-bottom d-flex align-items-center justify-content-between">
+                                    <h6 class="mb-0 fw-semibold text-secondary">
+                                        <i class="fa fa-balance-scale text-primary me-2"></i>Income Statement Summary
+                                    </h6>
+                                    <span class="badge bg-secondary-subtle text-secondary border px-2 py-1">Financial Audit</span>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover pl-statement-table align-middle mb-0">
+                                        <tbody>
+                                            <!-- REVENUE SECTION -->
+                                            <tr class="table-light">
+                                                <td colspan="2" class="section-header text-primary py-2 ps-3">
+                                                    <i class="fa fa-arrow-down me-1"></i> 1. Operating Revenue
+                                                </td>
+                                                <td class="text-end fw-bold text-primary font-monospace pe-3 py-2">Amount (<%= accessdata?.symbol || '$' %>)</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="width: 35px;" class="ps-3"><i class="fa fa-tshirt text-muted"></i></td>
+                                                <td>Base Service Charges (Subtotal)</td>
+                                                <td class="text-end fw-semibold font-monospace pe-3" id="stmt_subtotal"><%= metrics.totalSubtotal %></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="ps-3"><i class="fa fa-plus-circle text-muted"></i></td>
+                                                <td>Addon Charges &amp; Premium Finishes</td>
+                                                <td class="text-end fw-semibold font-monospace pe-3" id="stmt_addon"><%= metrics.totalAddon %></td>
+                                            </tr>
+                                            <tr class="fw-bold">
+                                                <td class="ps-3"></td>
+                                                <td>Gross Billed Sales</td>
+                                                <td class="text-end font-monospace pe-3" id="stmt_gross_sales"><%= metrics.grossSales %></td>
+                                            </tr>
+                                            <tr class="text-danger">
+                                                <td class="ps-3"><i class="fa fa-tag text-danger"></i></td>
+                                                <td>Less Discounts (Coupons &amp; Order Discounts)</td>
+                                                <td class="text-end fw-semibold font-monospace pe-3" id="stmt_discounts">-<%= metrics.totalDiscounts %></td>
+                                            </tr>
+                                            <tr class="fw-bold table-primary pl-net-row">
+                                                <td colspan="2" class="ps-3">TOTAL NET OPERATING REVENUE</td>
+                                                <td class="text-end text-primary font-monospace pe-3 fs-6" id="stmt_net_revenue"><%= accessdata?.symbol || '$' %><%= metrics.netRevenue %></td>
+                                            </tr>
+
+                                            <!-- EXPENSES SECTION -->
+                                            <tr class="table-light">
+                                                <td colspan="2" class="section-header text-danger py-2 ps-3">
+                                                    <i class="fa fa-arrow-up me-1"></i> 2. Operating Expenses (by Category)
+                                                </td>
+                                                <td class="text-end fw-bold text-danger font-monospace pe-3 py-2">Amount (<%= accessdata?.symbol || '$' %>)</td>
+                                            </tr>
+                                            <tbody id="stmt_category_rows">
+                                                <% if (categoryBreakdown.length === 0) { %>
                                                     <tr>
-                                                        <td><%= e.expense_date %></td>
-                                                        <td><span class="badge bg-warning-subtle text-warning fw-semibold"><%= e.category_name %></span></td>
-                                                        <td><%= e.towards %></td>
-                                                        <td><%= e.account_name %></td>
-                                                        <td><%= e.store_name %></td>
-                                                        <td class="text-end fw-bold text-warning"><%= parseFloat(e.amount || 0).toFixed(2) %></td>
-                                                        <td class="text-end"><%= parseFloat(e.tax_amount || 0).toFixed(2) %></td>
+                                                        <td colspan="3" class="text-center text-muted py-3">No expenses recorded for this period.</td>
                                                     </tr>
-                                                <% }); %>
+                                                <% } else { %>
+                                                    <% categoryBreakdown.forEach(function(cat) { %>
+                                                        <tr>
+                                                            <td class="ps-3"><i class="fa fa-folder text-warning"></i></td>
+                                                            <td><%= cat.category_name %> <span class="badge bg-light text-muted ms-1"><%= cat.count %></span></td>
+                                                            <td class="text-end fw-semibold font-monospace pe-3"><%= parseFloat(cat.total_amount).toFixed(2) %></td>
+                                                        </tr>
+                                                    <% }); %>
+                                                <% } %>
                                             </tbody>
-                                        </table>
+                                            <tr class="fw-bold table-warning pl-net-row">
+                                                <td colspan="2" class="ps-3">TOTAL OPERATING EXPENSES</td>
+                                                <td class="text-end text-danger font-monospace pe-3 fs-6" id="stmt_total_expense"><%= accessdata?.symbol || '$' %><%= metrics.totalExpense %></td>
+                                            </tr>
+
+                                            <!-- BOTTOM LINE -->
+                                            <tr class="fw-bold fs-16 <%= metrics.isProfit ? 'table-success text-success' : 'table-danger text-danger' %> pl-net-row" id="stmt_bottom_line">
+                                                <td colspan="2" class="ps-3 py-3">
+                                                    <span class="text-uppercase" id="stmt_profit_label"><%= metrics.isProfit ? 'NET PROFIT' : 'NET LOSS' %></span>
+                                                    <span class="fs-12 fw-normal ms-2" id="stmt_margin_label">(Profit Margin: <%= metrics.profitMargin %>%)</span>
+                                                </td>
+                                                <td class="text-end font-monospace pe-3 fs-5" id="stmt_net_profit"><%= accessdata?.symbol || '$' %><%= metrics.netProfit %></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- DRILLDOWN TABS: ORDERS & EXPENSES -->
+                            <div class="card border rounded-3 overflow-hidden shadow-none mb-2 daily-kpi-card">
+                                <div class="card-header border-bottom py-2 px-3 bg-light-subtle">
+                                    <ul class="nav nav-tabs card-header-tabs border-0" role="tablist">
+                                        <li class="nav-item">
+                                            <button class="nav-link active fw-bold fs-13 py-2 px-3 border-0 rounded-top" data-bs-toggle="tab" data-bs-target="#tab_orders" type="button" role="tab">
+                                                <i class="fa fa-shopping-bag me-1 text-primary"></i> Orders Breakdown (<span id="tab_order_count"><%= ordersList.length %></span>)
+                                            </button>
+                                        </li>
+                                        <li class="nav-item">
+                                            <button class="nav-link fw-bold fs-13 py-2 px-3 border-0 rounded-top" data-bs-toggle="tab" data-bs-target="#tab_expenses" type="button" role="tab">
+                                                <i class="fa fa-receipt me-1 text-danger"></i> Operating Expenses Detail (<span id="tab_expense_count"><%= expensesList.length %></span>)
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div class="card-body p-3">
+                                    <div class="tab-content">
+                                        <!-- TAB 1: ORDERS -->
+                                        <div class="tab-pane fade show active" id="tab_orders" role="tabpanel">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-hover align-middle w-100" id="pl_orders_table">
+                                                    <thead class="pl-table-head">
+                                                        <tr>
+                                                            <th class="ps-2">Date</th>
+                                                            <th>Order #</th>
+                                                            <th>Customer</th>
+                                                            <th>Store</th>
+                                                            <th class="text-end">Subtotal</th>
+                                                            <th class="text-end">Addon</th>
+                                                            <th class="text-end">Discount</th>
+                                                            <th class="text-end fw-bold text-primary">Net Revenue</th>
+                                                            <th class="text-end">Tax</th>
+                                                            <th class="pe-2 text-end">Gross Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="pl_orders_tbody">
+                                                        <% ordersList.forEach(function(o) { %>
+                                                            <tr>
+                                                                <td class="ps-2 text-nowrap"><%= o.order_date %></td>
+                                                                <td>
+                                                                    <span class="order-id-badge"><%= o.order_id %></span>
+                                                                </td>
+                                                                <td><%= o.customer_name %></td>
+                                                                <td><%= o.store_name %></td>
+                                                                <td class="text-end font-monospace"><%= parseFloat(o.sub_total || 0).toFixed(2) %></td>
+                                                                <td class="text-end font-monospace"><%= parseFloat(o.addon_price || 0).toFixed(2) %></td>
+                                                                <td class="text-end font-monospace text-danger"><%= parseFloat(o.total_discount || 0).toFixed(2) %></td>
+                                                                <td class="text-end font-monospace fw-bold text-primary"><%= parseFloat(o.net_amount || 0).toFixed(2) %></td>
+                                                                <td class="text-end font-monospace"><%= parseFloat(o.tax_amount || 0).toFixed(2) %></td>
+                                                                <td class="pe-2 text-end font-monospace fw-semibold"><%= parseFloat(o.gross_total || 0).toFixed(2) %></td>
+                                                            </tr>
+                                                        <% }); %>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        <!-- TAB 2: EXPENSES -->
+                                        <div class="tab-pane fade" id="tab_expenses" role="tabpanel">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-hover align-middle w-100" id="pl_expenses_table">
+                                                    <thead class="pl-table-head">
+                                                        <tr>
+                                                            <th class="ps-2">Date</th>
+                                                            <th>Category</th>
+                                                            <th>Towards / Description</th>
+                                                            <th>Payment Mode</th>
+                                                            <th>Store</th>
+                                                            <th class="text-end fw-bold text-danger">Amount (<%= accessdata?.symbol || '$' %>)</th>
+                                                            <th class="pe-2 text-end">Tax</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="pl_expenses_tbody">
+                                                        <% expensesList.forEach(function(e) { %>
+                                                            <tr>
+                                                                <td class="ps-2 text-nowrap"><%= e.expense_date %></td>
+                                                                <td><span class="badge bg-danger-subtle text-danger fw-semibold"><%= e.category_name %></span></td>
+                                                                <td><%= e.towards %></td>
+                                                                <td><%= e.account_name %></td>
+                                                                <td><%= e.store_name %></td>
+                                                                <td class="text-end font-monospace fw-bold text-danger"><%= parseFloat(e.amount || 0).toFixed(2) %></td>
+                                                                <td class="pe-2 text-end font-monospace"><%= parseFloat(e.tax_amount || 0).toFixed(2) %></td>
+                                                            </tr>
+                                                        <% }); %>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -572,7 +818,7 @@
                         // KPI 1: Revenue
                         $('#kpi_order_count').text(m.orderCount + ' Orders');
                         $('#kpi_net_revenue').text(sym + m.netRevenue);
-                        $('#kpi_gross_sales').text('Gross Sales: ' + sym + m.grossSales + ' | Disc: ' + sym + m.totalDiscounts);
+                        $('#kpi_gross_sales').text('Gross: ' + sym + m.grossSales + ' | Disc: ' + sym + m.totalDiscounts);
 
                         // KPI 2: Expenses
                         $('#kpi_expense_count').text(m.expenseCount + ' Entries');
@@ -581,15 +827,13 @@
 
                         // KPI 3: Net Profit / Loss
                         const isProfit = m.isProfit;
-                        const profitCard = $('#kpi_profit_card');
                         const profitTitle = $('#kpi_profit_title');
                         const profitMargin = $('#kpi_margin');
                         const profitVal = $('#kpi_net_profit');
                         const profitSub = $('#kpi_profit_sub');
 
-                        profitCard.removeClass('border-success border-danger').addClass(isProfit ? 'border-success' : 'border-danger');
-                        profitTitle.removeClass('text-success text-danger').addClass(isProfit ? 'text-success' : 'text-danger').text(isProfit ? 'Net Profit' : 'Net Loss');
-                        profitMargin.removeClass('bg-success bg-danger').addClass(isProfit ? 'bg-success' : 'bg-danger').text(m.profitMargin + '% Margin');
+                        profitTitle.text(isProfit ? 'Net Profit' : 'Net Loss');
+                        profitMargin.removeClass('badge-profit badge-expense').addClass(isProfit ? 'badge-profit' : 'badge-expense').text(m.profitMargin + '% Margin');
                         profitVal.removeClass('text-success text-danger').addClass(isProfit ? 'text-success' : 'text-danger').text(sym + m.netProfit);
                         profitSub.text(isProfit ? 'Profitable operation' : 'Expenses exceed revenue');
 
@@ -611,9 +855,9 @@
                         } else {
                             res.categoryBreakdown.forEach(function (cat) {
                                 catHtml += '<tr>' +
-                                    '<td><i class="fa fa-folder text-warning"></i></td>' +
+                                    '<td class="ps-3"><i class="fa fa-folder text-warning"></i></td>' +
                                     '<td>' + (cat.category_name || 'Uncategorized') + ' <span class="badge bg-light text-muted ms-1">' + cat.count + '</span></td>' +
-                                    '<td class="text-end fw-semibold">' + parseFloat(cat.total_amount || 0).toFixed(2) + '</td>' +
+                                    '<td class="text-end fw-semibold font-monospace pe-3">' + parseFloat(cat.total_amount || 0).toFixed(2) + '</td>' +
                                     '</tr>';
                             });
                         }
@@ -638,15 +882,15 @@
                             (res.ordersList || []).forEach(function (o) {
                                 ordersTable.row.add([
                                     o.order_date || '',
-                                    '<strong>' + (o.order_id || '') + '</strong>',
+                                    '<span class="order-id-badge">' + (o.order_id || '') + '</span>',
                                     o.customer_name || '',
                                     o.store_name || '',
-                                    '<span class="float-end">' + parseFloat(o.sub_total || 0).toFixed(2) + '</span>',
-                                    '<span class="float-end">' + parseFloat(o.addon_price || 0).toFixed(2) + '</span>',
-                                    '<span class="float-end text-danger">' + parseFloat(o.total_discount || 0).toFixed(2) + '</span>',
-                                    '<span class="float-end fw-bold text-primary">' + parseFloat(o.net_amount || 0).toFixed(2) + '</span>',
-                                    '<span class="float-end">' + parseFloat(o.tax_amount || 0).toFixed(2) + '</span>',
-                                    '<span class="float-end fw-semibold">' + parseFloat(o.gross_total || 0).toFixed(2) + '</span>'
+                                    '<span class="float-end font-monospace">' + parseFloat(o.sub_total || 0).toFixed(2) + '</span>',
+                                    '<span class="float-end font-monospace">' + parseFloat(o.addon_price || 0).toFixed(2) + '</span>',
+                                    '<span class="float-end font-monospace text-danger">' + parseFloat(o.total_discount || 0).toFixed(2) + '</span>',
+                                    '<span class="float-end font-monospace fw-bold text-primary">' + parseFloat(o.net_amount || 0).toFixed(2) + '</span>',
+                                    '<span class="float-end font-monospace">' + parseFloat(o.tax_amount || 0).toFixed(2) + '</span>',
+                                    '<span class="float-end font-monospace fw-semibold">' + parseFloat(o.gross_total || 0).toFixed(2) + '</span>'
                                 ]);
                             });
                             ordersTable.draw();
@@ -658,12 +902,12 @@
                             (res.expensesList || []).forEach(function (e) {
                                 expensesTable.row.add([
                                     e.expense_date || '',
-                                    '<span class="badge bg-warning-subtle text-warning fw-semibold">' + (e.category_name || '') + '</span>',
+                                    '<span class="badge bg-danger-subtle text-danger fw-semibold">' + (e.category_name || '') + '</span>',
                                     e.towards || '',
                                     e.account_name || '',
                                     e.store_name || '',
-                                    '<span class="float-end fw-bold text-warning">' + parseFloat(e.amount || 0).toFixed(2) + '</span>',
-                                    '<span class="float-end">' + parseFloat(e.tax_amount || 0).toFixed(2) + '</span>'
+                                    '<span class="float-end font-monospace fw-bold text-danger">' + parseFloat(e.amount || 0).toFixed(2) + '</span>',
+                                    '<span class="float-end font-monospace">' + parseFloat(e.tax_amount || 0).toFixed(2) + '</span>'
                                 ]);
                             });
                             expensesTable.draw();

@@ -43,9 +43,12 @@
                     <div class="col-12">
                         <div class="card border-0 shadow-sm rounded-3">
                             <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <h4 class="card-title mb-0 fw-bold">
-                                    <%= language.Transection_List %>
-                                </h4>
+                                <div>
+                                    <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
+                                        <i class="fa fa-money-bill-wave text-primary me-2"></i><%= language.Transection_List %>
+                                    </h3>
+                                    <small class="text-muted"><%= language.Transection_List_Subtitle || 'Review payout transaction records, settlements, and history' %></small>
+                                </div>
                             </div>
                             <div class="d-none">
                                 <input type="hiden" name="sym" value="<%= accessdata.symbol %>">

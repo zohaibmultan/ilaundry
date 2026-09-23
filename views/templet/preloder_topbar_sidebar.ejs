@@ -34,166 +34,181 @@
     <div class="header-content">
       <nav class="navbar navbar-expand">
         <div class="collapse navbar-collapse justify-content-between">
-          <div class="header-left">
-            <div class="dashboard_bar text-truncate" style="max-width: min(50vw, 320px);">
-              <%= titel %>
+          <div class="header-left d-flex align-items-center">
+            <div class="dashboard_bar text-truncate d-flex align-items-center gap-2" style="max-width: min(50vw, 320px);">
+              <span class="d-inline-block rounded-circle bg-primary" style="width: 8px; height: 8px; box-shadow: 0 0 6px rgba(0, 129, 238, 0.6);"></span>
+              <span><%= titel %></span>
             </div>
             <% if (accessdata?.topbardata?.is_staff != 0 && (accessdata?.topbardata?.store_name || accessdata?.topbardata?.store)) { %>
-              <div class="badge badge-primary bg-primary text-white ms-2 d-inline-flex align-items-center gap-1 py-1 px-2 rounded-pill fs-12 fw-semibold">
-                <i class="fas fa-store"></i>
+              <div class="header-store-badge ms-2">
+                <span class="header-store-dot"></span>
+                <i class="fas fa-store fs-11"></i>
                 <span><%= accessdata?.topbardata?.store_name || accessdata?.topbardata?.store %></span>
               </div>
             <% } %>
           </div>
 
-          <ul class="navbar-nav header-right">
-            <li class="nav-item dropdown  notification_dropdown">
-              <a class="nav-link ai-icon" id="header_theme_toggle" href="javascript:void(0);"
+          <ul class="navbar-nav header-right align-items-center">
+            <!-- Quick Action: POS / New Order Button -->
+            <% if ((accessdata?.logas == 'custmor' && accessdata?.roll?.pos?.includes('read')) || (accessdata?.roll?.pos && accessdata.roll.pos.includes('read'))) { %>
+              <li class="nav-item me-2 d-flex align-items-center">
+                <a href="/admin/pos" class="header-pos-btn" title="Point of Sale / New Order">
+                  <i class="fa fa-shopping-bag"></i>
+                  <span class="d-none d-sm-inline">+ <%= language.POS || 'New Order / POS' %></span>
+                </a>
+              </li>
+            <% } %>
+
+            <!-- Theme Switcher -->
+            <li class="nav-item dropdown notification_dropdown me-2">
+              <a class="header-icon-btn" id="header_theme_toggle" href="javascript:void(0);"
                 onclick="window.toggleAppTheme(event)" role="button" title="Toggle Dark/Light Mode"
                 style="cursor: pointer;">
                 <div class="mode" data-id="dark">
-                  <svg class="lighticon" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                  <svg class="lighticon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     xmlns="http://www.w3.org/2000/svg">
-                    <g>
-                      <g>
-                        <path fill-rule="evenodd" clip-rule="evenodd"
-                          d="M18.1377 13.7902C19.2217 14.8742 16.3477 21.0542 10.6517 21.0542C6.39771 21.0542 2.94971 17.6062 2.94971 13.3532C2.94971 8.05317 8.17871 4.66317 9.67771 6.16217C10.5407 7.02517 9.56871 11.0862 11.1167 12.6352C12.6647 14.1842 17.0537 12.7062 18.1377 13.7902Z"
-                          stroke="#130F26" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                      </g>
-                    </g>
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                      d="M18.1377 13.7902C19.2217 14.8742 16.3477 21.0542 10.6517 21.0542C6.39771 21.0542 2.94971 17.6062 2.94971 13.3532C2.94971 8.05317 8.17871 4.66317 9.67771 6.16217C10.5407 7.02517 9.56871 11.0862 11.1167 12.6352C12.6647 14.1842 17.0537 12.7062 18.1377 13.7902Z"
+                      stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
                   </svg>
-                  <svg class="darkicon" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                  <svg class="darkicon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.5"></circle>
                     <path
-                      d="M17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 9.23858 9.23858 7 12 7C14.7614 7 17 9.23858 17 12Z"
-                      stroke="#f1f5f9" stroke-width="1.5"></path>
-                    <path
-                      d="M18.3117 5.68834L18.4286 5.57143M5.57144 18.4286L5.68832 18.3117M12 3.07394V3M12 21V20.9261M3.07394 12H3M21 12H20.9261M5.68831 5.68834L5.5714 5.57143M18.4286 18.4286L18.3117 18.3117"
-                      stroke="#f1f5f9" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+                      d="M12 2V4M12 20V22M4 12H2M22 12H20M19.07 4.93L17.66 6.34M6.34 17.66L4.93 19.07M19.07 19.07L17.66 17.66M6.34 6.34L4.93 4.93"
+                      stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
                   </svg>
                 </div>
               </a>
             </li>
 
-            <li class="nav-item dropdown notification_dropdown">
-              <a class="nav-link  ai-icon" href="#" role="button" data-bs-toggle="dropdown">
-                <svg viewBox="0 0 16 16" width="18px" fill="" xmlns="http://www.w3.org/2000/svg">
-                  <path class="fill-secondary"
-                    d="M4.545 6.714 4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286H4.545zm1.634-.736L5.5 3.956h-.049l-.679 2.022H6.18z">
-                  </path>
-                  <path
-                    d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2zm7.138 9.995c.193.301.402.583.63.846-.748.575-1.673 1.001-2.768 1.292.178.217.451.635.555.867 1.125-.359 2.08-.844 2.886-1.494.777.665 1.739 1.165 2.93 1.472.133-.254.414-.673.629-.89-1.125-.253-2.057-.694-2.82-1.284.681-.747 1.222-1.651 1.621-2.757H14V8h-3v1.047h.765c-.318.844-.74 1.546-1.272 2.13a6.066 6.066 0 0 1-.415-.492 1.988 1.988 0 0 1-.94.31z">
-                  </path>
+            <!-- Language Switcher -->
+            <li class="nav-item dropdown notification_dropdown me-2">
+              <a class="header-icon-btn" href="#" role="button" data-bs-toggle="dropdown" title="Select Language">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
                 </svg>
               </a>
 
-              <div class="dropdown-menu dropdown-menu-end">
-                <div id="DZ_W_Notification1" class="widget-media dz-scroll ps">
-                  <div class="more_lang active">
-                    <div class="lang" id="en" data-lang="ltr" data-value="en"><i
-                        class="flag-icon flag-icon-us"></i><span class="lang-txt">English<span> (US)</span></span></div>
-                    <div class="lang" id="in" data-lang="ltr" data-value="in"><i
-                        class="flag-icon flag-icon-in"></i><span class="lang-txt">Hindi</span></div>
-                    <div class="lang" id="pt" data-lang="ltr" data-value="pt"><i
-                        class="flag-icon flag-icon-pt"></i><span class="lang-txt">Portugu&ecirc;s<span>
-                          (BR)</span></span></div>
-                    <div class="lang" id="es" data-lang="ltr" data-value="es"><i
-                        class="flag-icon flag-icon-es"></i><span class="lang-txt">Espa&ntilde;ol</span></div>
-                    <div class="lang" id="fr" data-lang="ltr" data-value="fr"><i
-                        class="flag-icon flag-icon-fr"></i><span class="lang-txt">Fran&ccedil;ais</span></div>
-                    <div class="lang" id="cn" data-lang="ltr" data-value="cn"><i
-                        class="flag-icon flag-icon-cn"></i><span
-                        class="lang-txt">&#x7B80;&#x4F53;&#x4E2D;&#x6587;</span></div>
-                    <div class="lang" id="ae" data-lang="rtl" data-value="ae"><i
-                        class="flag-icon flag-icon-ae"></i><span
-                        class="lang-txt">&#x644;&#x639;&#x631;&#x628;&#x64A;&#x629; <span> (ae)</span></span></div>
-                    <div class="lang" id="id" data-lang="ltr" data-value="id"><i
-                        class="flag-icon flag-icon-id"></i><span class="lang-txt">Indonesian</span></div>
-                    <div class="lang" id="ph" data-lang="ltr" data-value="ph"><i
-                        class="flag-icon flag-icon-ph"></i><span class="lang-txt">Philipines</span></div>
-                    <div class="lang" id="uk" data-lang="ltr" data-value="uk"><i
-                        class="flag-icon flag-icon-uk"></i><span class="lang-txt">Ukraine</span></div>
+              <div class="dropdown-menu dropdown-menu-end lang-glass-menu shadow-lg">
+                <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
+                  <span class="fs-12 fw-bold text-uppercase text-secondary">Select Language</span>
+                  <i class="fa fa-globe text-primary fs-12"></i>
+                </div>
+                <div class="lang-grid more_lang active">
+                  <div class="lang-grid-item lang" id="en" data-lang="ltr" data-value="en">
+                    <i class="flag-icon flag-icon-us rounded-1"></i>
+                    <span class="lang-txt flex-grow-1">English</span>
+                  </div>
+                  <div class="lang-grid-item lang" id="in" data-lang="ltr" data-value="in">
+                    <i class="flag-icon flag-icon-in rounded-1"></i>
+                    <span class="lang-txt flex-grow-1">Hindi</span>
+                  </div>
+                  <div class="lang-grid-item lang" id="pt" data-lang="ltr" data-value="pt">
+                    <i class="flag-icon flag-icon-pt rounded-1"></i>
+                    <span class="lang-txt flex-grow-1">Português</span>
+                  </div>
+                  <div class="lang-grid-item lang" id="es" data-lang="ltr" data-value="es">
+                    <i class="flag-icon flag-icon-es rounded-1"></i>
+                    <span class="lang-txt flex-grow-1">Español</span>
+                  </div>
+                  <div class="lang-grid-item lang" id="fr" data-lang="ltr" data-value="fr">
+                    <i class="flag-icon flag-icon-fr rounded-1"></i>
+                    <span class="lang-txt flex-grow-1">Français</span>
+                  </div>
+                  <div class="lang-grid-item lang" id="cn" data-lang="ltr" data-value="cn">
+                    <i class="flag-icon flag-icon-cn rounded-1"></i>
+                    <span class="lang-txt flex-grow-1">中文</span>
+                  </div>
+                  <div class="lang-grid-item lang" id="ae" data-lang="rtl" data-value="ae">
+                    <i class="flag-icon flag-icon-ae rounded-1"></i>
+                    <span class="lang-txt flex-grow-1">العربية</span>
+                  </div>
+                  <div class="lang-grid-item lang" id="id" data-lang="ltr" data-value="id">
+                    <i class="flag-icon flag-icon-id rounded-1"></i>
+                    <span class="lang-txt flex-grow-1">Bahasa</span>
+                  </div>
+                  <div class="lang-grid-item lang" id="ph" data-lang="ltr" data-value="ph">
+                    <i class="flag-icon flag-icon-ph rounded-1"></i>
+                    <span class="lang-txt flex-grow-1">Filipino</span>
+                  </div>
+                  <div class="lang-grid-item lang" id="uk" data-lang="ltr" data-value="uk">
+                    <i class="flag-icon flag-icon-uk rounded-1"></i>
+                    <span class="lang-txt flex-grow-1">Ukrainian</span>
                   </div>
                 </div>
               </div>
               <input type="hidden" id="hidden_lang" value="<%= language_name %>">
             </li>
 
-            <li class="nav-item dropdown notification_dropdown">
-              <a class="nav-link  ai-icon" href="#" role="button" data-bs-toggle="dropdown">
-                <svg width="26" height="28" viewBox="0 0 26 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M9.45251 25.6682C10.0606 27.0357 11.4091 28 13.0006 28C14.5922 28 15.9407 27.0357 16.5488 25.6682C15.4266 25.7231 14.2596 25.76 13.0006 25.76C11.7418 25.76 10.5748 25.7231 9.45251 25.6682Z"
-                    fill="#3E4954" />
-                  <path
-                    d="M25.3531 19.74C23.8769 17.8785 21.3995 14.2195 21.3995 10.64C21.3995 7.09073 19.1192 3.89758 15.7995 2.72382C15.7592 1.21406 14.5183 0 13.0006 0C11.4819 0 10.2421 1.21406 10.2017 2.72382C6.88095 3.89758 4.60064 7.09073 4.60064 10.64C4.60064 14.2207 2.12434 17.8785 0.647062 19.74C0.154273 20.3616 0.00191325 21.1825 0.240515 21.9363C0.473484 22.6721 1.05361 23.2422 1.79282 23.4595C3.08755 23.8415 5.20991 24.2715 8.44676 24.491C9.84785 24.5851 11.3543 24.64 13.0007 24.64C14.646 24.64 16.1524 24.5851 17.5535 24.491C20.7914 24.2715 22.9127 23.8415 24.2085 23.4595C24.9477 23.2422 25.5268 22.6722 25.7597 21.9363C25.9983 21.1825 25.8448 20.3616 25.3531 19.74Z"
-                    fill="#3E4954" />
+            <!-- Notifications Dropdown -->
+            <li class="nav-item dropdown notification_dropdown me-2">
+              <a class="header-icon-btn" href="#" role="button" data-bs-toggle="dropdown" title="Notifications">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
+                <% if(accessdata?.notification_data?.length > 0){ %>
+                  <span class="header-badge-dot"></span>
+                <% } %>
               </a>
-              <div class="dropdown-menu dropdown-menu-end">
-                <div id="DZ_W_Notification1" class="widget-media dz-scroll p-3 height410">
-                  <ul class="timeline">
-                    <% if(accessdata?.notification_data?.length>0){ %>
-                      <% accessdata?.notification_data?.forEach((data)=> { %>
-                        <li>
-                          <a href="#">
-                            <div class="timeline-panel">
-                              <div class="media me-2">
-                                <svg width="16" height="18" viewBox="0 0 26 28" fill="none"
-                                  xmlns="http://www.w3.org/2000/svg">
-                                  <path
-                                    d="M9.45251 25.6682C10.0606 27.0357 11.4091 28 13.0006 28C14.5922 28 15.9407 27.0357 16.5488 25.6682C15.4266 25.7231 14.2596 25.76 13.0006 25.76C11.7418 25.76 10.5748 25.7231 9.45251 25.6682Z"
-                                    fill="#3E4954" />
-                                  <path
-                                    d="M25.3531 19.74C23.8769 17.8785 21.3995 14.2195 21.3995 10.64C21.3995 7.09073 19.1192 3.89758 15.7995 2.72382C15.7592 1.21406 14.5183 0 13.0006 0C11.4819 0 10.2421 1.21406 10.2017 2.72382C6.88095 3.89758 4.60064 7.09073 4.60064 10.64C4.60064 14.2207 2.12434 17.8785 0.647062 19.74C0.154273 20.3616 0.00191325 21.1825 0.240515 21.9363C0.473484 22.6721 1.05361 23.2422 1.79282 23.4595C3.08755 23.8415 5.20991 24.2715 8.44676 24.491C9.84785 24.5851 11.3543 24.64 13.0007 24.64C14.646 24.64 16.1524 24.5851 17.5535 24.491C20.7914 24.2715 22.9127 23.8415 24.2085 23.4595C24.9477 23.2422 25.5268 22.6722 25.7597 21.9363C25.9983 21.1825 25.8448 20.3616 25.3531 19.74Z"
-                                    fill="#3E4954" />
-                                </svg>
-                              </div>
-                              <div class="media-body">
-                                <h6 class="mb-1">
-                                  <%= data.notification %>
-                                </h6>
-                                <small class="d-block">
-                                  <%= data.date %>
-                                </small>
-                              </div>
-                            </div>
-                          </a>
-                        </li>
-                        <% }) %>
-                          <%}else{%>
-                            <li>
-                              <a href="#">
-                                <div class="timeline-panel">
-                                  <div class="media-body">
-                                    <h5 class="mb-1 text-danger text-center">
-                                      No Notification Found
-                                    </h5>
-                                  </div>
-                                </div>
-                              </a>
-                            </li>
-                            <%}%>
-                  </ul>
+              <div class="dropdown-menu dropdown-menu-end notification-glass-menu shadow-lg">
+                <div class="notif-header">
+                  <div class="d-flex align-items-center gap-2">
+                    <h6 class="mb-0 fw-bold">Notifications</h6>
+                    <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1 fs-11">
+                      <%= accessdata?.notification_data ? accessdata.notification_data.length : 0 %>
+                    </span>
+                  </div>
+                  <a href="/admin/notification" class="fs-12 text-primary text-decoration-none fw-medium">View All</a>
                 </div>
-                <a class="all-notification" href="/admin/notification">
-                  <%= language.Check_All_Notification %> <i class="ti-arrow-right"></i>
-                </a>
+                <div class="widget-media dz-scroll" style="max-height: 340px; overflow-y: auto; overflow-x: hidden;">
+                  <% if(accessdata?.notification_data?.length > 0){ %>
+                    <% accessdata.notification_data.forEach((data) => { %>
+                      <a href="/admin/notification" class="notif-item">
+                        <div class="bg-primary-subtle text-primary rounded-circle notif-item-icon">
+                          <i class="fa fa-bell fs-12"></i>
+                        </div>
+                        <div class="notif-item-body">
+                          <div class="notif-item-text"><%= data.notification %></div>
+                          <div class="notif-item-time">
+                            <i class="fa fa-clock fs-10"></i>
+                            <span><%= data.date %></span>
+                          </div>
+                        </div>
+                      </a>
+                    <% }) %>
+                  <% } else { %>
+                    <div class="text-center py-4 text-muted">
+                      <i class="fa fa-bell-slash fs-2 mb-2 d-block text-secondary opacity-50"></i>
+                      <span class="fs-12">No notifications found</span>
+                    </div>
+                  <% } %>
+                </div>
+                <div class="notif-footer">
+                  <a href="/admin/notification" class="d-flex align-items-center justify-content-center gap-1">
+                    <span><%= language.Check_All_Notification || 'Check All Notifications' %></span>
+                    <i class="fas fa-chevron-right fs-10"></i>
+                  </a>
+                </div>
               </div>
             </li>
 
+            <!-- User Profile Dropdown -->
             <li class="nav-item dropdown header-profile">
-              <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown">
+              <a class="nav-link p-0" href="#" role="button" data-bs-toggle="dropdown">
                 <% if (accessdata?.logas==='custmor' ) { %>
-                  <img class="img-fluid 1" src="../../images/profile-default.png"
+                  <img class="img-fluid rounded-circle" style="width: 40px; height: 40px; object-fit: cover; border: 2px solid rgba(0, 129, 238, 0.2);" src="../../images/profile-default.png"
                     onerror="this.onerror=null;this.src='../../images/default.png';" alt="image">
                   <% } else if (accessdata?.isstore===true) { %>
-                    <img class="img-fluid 2" src="../../uploads/<%= accessdata?.topbardata?.img  %>"
+                    <img class="img-fluid rounded-circle" style="width: 40px; height: 40px; object-fit: cover; border: 2px solid rgba(0, 129, 238, 0.2);" src="../../uploads/<%= accessdata?.topbardata?.img  %>"
                       onerror="this.onerror=null;this.src='../../images/default.png';" alt="image">
-                    <% } else { %>
-                      <img class="img-fluid 3" src="../../uploads/<%= accessdata?.topbardata?.img %>"
-                        onerror="this.onerror=null;this.src='../../images/default.png';" alt="image">
-                      <% } %>
+                  <% } else { %>
+                    <img class="img-fluid rounded-circle" style="width: 40px; height: 40px; object-fit: cover; border: 2px solid rgba(0, 129, 238, 0.2);" src="../../uploads/<%= accessdata?.topbardata?.img %>"
+                      onerror="this.onerror=null;this.src='../../images/default.png';" alt="image">
+                  <% } %>
               </a>
               <div class="dropdown-menu dropdown-menu-end profile-glass-menu shadow-lg">
                 <% 

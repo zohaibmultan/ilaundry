@@ -26,15 +26,12 @@
                                         value="<%= accessdata.thousands_separator %>">
                                 </div>
 <div class="mt-4">
-                                    <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
-                                        <h5 class="text-uppercase fw-500 mb-0">
-                                            <span>
-                                                <%= language.Order_ID %> :
-                                            </span>
-                                            <span>
-                                                <%=order.order_id %>
-                                            </span>
-                                        </h5>
+                                    <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                        <h3 class="card-title mb-0 fw-bold text-dark d-flex align-items-center">
+                                            <i class="fa fa-file-invoice text-primary me-2"></i>
+                                            <span><%= language.Order_ID %> :</span>
+                                            <span class="ms-1 text-primary"><%=order.order_id %></span>
+                                        </h3>
                                         <% if (order.transferred_from_store_id && transferredFromStore) { %>
                                             <span class="badge bg-warning text-dark d-inline-flex align-items-center gap-1 py-1 px-2 rounded-pill fs-12 fw-semibold" title="Transferred from <%= transferredFromStore.name %>">
                                                 <i class="fas fa-random"></i>
@@ -42,6 +39,7 @@
                                             </span>
                                         <% } %>
                                     </div>
+                                    <small class="text-muted d-block mb-3"><%= language.Order_Details_Subtitle || 'Comprehensive invoice summary, service breakdown, and tracking details' %></small>
                                     <p class="text-sm mb-1">
                                         <span>
                                             <%= language.Order_Date %> :

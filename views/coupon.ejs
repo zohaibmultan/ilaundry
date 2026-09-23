@@ -43,13 +43,18 @@
                     <div class="col-12">
                         <div class="card border-0 shadow-sm rounded-3">
                             <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <h4 class="card-title mb-0 fw-bold">
-                                    <%= language.Coupon_List %>
-                                </h4>
-                                <button class="btn btn-primary <%= ((typeof canAdd !== 'undefined' && canAdd) || isadmin) ? '': 'd-none' %>"
-                                    data-bs-toggle="modal" data-bs-target="#coupon_add">
-                                    <i class="fa fa-plus me-2"></i><%= language.Add_New_Coupon %>
-                                </button>
+                                <div>
+                                    <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
+                                        <i class="fa fa-ticket-alt text-primary me-2"></i><%= language.Coupon_List %>
+                                    </h3>
+                                    <small class="text-muted"><%= language.Coupon_List_Subtitle || 'Manage promotional discount coupons, validity dates, and redemption limits' %></small>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-primary <%= ((typeof canAdd !== 'undefined' && canAdd) || isadmin) ? '': 'd-none' %>"
+                                        data-bs-toggle="modal" data-bs-target="#coupon_add">
+                                        <i class="fa fa-plus me-2"></i><%= language.Add_New_Coupon %>
+                                    </button>
+                                </div>
                             </div>
                             <div class="d-none">
                                 <input type="hiden" name="sym" value="<%= accessdata?.symbol %>">

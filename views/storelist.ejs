@@ -21,13 +21,18 @@
                     <div class="col-12">
                         <div class="card border-0 shadow-sm rounded-3">
                             <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <h4 class="card-title mb-0 fw-bold">
-                                    <%= language.Shop_List_Table %>
-                                </h4>
-                                <a href="/tool/addshop" class="btn btn-primary">
-                                    <i class="fa fa-plus me-2"></i>
-                                    <%= language.Add_New_Store %>
-                                </a>
+                                <div>
+                                    <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
+                                        <i class="fa fa-store text-primary me-2"></i><%= language.Shop_List_Table %>
+                                    </h3>
+                                    <small class="text-muted"><%= language.Store_List_Subtitle || 'Manage and monitor laundry store branches and operational status' %></small>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <a href="/tool/addshop" class="btn btn-sm btn-primary">
+                                        <i class="fa fa-plus me-2"></i>
+                                        <%= language.Add_New_Store %>
+                                    </a>
+                                </div>
                             </div>
 
                             <div class="card-body p-4">

@@ -20,14 +20,19 @@
                     <div class="col-12">
                         <div class="card border-0 shadow-sm rounded-3">
                             <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <h4 class="card-title mb-0 fw-bold">
-                                    <%= language.Staff %>
-                                </h4>
-                                <button
-                                    class="btn btn-primary <%= accessdata.roll.staff.includes('write') ?'':'d-none' %>"
-                                    data-bs-toggle="modal" data-bs-target="#staff_add">
-                                    <i class="fa fa-plus me-2"></i><%= language.Add_New_Staff %>
-                                </button>
+                                <div>
+                                    <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
+                                        <i class="fa fa-user-tie text-primary me-2"></i><%= language.Staff %>
+                                    </h3>
+                                    <small class="text-muted"><%= language.Staff_Subtitle || 'Manage staff accounts, store assignments, and operational access' %></small>
+                                </div>
+                                <div>
+                                    <button
+                                        class="btn btn-sm btn-primary <%= accessdata.roll.staff.includes('write') ?'':'d-none' %>"
+                                        data-bs-toggle="modal" data-bs-target="#staff_add">
+                                        <i class="fa fa-plus me-2"></i><%= language.Add_New_Staff %>
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body p-4">
                                 <!-- Server-side DataTable Toolbar -->
