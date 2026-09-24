@@ -371,18 +371,10 @@
                     </a>
                   </li>
                   <% } %>
-                    <!-- <li><a href="widget-basic.html" class="has-arrow ai-icon" aria-expanded="false">
-                    <i class="flaticon-381-settings-2"></i>
-                    <span class="nav-text">Orders Status</span>
-                </a>
-                </li> -->
-
-
-                    <% if((accessdata?.logas=='custmor' && accessdata?.roll?.customers?.includes('read')) ||
-                      accessdata?.roll?.customers?.includes('read')){ %>
+                    
+                    <% if((accessdata?.logas=='custmor' && accessdata?.roll?.customers?.includes('read')) || accessdata?.roll?.customers?.includes('read')){ %>
                       <li><a href="/coustomer/list" class="has-arrow ai-icon" aria-expanded="false">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            xmlns="http://www.w3.org/2000/svg">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <g>
                               <g>
                                 <path fill-rule="evenodd" clip-rule="evenodd"
@@ -405,7 +397,7 @@
                           </span>
                         </a>
                       </li>
-                      <%}%>
+                    <%}%>
 
                         <% if(accessdata?.logas !='custmor' && accessdata?.roll?.coupon?.includes('read') ){ %>
                           <li><a href="/coupon/list" class="has-arrow ai-icon" aria-expanded="false">
@@ -432,6 +424,7 @@
                             </a>
                           </li>
                           <% } %>
+                          
                             <% if(accessdata?.logas !='custmor' && accessdata?.roll?.expense?.includes('read')){ %>
                               <li class="has-menu"><a class="has-arrow ai-icon" href="javascript:void()"
                                   aria-expanded="false">

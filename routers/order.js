@@ -1282,6 +1282,11 @@ const renderOrderPrint = async (req, res) => {
       return res.redirect("/order/list");
     }
 
+    if (loginas == 0 && orderdata[0].customer_id != id) {
+      req.flash("errors", "You are not authorized to view this order");
+      return res.redirect("/order/list");
+    }
+
     const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
     if (isStaff && staffStoreId && orderdata[0].store_id != staffStoreId) {
       req.flash(
@@ -1358,6 +1363,8 @@ const renderOrderPrint = async (req, res) => {
 router.post("/orderprint", auth, renderOrderPrint);
 router.get("/orderprint", auth, renderOrderPrint);
 router.get("/orderprint/:id", auth, renderOrderPrint);
+router.get("/pos_invoice/:id", auth, renderOrderPrint);
+router.get("/pos_invoice", auth, renderOrderPrint);
 
 const handleListStatus = async (req, res) => {
   try {

@@ -316,6 +316,7 @@
                     $(document).ready(function () {
                         var isMaster = '<%= login %>' === 'master';
                         var isStaff = <%= (typeof isStaff !== 'undefined' && isStaff) ? 'true' : 'false' %>;
+                        var isCustomer = '<%= login %>' === 'customer' || '<%= accessdata.logas %>' === 'custmor';
 
                         window.orderTable = initServerDataTable('#server_order_table', {
                             ajaxUrl: '/order/list/data',
@@ -410,6 +411,13 @@
                                     className: 'text-center',
                                     render: function (data, type, row) {
                                         var actions = '<div class="server-dt-actions justify-content-center">';
+
+                                        if (isCustomer) {
+                                            actions += '<a href="/order/view/' + data + '" class="btn-dt-action btn-view" title="<%= language.View || "View" %>">' +
+                                                '<i class="fa fa-eye"></i></a>';
+                                            actions += '</div>';
+                                            return actions;
+                                        }
 
                                         if (row.order_status != 6 && row.canEdit) {
                                             actions += '<a href="/admin/edit/' + data + '" class="btn-dt-action btn-edit" title="<%= language.Edit || "Edit" %>">' +

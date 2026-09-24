@@ -932,6 +932,32 @@ textarea.form-control:focus {
   border-radius: 10px !important;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12) !important;
   overflow: hidden !important;
+  z-index: 1070 !important;
+}
+
+.select2-container--open {
+  z-index: 1065 !important;
+}
+
+/* Modal Dropdown Stacking & Layering (Bootstrap-select & Select2) */
+.modal .bootstrap-select.show,
+.modal-body .bootstrap-select.show {
+  z-index: 1060 !important;
+}
+
+.modal .bootstrap-select.show .dropdown-menu,
+.modal-body .bootstrap-select.show .dropdown-menu {
+  z-index: 1065 !important;
+}
+
+.modal .select2-container--open,
+.modal-body .select2-container--open {
+  z-index: 1065 !important;
+}
+
+.modal .select2-dropdown,
+.modal-body .select2-dropdown {
+  z-index: 1070 !important;
 }
 
 [data-theme-version="dark"] .select2-dropdown {
@@ -2592,7 +2618,7 @@ table.dataTable td.text-center {
   cursor: pointer;
   padding: 4px 6px;
   font-size: 14px;
-  z-index: 5;
+  z-index: 10;
   transition: color 0.2s ease;
 }
 
@@ -2602,6 +2628,13 @@ table.dataTable td.text-center {
 
 [data-theme-version="dark"] .password-toggle-btn:hover {
   color: #38bdf8;
+}
+
+/* Ensure password input inside input-group preserves right border-radius when toggle button is present */
+.input-group > .form-control.rounded-end,
+.input-group:has(> .password-toggle-btn) > .form-control {
+  border-top-right-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
 }
 
 /* Quick Demo Badges Bar on Login */

@@ -567,9 +567,11 @@ router.post("/register", async (req, res) => {
       password,
       store,
     } = req.body;
+
     const check_number = await DataFind(
       "SELECT * FROM tbl_customer WHERE number='" + number + "'",
     );
+
     if (check_number.length > 0) {
       req.flash("error", "This Mobile Number Alredy Register!!!!");
       return res.redirect(req.get("Referrer") || "/");
@@ -578,6 +580,7 @@ router.post("/register", async (req, res) => {
     const check_username = await DataFind(
       "SELECT * FROM tbl_customer WHERE username='" + username + "'",
     );
+
     if (check_username.length > 0) {
       req.flash("error", "This UserName Alredy Register!!!!");
       return res.redirect(req.get("Referrer") || "/");
@@ -586,6 +589,7 @@ router.post("/register", async (req, res) => {
     const autoApproval = await DataFind(
       "SELECT customer_autoapprove FROM tbl_master_shop where id=1",
     );
+
     if (autoApproval[0].customer_autoapprove == 1) {
       var approved = 1;
     } else {
@@ -596,34 +600,14 @@ router.post("/register", async (req, res) => {
       `SELECT * FROM tbl_roll WHERE rollType='customer'`,
     );
 
-    if (store) {
-      // var qury =
-      //   "INSERT INTO tbl_customer (name,number,email,address,taxnumber,username,password,main_roll_id,approved,store_ID) VALUE ('" +
-      //   name +
-      //   "','" +
-      //   number +
-      //   "','" +
-      //   email +
-      //   "','" +
-      //   address +
-      //   "','" +
-      //   taxnumber +
-      //   "','" +
-      //   username +
-      //   "','" +
-      //   password +
-      //   "','" +
-      //   customerId[0].id +
-      //   "'," +
-      //   approved +
-      //   ",'" +
-      //   store +
-      //   "')";
+    const salt = bcrypt.genSaltSync(10);
+    const hashpass = bcrypt.hashSync(password, salt);
 
+    if (store) {
       const customerInsert = await DataInsert(
         `tbl_customer`,
         `name,number,email,address,taxnumber,username,password,main_roll_id,approved,store_ID`,
-        `'${name}','${number}','${email}','${address}','${taxnumber}','${username}','${password}','${customerId[0].id}',${approved},'${store}'`,
+        `'${name}','${number}','${email}','${address}','${taxnumber}','${username}','${hashpass}','${customerId[0].id}',${approved},'${store}'`,
         req.hostname,
         req.protocol,
       );
@@ -636,31 +620,10 @@ router.post("/register", async (req, res) => {
         return res.redirect("back");
       }
     } else {
-      // var qury =
-      //   "INSERT INTO tbl_customer (name,number,email,address,taxnumber,username,password,main_roll_id,approved) VALUE ('" +
-      //   name +
-      //   "','" +
-      //   number +
-      //   "','" +
-      //   email +
-      //   "','" +
-      //   address +
-      //   "','" +
-      //   taxnumber +
-      //   "','" +
-      //   username +
-      //   "','" +
-      //   password +
-      //   "','" +
-      //   customerId[0].id +
-      //   "'," +
-      //   approved +
-      //   ")";
-
       const customerInsert = await DataInsert(
         `tbl_customer`,
         `name,number,email,address,taxnumber,username,password,main_roll_id,approved`,
-        `'${name}','${number}','${email}','${address}','${taxnumber}','${username}','${password}','${customerId[0].id}',${approved}`,
+        `'${name}','${number}','${email}','${address}','${taxnumber}','${username}','${hashpass}','${customerId[0].id}',${approved}`,
         req.hostname,
         req.protocol,
       );
@@ -1142,46 +1105,6 @@ router.get("/api/dashboard-stats", auth, async (req, res) => {
   }
 });
 
-// async function groupSalesByYearAndMonth(orders) {
-//     const groupedOrders = [];
-//     let totorder = ""
-
-//     orders.forEach(order => {
-//         const orderDate = new Date(order.order_date);
-//         const year = orderDate.getFullYear();
-//         const month = orderDate.getMonth() + 1;
-
-//         let yearGroup = groupedOrders.find(item => item.year === year);
-//         if (!yearGroup) {
-//             yearGroup = { year: year, months: [] };
-//             groupedOrders.push(yearGroup);
-//         }
-
-//         let monthGroup = yearGroup.months.find(item => item.month === month);
-//         if (!monthGroup) {
-//             monthGroup = { month: month, orders: [] };
-//             yearGroup.months.push(monthGroup);
-//         }
-
-//         monthGroup.orders.push(order);
-//     });
-
-//     groupedOrders.forEach(yearGroup => {
-//         let totmonth = ""
-//         yearGroup.months.forEach((monthGroup, index) => {
-//             let tm = monthGroup.month, to = monthGroup.orders.length
-//             monthGroup.totalOrders = to;
-//             totmonth += totmonth == "" ? `${tm}#${to}` : `@${tm}#${to}`
-//             delete monthGroup.orders;
-//         });
-
-//         totorder += totorder == "" ? yearGroup.year + "&!" + totmonth : "&&!" + yearGroup.year + "&!" + totmonth
-//     });
-
-//     return totorder;
-// }
-
-// separate year and month wise
 async function groupOrdersByYearAndMonth(orders) {
   const groupedOrders = [];
   let totorder = "",

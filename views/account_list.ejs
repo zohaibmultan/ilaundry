@@ -14,7 +14,6 @@
         <!--********** Content body start **********-->
 
         <div class="content-body">
-
             <div class="container-fluid" style="min-height: 100vh;">
                 <div class="row">
                     <div class="d-none">
@@ -356,7 +355,7 @@
                             <% if (typeof ismulty !== 'undefined' && ismulty) { %>
                                 <div class="mb-3">
                                     <label class="form-label"><strong><%= language.Store_List || 'Store' %></strong><span class="text-danger">*</span></label>
-                                    <select class="form-control default-select" name="storeid" id="account_store_id" required>
+                                    <select class="form-control wide" name="storeid" id="account_store_id" required>
                                         <option value="" disabled selected><%= language.Select_Store || 'Select Store' %></option>
                                         <option value="master"><%= language.Master || 'Master / Main Store' %></option>
                                         <% (storeList || []).forEach(function(store){ %>
@@ -422,24 +421,29 @@
             <%- include('templet/script')-%>
 <script>
   $('#payment').on('shown.bs.modal', function () {
-    
     $('#to_account').select2({
       dropdownParent: $('#payment'),
       placeholder: 'Select Account(a)',
       width: '100%',
       allowClear: true
     });
-  });
-</script>  
-<script>
-  $('#payment').on('shown.bs.modal', function () {
-    
     $('#from_account').select2({
       dropdownParent: $('#payment'),
       placeholder: 'Select Account(a)',
       width: '100%',
       allowClear: true
     });
+  });
+
+  $('#account_add').on('shown.bs.modal', function () {
+    if ($('#account_store_id').length) {
+      $('#account_store_id').select2({
+        dropdownParent: $('#account_add'),
+        placeholder: '<%= (language && language.Select_Store) ? language.Select_Store : "Select Store" %>',
+        width: '100%',
+        allowClear: false
+      });
+    }
   });
 </script>
 <script>

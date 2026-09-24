@@ -139,157 +139,99 @@ router.get("/pos", auth, async (req, res) => {
     ) {
       // customer login
       login = "customer";
+
+      // 1. Fetch customer details
+      const customerData = await DataFind(
+        "SELECT id, name, number, email, store_ID, reffstore FROM tbl_customer WHERE id=" + id
+      );
+      customerList = customerData.length > 0 ? customerData : [{ id, name: "Customer", number: "", email: "" }];
+
+      // 2. Resolve store: customer's store_ID -> reffstore -> token store -> fallback to first active store
+      let resolvedStore = (customerData.length > 0 && customerData[0].store_ID && String(customerData[0].store_ID) !== '0' && String(customerData[0].store_ID).trim() !== '')
+        ? String(customerData[0].store_ID)
+        : ((customerData.length > 0 && customerData[0].reffstore && String(customerData[0].reffstore) !== '0' && String(customerData[0].reffstore).trim() !== '')
+          ? String(customerData[0].reffstore)
+          : ((store && String(store) !== '0' && String(store).trim() !== '') ? String(store) : ''));
+
+      if (!resolvedStore) {
+        const defaultStore = await DataFind("SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0 ORDER BY id ASC LIMIT 1");
+        resolvedStore = defaultStore.length > 0 ? String(defaultStore[0].id) : '1';
+      }
+
+      targetStoreId = resolvedStore;
+      showStoreSelect = false;
+
+      // 3. Fetch store details (name and tax)
+      const storeDetails = await DataFind(`SELECT id, name, tax_percent FROM tbl_store WHERE id = '${targetStoreId}'`);
+      if (storeDetails.length > 0) {
+        assignedStoreName = storeDetails[0].name;
+      } else {
+        assignedStoreName = "Main Store";
+      }
+
+      let taxValue = storeDetails.length > 0 ? (storeDetails[0].tax_percent || 0) : 0;
+      storeList = await DataFind("SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0");
+
+      // 4. Cart management and synchronization
       const cartdata = await DataFind(
         "SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'"
       );
 
-      console.log("loginas", loginas);
-      console.log("id", id);
-      console.log("cartdata", cartdata);
-
       if (cartdata.length > 0) {
-        service_list = await DataFind(`SELECT * FROM tbl_services 
-                                      WHERE status = 0 AND ${store && cartdata.length > 0
-            ? `store_ID = '${store}'`
-            : `'${cartdata[0].store_id}'`
-              ? `store_ID='${cartdata[0].store_id}'`
-              : 'store_ID=" "  '
-          }`);
-      }
-      customerList = await DataFind(
-        "SELECT id,name,number,email FROM tbl_customer WHERE id=" + id
-      );
-      const multiy = await DataFind(
-        "SELECT type, customer_selection FROM tbl_master_shop"
-      );
-      console.log("multiy", multiy);
-
-      if (store == " " || multiy[0].type == 1) {
-        storeList = await DataFind(
-          "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0"
-        );
-      }
-
-      let tax = [];
-      if (store) {
-        tax = await DataFind(
-          "SELECT tax_percent FROM tbl_store WHERE id='" + store + "'"
-        );
-      }
-
-      console.log("cartdata", cartdata);
-
-      // addonlist = await DataFind(
-      //   `SELECT * FROM tbl_addons WHERE status=0  ${
-      //     store ? `AND store_ID = ${store}` : ""
-      //   }`
-      // );
-      let taxValue = tax.length > 0 ? tax[0].tax_percent : 0;
-
-      if (cartdata.length > 0) {
-        if (store != "") {
-          // await DataFind(
-          //   "UPDATE tbl_cart SET order_id='" +
-          //     orderid +
-          //     "', tax='" +
-          //     taxValue +
-          //     "',store_id='" +
-          //     store +
-          //     "',customer_id='" +
-          //     id +
-          //     "' WHERE created_by='" +
-          //     loginas +
-          //     "," +
-          //     id +
-          //     "'"
-          // );
-
-          let data = await DataUpdate(
+        const currentCartStore = String(cartdata[0].store_id || '0');
+        if (currentCartStore !== String(targetStoreId)) {
+          // Store mismatch: clear items belonging to different/unassigned store
+          if (cartdata[0].service_list_id && cartdata[0].service_list_id !== '0') {
+            const oldIds = cartdata[0].service_list_id.split(',').filter(x => x && x !== '0').join(',');
+            if (oldIds) {
+              await DataDelete('tbl_cart_servicelist', `id IN (${oldIds})`, req.hostname, req.protocol);
+            }
+          }
+          await DataUpdate(
             `tbl_cart`,
-            `order_id='${orderid}', tax='${taxValue}', store_id='${store}', customer_id='${id}'`,
+            `order_id='${orderid}', store_id='${targetStoreId}', customer_id='${id}', tax='${taxValue}', service_list_id='0', sub_total=0, addon_id=0, addon_price=0, extra_discount=0, coupon_id=0, coupon_discount=0, tax_amount=0, gross_total=0, paid_amount=0, balance=0`,
             `created_by='${loginas},${id}'`,
             req.hostname,
             req.protocol
           );
-
-          if (data == -1) {
-            req.flash("errors", process.env.dataerror);
-            return res.redirect("/valid_license");
-          }
         } else {
-          // await DataFind(
-          //   "UPDATE tbl_cart SET order_id='" +
-          //     orderid +
-          //     "', tax='" +
-          //     taxValue +
-          //     "',store_id='" +
-          //     cartdata[0].store_id +
-          //     "',customer_id='" +
-          //     id +
-          //     "' WHERE created_by='" +
-          //     loginas +
-          //     "," +
-          //     id +
-          //     "'"
-          // );
-
-          let data = await DataUpdate(
+          // Same store: update order_id, tax, and customer_id
+          await DataUpdate(
             `tbl_cart`,
-            `order_id='${orderid}', tax='${taxValue}', store_id='${cartdata[0].store_id}', customer_id='${id}'`,
+            `order_id='${orderid}', tax='${taxValue}', store_id='${targetStoreId}', customer_id='${id}'`,
             `created_by='${loginas},${id}'`,
             req.hostname,
             req.protocol
           );
-
-          if (data == -1) {
-            req.flash("errors", process.env.dataerror);
-            return res.redirect("/valid_license");
-          }
         }
-        cart = await DataFind(
-          "SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'"
+      } else {
+        // Fresh cart insert
+        await DataInsert(
+          `tbl_cart`,
+          `created_by, store_id, customer_id, order_id, tax`,
+          `'${loginas},${id}', '${targetStoreId}', ${id}, '${orderid}', '${taxValue}'`,
+          req.hostname,
+          req.protocol
         );
-        console.log("cart", cart);
+      }
 
+      // Re-fetch updated cart
+      cart = await DataFind(
+        "SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'"
+      );
+
+      // 5. Load services & addons for customer's store
+      service_list = await DataFind("SELECT * FROM tbl_services WHERE status=0 AND store_ID=" + targetStoreId);
+      addonlist = await DataFind("SELECT * FROM tbl_addons WHERE status=0 AND store_ID=" + targetStoreId);
+
+      if (cart.length > 0 && cart[0].service_list_id && cart[0].service_list_id !== '0') {
         cartservice = await DataFind(
           "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
           cart[0].service_list_id +
           "')"
         );
       } else {
-        // await DataFind(
-        //   "INSERT INTO tbl_cart (created_by,store_id,customer_id,order_id,tax) VALUE('" +
-        //     loginas +
-        //     "," +
-        //     id +
-        //     "','" +
-        //     store +
-        //     "'," +
-        //     id +
-        //     ",'" +
-        //     orderid +
-        //     "','" +
-        //     taxValue +
-        //     "')"
-        // );
-
-        const cartInsert = await DataInsert(
-          `tbl_cart`,
-          `created_by, store_id, customer_id, order_id, tax`,
-          `'${loginas},${id}', '${store}', ${id}, '${orderid}', '${taxValue}'`,
-          req.hostname,
-          req.protocol
-        );
-
-        if (cartInsert == -1) {
-          req.flash("errors", process.env.dataerror);
-          return res.redirect("/some_error_page");
-        }
-
         cartservice = [];
-        cart = await DataFind(
-          "SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'"
-        );
       }
     } else {
       // admin, store user, or staff login
@@ -711,6 +653,7 @@ router.post("/addservicelist", auth, async (req, res) => {
     res.status(200).json({ cart: cart[0], cartservice, loginas });
   } catch (error) {
     console.log(error);
+    return res.status(500).json({ error: error.message });
   }
 });
 

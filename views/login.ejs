@@ -105,12 +105,15 @@
                 <form action="/login" method="POST" class="need-validation" id="login_form">
                     <!-- Username / Email / Number -->
                     <div class="mb-3">
-                        <label class="form-label mb-1"><strong>Username, Email or Phone</strong> <span
-                                class="text-danger">*</span></label>
+                        <label class="form-label mb-1">
+                            <strong>Username, Email or Phone</strong> 
+                            <span class="text-danger">*</span>
+                        </label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-user text-muted"></i></span>
-                            <input type="text" class="form-control" name="username" placeholder="Enter your username"
-                                required autofocus>
+                            <span class="input-group-text">
+                                <i class="fas fa-user text-muted"></i>
+                            </span>
+                            <input type="text" class="form-control" name="username" placeholder="Enter your username" required autofocus>
                         </div>
                     </div>
 
@@ -124,11 +127,12 @@
                                 Forgot Password?
                             </a>
                         </div>
-                        <div class="position-relative">
-                            <input type="password" class="form-control pe-5" id="login_password" name="password"
-                                placeholder="Enter your password" required>
-                            <button type="button" class="password-toggle-btn"
-                                onclick="togglePasswordVisibility('login_password', this)">
+                        <div class="input-group position-relative">
+                            <span class="input-group-text">
+                                <i class="fas fa-lock text-muted"></i>
+                            </span>
+                            <input type="password" class="form-control pe-5 rounded-end" id="login_password" name="password" placeholder="Enter your password" required autocomplete="current-password" style="border-top-right-radius: 0.75rem !important; border-bottom-right-radius: 0.75rem !important;">
+                            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('login_password', this)" title="Toggle password visibility" aria-label="Toggle password visibility">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>

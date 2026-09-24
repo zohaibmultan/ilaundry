@@ -1,317 +1,447 @@
 <!DOCTYPE html>
 <html lang="en" class="h-100">
 
-
 <head>
     <!-- meta and links start -->
     <%- include('templet/meta')-%>
-
-
-
 </head>
 
 <body>
     <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
-        <!--********** Content body start **********-->
 
-        <div class="content-body">
+    <!--********** Content body start **********-->
+    <div class="content-body">
+        <div class="container-fluid" style="min-height: 100vh;">
+            
+            <% storedata.forEach(function(data){ %>
 
-            <div class="container-fluid" style="min-height: 100vh;">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm rounded-3">
-                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <div>
-                                    <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
-                                        <i class="fa fa-sliders-h text-primary me-2"></i><%= language.Branch_Store_Settings %>
-                                    </h3>
-                                    <small class="text-muted"><%= language.Branch_Store_Settings_Subtitle || 'Configure master settings, service defaults, and store branch specifications' %></small>
-                                </div>
+            <!-- Page Header Card -->
+            <div class="row mb-2">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div>
+                                <h3 class="mb-1 fw-bold text-dark d-flex align-items-center">
+                                    <i class="fa fa-store-alt text-primary me-2"></i><%= language.Branch_Store_Settings || 'Edit Branch Store' %>
+                                </h3>
+                                <p class="text-muted mb-0 fs-13">
+                                    <%= language.Branch_Store_Settings_Subtitle || 'Configure branch settings, manager credentials, tax rules, and operational location' %>: <strong class="text-primary"><%= data.name %></strong>
+                                </p>
                             </div>
-                            <div class="card-body p-4">
-                                <% storedata.forEach(function(data){ %>
-                                  
-                                    <form class="row g-4 align-items-center need-validation"
-                                        action="/tool/branchdata/<%=data.id %>" method="post"
-                                        enctype="multipart/form-data">
-
-                                        <div>
-                                            <%= language.APPLICATION_DETAILS %>
-                                        </div>
-
-                                        <hr>
-                                        <div class="row">
-
-                                            <div class="col-xl-9">
-                                                <div class="row mt-3">
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">
-                                                            <%= language.Application_Name %> <span
-                                                                    class="text-danger">*</span>
-                                                        </label>
-                                                        <input type="text" placeholder="Enter Application Name"
-                                                            class="form-control" name="name" value="<%=data.name %>"
-                                                            required>
-                                                    </div>
-
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">
-                                                            <%= language.Phone_Number %> <span
-                                                                    class="text-danger">*</span>
-                                                        </label>
-                                                        <input type="text" class="form-control"
-                                                            placeholder="Enter Phone Number" name="number"
-                                                            value="<%= data.mobile_number %>" required>
-                                                    </div>
-                                                </div>
-
-                                                <div class="row mt-4">
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">
-                                                            <%= language.Username %> <span class="text-danger">*</span>
-                                                        </label>
-                                                        <input type="text" class="form-control"
-                                                            placeholder="Enter Username" name="username"
-                                                            value="<%= data.username %>" required>
-                                                    </div>
-
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">
-                                                            <%= language.Password %> <span class="text-danger">*</span>
-                                                        </label>
-                                                        <input type="text" class="form-control"
-                                                            placeholder="Update Password" name="password"
-                                                            value="">
-                                                    </div>
-                                                </div>
-
-                                            </div>
-
-                                            <div class="col-xl-3">
-                                                <div class="center">
-                                                    <div class="form-input">
-                                                        <div class="preview m-3 mt-0">
-                                                            <img id="file-preview" width="180"
-                                                                src="../../uploads/<%=data.logo %>" alt="image">
-                                                        </div>
-
-                                                        <input class="d-none" type="file" id="file-1" name="logo"
-                                                            accept="image/*" onchange="showPreview(event);">
-
-                                                        <label class="btn btn-primary w-100" for="file-1">
-                                                            <%= language.Upload_App_Logo %>
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                        </div>
-
-                                        <hr>
-
-                                        <div>
-                                            <%= language.FINANCE_SETTINGS %>
-                                        </div>
-
-                                        <hr>
-
-                                        <div class="col-md-4">
-                                            <label class="form-label">
-                                                <%= language.Shop_Commission %>
-                                            </label>
-                                            <input type="number" class="form-control" placeholder="Shop Commission"
-                                                name="commission" value="<%=data.shop_commission %>" required>
-                                        </div>
-
-                                        <div class="col-md-4">
-                                            <label class="form-label">
-                                                <%= language.Tax_Percentage %>
-                                            </label>
-                                            <input type="text" class="form-control" name="taxpercent"
-                                                value="<%=data.tax_percent %>" required>
-                                        </div>
-
-                                        <hr>
-
-                                        <div>
-                                            <%= language.FIRM_ADDRESS %>
-                                        </div>
-
-                                        <hr>
- 
-
-                                        <div class="col-md-3">
-                                            <label class="form-label">
-                                                <%= language.Country %>
-                                            </label>
-                                            <input type="text" class="form-control" placeholder="Enter Country Name"
-                                                name="country" value="<%=data.country %>" required>
-                                            <!-- <select class="default-select form-control wide mb-3" name="country" required >
-                                            <option value="" selected disabled>Select One</option>
-                                            <option value="AR"  >Argentina [AR]</option>
-                                            <option value="AU" >Australia [AU]</option>
-                                            <option value="BE" >Belgium [BE]</option>
-                                            <option value="BR" >Brazil [BR]</option>
-                                            <option value="CA" >Canada [CA]</option>
-                                            <option value="CN" >China [CN]</option>
-                                            <option value="DK" >Denmark [DK]</option>
-                                            <option value="IN" >India [IN]</option>
-                                            <option value="EG" >Egypt [EG]</option>
-                                            <option value="FR" >France [FR]</option>
-                                            <option value="DE" >Germany [DE]</option>
-                                            <option value="JP" >Japan [JP]</option>
-                                        </select> -->
-                                        </div>
-
-                                        <div class="col-md-3">
-                                            <label class="form-label">
-                                                <%= language.State %>
-                                            </label>
-                                            <input type="text" class="form-control" placeholder="Enter State Name"
-                                                name="state" value="<%=data.state %>" required>
-                                        </div>
-
-                                        <div class="col-md-3">
-                                            <label class="form-label">
-                                                <%= language.City %>
-                                            </label>
-                                            <input type="text" class="form-control" placeholder="Enter City Name"
-                                                name="city" value="<%=data.city %>" required>
-                                        </div>
-
-                                        <div class="col-md-3">
-                                            <label class="form-label">
-                                                <%= language.District %>
-                                            </label>
-                                            <input type="text" class="form-control" placeholder="Enter District Name"
-                                                name="district" value="<%=data.district %>" required>
-                                        </div>
-
-                                        <div class="col-md-3">
-                                            <label class="form-label">
-                                                <%= language.Zip_Code %>
-                                            </label>
-                                            <input type="text" class="form-control" placeholder="Enter Zip Code"
-                                                name="zip_code" value="<%=data.zipcode %>" required>
-                                        </div>
-
-                                        <div class="col-md-3">
-                                            <label class="form-label">
-                                                <%= language.Store_Email %>
-                                            </label>
-                                            <input type="email" class="form-control" placeholder="Enter Store Email"
-                                                name="store_email" value="<%=data.store_email %>" required>
-                                        </div>
-
-                                        <div class="col-md-3">
-                                            <label class="form-label">
-                                                <%= language.Store_Tax_Number %>
-                                            </label>
-                                            <input type="text" class="form-control" placeholder="Enter Store Tax Number"
-                                                name="tax_number" value="<%=data.store_tax_number %>" required>
-                                        </div>
-
-                                        <div class="col-12 mb-3">
-                                            <label for="inputAddress" class="form-label">
-                                                <%= language.Address %>
-                                            </label>
-                                            <input type="text" class="form-control" placeholder="Enter Address"
-                                                name="address" value="<%=data.address %>" required>
-                                        </div>
-
-                                        <hr>
-
-                                        <h4>
-                                            <%= language.Store_Status %>
-                                        </h4>
-                                        <div class="col-12 mb-5 d-flex justify-content-between">
-
-                                            <div class="col-md-2">
-
-                                                <div class="form-check custom-checkbox mb-3 checkbox-success">
-                                                    <input type="radio" class="form-check-input" id="approved"
-                                                        name="status" value="1" <%=data.status==1 ? 'checked' : '' %>
-                                                    required >
-                                                    <label class="form-check-label text-success" for="approved">
-                                                        <%= language.Approved %>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-2">
-
-                                                <div class="form-check custom-checkbox mb-3 checkbox-danger">
-                                                    <input type="radio" class="form-check-input" id="rejected"
-                                                        name="status" value="0" <%=data.status==0 ? 'checked' : '' %>
-                                                    required >
-                                                    <label class="form-check-label text-danger" for="rejected">
-                                                        <%= language.Rejected %>
-                                                    </label>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-md-4">
-                                                <!-- blank div -->
-                                            </div>
-
-                                            <div class="col-md-4">
-                                                <!-- <label class="form-label">
-                                                    <%= language.Store_Access_Roll %>
-                                                </label> -->
-                                                <!-- <select class="default-select form-control wide mb-3" name="roll"
-                                                    required>
-                                                    <option value="" selected disabled>Select One</option>
-                                                    <% rolldata.forEach(function(x){ %>
-                                                        <option value="<%= x.id %>" <%=data.roll_ID==x.id ? 'selected'
-                                                            : '' %> ><%= x.roll %>
-                                                        </option>
-                                                        <% }) %>
-
-                                                </select> -->
-                                                <% let storeRole=rolldata.find(val=> val.rollType === 'store'); %>
-                                                    <input type="hidden" value="<%= storeRole.id%>"  name="roll">
-                                            </div>
-
-
-
-
-
-                                        </div>
-
-                                        <hr>
-
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fa fa-save me-2"></i><%= language.Save_Data %>
-                                        </button>
-
-                                    </form>
-                                    <% }) %>
+                            <div class="d-flex align-items-center gap-2">
+                                <a href="/tool/store" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold">
+                                    <i class="fa fa-arrow-left me-1"></i> <%= language.Back || 'Back to Stores' %>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Form Container -->
+            <form action="/tool/branchdata/<%= data.id %>" method="POST" enctype="multipart/form-data" class="need-validation" novalidate>
+                <% let storeRole = (typeof rolldata !== 'undefined' && rolldata) ? rolldata.find(val => val.rollType === 'store') : null; %>
+                <input type="hidden" name="roll" value="<%= storeRole ? storeRole.id : data.roll_ID %>">
+
+                <div class="row g-4">
+                    <!-- Left Column: Core Form Details (8 Columns) -->
+                    <div class="col-lg-8">
+                        
+                        <!-- Section 1: General & Manager Credentials -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4">
+                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                    <i class="fa fa-id-card text-primary me-2"></i><%= language.APPLICATION_DETAILS || 'Store & Manager Credentials' %>
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-3">
+                                    <!-- Store Name -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Application_Name || 'Store Name' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-store"></i></span>
+                                            <input type="text" class="form-control" name="name" value="<%= data.name %>" placeholder="Enter Store Name" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Phone Number -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Phone_Number || 'Contact Phone Number' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-phone"></i></span>
+                                            <input type="tel" class="form-control" name="number" value="<%= data.mobile_number %>" placeholder="Enter Phone Number" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Username -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Username || 'Manager Username' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-user"></i></span>
+                                            <input type="text" class="form-control" name="username" value="<%= data.username %>" placeholder="Enter Username" required autocomplete="off">
+                                        </div>
+                                    </div>
+
+                                    <!-- Password with Toggle -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Password || 'Update Password' %>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-lock"></i></span>
+                                            <input type="password" class="form-control" id="store_password" name="password" value="" placeholder="Leave blank to keep current password" autocomplete="new-password">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="togglePasswordVisibility('store_password', this)" title="Toggle visibility">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted fs-12">Only enter a password if you want to change the manager's current password.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Physical Location & Address -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4">
+                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                    <i class="fa fa-map-marked-alt text-info me-2"></i><%= language.FIRM_ADDRESS || 'Location & Tax Information' %>
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-3">
+                                    <!-- Store Email -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Store_Email || 'Store Official Email' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-envelope"></i></span>
+                                            <input type="email" class="form-control" name="store_email" value="<%= data.store_email %>" placeholder="Enter Store Email" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Store Tax / VAT Number -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Store_Tax_Number || 'Tax / VAT Registration No.' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-receipt"></i></span>
+                                            <input type="text" class="form-control" name="tax_number" value="<%= data.store_tax_number %>" placeholder="Enter Store Tax Number" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Country -->
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Country || 'Country' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-globe"></i></span>
+                                            <input type="text" class="form-control" name="country" value="<%= data.country %>" placeholder="Enter Country Name" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- State / Province -->
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.State || 'State / Province' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-map"></i></span>
+                                            <input type="text" class="form-control" name="state" value="<%= data.state %>" placeholder="Enter State Name" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- City -->
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.City || 'City' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-city"></i></span>
+                                            <input type="text" class="form-control" name="city" value="<%= data.city %>" placeholder="Enter City Name" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- District / Area -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.District || 'District / Neighborhood' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-compass"></i></span>
+                                            <input type="text" class="form-control" name="district" value="<%= data.district %>" placeholder="Enter District Name" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Zip Code -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Zip_Code || 'Postal / Zip Code' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-mail-bulk"></i></span>
+                                            <input type="text" class="form-control" name="zip_code" value="<%= data.zipcode %>" placeholder="Enter Zip Code" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Street Address -->
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Address || 'Complete Physical Address' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-map-pin"></i></span>
+                                            <input type="text" class="form-control" name="address" value="<%= data.address %>" placeholder="Enter Address" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Financial & Commission Rules -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4">
+                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                    <i class="fa fa-percentage text-success me-2"></i><%= language.FINANCE_SETTINGS || 'Financial & Tax Parameters' %>
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-3">
+                                    <!-- Commission -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Shop_Commission || 'Shop Franchise Commission' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-hand-holding-usd"></i></span>
+                                            <input type="number" step="0.01" class="form-control" name="commission" value="<%= data.shop_commission %>" placeholder="Shop Commission" required>
+                                            <span class="input-group-text bg-light fw-bold">%</span>
+                                        </div>
+                                        <small class="text-muted fs-12">Platform royalty or commission deducted per completed order.</small>
+                                    </div>
+
+                                    <!-- Tax Rate -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Tax_Percentage || 'Local Sales Tax / VAT' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-file-invoice-dollar"></i></span>
+                                            <input type="number" step="0.01" class="form-control" name="taxpercent" value="<%= data.tax_percent %>" placeholder="Tax Percentage" required>
+                                            <span class="input-group-text bg-light fw-bold">%</span>
+                                        </div>
+                                        <small class="text-muted fs-12">Applicable local tax percentage applied to customer checkout bills.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Right Column: Branding & Publishing Actions (4 Columns) -->
+                    <div class="col-lg-4">
+
+                        <!-- Section 4: Store Logo Upload & Preview -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4">
+                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                    <i class="fa fa-image text-warning me-2"></i><%= language.Store_Logo || 'Store Branding' %>
+                                </h5>
+                            </div>
+                            <div class="card-body p-4 text-center">
+                                
+                                <!-- Logo Preview Box -->
+                                <div class="p-3 mb-3 border border-2 border-dashed rounded-3 bg-light d-flex flex-column align-items-center justify-content-center" style="min-height: 190px;">
+                                    <% if (data.logo && data.logo !== 'default.png') { %>
+                                        <div id="placeholder-box" class="d-none py-3 text-center">
+                                            <div class="d-inline-flex p-3 rounded-circle bg-white shadow-sm mb-2">
+                                                <i class="fa fa-store fa-2x text-primary opacity-75"></i>
+                                            </div>
+                                            <div class="fw-semibold text-dark fs-14">No Logo Selected</div>
+                                        </div>
+                                        <img id="file-preview" class="rounded-3 shadow-sm border mw-100" style="max-height: 160px; object-fit: contain;" src="/uploads/<%= data.logo %>" alt="Current Store Logo">
+                                    <% } else { %>
+                                        <div id="placeholder-box" class="py-3 text-center">
+                                            <div class="d-inline-flex p-3 rounded-circle bg-white shadow-sm mb-2">
+                                                <i class="fa fa-store fa-2x text-primary opacity-75"></i>
+                                            </div>
+                                            <div class="fw-semibold text-dark fs-14">Default Store Logo</div>
+                                            <div class="text-muted fs-12">Upload a custom logo to replace default</div>
+                                        </div>
+                                        <img id="file-preview" class="d-none rounded-3 shadow-sm border mw-100" style="max-height: 160px; object-fit: contain;" alt="Store Logo Preview">
+                                    <% } %>
+                                </div>
+
+                                <!-- Hidden Native Input (Optional on Edit) -->
+                                <input class="d-none" type="file" id="file-1" name="logo" accept="image/*" onchange="showPreview(event)">
+
+                                <!-- Button Trigger -->
+                                <div class="d-grid gap-2">
+                                    <label class="btn btn-outline-primary fw-semibold py-2" for="file-1">
+                                        <i class="fa fa-cloud-upload-alt me-1"></i> <%= language.Upload_App_Logo || 'Change Logo File' %>
+                                    </label>
+                                    <button type="button" id="btn-reset-preview" class="btn btn-outline-danger btn-sm d-none" onclick="resetPreview()">
+                                        <i class="fa fa-undo me-1"></i> Revert to Current Logo
+                                    </button>
+                                </div>
+
+                                <div class="text-muted mt-3 fs-12 text-center">
+                                    Supported: <span class="fw-semibold">PNG, JPG, WEBP</span><br>
+                                    Leave unchanged to keep the existing logo
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 5: Store Status & Save Actions -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4">
+                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                    <i class="fa fa-toggle-on text-primary me-2"></i><%= language.Store_Status || 'Activation Status' %>
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                
+                                <label class="form-label fw-semibold mb-2">Branch Operating Mode</label>
+                                
+                                <div class="d-flex flex-column gap-2 mb-4">
+                                    <!-- Approved / Active -->
+                                    <label class="border rounded-3 p-3" for="approved" style="cursor: pointer;">
+                                        <div style="display: flex; flex-direction: row;">
+                                            <div class="form-check me-3">
+                                                <input type="radio" class="form-check-input" id="approved" name="status" value="1" <%= data.status == 1 ? 'checked' : '' %> required>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-bold text-success d-flex align-items-center fs-14">
+                                                    <i class="fa fa-check-circle me-1"></i> <%= language.Approved || 'Approved & Active' %>
+                                                </div>
+                                                <div class="text-muted fs-12">Store is live and can process orders</div>
+                                            </div>
+                                        </div>
+                                    </label>
+
+                                    <!-- Inactive / Rejected -->
+                                    <label class="border rounded-3 p-3" for="rejected" style="cursor: pointer;">
+                                        <div style="display: flex; flex-direction: row;">
+                                            <div class="form-check me-3">
+                                                <input type="radio" class="form-check-input" id="rejected" name="status" value="0" <%= data.status == 0 ? 'checked' : '' %> required>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-bold text-danger d-flex align-items-center fs-14">
+                                                    <i class="fa fa-ban me-1"></i> <%= language.Rejected || 'Inactive / Suspended' %>
+                                                </div>
+                                                <div class="text-muted fs-12">Store operations disabled temporarily</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <hr class="my-3">
+
+                                <!-- Submit & Action Buttons -->
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary py-2 fw-semibold shadow-sm" id="btn_update_store">
+                                        <i class="fa fa-save me-2"></i><%= language.Save_Data || 'Save Changes' %>
+                                    </button>
+                                    <a href="/tool/store" class="btn btn-outline-secondary py-2">
+                                        <i class="fa fa-times me-1"></i> Cancel
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </form>
+
+            <% }) %>
 
         </div>
+    </div>
+    <!--********** Content body end **********-->
 
-        <!--********** Content body end **********-->
+    <!--**********************************
+        Footer start
+    ***********************************-->
+    <%- include('templet/footer')-%>
+    <!--**********************************
+        Footer end
+    ***********************************-->
 
-        </div>
-        <!--**********************************
-            Footer start
-        ***********************************-->
-        <%- include('templet/footer')-%>
+    </div>
+    <!--********** Main wrapper end **********-->
 
-            <!--**********************************
-            Footer end
-        ***********************************-->
+    <%- include('templet/script')-%>
 
-            </div>
+    <script>
+        // Password visibility toggle helper
+        function togglePasswordVisibility(fieldId, btn) {
+            const input = document.getElementById(fieldId);
+            const icon = btn.querySelector('i');
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
 
-            <!--********** Main wrapper end **********-->
-            <%- include('templet/script')-%>
+        // Keep reference to initial logo path
+        const currentLogoPath = document.getElementById('file-preview') ? document.getElementById('file-preview').getAttribute('src') : '';
 
+        // Live image preview on file selection
+        function showPreview(event) {
+            const file = event.target.files && event.target.files[0];
+            if (file) {
+                const preview = document.getElementById('file-preview');
+                const placeholder = document.getElementById('placeholder-box');
+                const resetBtn = document.getElementById('btn-reset-preview');
+
+                if (preview) {
+                    preview.src = URL.createObjectURL(file);
+                    preview.classList.remove('d-none');
+                }
+                if (placeholder) placeholder.classList.add('d-none');
+                if (resetBtn) resetBtn.classList.remove('d-none');
+            }
+        }
+
+        // Revert image preview back to current stored logo
+        function resetPreview() {
+            const preview = document.getElementById('file-preview');
+            const placeholder = document.getElementById('placeholder-box');
+            const resetBtn = document.getElementById('btn-reset-preview');
+            const fileInput = document.getElementById('file-1');
+
+            if (fileInput) fileInput.value = '';
+            if (currentLogoPath) {
+                if (preview) {
+                    preview.src = currentLogoPath;
+                    preview.classList.remove('d-none');
+                }
+                if (placeholder) placeholder.classList.add('d-none');
+            } else {
+                if (preview) {
+                    preview.src = '';
+                    preview.classList.add('d-none');
+                }
+                if (placeholder) placeholder.classList.remove('d-none');
+            }
+            if (resetBtn) resetBtn.classList.add('d-none');
+        }
+    </script>
 </body>
-
 
 </html>
