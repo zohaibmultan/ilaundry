@@ -71,3 +71,75 @@ This skill documents the standard architecture for tabular data views across all
 ## Examples
 - See the complete JavaScript template in [datatable-sample.js](./examples/datatable-sample.js).
 
+## 3. Row Action Modals & Form Action Safety Pattern
+
+When DataTables action buttons trigger dynamic editing/updating modals:
+
+### A. Action Button Column Render
+* Never repeat IDs across table rows (e.g. ❌ `id="update_staff"`). Always use action classes (e.g. `.btn-staff-edit`).
+* Escape dynamic values embedded into data attributes:
+  ```javascript
+  {
+      data: null,
+      orderable: false,
+      searchable: false,
+      className: 'text-center',
+      render: function(data, type, row) {
+          return `
+              <div class="tbl-action-group justify-content-center">
+                  <a href="#" class="btn-dt-action btn-edit btn-staff-edit" 
+                     data-bs-toggle="modal" data-bs-target="#staff_update"
+                     data-id="${row.id}" data-name="${escapeHtml(row.name)}"
+                     data-store-id="${row.store_ID}" data-approved="${row.approved}">
+                     <i class="fas fa-pencil-alt"></i>
+                  </a>
+              </div>
+          `;
+      }
+  }
+  ```
+
+### B. Dual-Bound Modal Population & Switch Setting
+```javascript
+function populateUpdateModal(button) {
+    const $btn = $(button);
+    const id = $btn.attr('data-id');
+    const name = $btn.attr('data-name') || '';
+    const storeId = $btn.attr('data-store-id') || '';
+    const approved = $btn.attr('data-approved');
+
+    if (id) {
+        $('#update_form').attr('action', '/module/update/' + id);
+    }
+    $('#name_update').val(name);
+    $('#store_update').val(storeId);
+    // Use .prop('checked', boolean), never .attr('checked')
+    $('#active_update').prop('checked', String(approved) === '1');
+}
+
+// Bind to both direct click and Bootstrap modal show event
+$(document).on('click', '.btn-staff-edit', function () {
+    populateUpdateModal(this);
+});
+
+$('#staff_update').on('show.bs.modal', function (e) {
+    if (e.relatedTarget) {
+        populateUpdateModal(e.relatedTarget);
+    }
+});
+```
+
+### C. Form Destination Guard
+Prevent accidental full-page navigation to empty actions or `undefined`:
+```javascript
+$('#update_form').on('submit', function (e) {
+    const action = $(this).attr('action');
+    if (!action || action === '' || action.includes('undefined')) {
+        e.preventDefault();
+        alert('Invalid destination: please re-open the dialog and try again.');
+        return false;
+    }
+});
+```
+
+

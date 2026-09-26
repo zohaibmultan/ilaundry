@@ -124,6 +124,7 @@ router.get("/categorytype/data", auth, async (req, res) => {
           id: t.id,
           type_name: t.type_name || '',
           store: t.store || '',
+          store_id: t.store_ID || '',
           canEdit,
           canDelete
         }));
@@ -216,27 +217,33 @@ router.post("/updatecategorytype/:id", auth, async (req, res) => {
 `);
 
     if (rolldetail[0].expense.includes("edit")) {
-      var dataid = req.params.id;
-      const name = req.body.name;
-      // var qury =
-      //   "UPDATE tbl_exp_cat_type SET type_name='" +
-      //   name +
-      //   "' WHERE id=" +
-      //   dataid +
-      //   "";
-      // const data = await DataFind(qury);
+      const dataid = String(req.params.id).replace(/['"]/g, '').trim();
+      const name = req.body.name ? req.body.name.replace(/'/g, "\\'") : '';
+      const isMaster = rolldetail[0].rollType.includes("master");
 
-       const data = await DataUpdate(
-        `tbl_exp_cat_type`,
-        `type_name='${name}'`,
-        `id=${dataid}`,
-        req.hostname,req.protocol);
-
-
-      if (data == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+      let updateSet = `type_name='${name}'`;
+      if (isMaster && req.body.storeid) {
+        const storeid = String(req.body.storeid).replace(/['"]/g, '').trim();
+        updateSet += `, store_ID='${storeid}'`;
       }
 
+      let whereClause = `id=${dataid}`;
+      if (!isMaster) {
+        whereClause += ` AND store_ID='${store}'`;
+      }
+
+      const data = await DataUpdate(
+        `tbl_exp_cat_type`,
+        updateSet,
+        whereClause,
+        req.hostname,
+        req.protocol
+      );
+
+      if (data == -1) {
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
+      }
 
       req.flash("success", "Expense Category Type Update success");
       res.redirect("back");
@@ -270,23 +277,26 @@ router.get("/deletcategorytype/:id", auth, async (req, res) => {
   WHERE sr.id = ${roll}
 `);
     if (rolldetail[0].expense.includes("delete")) {
-      var dataid = req.params.id;
-
-      // var qury = "UPDATE tbl_exp_cat_type SET delet_flage=1 WHERE id=" + dataid + ""; 
-      // const data = await DataFind(qury);
-
-       const data = await DataUpdate(
-        `tbl_exp_cat_type`,
-        `delet_flage=1`,
-        `id=${dataid}`,
-        req.hostname,req.protocol);
-
-
-      if (data == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+      const dataid = String(req.params.id).replace(/['"]/g, '').trim();
+      const isMaster = rolldetail[0].rollType.includes("master");
+      let whereClause = `id=${dataid}`;
+      if (!isMaster) {
+        whereClause += ` AND store_ID='${store}'`;
       }
 
-      
+      const data = await DataUpdate(
+        `tbl_exp_cat_type`,
+        `delet_flage=1`,
+        whereClause,
+        req.hostname,
+        req.protocol
+      );
+
+      if (data == -1) {
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
+      }
+
       req.flash("success", "Expense Category Type Delet success");
       res.redirect("back");
     } else {

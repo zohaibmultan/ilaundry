@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="author" content="iLaundry">
+    <meta name="author" content="iCleaners">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
         <%= data?.app_name || '' %> - Sign In
@@ -36,6 +36,23 @@
         })();
     </script>
 
+    <!-- Language & RTL Early Bootstrap -->
+    <script>
+        window.APP_LANG = "<%= typeof language_name !== 'undefined' ? language_name : 'en' %>";
+        window.APP_IS_RTL = <%= typeof isRTL !== 'undefined' && isRTL ? 'true' : 'false' %>;
+        window.__ = function(key, fallback) {
+            var dict = <%- typeof langJson !== 'undefined' ? langJson : '{}' %>;
+            return dict[key] || fallback || (key ? String(key).replace(/_/g, ' ') : '');
+        };
+        if (window.APP_IS_RTL) {
+            document.documentElement.setAttribute('dir', 'rtl');
+            document.documentElement.classList.add('rtl');
+        } else {
+            document.documentElement.setAttribute('dir', 'ltr');
+            document.documentElement.classList.remove('rtl');
+        }
+    </script>
+
     <!-- Favicon icon -->
     <link rel="icon" type="image/png" sizes="16x16" href="/uploads/<%= data?.app_favicon || '' %>">
     <!-- Google Fonts (Inter) -->
@@ -43,6 +60,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
+    <link rel="stylesheet" type="text/css" href="/vendor/flag-icon.css">
     <link href="/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/liquid-glass-theme.css">
@@ -53,8 +71,75 @@
 
 <body>
     <div class="auth-split-wrapper">
-        <!-- Floating Top-Right Theme Switcher -->
-        <div class="auth-top-controls">
+        <!-- Floating Top-Right Controls: Theme & Language -->
+        <div class="auth-top-controls d-flex align-items-center gap-2">
+            <!-- Language Switcher Dropdown -->
+            <div class="dropdown">
+                <button type="button" class="auth-theme-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="<%= language.Select_Language || 'Select Language' %>">
+                    <i class="fas fa-globe text-primary"></i>
+                    <span class="text-uppercase fw-bold fs-12"><%= typeof language_name !== 'undefined' ? language_name : 'en' %></span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end lang-glass-menu shadow-lg p-2" style="min-width: 240px; z-index: 1060;">
+                    <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
+                        <span class="fs-12 fw-bold text-uppercase text-secondary"><%= language.Select_Language || 'Select Language' %></span>
+                        <i class="fa fa-globe text-primary fs-12"></i>
+                    </div>
+                    <div class="lang-grid more_lang active">
+                        <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'en') ? 'active' : '' %>" data-value="en">
+                            <i class="flag-icon flag-icon-us rounded-1"></i>
+                            <span class="lang-txt flex-grow-1">English</span>
+                            <% if (typeof language_name !== 'undefined' && language_name === 'en') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
+                        </div>
+                        <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'in') ? 'active' : '' %>" data-value="in">
+                            <i class="flag-icon flag-icon-in rounded-1"></i>
+                            <span class="lang-txt flex-grow-1">Hindi</span>
+                            <% if (typeof language_name !== 'undefined' && language_name === 'in') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
+                        </div>
+                        <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'pt') ? 'active' : '' %>" data-value="pt">
+                            <i class="flag-icon flag-icon-pt rounded-1"></i>
+                            <span class="lang-txt flex-grow-1">Português</span>
+                            <% if (typeof language_name !== 'undefined' && language_name === 'pt') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
+                        </div>
+                        <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'es') ? 'active' : '' %>" data-value="es">
+                            <i class="flag-icon flag-icon-es rounded-1"></i>
+                            <span class="lang-txt flex-grow-1">Español</span>
+                            <% if (typeof language_name !== 'undefined' && language_name === 'es') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
+                        </div>
+                        <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'fr') ? 'active' : '' %>" data-value="fr">
+                            <i class="flag-icon flag-icon-fr rounded-1"></i>
+                            <span class="lang-txt flex-grow-1">Français</span>
+                            <% if (typeof language_name !== 'undefined' && language_name === 'fr') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
+                        </div>
+                        <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'cn') ? 'active' : '' %>" data-value="cn">
+                            <i class="flag-icon flag-icon-cn rounded-1"></i>
+                            <span class="lang-txt flex-grow-1">中文</span>
+                            <% if (typeof language_name !== 'undefined' && language_name === 'cn') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
+                        </div>
+                        <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'ae') ? 'active' : '' %>" data-value="ae">
+                            <i class="flag-icon flag-icon-ae rounded-1"></i>
+                            <span class="lang-txt flex-grow-1">العربية</span>
+                            <% if (typeof language_name !== 'undefined' && language_name === 'ae') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
+                        </div>
+                        <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'id') ? 'active' : '' %>" data-value="id">
+                            <i class="flag-icon flag-icon-id rounded-1"></i>
+                            <span class="lang-txt flex-grow-1">Bahasa</span>
+                            <% if (typeof language_name !== 'undefined' && language_name === 'id') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
+                        </div>
+                        <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'ph') ? 'active' : '' %>" data-value="ph">
+                            <i class="flag-icon flag-icon-ph rounded-1"></i>
+                            <span class="lang-txt flex-grow-1">Filipino</span>
+                            <% if (typeof language_name !== 'undefined' && language_name === 'ph') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
+                        </div>
+                        <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'uk') ? 'active' : '' %>" data-value="uk">
+                            <i class="flag-icon flag-icon-uk rounded-1"></i>
+                            <span class="lang-txt flex-grow-1">Ukrainian</span>
+                            <% if (typeof language_name !== 'undefined' && language_name === 'uk') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theme Switcher -->
             <button type="button" class="auth-theme-btn" id="auth_theme_toggle" title="Switch Theme">
                 <i class="fas fa-moon lighticon"></i>
                 <i class="fas fa-sun darkicon d-none"></i>
@@ -96,9 +181,9 @@
                         <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-card-logo"
                             alt="<%= data?.app_name || '' %>">
                     </a>
-                    <h3 class="auth-card-title">Sign In to Your Account</h3>
+                    <h3 class="auth-card-title"><%= language.Sign_In_Account || 'Sign In to Your Account' %></h3>
                     <p class="auth-card-subtitle">
-                        Welcome back!
+                        <%= language.Welcome_back || 'Welcome back' %>!
                     </p>
                 </div>
 
@@ -106,32 +191,32 @@
                     <!-- Username / Email / Number -->
                     <div class="mb-3">
                         <label class="form-label mb-1">
-                            <strong>Username, Email or Phone</strong> 
+                            <strong><%= language.Username_Email_Phone || 'Username, Email or Phone' %></strong> 
                             <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text">
                                 <i class="fas fa-user text-muted"></i>
                             </span>
-                            <input type="text" class="form-control" name="username" placeholder="Enter your username" required autofocus>
+                            <input type="text" class="form-control" name="username" placeholder="<%= language.Enter_Username || 'Enter your username' %>" required autofocus>
                         </div>
                     </div>
 
                     <!-- Password with Eye Toggle -->
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label class="form-label mb-0"><strong>Password</strong> <span
+                            <label class="form-label mb-0"><strong><%= language.Password || 'Password' %></strong> <span
                                     class="text-danger">*</span></label>
                             <a href="/forgot-password" class="fs-12 text-primary fw-semibold text-decoration-none"
                                 title="Reset your password">
-                                Forgot Password?
+                                <%= language.Forgot_Password || 'Forgot Password?' %>
                             </a>
                         </div>
                         <div class="input-group position-relative">
                             <span class="input-group-text">
                                 <i class="fas fa-lock text-muted"></i>
                             </span>
-                            <input type="password" class="form-control pe-5 rounded-end" id="login_password" name="password" placeholder="Enter your password" required autocomplete="current-password" style="border-top-right-radius: 0.75rem !important; border-bottom-right-radius: 0.75rem !important;">
+                            <input type="password" class="form-control pe-5 rounded-end" id="login_password" name="password" placeholder="<%= language.Enter_Password || 'Enter your password' %>" required autocomplete="current-password" style="border-top-right-radius: 0.75rem !important; border-bottom-right-radius: 0.75rem !important;">
                             <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('login_password', this)" title="Toggle password visibility" aria-label="Toggle password visibility">
                                 <i class="fas fa-eye"></i>
                             </button>
@@ -142,21 +227,20 @@
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="form-check custom-checkbox mb-0">
                             <input type="checkbox" class="form-check-input" id="basic_checkbox_1">
-                            <label class="form-check-label fs-12 text-muted" for="basic_checkbox_1">Remember my
-                                preference</label>
+                            <label class="form-check-label fs-12 text-muted" for="basic_checkbox_1"><%= language.Remember_Preference || 'Remember my preference' %></label>
                         </div>
                     </div>
 
                     <!-- Sign In Submit -->
                     <button type="submit" class="auth-submit-btn" id="login_submit_btn">
-                        <i class="fas fa-sign-in-alt me-1"></i> Sign In
+                        <i class="fas fa-sign-in-alt me-1"></i> <%= language.Sign_In || 'Sign In' %>
                     </button>
                 </form>
 
                 <!-- Quick Demo Credentials Pill Bar -->
                 <div class="auth-demo-bar">
                     <div class="fs-11 fw-bold text-muted text-uppercase tracking-wider">
-                        <i class="fas fa-bolt text-warning me-1"></i> One-Click Demo Logins
+                        <i class="fas fa-bolt text-warning me-1"></i> <%= language.One_Click_Demo_Logins || 'One-Click Demo Logins' %>
                     </div>
                     <div class="auth-demo-pills">
                         <button type="button" class="auth-demo-pill" id="demo_master_admin"
@@ -226,7 +310,7 @@
             toastr.options.closeButton = true;
             toastr.options.closeHtml = '<button type="button" class="toast-close-button" aria-label="Close">&times;</button>';
             toastr.options.progressBar = true;
-            toastr.options.positionClass = "toast-top-right";
+            toastr.options.positionClass = "toast-bottom-right";
             toastr.options.timeOut = 5000;
             toastr.options.extendedTimeOut = 1500;
             toastr.options.newestOnTop = true;
@@ -327,6 +411,19 @@
                 $('#login_password').val('123456');
                 toastr.info('Loaded credentials for <b>Customer</b> (customer)', { timeOut: 2500, escapeHtml: false });
             });
+            // Language selector click handler
+            $(document).on('click', '.lang', function () {
+                var lang = $(this).attr('data-value');
+                var base_url = window.location.origin;
+                $.ajax({
+                    url: base_url + '/lang/' + lang,
+                    type: 'GET',
+                    dataType: 'JSON',
+                    success: function () {
+                        location.reload();
+                    }
+                });
+            });
         });
     </script>
 
@@ -337,7 +434,7 @@
                 timeOut: 8000,
                 closeButton: true,
                 progressBar: true,
-                positionClass: "toast-top-right",
+                positionClass: "toast-bottom-right",
                 escapeHtml: false
             });
         </script>

@@ -19225,7 +19225,7 @@ Fixing Order => Base + Typography >> General Layout + Grid >> Page Layout + Comp
   width: 0.5rem;
   height: 0.5rem;
   right: 1.5rem;
-  top: 28px;
+  top: 23px;
   border-color: #d1d1d1;
   -webkit-transform: rotate(-225deg) translateY(-50%);
   transform: rotate(-225deg) translateY(-50%);
@@ -26776,7 +26776,7 @@ Fixing Order => Base + Typography >> General Layout + Grid >> Page Layout + Comp
 }
 
 [data-theme-version="dark"] .border {
-  border: 1px solid #fff !important;
+  border: 1px solid rgba(0, 0, 0, 0.125) !important;
 }
 
 [data-theme-version="dark"] .card {
@@ -33569,7 +33569,7 @@ button:focus {
 }
 
 .btn-icon-end {
-  border-left: 0.0625rem solid white;
+  /* border-left: 0.0625rem solid white; */
   display: inline-block;
   margin: -.8rem 0 -.8rem 1rem;
   padding: 0.4375rem 0 0.4375rem 1rem;
@@ -43288,7 +43288,7 @@ html[dir="rtl"] [direction="rtl"][data-sidebar-style="compact"]:not([data-layout
 }
 
 [data-theme-version="dark"] .border {
-  border: 1px solid #fff !important;
+  border: 1px solid #333a54 !important;
 }
 
 [data-theme-version="dark"] .card {
@@ -43974,7 +43974,7 @@ html[dir="rtl"] [direction="rtl"][data-sidebar-style="compact"]:not([data-layout
 }
 
 [data-theme-version="dark"][data-sidebar-style="full"][data-layout="vertical"] .deznav .metismenu>li.mm-active.has-menu:after {
-  border-color: #fff;
+  border-color: #b3b3b3;
 }
 
 [data-theme-version="dark"] .primary-icon path {

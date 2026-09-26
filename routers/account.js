@@ -34,15 +34,18 @@ router.get("/list", auth, async (req, res) => {
     const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
     const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
     const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
-    const isMaster = rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && !isStaff && (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === '0');
+    const isMaster = accessdata?.logas === "master" || (accessdata?.roll && accessdata.roll.rollType === "master") || (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && !isStaff && (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === '0'));
+
+    const accountPerm = (accessdata?.roll?.account || (rolldetail && rolldetail.length > 0 ? rolldetail[0].account : '') || '');
 
     // Permissions:
-    // Store owner (!isStaff) has write, edit, delete access for their store.
-    // Staff user (isStaff) must have corresponding permission in rolldetail.
-    const canRead = isMaster || !isStaff || (rolldetail && rolldetail.length > 0 && rolldetail[0].account.includes("read"));
-    const canWrite = isMaster || !isStaff || (rolldetail && rolldetail.length > 0 && rolldetail[0].account.includes("write"));
-    const canEdit = isMaster || !isStaff || (rolldetail && rolldetail.length > 0 && rolldetail[0].account.includes("edit"));
-    const canDelete = isMaster || !isStaff || (rolldetail && rolldetail.length > 0 && rolldetail[0].account.includes("delete"));
+    // Master user: always has full permissions
+    // Store owner (!isStaff): has write, edit, delete access for their store.
+    // Staff user (isStaff): must have corresponding permission in accountPerm.
+    const canRead = isMaster || (!isStaff && accessdata?.isstore) || accountPerm.includes("read");
+    const canWrite = isMaster || (!isStaff && accessdata?.isstore) || (isStaff && accountPerm.includes("write"));
+    const canEdit = isMaster || (!isStaff && accessdata?.isstore) || (isStaff && accountPerm.includes("edit"));
+    const canDelete = isMaster || (!isStaff && accessdata?.isstore) || (isStaff && accountPerm.includes("delete"));
 
     if (!canRead) {
       req.flash("error", "Your Are Not Authorized For this");
@@ -250,9 +253,11 @@ router.post("/updateaccount/:id", auth, async (req, res) => {
     const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
     const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
     const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
-    const isMaster = rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && !isStaff && (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === '0');
+    const accessdata = await access(req.user);
+    const isMaster = accessdata?.logas === "master" || (accessdata?.roll && accessdata.roll.rollType === "master") || (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && !isStaff && (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === '0'));
+    const accountPerm = (accessdata?.roll?.account || (rolldetail && rolldetail.length > 0 ? rolldetail[0].account : '') || '');
 
-    const canEdit = isMaster ? (rolldetail && rolldetail[0].account.includes("edit")) : (!isStaff || (rolldetail && rolldetail[0].account.includes("edit")));
+    const canEdit = isMaster || (!isStaff && accessdata?.isstore) || (isStaff && accountPerm.includes("edit"));
 
     if (!canEdit) {
       req.flash("error", "Your Are Not Authorized For this");
@@ -326,9 +331,11 @@ router.get("/deletaccount/:id", auth, async (req, res) => {
     const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
     const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
     const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
-    const isMaster = rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && !isStaff && (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === '0');
+    const accessdata = await access(req.user);
+    const isMaster = accessdata?.logas === "master" || (accessdata?.roll && accessdata.roll.rollType === "master") || (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && !isStaff && (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === '0'));
+    const accountPerm = (accessdata?.roll?.account || (rolldetail && rolldetail.length > 0 ? rolldetail[0].account : '') || '');
 
-    const canDelete = isMaster ? (rolldetail && rolldetail[0].account.includes("delete")) : (!isStaff || (rolldetail && rolldetail[0].account.includes("delete")));
+    const canDelete = isMaster || (!isStaff && accessdata?.isstore) || (isStaff && accountPerm.includes("delete"));
 
     if (!canDelete) {
       req.flash("error", "Your Are Not Authorized For this");

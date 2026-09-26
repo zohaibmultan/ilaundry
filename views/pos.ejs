@@ -121,14 +121,13 @@
                                 <div class="pos-services-grid mt-2" id="pos_service">
                                     <% if(service_list.length < 1 && login=='master' && cart.store_id==0){ %>
                                         <div class="p-3 text-center w-100">
-                                            <h5 class="text-center text-danger">
+                                            <h5>
                                                 <%= language.Please_Select_Store %>
                                             </h5>
                                         </div>
                                         <% }else if(service_list.length < 1){ %>
                                             <div class="p-3 text-center w-100">
-                                                <img src="../images/empty.png"
-                                                    style="max-height: 80px; margin-bottom: 8px;">
+
                                                 <h5 class="text-center text-danger">
                                                     <%= language.Not_listed_any_services_yet %>
                                                 </h5>
@@ -195,12 +194,12 @@
                                         <% if (typeof showStoreSelect !== 'undefined' && showStoreSelect) { %>
                                             <div class="col-12 col-md-6">
                                                 <div class="pos-date-group">
-                                                    <label class="pos-field-label">Select Store <span
+                                                    <label class="pos-field-label"><%= language.Select_Store || 'Select Store' %> <span
                                                             class="text-danger">*</span></label>
                                                     <select class="default-select wide w-100" name="store"
                                                         id="pos_store_id" data-live-search="true" required>
                                                         <option value="0" <%=(!cart.store_id || cart.store_id==0)
-                                                            ? 'selected' : '' %> disabled>Select Store *</option>
+                                                            ? 'selected' : '' %> disabled><%= language.Select_Store || 'Select Store' %> *</option>
                                                         <% storeList.forEach(function(x){ %>
                                                             <option value="<%= x.id %>" <%=(cart.store_id==x.id)
                                                                 ? 'selected' : '' %>><%= x.name %>
@@ -218,7 +217,7 @@
                                             <div class="pos-date-group">
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <div class="d-flex align-items-center">
-                                                        <label class="pos-field-label mb-0">Select Customer
+                                                        <label class="pos-field-label mb-0"><%= language.Select_Customer || 'Select Customer' %>
                                                             <span class="text-danger">*</span>
                                                         </label>
                                                         <% if (typeof showStoreSelect !== 'undefined' && !showStoreSelect && typeof assignedStoreName !== 'undefined' && assignedStoreName) { %>
@@ -227,7 +226,7 @@
                                                     </div>
                                                     <a href="javascript:void(0)" style="color: blue" data-bs-toggle="modal"
                                                         data-bs-target="#addcustomer">
-                                                        <i class="fa fa-plus"></i> Add
+                                                        <i class="fa fa-plus"></i> <%= language.Add || 'Add' %>
                                                     </a>
                                                 </div>
                                                 <select id="single-select" name="customer"
@@ -235,7 +234,7 @@
                                                     required <%= (typeof showStoreSelect !== 'undefined' && showStoreSelect && (!cart.store_id || cart.store_id==0)) ? 'disabled' : '' %>>
                                                     <option value="0" disabled <%= (!cart.customer_id || cart.customer_id==0) ? 'selected' : '' %>>
                                                         <%= (typeof showStoreSelect !== 'undefined' && showStoreSelect && (!cart.store_id || cart.store_id==0))
-                                                            ? 'Select Store First *' : 'Select Customer *' %>
+                                                            ? (language.Select_Store_First || 'Select Store First') + ' *' : (language.Select_Customer || 'Select Customer') + ' *' %>
                                                     </option>
                                                     <% customerList.forEach(function(x) { %>
                                                         <% let showExtra="" ; %>
@@ -268,7 +267,7 @@
                                 <div class="row g-2 mb-3">
                                     <div class="col-12 col-sm-4">
                                         <div class="pos-date-group">
-                                            <label class="pos-field-label">Order #</label>
+                                            <label class="pos-field-label"><%= language.Order_No || 'Order #' %></label>
                                             <input type="text" id="pos_order_id" class="form-control pos-input-sm w-100"
                                                 value="<%= cart.order_id %>" readonly title="Order ID">
                                         </div>
@@ -485,9 +484,8 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
 
-                        <!-- <form id="pyment_POS_cart" method="post" class="need-validation"> -->
-                        <div class="modal-body" id="payment_sum">
-                            <form id="posprintform" action="/admin/posprint" method="post" class="need-validation">
+                        <form id="posprintform" action="/admin/posprint" method="post">
+                            <div class="modal-body" id="payment_sum">
                                 <div class="row g-2 align-items-center">
 
                                     <div class="col-12">
@@ -617,9 +615,9 @@
                                                 <label class="form-label">
                                                     <%= language.Payment_Type %>
                                                 </label>
-                                                <select class=" form-control wide" name="payment_type"
-                                                    id="POS_payment_type_list" required>
-                                                    <option value disabled>Choose Payment Type</option>
+                                                <select class="form-control wide" name="payment_type"
+                                                    id="POS_payment_type_list">
+                                                    <option value="0" disabled selected>Choose Payment Type</option>
                                                     <option value="cash">Cash</option>
                                                     <option value="upi">UPI</option>
                                                     <option value="card">Card</option>
@@ -660,16 +658,16 @@
                                         </div>
                                     </div>
                                 </div>
-                        </div>
+                            </div>
 
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <i class="fa fa-times me-2"></i><%= language.Cancel %>
-                            </button>
-                            <button class="btn btn-primary" type="submit" value="submit" id="printcheck">
-                                <i class="fa fa-print me-2"></i><%= language.Save %> & <%= language.Print %>
-                            </button>
-                        </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fa fa-times me-2"></i><%= language.Cancel %>
+                                </button>
+                                <button class="btn btn-primary" type="submit" value="submit" id="printcheck">
+                                    <i class="fa fa-print me-2"></i><%= language.Save %> & <%= language.Print %>
+                                </button>
+                            </div>
                         </form>
 
                     </div>
@@ -896,7 +894,7 @@
                                 <div class="input-group mb-3">
                                     <input type="text" class="form-control" placeholder="Enter Coupon Code"
                                         name="coupon_code">
-                                    <button class="btn btn-primary" id="POS_coupon_code" type="button">
+                                    <button class="btn btn-primary btn-sm" id="POS_coupon_code" type="button">
                                         <i class="fa fa-check me-2"></i><%= language.Apply %>
                                     </button>
                                 </div>
@@ -1192,15 +1190,28 @@
                     });
                 </script>
                 <script>
-                    document.getElementById("paid_amount").addEventListener("input", function () {
-                        const paidAmount = parseFloat(this.value) || 0;
-                        const paymentTypeSelect = document.getElementById("POS_payment_type_list");
+                    $('#posprintform').on('submit', function (e) {
+                        const paidAmount = parseFloat($('#paid_amount').val()) || 0;
+                        const paymentType = $('#POS_payment_type_list').val();
 
-                        if (paidAmount > 0) {
-                            paymentTypeSelect.setAttribute("required", "required");
-                        } else {
-                            paymentTypeSelect.removeAttribute("required");
+                        if (paidAmount > 0 && (!paymentType || paymentType === '0')) {
+                            e.preventDefault();
+                            if (typeof toastr !== 'undefined') {
+                                toastr.warning('Please select a payment type for the paid amount.');
+                            } else {
+                                alert('Please select a payment type.');
+                            }
+                            if ($('#POS_payment_type_list').data('select2')) {
+                                $('#POS_payment_type_list').select2('open');
+                            } else {
+                                $('#POS_payment_type_list').focus();
+                            }
+                            return false;
                         }
+
+                        // Prevent multiple submissions
+                        $('#printcheck').prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-2"></i><%= language.Saving || "Saving..." %>');
+                        return true;
                     });
                 </script>
                 <script src="/js/pos-print-client.js"></script>

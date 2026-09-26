@@ -260,6 +260,10 @@
             transform: scale(1.1);
         }
 
+        .table.dataTable tbody tr{
+            background-color: unset;
+        }
+        
         /* Print styles */
         @media print {
             .nav-header,
@@ -380,17 +384,17 @@
                                     <% } %>
 
                                     <div class="col-12 col-sm-6 col-md-3 d-flex gap-2">
-                                        <button type="button" class="btn btn-primary flex-fill d-flex align-items-center justify-content-center gap-1" id="pl_filter_btn">
+                                        <button type="button" class="btn btn-sm btn-primary flex-fill d-flex align-items-center justify-content-center gap-1" id="pl_filter_btn">
                                             <i class="fa fa-filter me-1"></i><%= language.Apply_Filter || 'Apply Filter' %>
                                         </button>
-                                        <button type="button" class="btn btn-outline-secondary d-flex align-items-center justify-content-center" id="pl_reset_btn" title="Reset to current month">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center" id="pl_reset_btn" title="Reset to current month">
                                             <i class="fa fa-undo"></i>
                                         </button>
                                     </div>
                                 </div>
 
                                 <!-- QUICK PRESET BUTTONS -->
-                                <div class="d-flex flex-wrap gap-1 align-items-center pt-2 border-top">
+                                <div class="d-flex flex-wrap gap-2 align-items-center pt-2 border-top">
                                     <span class="fs-11 text-muted fw-bold text-uppercase me-2">Presets:</span>
                                     <button type="button" class="btn btn-xs btn-outline-secondary pl-preset-btn" data-preset="today">Today</button>
                                     <button type="button" class="btn btn-xs btn-outline-secondary pl-preset-btn" data-preset="this_week">This Week</button>
@@ -504,8 +508,8 @@
                                 </div>
                                 <div class="table-responsive">
                                     <table class="table table-hover pl-statement-table align-middle mb-0">
-                                        <tbody>
-                                            <!-- REVENUE SECTION -->
+                                        <!-- REVENUE SECTION -->
+                                        <tbody id="stmt_revenue_section">
                                             <tr class="table-light">
                                                 <td colspan="2" class="section-header text-primary py-2 ps-3">
                                                     <i class="fa fa-arrow-down me-1"></i> 1. Operating Revenue
@@ -536,35 +540,41 @@
                                                 <td colspan="2" class="ps-3">TOTAL NET OPERATING REVENUE</td>
                                                 <td class="text-end text-primary font-monospace pe-3 fs-6" id="stmt_net_revenue"><%= accessdata?.symbol || '$' %><%= metrics.netRevenue %></td>
                                             </tr>
+                                        </tbody>
 
-                                            <!-- EXPENSES SECTION -->
+                                        <!-- EXPENSES HEADER -->
+                                        <tbody id="stmt_expenses_header">
                                             <tr class="table-light">
                                                 <td colspan="2" class="section-header text-danger py-2 ps-3">
                                                     <i class="fa fa-arrow-up me-1"></i> 2. Operating Expenses (by Category)
                                                 </td>
                                                 <td class="text-end fw-bold text-danger font-monospace pe-3 py-2">Amount (<%= accessdata?.symbol || '$' %>)</td>
                                             </tr>
-                                            <tbody id="stmt_category_rows">
-                                                <% if (categoryBreakdown.length === 0) { %>
+                                        </tbody>
+
+                                        <!-- EXPENSES CATEGORIES BREAKDOWN -->
+                                        <tbody id="stmt_category_rows">
+                                            <% if (categoryBreakdown.length === 0) { %>
+                                                <tr>
+                                                    <td colspan="3" class="text-center text-muted py-3">No expenses recorded for this period.</td>
+                                                </tr>
+                                            <% } else { %>
+                                                <% categoryBreakdown.forEach(function(cat) { %>
                                                     <tr>
-                                                        <td colspan="3" class="text-center text-muted py-3">No expenses recorded for this period.</td>
+                                                        <td class="ps-3"><i class="fa fa-folder text-warning"></i></td>
+                                                        <td><%= cat.category_name %> <span class="badge bg-light text-muted ms-1"><%= cat.count %></span></td>
+                                                        <td class="text-end fw-semibold font-monospace pe-3"><%= parseFloat(cat.total_amount).toFixed(2) %></td>
                                                     </tr>
-                                                <% } else { %>
-                                                    <% categoryBreakdown.forEach(function(cat) { %>
-                                                        <tr>
-                                                            <td class="ps-3"><i class="fa fa-folder text-warning"></i></td>
-                                                            <td><%= cat.category_name %> <span class="badge bg-light text-muted ms-1"><%= cat.count %></span></td>
-                                                            <td class="text-end fw-semibold font-monospace pe-3"><%= parseFloat(cat.total_amount).toFixed(2) %></td>
-                                                        </tr>
-                                                    <% }); %>
-                                                <% } %>
-                                            </tbody>
+                                                <% }); %>
+                                            <% } %>
+                                        </tbody>
+
+                                        <!-- EXPENSES TOTALS & NET PROFIT/LOSS -->
+                                        <tbody id="stmt_totals_section">
                                             <tr class="fw-bold table-warning pl-net-row">
                                                 <td colspan="2" class="ps-3">TOTAL OPERATING EXPENSES</td>
                                                 <td class="text-end text-danger font-monospace pe-3 fs-6" id="stmt_total_expense"><%= accessdata?.symbol || '$' %><%= metrics.totalExpense %></td>
                                             </tr>
-
-                                            <!-- BOTTOM LINE -->
                                             <tr class="fw-bold fs-16 <%= metrics.isProfit ? 'table-success text-success' : 'table-danger text-danger' %> pl-net-row" id="stmt_bottom_line">
                                                 <td colspan="2" class="ps-3 py-3">
                                                     <span class="text-uppercase" id="stmt_profit_label"><%= metrics.isProfit ? 'NET PROFIT' : 'NET LOSS' %></span>
@@ -691,7 +701,7 @@
                 ordersTable = $('#pl_orders_table').DataTable({
                     pageLength: 10,
                     order: [[0, 'desc']],
-                    responsive: true
+                    autoWidth: false
                 });
             }
 
@@ -700,9 +710,16 @@
                 expensesTable = $('#pl_expenses_table').DataTable({
                     pageLength: 10,
                     order: [[0, 'desc']],
-                    responsive: true
+                    autoWidth: false
                 });
             }
+
+            // Sync DataTables layout when switching between Orders and Expenses tabs
+            $('button[data-bs-toggle="tab"], a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+                if ($.fn.DataTable) {
+                    $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+                }
+            });
 
             // Helper to format dates YYYY-MM-DD
             function formatDateYMD(d) {
@@ -911,6 +928,11 @@
                                 ]);
                             });
                             expensesTable.draw();
+                        }
+
+                        // Adjust columns for currently visible tab
+                        if ($.fn.DataTable) {
+                            $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
                         }
 
                         if (typeof toastr !== 'undefined') {

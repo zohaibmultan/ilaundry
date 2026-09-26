@@ -15,6 +15,11 @@
         <div class="content-body">
 
             <div class="container-fluid" style="min-height: 100vh;">
+                <% 
+                    const isMaster = (accessdata?.logas === 'master' || (accessdata?.roll && accessdata.roll.rollType === 'master'));
+                    const canEditOrder = accessdata?.logas != 'custmor' && (isMaster || (accessdata?.roll?.orders && accessdata.roll.orders.includes('edit')));
+                    const canDeleteOrder = accessdata?.logas != 'custmor' && (isMaster || (accessdata?.roll?.orders && accessdata.roll.orders.includes('delete')));
+                %>
                 <div class="row">
                     <div class="col-xl-9">
                         <div class="card border-0 shadow-sm rounded-3">
@@ -381,24 +386,26 @@
 
 
                                                     <div class="row">
-                                                        <div
-                                                            class="col-12 <%= (accessdata.logas != 'custmor' && order.order_status != 6) ? '' : 'd-none' %>">
-                                                            <a href="/admin/edit/<%= order.id %>"
-                                                                class="btn btn-primary mb-3 w-100">
-                                                                <i class="fa fa-edit me-2"></i>
-                                                                <%= language.Edit || 'Edit Order' %>
-                                                            </a>
-                                                        </div>
-                                                        <div
-                                                            class="col-12 <%= accessdata.logas != 'custmor' && accessdata.roll.orders.includes('edit') ?'':'d-none' %>">
-                                                            <button data-bs-toggle="modal"
-                                                                data-bs-target="#addpaymentmodel" type="button"
-                                                                class="btn btn-primary mb-3 w-100"
-                                                                <%=order.balance_amount> 0 ? '':'disabled' %>>
-                                                                <i class="fa fa-plus me-2"></i>
-                                                                <%= language.Add_Payment %>
-                                                            </button>
-                                                        </div>
+                                                        <% if (canEditOrder && order.order_status != 6) { %>
+                                                            <div class="col-12">
+                                                                <a href="/admin/edit/<%= order.id %>"
+                                                                    class="btn btn-primary mb-3 w-100">
+                                                                    <i class="fa fa-edit me-2"></i>
+                                                                    <%= language.Edit || 'Edit Order' %>
+                                                                </a>
+                                                            </div>
+                                                        <% } %>
+                                                        <% if (canEditOrder) { %>
+                                                            <div class="col-12">
+                                                                <button data-bs-toggle="modal"
+                                                                    data-bs-target="#addpaymentmodel" type="button"
+                                                                    class="btn btn-primary mb-3 w-100"
+                                                                    <%= order.balance_amount > 0 ? '' : 'disabled' %>>
+                                                                    <i class="fa fa-plus me-2"></i>
+                                                                    <%= language.Add_Payment %>
+                                                                </button>
+                                                            </div>
+                                                        <% } %>
                                                         <div class="col-12">
                                                             <button type="button" class="btn btn-info mb-2 w-100"
                                                                 data-bs-toggle="modal" data-bs-target="#invoice">
@@ -413,13 +420,15 @@
                                                                 <i class="fa fa-tags me-2"></i> <%= language.Print_Cloth_Tag || language.Print_Barcode || 'Print Cloth Tag' %>
                                                             </button>
                                                         </div>
-                                                        <div class="col-12 <%= accessdata.logas != 'custmor' ? '' : 'd-none' %>">
-                                                            <button type="button" class="btn btn-danger w-100"
-                                                                data-bs-toggle="modal" data-bs-target="#deleteOrderModal"
-                                                                data-id="<%= order.id %>" data-orderid="<%= order.order_id %>">
-                                                                <i class="fa fa-trash me-2"></i> <%= language.Delete_Order || 'Delete Order' %>
-                                                            </button>
-                                                        </div>
+                                                        <% if (canDeleteOrder) { %>
+                                                            <div class="col-12">
+                                                                <button type="button" class="btn btn-danger w-100"
+                                                                    data-bs-toggle="modal" data-bs-target="#deleteOrderModal"
+                                                                    data-id="<%= order.id %>" data-orderid="<%= order.order_id %>">
+                                                                    <i class="fa fa-trash me-2"></i> <%= language.Delete_Order || 'Delete Order' %>
+                                                                </button>
+                                                            </div>
+                                                        <% } %>
                                                     </div>
                                                 </div>
 
@@ -884,6 +893,7 @@
         </div>
 
         <!-- Delete Order Confirmation Modal -->
+        <% if (canDeleteOrder) { %>
         <div class="modal fade" id="deleteOrderModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
                 <div class="modal-content text-center p-3" style="border-radius: 16px;">
@@ -909,6 +919,7 @@
                 </div>
             </div>
         </div>
+        <% } %>
 
         <!-- Transfer Store Modal (Step 1: Select Active Store) -->
         <div class="modal fade" id="transferStoreModal" tabindex="-1" aria-labelledby="transferStoreModalLabel" aria-hidden="true">

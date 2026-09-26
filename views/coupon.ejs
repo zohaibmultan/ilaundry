@@ -119,6 +119,9 @@
                                                 <th><%= language.Discount %></th>
                                                 <th><%= language.Start_Date %></th>
                                                 <th><%= language.End_Date %></th>
+                                                <th class="<%= mlty && isadmin ? '' : 'd-none' %>">
+                                                    <%= language.Store_Name %>
+                                                </th>
                                                 <th style="width: 110px;"><%= language.Status %></th>
                                                 <th class="<%= (isadmin || (typeof canEdit !== 'undefined' && canEdit) || (typeof canDelete !== 'undefined' && canDelete)) ? '': 'd-none' %> text-center" style="width: 110px;"><%= language.Action %></th>
                                             </tr>
@@ -549,6 +552,13 @@
                                 }
                             },
                             {
+                                data: 'storeList',
+                                visible: isAdmin,
+                                render: function(data, type, row) {
+                                    return `<span class="badge bg-light text-dark px-2 py-1">${escapeHtml(data) || '—'}</span>`;
+                                }
+                            },
+                            {
                                 data: 'status',
                                 render: function(data, type, row) {
                                     if (parseInt(data) === 0) {
@@ -562,7 +572,6 @@
                                 data: null,
                                 orderable: false,
                                 searchable: false,
-                                visible: isAdmin,
                                 className: 'text-center',
                                 render: function(data, type, row) {
                                     const editBtn = row.canEdit ? `

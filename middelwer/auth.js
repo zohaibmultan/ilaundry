@@ -22,59 +22,34 @@ const auth = async (req, res, next)=>{
         console.log("decode" , decode);
         req.user = decode
 
-        const lang = req.cookies.lang
-        let decode_lang = { lang: 'en' };
+        const { createLanguageProxy } = require('./language');
+        const lang = req.cookies.lang;
+        let activeLang = 'en';
         if (lang) {
             try {
-                decode_lang = await jwt.verify(lang, process.env.TOKEN);
+                const decode_lang = await jwt.verify(lang, process.env.TOKEN);
+                if (decode_lang && decode_lang.lang) {
+                    activeLang = decode_lang.lang;
+                }
             } catch (err) {
-                decode_lang = { lang: 'en' };
+                if (['en', 'in', 'pt', 'es', 'fr', 'cn', 'ae', 'id', 'ph', 'uk'].includes(lang)) {
+                    activeLang = lang;
+                }
             }
         }
-        req.lang = decode_lang
+        req.lang = { lang: activeLang };
+        const langProxy = createLanguageProxy(activeLang);
 
-        if (decode_lang.lang == 'en') {
-            let data = language.en
-            req.language_data = data
-            req.language_name = 'en'
-        } else if (decode_lang.lang == 'es') {
-            let data = language.es
-            req.language_data = data
-            req.language_name = 'es'
-        } else if (decode_lang.lang == 'fr') {
-            let data = language.fr
-            req.language_data = data
-            req.language_name = 'fr'
-        } else if (decode_lang.lang == 'pt') {
-            let data = language.pt
-            req.language_data = data
-            req.language_name = 'pt'
-        } else if (decode_lang.lang == 'cn') {
-            let data = language.cn
-            req.language_data = data
-            req.language_name = 'cn'
-        } else if (decode_lang.lang == 'ae') {
-            let data = language.ae
-            req.language_data = data
-            req.language_name = 'ae'
-        } else if (decode_lang.lang == 'in') {
-            let data = language.in
-            req.language_data = data
-            req.language_name = 'in'
-        } else if (decode_lang.lang == 'id') {
-            let data = language.id
-            req.language_data = data
-            req.language_name = 'id'
-        } else if (decode_lang.lang == 'ph') {
-            let data = language.ph
-            req.language_data = data
-            req.language_name = 'ph'
-        } else if (decode_lang.lang == 'uk') {
-            let data = language.uk
-            req.language_data = data
-            req.language_name = 'uk'
-        }
-        next()
+        req.language_data = langProxy;
+        req.language_name = activeLang;
+        req.isRTL = (activeLang === 'ae');
+
+        res.locals.language = langProxy;
+        res.locals.language_name = activeLang;
+        res.locals.isRTL = (activeLang === 'ae');
+        res.locals.langJson = JSON.stringify(language[activeLang] || language.en || {});
+        res.locals.t = (key, fallback) => langProxy[key] || fallback || (key ? String(key).replace(/_/g, ' ') : '');
+        next();
         
     
 }

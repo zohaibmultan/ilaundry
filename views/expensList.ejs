@@ -111,11 +111,8 @@
                     </div>
                 </div>
             </div>
-
-
-
-
-            <!--********** Content body end **********-->
+        </div>
+        <!--********** Content body end **********-->
 
             <!-- Modal update -->
             <div class="modal fade" id="expense_edit">
@@ -372,6 +369,32 @@
                     </div>
                 </div>
             </div>
+
+        <!-- Modal delete confirm -->
+        <div class="modal fade" id="deleteExpenseModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+                <div class="modal-content text-center p-3" style="border-radius: 16px;">
+                    <div class="modal-body pt-4">
+                        <div class="mb-3">
+                            <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; justify-content: center; color: #ef4444; font-size: 28px;">
+                                <i class="fa fa-trash-alt"></i>
+                            </div>
+                        </div>
+                        <h4 class="mb-2 fw-bold text-dark"><%= language.Delete_Expense || language.Delete || 'Delete Expense' %></h4>
+                        <p class="text-muted mb-1"><%= language.Are_you_sure_delete || 'Are you sure you want to delete this expense?' %></p>
+                        <p class="fw-bold text-danger fs-5 mb-3" id="deleteExpenseModalTitle"></p>
+                        <p class="text-xs text-muted mb-4"><%= language.Action_cannot_be_undone || 'This action cannot be undone.' %></p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+                            </button>
+                            <a href="#" id="deleteExpenseConfirmBtn" class="btn btn-danger">
+                                <i class="fa fa-trash me-2"></i><%= language.Delete || 'Yes, Delete' %>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <!--**********************************
             Footer start
@@ -537,12 +560,17 @@
                                         </a>` : '';
 
                                     const deleteBtn = row.canDelete ? `
-                                        <a href="/expense/deletexpe/${row.id}" 
-                                           class="btn-tbl-action btn-tbl-delete" 
-                                           id="delete" 
+                                        <button type="button" 
+                                           class="btn-tbl-action btn-tbl-delete btn-delete-expense" 
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#deleteExpenseModal"
+                                           data-id="${row.id}"
+                                           data-towards="${escapeHtml(row.towards || '')}"
+                                           data-cat="${escapeHtml(row.cat_name || '')}"
+                                           data-amount="${row.amount}"
                                            title="<%= language.Delete || 'Delete' %>">
                                             <i class="fa fa-trash"></i>
-                                        </a>` : '';
+                                        </button>` : '';
 
                                     return `<div class="tbl-action-group">${editBtn}${deleteBtn}</div>`;
                                 }
@@ -563,6 +591,28 @@
                             language: {
                                 emptyTable: '<%= language.No_data_available_in_table || "No expenses found" %>'
                             }
+                        });
+
+                        // Populate Delete Modal
+                        $(document).on('click', '.btn-delete-expense', function () {
+                            const id = $(this).attr('data-id');
+                            const cleanId = String(id).replace(/['"]/g, '').trim();
+                            const towards = $(this).attr('data-towards') || '';
+                            const cat = $(this).attr('data-cat') || '';
+                            const amount = $(this).attr('data-amount') || '';
+
+                            const formattedAmount = (window.formatDtCurrency && typeof window.formatDtCurrency === 'function') 
+                                ? window.formatDtCurrency(amount) 
+                                : amount;
+                            const titleParts = [];
+                            if (towards) titleParts.push(towards);
+                            else if (cat) titleParts.push(cat);
+                            if (formattedAmount) titleParts.push('(' + formattedAmount + ')');
+
+                            const displayTitle = titleParts.join(' ') || ('#' + cleanId);
+
+                            $('#deleteExpenseModalTitle').text(displayTitle);
+                            $('#deleteExpenseConfirmBtn').attr('href', '/expense/deletexpe/' + cleanId);
                         });
                     });
                 </script>

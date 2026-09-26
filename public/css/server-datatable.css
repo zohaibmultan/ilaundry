@@ -1,8 +1,3 @@
-/* ==========================================================================
-   UNIFIED SERVER-SIDE DATATABLES DESIGN SYSTEM
-   Standardized styling across all primary operational tables in iLaundry
-   ========================================================================== */
-
 /* Container & Filter Toolbar */
 .server-dt-toolbar {
     display: flex;

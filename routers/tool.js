@@ -45,7 +45,7 @@ router.get("/roll", auth, async (req, res) => {
       if (multiy[0].type == 1) {
         var ismulty = true;
         const storeList = await DataFind(
-          "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0"
+          "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0",
         );
 
         res.render("roll", {
@@ -92,35 +92,47 @@ router.get("/roll/data", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
     if (loginas == 0) {
-      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
     }
 
     const filterConditions = [];
     const statusParam = req.query.status_filter || req.query.roll_status;
-    if (statusParam && !["all", "ALL", ""].includes(String(statusParam).trim())) {
+    if (
+      statusParam &&
+      !["all", "ALL", ""].includes(String(statusParam).trim())
+    ) {
       const cleanStatus = String(statusParam).trim().replace(/'/g, "\\'");
       filterConditions.push(`tbl_roll.roll_status = '${cleanStatus}'`);
     }
 
     const canEdit = Boolean(
-      accessdata && (accessdata.logas === 'master' || (accessdata.roll && accessdata.roll.rollaccess && accessdata.roll.rollaccess.includes('edit')))
+      accessdata &&
+      (accessdata.logas === "master" ||
+        (accessdata.roll &&
+          accessdata.roll.rollaccess &&
+          accessdata.roll.rollaccess.includes("edit"))),
     );
 
     const result = await paginateDataTable(req, {
       select: `tbl_roll.id, tbl_roll.roll, tbl_roll.rollType, tbl_roll.roll_status, tbl_roll.delet_flage`,
       from: `tbl_roll`,
       searchColumns: [
-        'tbl_roll.roll',
-        'tbl_roll.rollType',
-        'tbl_roll.roll_status'
+        "tbl_roll.roll",
+        "tbl_roll.rollType",
+        "tbl_roll.roll_status",
       ],
-      baseWhere: ['tbl_roll.delet_flage = 0'],
+      baseWhere: ["tbl_roll.delet_flage = 0"],
       filterWhere: filterConditions,
-      defaultOrder: 'tbl_roll.id ASC',
+      defaultOrder: "tbl_roll.id ASC",
       columnMap: {
-        0: 'tbl_roll.id',
-        1: 'tbl_roll.roll',
-        2: 'tbl_roll.roll_status'
+        0: "tbl_roll.id",
+        1: "tbl_roll.roll",
+        2: "tbl_roll.roll_status",
       },
       postProcess: async (rows) => {
         return rows.map((r) => ({
@@ -128,9 +140,9 @@ router.get("/roll/data", auth, async (req, res) => {
           roll: r.roll,
           rollType: r.rollType,
           roll_status: r.roll_status,
-          canEdit
+          canEdit,
         }));
-      }
+      },
     });
 
     return res.json(result);
@@ -142,8 +154,8 @@ router.get("/roll/data", auth, async (req, res) => {
 
 router.post("/addroll", auth, async (req, res) => {
   try {
-    if (process.env.DISABLE_DB_WRITE === 'true') {
-      req.flash('error', 'For demo purpose we disabled crud operations!!');
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/");
     }
     const { id, roll, store, loginas } = req.user;
@@ -317,11 +329,12 @@ router.post("/addroll", auth, async (req, res) => {
         `roll, rollType, customers,orders,  expense, service, reports, tools,  mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out,roll_status,delet_flage`,
         `'${name}','${name}','${customers}','${orders}','${expense}','${service}','${reports}','${tools}','${mail}','${master}','${sms}','${staff}','${pos}','${rollname}','${accountname}','${couponname}','${branch_n_store}','${master_setting}','${Pay_Out}','${"active"}',0`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (newroll == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       req.flash("success", "New Roll Added !");
@@ -337,8 +350,8 @@ router.post("/addroll", auth, async (req, res) => {
 
 router.get("/deletroll/:id", auth, async (req, res) => {
   try {
-    if (process.env.DISABLE_DB_WRITE === 'true') {
-      req.flash('error', 'For demo purpose we disabled crud operations!!');
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/");
     }
     const { id, roll, store, loginas } = req.user;
@@ -369,10 +382,11 @@ router.get("/deletroll/:id", auth, async (req, res) => {
           `tbl_roll`,
           `id = '${rollid}'`,
           req.hostname,
-          req.protocol
+          req.protocol,
         )) == -1
       ) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       req.flash("success", "Roll Deleted  !!!");
@@ -390,7 +404,7 @@ router.get("/rolldetails/:id", auth, async (req, res) => {
   try {
     const id = req.params.id;
     const newroll = await DataFind(
-      "SELECT * FROM tbl_roll WHERE id=" + id + " "
+      "SELECT * FROM tbl_roll WHERE id=" + id + " ",
     );
     res.status(200).json({ rolldata: newroll[0] });
   } catch (error) {
@@ -400,8 +414,8 @@ router.get("/rolldetails/:id", auth, async (req, res) => {
 
 router.post("/updateroll/:id", auth, async (req, res) => {
   try {
-    if (process.env.DISABLE_DB_WRITE === 'true') {
-      req.flash('error', 'For demo purpose we disabled crud operations!!');
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/");
     }
     const { id, roll, store, loginas } = req.user;
@@ -549,11 +563,12 @@ router.post("/updateroll/:id", auth, async (req, res) => {
    branch_n_store='${branch_n_store}'`,
         `id=${rollid}`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (newroll === -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       req.flash("success", "Roll Updated!");
@@ -586,8 +601,10 @@ router.get("/storesetting", auth, async (req, res) => {
 `);
 
     let targetStoreId = store;
-    if (!targetStoreId || targetStoreId === ' ' || targetStoreId === '') {
-      const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    if (!targetStoreId || targetStoreId === " " || targetStoreId === "") {
+      const adminData = await DataFind(
+        `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
+      );
       if (adminData.length > 0 && adminData[0].store_ID) {
         targetStoreId = adminData[0].store_ID;
       }
@@ -596,7 +613,7 @@ router.get("/storesetting", auth, async (req, res) => {
     let storedata = [];
     let update = false;
 
-    if (targetStoreId && targetStoreId !== ' ' && targetStoreId != 0) {
+    if (targetStoreId && targetStoreId !== " " && targetStoreId != 0) {
       storedata = await DataFind(`
         SELECT 
         tbl_store.*, 
@@ -606,8 +623,15 @@ router.get("/storesetting", auth, async (req, res) => {
         WHERE tbl_store.id = ${targetStoreId} AND tbl_store.status = 1 LIMIT 1
       `);
 
-      const hasEditPermission = rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("edit");
-      update = (rolldetail.length > 0 && rolldetail[0].rollType === "master" && accessdata.mutibranch === false) || hasEditPermission;
+      const hasEditPermission =
+        rolldetail.length > 0 &&
+        rolldetail[0].master &&
+        rolldetail[0].master.includes("edit");
+      update =
+        (rolldetail.length > 0 &&
+          rolldetail[0].rollType === "master" &&
+          accessdata.mutibranch === false) ||
+        hasEditPermission;
     } else if (rolldetail.length > 0 && rolldetail[0].rollType === "master") {
       const multiy = await DataFind("SELECT type FROM tbl_master_shop");
       if (multiy[0].type == 1) {
@@ -615,11 +639,11 @@ router.get("/storesetting", auth, async (req, res) => {
         return res.redirect(req.get("Referrer") || "/");
       } else {
         var storeID = await DataFind(
-          `SELECT * FROM tbl_admin WHERE  id= ${id}`
+          `SELECT * FROM tbl_admin WHERE  id= ${id}`,
         );
 
         storedata = await DataFind(
-          "SELECT * FROM tbl_store WHERE id=" + storeID[0].store_ID + " "
+          "SELECT * FROM tbl_store WHERE id=" + storeID[0].store_ID + " ",
         );
         update = true;
         console.log("storedata1", storedata);
@@ -636,7 +660,7 @@ router.get("/storesetting", auth, async (req, res) => {
       language: req.language_data,
       language_name: req.language_name,
     });
-  } catch (error) { }
+  } catch (error) {}
 });
 
 // branch update by store admin
@@ -646,33 +670,44 @@ router.post(
   upload.single("logo"),
   async (req, res) => {
     try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-        req.flash('error', 'For demo purpose we disabled crud operations!!');
+      if (process.env.DISABLE_DB_WRITE === "true") {
+        req.flash("error", "For demo purpose we disabled crud operations!!");
         return res.redirect(req.get("Referrer") || "/");
       }
+
       const { id, roll, store, loginas } = req.user;
       if (loginas == 0) {
         req.flash("error", "Your Are Not Authorized For this");
         return res.redirect(req.get("Referrer") || "/");
       }
+
       const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
-  FROM tbl_staff_roll sr
-  JOIN tbl_roll r ON sr.main_roll_id = r.id
-  WHERE sr.id = ${roll}
-`);
+        SELECT 
+          sr.*, 
+          r.roll_status, 
+          r.rollType 
+        FROM tbl_staff_roll sr
+        JOIN tbl_roll r ON sr.main_roll_id = r.id
+        WHERE sr.id = ${roll}
+      `);
+
       let userStore = store;
-      if (!userStore || userStore === ' ' || userStore === '') {
-        const adminData = await DataFind(`SELECT store_ID FROM tbl_admin WHERE id = ${id}`);
+      if (!userStore || userStore === " " || userStore === "") {
+        const adminData = await DataFind(
+          `SELECT store_ID FROM tbl_admin WHERE id = ${id}`,
+        );
+
         if (adminData.length > 0) userStore = adminData[0].store_ID;
       }
 
-      const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === 'master';
-      const hasEdit = rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("edit");
-      const isStoreAuthorized = isMaster || (userStore == req.params.id && hasEdit);
+      const isMaster =
+        rolldetail.length > 0 && rolldetail[0].rollType === "master";
+      const hasEdit =
+        rolldetail.length > 0 &&
+        rolldetail[0].master &&
+        rolldetail[0].master.includes("edit");
+      const isStoreAuthorized =
+        isMaster || (userStore == req.params.id && hasEdit);
 
       if (isStoreAuthorized) {
         const dataid = req.params.id;
@@ -687,11 +722,15 @@ router.post(
             `logo='${logo}'`,
             `id=${dataid}`,
             req.hostname,
-            req.protocol
+            req.protocol,
           );
 
           if (logoUpdate === -1) {
-            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+            req.flash(
+              "error",
+              "Action failed, please check input and try again",
+            );
+            return res.redirect("back");
           }
         }
 
@@ -715,7 +754,7 @@ router.post(
         } = req.body;
 
         const OldDadta = await DataFind(
-          `SELECT * FROM tbl_store WHERE id=${dataid}`
+          `SELECT * FROM tbl_store WHERE id=${dataid}`,
         );
         let haspass = "";
 
@@ -736,48 +775,44 @@ router.post(
           `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${district}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}'`,
           `id=${dataid}`,
           req.hostname,
-          req.protocol
+          req.protocol,
         );
 
         if (storeUpdate === -1) {
-          req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+          req.flash("error", "Action failed, please check input and try again");
+          return res.redirect("back");
         }
 
-        if (walkincustome.length > 0) {
-          //       const dataupdate = await DataFind(
-          //         `UPDATE tbl_customer
-          //  SET name = '${walkincustome}'
-          //  WHERE store_ID = '${dataid}'`
-          //       );
-
+        if (walkincustome === "" || walkincustome.length > 0) {
           const customerUpdate = await DataUpdate(
             "tbl_customer",
             `name='${walkincustome}'`,
             `store_ID='${dataid}'`,
             req.hostname,
-            req.protocol
+            req.protocol,
           );
 
           if (customerUpdate === -1) {
-            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+            req.flash(
+              "error",
+              "Action failed, please check input and try again",
+            );
+            return res.redirect("back");
           }
         }
 
-        // const adminupdate =
-        //   await DataFind(`UPDATE tbl_admin SET name='${name}',number='${number}',
-        //     username='${username}',password='${haspass}',email='${store_email}' WHERE id=${adminid}`);
+        // const adminUpdate = await DataUpdate(
+        //   "tbl_admin",
+        //   `name='${name}', number='${number}', username='${username}', password='${haspass}', email='${store_email}'`,
+        //   `id=${adminid}`,
+        //   req.hostname,
+        //   req.protocol,
+        // );
 
-        const adminUpdate = await DataUpdate(
-          "tbl_admin",
-          `name='${name}', number='${number}', username='${username}', password='${haspass}', email='${store_email}'`,
-          `id=${adminid}`,
-          req.hostname,
-          req.protocol
-        );
-
-        if (adminUpdate === -1) {
-          req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
-        }
+        // if (adminUpdate === -1) {
+        //   req.flash("error", "Action failed, please check input and try again");
+        //   return res.redirect("back");
+        // }
 
         req.flash("success", "Store Details Updated!");
         res.redirect("back");
@@ -788,7 +823,7 @@ router.post(
     } catch (error) {
       console.log(error);
     }
-  }
+  },
 );
 
 // <<<< Branch shope list master only>>>>>>>
@@ -827,7 +862,7 @@ router.get("/storelist", auth, async (req, res) => {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
-  } catch (error) { }
+  } catch (error) {}
 });
 
 router.get("/storelist/data", auth, async (req, res) => {
@@ -835,12 +870,21 @@ router.get("/storelist/data", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
     if (loginas == 0) {
-      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
     }
 
     const filterConditions = [];
     const statusParam = req.query.status_filter || req.query.status;
-    if (statusParam !== undefined && statusParam !== null && !["all", "ALL", ""].includes(String(statusParam).trim())) {
+    if (
+      statusParam !== undefined &&
+      statusParam !== null &&
+      !["all", "ALL", ""].includes(String(statusParam).trim())
+    ) {
       const cleanStatus = String(statusParam).trim() === "1" ? "1" : "0";
       filterConditions.push(`tbl_store.status = '${cleanStatus}'`);
     }
@@ -849,28 +893,28 @@ router.get("/storelist/data", auth, async (req, res) => {
       select: `tbl_store.*`,
       from: `tbl_store`,
       searchColumns: [
-        'tbl_store.name',
-        'tbl_store.id',
-        'tbl_store.number',
-        'tbl_store.email',
-        'tbl_store.address'
+        "tbl_store.name",
+        "tbl_store.id",
+        "tbl_store.number",
+        "tbl_store.email",
+        "tbl_store.address",
       ],
-      baseWhere: ['tbl_store.delete_flage = 0'],
+      baseWhere: ["tbl_store.delete_flage = 0"],
       filterWhere: filterConditions,
-      defaultOrder: 'tbl_store.id DESC',
+      defaultOrder: "tbl_store.id DESC",
       columnMap: {
-        0: 'tbl_store.id',
-        1: 'tbl_store.name',
-        2: 'tbl_store.id',
-        3: 'tbl_store.status'
+        0: "tbl_store.id",
+        1: "tbl_store.name",
+        2: "tbl_store.id",
+        3: "tbl_store.status",
       },
       postProcess: async (rows) => {
         return rows.map((s) => ({
           id: s.id,
-          name: s.name || '',
-          status: parseInt(s.status) || 0
+          name: s.name || "",
+          status: parseInt(s.status) || 0,
         }));
-      }
+      },
     });
 
     return res.json(result);
@@ -883,8 +927,8 @@ router.get("/storelist/data", auth, async (req, res) => {
 // Delete store and cascade delete all related store data (master only)
 router.get("/deletestore/:id", auth, async (req, res) => {
   try {
-    if (process.env.DISABLE_DB_WRITE === 'true') {
-      req.flash('error', 'For demo purpose we disabled crud operations!!');
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/tool/storelist");
     }
 
@@ -904,7 +948,11 @@ router.get("/deletestore/:id", auth, async (req, res) => {
       WHERE sr.id = ${roll}
     `);
 
-    if (!rolldetail || rolldetail.length === 0 || rolldetail[0].rollType !== "master") {
+    if (
+      !rolldetail ||
+      rolldetail.length === 0 ||
+      rolldetail[0].rollType !== "master"
+    ) {
       req.flash("error", "You are not authorized for this action");
       return res.redirect(req.get("Referrer") || "/tool/storelist");
     }
@@ -915,25 +963,34 @@ router.get("/deletestore/:id", auth, async (req, res) => {
       return res.redirect("/tool/storelist");
     }
 
-    const existingStore = await DataFind(`SELECT * FROM tbl_store WHERE id = ${storeId}`);
+    const existingStore = await DataFind(
+      `SELECT * FROM tbl_store WHERE id = ${storeId}`,
+    );
     if (!existingStore || existingStore.length === 0) {
       req.flash("error", "Store not found or already deleted");
       return res.redirect("/tool/storelist");
     }
 
     // 1. Find all orders belonging to this store
-    const storeOrders = await DataFind(`SELECT id, service_list FROM tbl_order WHERE store_id = '${storeId}' OR transferred_from_store_id = '${storeId}'`);
+    const storeOrders = await DataFind(
+      `SELECT id, service_list FROM tbl_order WHERE store_id = '${storeId}' OR transferred_from_store_id = '${storeId}'`,
+    );
     if (storeOrders && storeOrders.length > 0) {
-      const orderIds = storeOrders.map(o => `'${o.id}'`).join(',');
+      const orderIds = storeOrders.map((o) => `'${o.id}'`).join(",");
 
       // Delete payments for these orders
-      await DataDelete('tbl_order_payment', `order_id IN (${orderIds})`, req.hostname, req.protocol);
+      await DataDelete(
+        "tbl_order_payment",
+        `order_id IN (${orderIds})`,
+        req.hostname,
+        req.protocol,
+      );
 
       // Collect service list item IDs from orders
       let cartServiceIds = [];
-      storeOrders.forEach(o => {
-        if (o.service_list && typeof o.service_list === 'string') {
-          o.service_list.split(',').forEach(sid => {
+      storeOrders.forEach((o) => {
+        if (o.service_list && typeof o.service_list === "string") {
+          o.service_list.split(",").forEach((sid) => {
             const trimmed = sid.trim();
             if (trimmed && !isNaN(trimmed)) {
               cartServiceIds.push(trimmed);
@@ -943,21 +1000,35 @@ router.get("/deletestore/:id", auth, async (req, res) => {
       });
 
       if (cartServiceIds.length > 0) {
-        const uniqueCartServiceIds = [...new Set(cartServiceIds)].map(id => `'${id}'`).join(',');
-        await DataDelete('tbl_cart_servicelist', `id IN (${uniqueCartServiceIds})`, req.hostname, req.protocol);
+        const uniqueCartServiceIds = [...new Set(cartServiceIds)]
+          .map((id) => `'${id}'`)
+          .join(",");
+        await DataDelete(
+          "tbl_cart_servicelist",
+          `id IN (${uniqueCartServiceIds})`,
+          req.hostname,
+          req.protocol,
+        );
       }
 
       // Delete orders
-      await DataDelete('tbl_order', `store_id = '${storeId}' OR transferred_from_store_id = '${storeId}'`, req.hostname, req.protocol);
+      await DataDelete(
+        "tbl_order",
+        `store_id = '${storeId}' OR transferred_from_store_id = '${storeId}'`,
+        req.hostname,
+        req.protocol,
+      );
     }
 
     // 2. Find carts belonging to this store
-    const storeCarts = await DataFind(`SELECT id, service_list_id FROM tbl_cart WHERE store_id = '${storeId}'`);
+    const storeCarts = await DataFind(
+      `SELECT id, service_list_id FROM tbl_cart WHERE store_id = '${storeId}'`,
+    );
     if (storeCarts && storeCarts.length > 0) {
       let cartServiceListIds = [];
-      storeCarts.forEach(c => {
-        if (c.service_list_id && typeof c.service_list_id === 'string') {
-          c.service_list_id.split(',').forEach(sid => {
+      storeCarts.forEach((c) => {
+        if (c.service_list_id && typeof c.service_list_id === "string") {
+          c.service_list_id.split(",").forEach((sid) => {
             const trimmed = sid.trim();
             if (trimmed && !isNaN(trimmed)) {
               cartServiceListIds.push(trimmed);
@@ -966,39 +1037,121 @@ router.get("/deletestore/:id", auth, async (req, res) => {
         }
       });
       if (cartServiceListIds.length > 0) {
-        const uniqueCartServiceListIds = [...new Set(cartServiceListIds)].map(id => `'${id}'`).join(',');
-        await DataDelete('tbl_cart_servicelist', `id IN (${uniqueCartServiceListIds})`, req.hostname, req.protocol);
+        const uniqueCartServiceListIds = [...new Set(cartServiceListIds)]
+          .map((id) => `'${id}'`)
+          .join(",");
+        await DataDelete(
+          "tbl_cart_servicelist",
+          `id IN (${uniqueCartServiceListIds})`,
+          req.hostname,
+          req.protocol,
+        );
       }
-      await DataDelete('tbl_cart', `store_id = '${storeId}'`, req.hostname, req.protocol);
+      await DataDelete(
+        "tbl_cart",
+        `store_id = '${storeId}'`,
+        req.hostname,
+        req.protocol,
+      );
     }
 
     // 3. Delete services and service types for this store
-    await DataDelete('tbl_services', `store_ID = '${storeId}'`, req.hostname, req.protocol);
-    await DataDelete('tbl_services_type', `store_ID = '${storeId}'`, req.hostname, req.protocol);
+    await DataDelete(
+      "tbl_services",
+      `store_ID = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    );
+    await DataDelete(
+      "tbl_services_type",
+      `store_ID = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    );
 
     // 4. Delete addons and coupons
-    await DataDelete('tbl_addons', `store_ID = '${storeId}'`, req.hostname, req.protocol);
-    await DataDelete('tbl_coupon', `store_list_id = '${storeId}'`, req.hostname, req.protocol);
+    await DataDelete(
+      "tbl_addons",
+      `store_ID = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    );
+    await DataDelete(
+      "tbl_coupon",
+      `store_list_id = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    );
 
     // 5. Delete expenses and expense categories
-    await DataDelete('tbl_expense', `store_ID = '${storeId}'`, req.hostname, req.protocol);
-    await DataDelete('tbl_exp_cat_type', `store_ID = '${storeId}'`, req.hostname, req.protocol);
-    await DataDelete('tbl_exp_cat', `store_ID = '${storeId}'`, req.hostname, req.protocol);
+    await DataDelete(
+      "tbl_expense",
+      `store_ID = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    );
+    await DataDelete(
+      "tbl_exp_cat_type",
+      `store_ID = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    );
+    await DataDelete(
+      "tbl_exp_cat",
+      `store_ID = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    );
 
     // 6. Delete transactions, accounts, commissions, emails
-    await DataDelete('tbl_transections', `store_ID = '${storeId}'`, req.hostname, req.protocol);
-    await DataDelete('tbl_account', `store_ID = '${storeId}'`, req.hostname, req.protocol);
-    await DataDelete('tbl_commision', `store_id = '${storeId}'`, req.hostname, req.protocol);
-    await DataDelete('tbl_email', `store_id = '${storeId}'`, req.hostname, req.protocol);
+    await DataDelete(
+      "tbl_transections",
+      `store_ID = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    );
+    await DataDelete(
+      "tbl_account",
+      `store_ID = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    );
+    await DataDelete(
+      "tbl_commision",
+      `store_id = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    );
+    await DataDelete(
+      "tbl_email",
+      `store_id = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    );
 
     // 7. Delete customers associated with this store
-    await DataDelete('tbl_customer', `store_ID = '${storeId}' OR reffstore = '${storeId}'`, req.hostname, req.protocol);
+    await DataDelete(
+      "tbl_customer",
+      `store_ID = '${storeId}' OR reffstore = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    );
 
     // 8. Delete admin/staff users assigned to this store
-    await DataDelete('tbl_admin', `store_ID = '${storeId}'`, req.hostname, req.protocol);
+    await DataDelete(
+      "tbl_admin",
+      `store_ID = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    );
 
     // 9. Delete the store record itself
-    await DataDelete('tbl_store', `id = '${storeId}'`, req.hostname, req.protocol);
+    await DataDelete(
+      "tbl_store",
+      `id = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    );
 
     req.flash("success", "Store and all related data deleted successfully");
     return res.redirect("/tool/storelist");
@@ -1030,13 +1183,13 @@ router.get("/approvedshop/:id", auth, async (req, res) => {
                                       `);
     if (rolldetail[0].rollType === "master") {
       var storedata = await DataFind(
-        `SELECT * FROM tbl_store WHERE id = ${req.params.id}`
+        `SELECT * FROM tbl_store WHERE id = ${req.params.id}`,
       );
 
       console.log("storedata", storedata);
 
       const rolldata = await DataFind(
-        "select * from tbl_roll where delet_flage = 0 "
+        "select * from tbl_roll where delet_flage = 0 ",
       );
       console.log("rolldata", rolldata);
 
@@ -1063,8 +1216,8 @@ router.post(
   upload.single("logo"),
   async (req, res) => {
     try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-        req.flash('error', 'For demo purpose we disabled crud operations!!');
+      if (process.env.DISABLE_DB_WRITE === "true") {
+        req.flash("error", "For demo purpose we disabled crud operations!!");
         return res.redirect(req.get("Referrer") || "/");
       }
       const { id, roll, store, loginas } = req.user;
@@ -1107,7 +1260,7 @@ router.post(
 
         console.log(req.file);
         let storefind = await DataFind(
-          `SELECT * FROM tbl_store WHERE id=${dataid}`
+          `SELECT * FROM tbl_store WHERE id=${dataid}`,
         );
         let imgFiled = storefind[0].logo;
         if (req.file) {
@@ -1115,7 +1268,7 @@ router.post(
         }
 
         let OldData = await DataFind(
-          `SELECT * FROM tbl_store   WHERE id=${dataid}`
+          `SELECT * FROM tbl_store   WHERE id=${dataid}`,
         );
         let haspass = "";
         if (password.length > 0) {
@@ -1135,14 +1288,15 @@ router.post(
           `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${district}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', status=${status}, roll_ID=${roll}, logo='${imgFiled}'`,
           `id=${dataid}`,
           req.hostname,
-          req.protocol
+          req.protocol,
         );
         if (storeUpdate === -1) {
-          req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+          req.flash("error", "Action failed, please check input and try again");
+          return res.redirect("back");
         }
 
         const adminid = await DataFind(
-          "SELECT admin_id FROM tbl_store WHERE id=" + dataid + ""
+          "SELECT admin_id FROM tbl_store WHERE id=" + dataid + "",
         );
 
         // const adminupdate =
@@ -1154,11 +1308,12 @@ router.post(
           `name='${name}', number='${number}', username='${username}', password='${haspass}', email='${store_email}'`,
           `id=${adminid[0].admin_id}`,
           req.hostname,
-          req.protocol
+          req.protocol,
         );
 
         if (adminUpdate === -1) {
-          req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+          req.flash("error", "Action failed, please check input and try again");
+          return res.redirect("back");
         }
 
         if (status == 1) {
@@ -1173,18 +1328,22 @@ router.post(
           // );
 
           let finalRollId = roll;
-          const existingStaffRoll = await DataFind(`SELECT id FROM tbl_staff_roll WHERE staff_id = '${adminid[0].admin_id}'`);
+          const existingStaffRoll = await DataFind(
+            `SELECT id FROM tbl_staff_roll WHERE staff_id = '${adminid[0].admin_id}'`,
+          );
           if (existingStaffRoll.length > 0) {
             finalRollId = existingStaffRoll[0].id;
           } else {
-            const RollFind = await DataFind(`SELECT * FROM tbl_roll WHERE id='${roll}'`);
+            const RollFind = await DataFind(
+              `SELECT * FROM tbl_roll WHERE id='${roll}'`,
+            );
             if (RollFind.length > 0) {
               const RollAdd = await DataInsert(
                 `tbl_staff_roll`,
                 `customers, orders, expense, service, reports, tools, mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id, is_staff`,
                 `'${RollFind[0].customers || "read,write,edit,delete"}', '${RollFind[0].orders || "read,write,edit,delete"}', '${RollFind[0].expense || "read,write,edit,delete"}', '${RollFind[0].service || "read,write,edit,delete"}', '${RollFind[0].reports || "read"}', '${RollFind[0].tools || "read"}', '${RollFind[0].mail || "read,edit"}', '${RollFind[0].master || "read,edit"}', '${RollFind[0].sms || "read,write,edit,delete"}', '${RollFind[0].staff || "read,write,edit,delete"}', '${RollFind[0].pos || "read,write,edit"}', '', '${RollFind[0].account || "read,write,edit,delete"}', '${RollFind[0].coupon || "read,write,edit,delete"}', '', '', '', '${RollFind[0].id}', '${adminid[0].admin_id}', '0'`,
                 req.hostname,
-                req.protocol
+                req.protocol,
               );
               if (RollAdd && RollAdd != -1) {
                 finalRollId = RollAdd.insertId;
@@ -1197,11 +1356,15 @@ router.post(
             `store_ID=${dataid}, roll_id=${finalRollId}, approved=1`,
             `id=${adminid[0].admin_id}`,
             req.hostname,
-            req.protocol
+            req.protocol,
           );
 
           if (adminDataUpdate1 === -1) {
-            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+            req.flash(
+              "error",
+              "Action failed, please check input and try again",
+            );
+            return res.redirect("back");
           }
         } else if (status == 2) {
           // const admndata = await DataFind(
@@ -1219,11 +1382,15 @@ router.post(
             `store_ID=${dataid}, approved=2`,
             `id=${adminid[0].admin_id} OR store_ID=${dataid}`,
             req.hostname,
-            req.protocol
+            req.protocol,
           );
 
           if (adminDataUpdate2 === -1) {
-            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+            req.flash(
+              "error",
+              "Action failed, please check input and try again",
+            );
+            return res.redirect("back");
           }
         }
 
@@ -1236,7 +1403,7 @@ router.post(
     } catch (error) {
       console.log(error);
     }
-  }
+  },
 );
 
 //add new shope by admin get master only
@@ -1259,7 +1426,7 @@ router.get("/addshop", auth, async (req, res) => {
   `);
     if (rolldetail[0].branch_n_store.includes("write")) {
       const rolldata = await DataFind(
-        "select * from tbl_roll where delet_flage =0 "
+        "select * from tbl_roll where delet_flage =0 ",
       );
       res.render("shop_add_admin", {
         rolldata,
@@ -1315,7 +1482,7 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
       } = req.body;
 
       const checkname = await DataFind(
-        "SELECT * FROM tbl_store WHERE name='" + name + "'"
+        "SELECT * FROM tbl_store WHERE name='" + name + "'",
       );
       if (checkname.length > 0) {
         req.flash("error", "This Store Name Alredy Register!!!!");
@@ -1323,7 +1490,7 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
       }
 
       const checknumber = await DataFind(
-        "SELECT * FROM tbl_store WHERE mobile_number='" + number + "'"
+        "SELECT * FROM tbl_store WHERE mobile_number='" + number + "'",
       );
       if (checknumber.length > 0) {
         req.flash("error", "This Number Alredy Register!!!!");
@@ -1331,7 +1498,7 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
       }
 
       const checkusername = await DataFind(
-        "SELECT * FROM tbl_store WHERE username='" + username + "'"
+        "SELECT * FROM tbl_store WHERE username='" + username + "'",
       );
       if (checkusername.length > 0) {
         req.flash("error", "This Username Alredy Register!!!!");
@@ -1339,7 +1506,7 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
       }
 
       const checkstore_email = await DataFind(
-        "SELECT * FROM tbl_store WHERE store_email='" + store_email + "'"
+        "SELECT * FROM tbl_store WHERE store_email='" + store_email + "'",
       );
       if (checkstore_email.length > 0) {
         req.flash("error", "This Email Alredy Register!!!!");
@@ -1372,11 +1539,12 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
         `name,number,email,username,password,img`,
         `'${name}','${number}','${store_email}','${username}','${hashpass}','${logo}'`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (admindata == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       var newid = admindata.insertId;
@@ -1393,15 +1561,16 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
         `'${name}','${logo}','${number}','${username}','${hashpass}',${commission},${taxpercent},'${country} ','${state}','${city}',' ${district}','${zip_code}','${store_email}',
         '${tax_number}','${address} ',${newid},${status},${rollid}`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (newstore == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       const RollFind = await DataFind(
-        `SELECT * FROM tbl_roll WHERE id='${rollid}'`
+        `SELECT * FROM tbl_roll WHERE id='${rollid}'`,
       );
 
       //   const RollAdd =
@@ -1417,11 +1586,12 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
                                          branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id,is_staff`,
         `'${RollFind[0].customers || RollFind[0].customer || "read,write,edit,delete"}', '${RollFind[0].orders}', '${RollFind[0].expense}', '${RollFind[0].service}', '${RollFind[0].reports}', '${RollFind[0].tools}', '${RollFind[0].mail}','${RollFind[0].master}', '${RollFind[0].sms}', '${RollFind[0].staff}', '${RollFind[0].pos}', '${RollFind[0].rollaccess}', '${RollFind[0].account}', '${RollFind[0].coupon || "read,write,edit,delete"}','${RollFind[0].branch_n_store}', '${RollFind[0].master_setting}', '${RollFind[0].Pay_Out}','${RollFind[0].id}','${newid}','0'`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (RollAdd == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       if (status == 1) {
@@ -1438,11 +1608,12 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
           `store_ID=${newstore.insertId}, roll_id=${RollAdd.insertId}, approved=1`,
           `id=${newid}`,
           req.hostname,
-          req.protocol
+          req.protocol,
         );
 
         if (adminUpdate1 === -1) {
-          req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+          req.flash("error", "Action failed, please check input and try again");
+          return res.redirect("back");
         }
       } else if (status == 2) {
         // const admndata = await DataFind(
@@ -1460,11 +1631,12 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
           `store_ID=${newstore.insertId}, approved=2`,
           `id=${newid} OR store_ID=${newstore.insertId}`,
           req.hostname,
-          req.protocol
+          req.protocol,
         );
 
         if (adminUpdate2 === -1) {
-          req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+          req.flash("error", "Action failed, please check input and try again");
+          return res.redirect("back");
         }
       }
 
@@ -1488,15 +1660,18 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
       const walkinCustomerInsert = await DataInsert(
         `tbl_customer`,
         `name, number, email, address, taxnumber,username, password, store_ID, reffstore, approved, delet_flage`,
-        `'${walkincustome.length > 0 ? walkincustome : "Walk In Customer"
-        }', NULL, NULL, NULL, NULL, NULL, NULL, ${newstore.insertId}, ${newstore.insertId
+        `'${
+          walkincustome.length > 0 ? walkincustome : "Walk In Customer"
+        }', NULL, NULL, NULL, NULL, NULL, NULL, ${newstore.insertId}, ${
+          newstore.insertId
         }, "1", 0`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (walkinCustomerInsert == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       req.flash("success", "New Shop Resiter success fully !!!!");
@@ -1541,7 +1716,7 @@ router.get("/staff", auth, async (req, res) => {
     ) {
       var ismulty = true;
       storeList = await DataFind(
-        "SELECT id, name FROM tbl_store WHERE status = 1 AND delete_flage = 0 ORDER BY name ASC"
+        "SELECT id, name FROM tbl_store WHERE status = 1 AND delete_flage = 0 ORDER BY name ASC",
       );
       var staffdata = await DataFind(`
         SELECT tbl_admin.*, tbl_store.name as store, tbl_roll.roll, tbl_roll.rollType, tbl_staff_roll.main_roll_id
@@ -1554,7 +1729,7 @@ router.get("/staff", auth, async (req, res) => {
       `);
 
       var rolldata = await DataFind(
-        "SELECT tbl_roll.* FROM tbl_roll WHERE delet_flage=0 AND roll_status ='active'"
+        "SELECT tbl_roll.* FROM tbl_roll WHERE delet_flage=0 AND roll_status ='active'",
       );
     } else if (
       rolldetail[0].rollType === "store" &&
@@ -1562,11 +1737,11 @@ router.get("/staff", auth, async (req, res) => {
     ) {
       var ismulty = false;
       storeList = await DataFind(
-        `SELECT id, name FROM tbl_store WHERE id = '${store}' AND status = 1 AND delete_flage = 0`
+        `SELECT id, name FROM tbl_store WHERE id = '${store}' AND status = 1 AND delete_flage = 0`,
       );
 
       var rolldata = await DataFind(
-        "SELECT * FROM tbl_roll WHERE delet_flage=0 AND roll_status ='active' AND rollType ='store'"
+        "SELECT * FROM tbl_roll WHERE delet_flage=0 AND roll_status ='active' AND rollType ='store'",
       );
     } else {
       req.flash("error", "Your Are Not Authorized For this");
@@ -1592,7 +1767,12 @@ router.get("/staff/data", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
     if (loginas == 0) {
-      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
     }
 
     const rolldetail = await DataFind(`
@@ -1604,33 +1784,68 @@ router.get("/staff/data", auth, async (req, res) => {
 
     let scopeConditions = [
       "tbl_admin.is_staff != '0'",
-      "tbl_admin.delet_flage = 0"
+      "tbl_admin.delet_flage = 0",
     ];
 
     let isMaster = false;
-    if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && rolldetail[0].staff && rolldetail[0].staff.includes("read")) {
+    if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].rollType === "master" &&
+      rolldetail[0].staff &&
+      rolldetail[0].staff.includes("read")
+    ) {
       isMaster = true;
-    } else if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "store" && rolldetail[0].staff && rolldetail[0].staff.includes("read")) {
+    } else if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].rollType === "store" &&
+      rolldetail[0].staff &&
+      rolldetail[0].staff.includes("read")
+    ) {
       scopeConditions.push(`tbl_admin.store_ID = '${store}'`);
     } else {
-      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
     }
 
     const filterConditions = [];
     const statusParam = req.query.status_filter || req.query.approved;
-    if (statusParam !== undefined && statusParam !== null && !["all", "ALL", ""].includes(String(statusParam).trim())) {
+    if (
+      statusParam !== undefined &&
+      statusParam !== null &&
+      !["all", "ALL", ""].includes(String(statusParam).trim())
+    ) {
       const cleanApproved = String(statusParam).trim() === "1" ? "1" : "0";
       filterConditions.push(`tbl_admin.approved = ${cleanApproved}`);
     }
 
     const storeParam = req.query.store_filter || req.query.store_id;
-    if (storeParam && isMaster && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+    if (
+      storeParam &&
+      isMaster &&
+      !["all", "ALL", "", "0"].includes(String(storeParam).trim())
+    ) {
       const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
       filterConditions.push(`tbl_admin.store_ID = '${cleanStore}'`);
     }
 
-    const canEdit = Boolean(accessdata && accessdata.roll && accessdata.roll.staff && accessdata.roll.staff.includes("edit"));
-    const canDelete = Boolean(accessdata && accessdata.roll && accessdata.roll.staff && accessdata.roll.staff.includes("delete"));
+    const canEdit = Boolean(
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.staff &&
+      accessdata.roll.staff.includes("edit"),
+    );
+    const canDelete = Boolean(
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.staff &&
+      accessdata.roll.staff.includes("delete"),
+    );
 
     const result = await paginateDataTable(req, {
       select: `tbl_admin.*, 
@@ -1643,42 +1858,42 @@ router.get("/staff/data", auth, async (req, res) => {
              LEFT JOIN tbl_staff_roll ON tbl_admin.roll_id = tbl_staff_roll.id
              LEFT JOIN tbl_roll ON tbl_staff_roll.main_roll_id = tbl_roll.id`,
       searchColumns: [
-        'tbl_admin.name',
-        'tbl_admin.number',
-        'tbl_admin.email',
-        'tbl_admin.username',
-        'tbl_store.name',
-        'tbl_roll.roll'
+        "tbl_admin.name",
+        "tbl_admin.number",
+        "tbl_admin.email",
+        "tbl_admin.username",
+        "tbl_store.name",
+        "tbl_roll.roll",
       ],
       baseWhere: scopeConditions,
       filterWhere: filterConditions,
-      defaultOrder: 'tbl_admin.id DESC',
+      defaultOrder: "tbl_admin.id DESC",
       columnMap: {
-        0: 'tbl_admin.id',
-        1: 'tbl_admin.name',
-        2: 'tbl_admin.number',
-        3: 'tbl_store.name',
-        4: 'tbl_admin.approved'
+        0: "tbl_admin.id",
+        1: "tbl_admin.name",
+        2: "tbl_admin.number",
+        3: "tbl_store.name",
+        4: "tbl_admin.approved",
       },
       postProcess: async (rows) => {
         return rows.map((s) => ({
           id: s.id,
-          name: s.name || '',
-          number: s.number || '',
-          email: s.email || '',
-          username: s.username || '',
-          password: s.password || '',
-          store_ID: s.store_ID || '',
-          store: s.store || 'Not Assigned',
-          roll: s.roll || '',
-          rollType: s.rollType || 'store',
-          roll_id: s.roll_id || '',
-          main_roll_id: s.main_roll_id || '',
-          approved: s.approved === 1 ? 1 : 0,
+          name: s.name || "",
+          number: s.number || "",
+          email: s.email || "",
+          username: s.username || "",
+          password: s.password || "",
+          store_ID: s.store_ID || "",
+          store: s.store || "Not Assigned",
+          roll: s.roll || "",
+          rollType: s.rollType || "store",
+          roll_id: s.roll_id || "",
+          main_roll_id: s.main_roll_id || "",
+          approved: s.approved === 1 || s.approved === '1' ? 1 : 0,
           canEdit,
-          canDelete
+          canDelete,
         }));
-      }
+      },
     });
 
     return res.json(result);
@@ -1690,8 +1905,8 @@ router.get("/staff/data", auth, async (req, res) => {
 
 router.get("/deletstaff/:id", auth, async (req, res) => {
   try {
-    if (process.env.DISABLE_DB_WRITE === 'true') {
-      req.flash('error', 'For demo purpose we disabled crud operations!!');
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/");
     }
     const { id, roll, store, loginas } = req.user;
@@ -1723,11 +1938,12 @@ router.get("/deletstaff/:id", auth, async (req, res) => {
         "delet_flage = 1, approved = 0",
         `id = ${dataid}`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (newroll === -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       req.flash("success", "Staff Deleted  !!!");
@@ -1743,8 +1959,8 @@ router.get("/deletstaff/:id", auth, async (req, res) => {
 
 router.post("/addstaff", auth, async (req, res) => {
   try {
-    if (process.env.DISABLE_DB_WRITE === 'true') {
-      req.flash('error', 'For demo purpose we disabled crud operations!!');
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/");
     }
     let { id, roll, store, loginas } = req.user;
@@ -1763,20 +1979,33 @@ router.post("/addstaff", auth, async (req, res) => {
 `);
 
     if (rolldetail[0].staff.includes("write")) {
-      var { name, number, email, username, password, roll_list, active, store_id } =
-        req.body;
+      var {
+        name,
+        number,
+        email,
+        username,
+        password,
+        roll_list,
+        active,
+        store_id,
+      } = req.body;
       active ? (active = 1) : (active = 0);
 
-      const assignedStore = (store_id !== undefined && store_id !== null && store_id !== '') ? store_id : (store || "");
+      const assignedStore =
+        store_id !== undefined && store_id !== null && store_id !== ""
+          ? store_id
+          : store || "";
 
       let roleTemplateId = roll_list;
       if (!roleTemplateId) {
-        const defaultRoll = await DataFind("SELECT id FROM tbl_roll WHERE delet_flage=0 AND roll_status='active' ORDER BY id ASC LIMIT 1");
+        const defaultRoll = await DataFind(
+          "SELECT id FROM tbl_roll WHERE delet_flage=0 AND roll_status='active' ORDER BY id ASC LIMIT 1",
+        );
         roleTemplateId = defaultRoll[0]?.id;
       }
 
       const RollFind = await DataFind(
-        `SELECT * FROM tbl_roll WHERE id = ${roleTemplateId}`
+        `SELECT * FROM tbl_roll WHERE id = ${roleTemplateId}`,
       );
 
       const salt = bcrypt.genSaltSync(10);
@@ -1787,11 +2016,12 @@ router.post("/addstaff", auth, async (req, res) => {
         `name,number,email,username,password,store_ID,roll_id,approved,is_staff`,
         `'${name}','${number}','${email}','${username}','${hashpass}','${assignedStore}','${""}',${active},'1'`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (newroll == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       //   const RollAdd =
@@ -1809,11 +2039,12 @@ router.post("/addstaff", auth, async (req, res) => {
         `'${RollFind[0].customer}', '${RollFind[0].orders}', '${RollFind[0].expense}', '${RollFind[0].service}', '${RollFind[0].reports}', '${RollFind[0].tools}', '${RollFind[0].mail}',
            '${RollFind[0].master}', '${RollFind[0].sms}', '${RollFind[0].staff}', '${RollFind[0].pos}', '${RollFind[0].rollaccess}', '${RollFind[0].account}', '${RollFind[0].coupon}','${RollFind[0].branch_n_store}', '${RollFind[0].master_setting}', '${RollFind[0].Pay_Out}','${RollFind[0].id}','${newroll.insertId}','1'`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (RollAdd == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       //  const updateRoll = await DataFind(`
@@ -1827,11 +2058,12 @@ router.post("/addstaff", auth, async (req, res) => {
         `roll_id = '${RollAdd.insertId}'`,
         `id = '${newroll.insertId}'`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (updateRoll === -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       req.flash("success", "New Staff Added !!!");
@@ -1847,8 +2079,8 @@ router.post("/addstaff", auth, async (req, res) => {
 
 router.post("/updatestaff/:id", auth, async (req, res) => {
   try {
-    if (process.env.DISABLE_DB_WRITE === 'true') {
-      req.flash('error', 'For demo purpose we disabled crud operations!!');
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/");
     }
     const { id, roll, store, loginas } = req.user;
@@ -1884,7 +2116,7 @@ router.post("/updatestaff/:id", auth, async (req, res) => {
       active_update ? (active_update = 1) : (active_update = 0);
 
       let OldData = await DataFind(
-        `SELECT * FROM tbl_admin WHERE id=${dataid}`
+        `SELECT * FROM tbl_admin WHERE id=${dataid}`,
       );
       let haspass = "";
 
@@ -1895,11 +2127,17 @@ router.post("/updatestaff/:id", auth, async (req, res) => {
         haspass = OldData[0].password;
       }
 
-      const assignedStore = (store_update !== undefined && store_update !== null && store_update !== '')
-        ? store_update
-        : (OldData[0].store_ID || "");
+      const assignedStore =
+        store_update !== undefined &&
+        store_update !== null &&
+        store_update !== ""
+          ? store_update
+          : OldData[0].store_ID || "";
 
-      const rollIdVal = (roll_list_update && roll_list_update !== '') ? roll_list_update : OldData[0].roll_id;
+      const rollIdVal =
+        roll_list_update && roll_list_update !== ""
+          ? roll_list_update
+          : OldData[0].roll_id;
 
       const newroll = await DataUpdate(
         "tbl_admin",
@@ -1907,11 +2145,12 @@ router.post("/updatestaff/:id", auth, async (req, res) => {
     password='${haspass}', roll_id='${rollIdVal}', store_ID='${assignedStore}', approved='${active_update}'`,
         `id=${dataid}`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (newroll === -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       req.flash("success", "Staff Updated !!!");
@@ -1929,13 +2168,13 @@ router.get("/rolllist/:id", auth, async (req, res) => {
   try {
     const staffid = req.params.id;
     const storeid = await DataFind(
-      "SELECT roll_id FROM tbl_admin WHERE id=" + staffid + ""
+      "SELECT roll_id FROM tbl_admin WHERE id=" + staffid + "",
     );
 
     console.log(storeid);
 
     const rolllist = await DataFind(
-      `SELECT tbl_roll.id, tbl_roll.roll ,tbl_roll.rollType FROM tbl_roll  WHERE delet_flage=0 AND roll_status='active' AND roll_id=${storeid[0].roll_id}`
+      `SELECT tbl_roll.id, tbl_roll.roll ,tbl_roll.rollType FROM tbl_roll  WHERE delet_flage=0 AND roll_status='active' AND roll_id=${storeid[0].roll_id}`,
     );
 
     res.status(200).json({ rolllist, storeid });
@@ -1964,14 +2203,14 @@ router.get("/setting", auth, async (req, res) => {
 `);
     if (rolldetail[0].rollType === "master") {
       const masterstore = await DataFind(
-        "SELECT * FROM tbl_master_shop where id=1"
+        "SELECT * FROM tbl_master_shop where id=1",
       );
       const roll = await DataFind(
-        "SELECT id, roll,rollType FROM tbl_roll WHERE rollType='master'"
+        "SELECT id, roll,rollType FROM tbl_roll WHERE rollType='master'",
       );
 
       const storeList = await DataFind(
-        "SELECT * FROM tbl_store WHERE delete_flage='0' AND  status='1'"
+        "SELECT * FROM tbl_store WHERE delete_flage='0' AND  status='1'",
       );
       console.log(masterstore);
 
@@ -2002,8 +2241,8 @@ router.post(
   ]),
   async (req, res) => {
     try {
-      if (process.env.DISABLE_DB_WRITE === 'true') {
-        req.flash('error', 'For demo purpose we disabled crud operations!!');
+      if (process.env.DISABLE_DB_WRITE === "true") {
+        req.flash("error", "For demo purpose we disabled crud operations!!");
         return res.redirect(req.get("Referrer") || "/");
       }
       const { id, roll, store, loginas } = req.user;
@@ -2069,16 +2308,38 @@ router.post(
           ? (Symbol_Placement = Symbol_Placement)
           : (Symbol_Placement = 0);
 
-        let invFormat = invoice_printer_format !== undefined ? parseInt(invoice_printer_format) : 1;
+        let invFormat =
+          invoice_printer_format !== undefined
+            ? parseInt(invoice_printer_format)
+            : 1;
         let invName = (invoice_printer_name || "").trim().replace(/'/g, "\\'");
-        let tagFormat = tag_printer_format !== undefined ? parseInt(tag_printer_format) : 0;
+        let tagFormat =
+          tag_printer_format !== undefined ? parseInt(tag_printer_format) : 0;
         let tagName = (tag_printer_name || "").trim().replace(/'/g, "\\'");
 
-        let printServerUrl = (printing_server_url || "http://127.0.0.1:4321").trim().replace(/'/g, "\\'");
-        let silentPrint = (silent_print_enabled == "1" || silent_print_enabled === 1 || silent_print_enabled === "on") ? 1 : 0;
-        let autoCut = (printer_auto_cut == "1" || printer_auto_cut === 1 || printer_auto_cut === "on") ? 1 : 0;
-        let cashDrawer = (printer_open_cash_drawer == "1" || printer_open_cash_drawer === 1 || printer_open_cash_drawer === "on") ? 1 : 0;
-        let copiesCount = printer_copies !== undefined ? (parseInt(printer_copies) || 1) : 1;
+        let printServerUrl = (printing_server_url || "http://127.0.0.1:4321")
+          .trim()
+          .replace(/'/g, "\\'");
+        let silentPrint =
+          silent_print_enabled == "1" ||
+          silent_print_enabled === 1 ||
+          silent_print_enabled === "on"
+            ? 1
+            : 0;
+        let autoCut =
+          printer_auto_cut == "1" ||
+          printer_auto_cut === 1 ||
+          printer_auto_cut === "on"
+            ? 1
+            : 0;
+        let cashDrawer =
+          printer_open_cash_drawer == "1" ||
+          printer_open_cash_drawer === 1 ||
+          printer_open_cash_drawer === "on"
+            ? 1
+            : 0;
+        let copiesCount =
+          printer_copies !== undefined ? parseInt(printer_copies) || 1 : 1;
 
         if (req.files.favicon) {
           console.log("favicon", req.files.favicon);
@@ -2092,11 +2353,15 @@ router.post(
             `app_favicon='${req.files.favicon[0].filename}'`,
             `1=1`,
             req.hostname,
-            req.protocol
+            req.protocol,
           );
 
           if (faviconUpdate === -1) {
-            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+            req.flash(
+              "error",
+              "Action failed, please check input and try again",
+            );
+            return res.redirect("back");
           }
         }
 
@@ -2112,11 +2377,15 @@ router.post(
             `app_logo='${req.files.logo[0].filename}'`,
             `1=1`,
             req.hostname,
-            req.protocol
+            req.protocol,
           );
 
           if (logoUpdate === -1) {
-            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+            req.flash(
+              "error",
+              "Action failed, please check input and try again",
+            );
+            return res.redirect("back");
           }
         }
         let isvalidmulty = await DataFind(`SELECT * FROM tbl_master_shop `);
@@ -2156,11 +2425,12 @@ router.post(
    printer_copies=${copiesCount}`,
           `1=1`,
           req.hostname,
-          req.protocol
+          req.protocol,
         );
 
         if (settingsUpdate === -1) {
-          req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+          req.flash("error", "Action failed, please check input and try again");
+          return res.redirect("back");
         }
 
         console.log("isvalidmulty", isvalidmulty[0].type);
@@ -2195,11 +2465,15 @@ router.post(
               "approved = 1",
               "store_ID != '' AND approved = 8",
               req.hostname,
-              req.protocol
+              req.protocol,
             );
 
             if (updateApprovedAdmins === -1) {
-              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+              req.flash(
+                "error",
+                "Action failed, please check input and try again",
+              );
+              return res.redirect("back");
             }
 
             const updateApprovedAdminsstaff = await DataUpdate(
@@ -2207,11 +2481,15 @@ router.post(
               "approved = 1",
               "store_ID = ' ' AND approved = 8",
               req.hostname,
-              req.protocol
+              req.protocol,
             );
 
             if (updateApprovedAdminsstaff === -1) {
-              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+              req.flash(
+                "error",
+                "Action failed, please check input and try again",
+              );
+              return res.redirect("back");
             }
 
             const updateCustomerRef = await DataUpdate(
@@ -2219,11 +2497,15 @@ router.post(
               "store_ID = reffstore, reffstore = ''",
               "1=1",
               req.hostname,
-              req.protocol
+              req.protocol,
             );
 
             if (updateCustomerRef === -1) {
-              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+              req.flash(
+                "error",
+                "Action failed, please check input and try again",
+              );
+              return res.redirect("back");
             }
 
             const setAdminStaff1 = await DataUpdate(
@@ -2231,11 +2513,15 @@ router.post(
               "is_staff = 1",
               "id = 1",
               req.hostname,
-              req.protocol
+              req.protocol,
             );
 
             if (setAdminStaff1 === -1) {
-              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+              req.flash(
+                "error",
+                "Action failed, please check input and try again",
+              );
+              return res.redirect("back");
             }
 
             const setAdminStaff0 = await DataUpdate(
@@ -2243,11 +2529,15 @@ router.post(
               "is_staff = 0",
               "id = 2",
               req.hostname,
-              req.protocol
+              req.protocol,
             );
 
             if (setAdminStaff0 === -1) {
-              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+              req.flash(
+                "error",
+                "Action failed, please check input and try again",
+              );
+              return res.redirect("back");
             }
 
             const clearAdminStoreId = await DataUpdate(
@@ -2255,11 +2545,15 @@ router.post(
               "store_ID = ''",
               `id = '${id}'`,
               req.hostname,
-              req.protocol
+              req.protocol,
             );
 
             if (clearAdminStoreId === -1) {
-              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+              req.flash(
+                "error",
+                "Action failed, please check input and try again",
+              );
+              return res.redirect("back");
             }
 
             const assignStoreToAdmin = await DataUpdate(
@@ -2267,11 +2561,15 @@ router.post(
               `store_ID = '${fromStore}'`,
               `store_ID = ' ' AND is_staff = '1'`,
               req.hostname,
-              req.protocol
+              req.protocol,
             );
 
             if (assignStoreToAdmin === -1) {
-              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+              req.flash(
+                "error",
+                "Action failed, please check input and try again",
+              );
+              return res.redirect("back");
             }
           } else {
             // var admintable = await DataFind(
@@ -2295,10 +2593,14 @@ router.post(
               "approved = 8",
               `store_ID = '' AND approved = 1`,
               req.hostname,
-              req.protocol
+              req.protocol,
             );
             if (updateApprovedAdmins === -1) {
-              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+              req.flash(
+                "error",
+                "Action failed, please check input and try again",
+              );
+              return res.redirect("back");
             }
 
             const updateCustomerStore = await DataUpdate(
@@ -2306,10 +2608,14 @@ router.post(
               `reffstore = store_ID, store_ID = '${fromStore}'`,
               "1=1",
               req.hostname,
-              req.protocol
+              req.protocol,
             );
             if (updateCustomerStore === -1) {
-              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+              req.flash(
+                "error",
+                "Action failed, please check input and try again",
+              );
+              return res.redirect("back");
             }
 
             const setAdmin1Staff0 = await DataUpdate(
@@ -2317,10 +2623,14 @@ router.post(
               "is_staff = 0",
               "id = 1",
               req.hostname,
-              req.protocol
+              req.protocol,
             );
             if (setAdmin1Staff0 === -1) {
-              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+              req.flash(
+                "error",
+                "Action failed, please check input and try again",
+              );
+              return res.redirect("back");
             }
 
             const setAdmin2Staff1 = await DataUpdate(
@@ -2328,10 +2638,14 @@ router.post(
               "is_staff = 1",
               "id = 2",
               req.hostname,
-              req.protocol
+              req.protocol,
             );
             if (setAdmin2Staff1 === -1) {
-              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+              req.flash(
+                "error",
+                "Action failed, please check input and try again",
+              );
+              return res.redirect("back");
             }
 
             const setStoreIdForAdmin = await DataUpdate(
@@ -2339,10 +2653,14 @@ router.post(
               `store_ID = '${fromStore}'`,
               `id = '${id}'`,
               req.hostname,
-              req.protocol
+              req.protocol,
             );
             if (setStoreIdForAdmin === -1) {
-              req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+              req.flash(
+                "error",
+                "Action failed, please check input and try again",
+              );
+              return res.redirect("back");
             }
           }
         } else if (
@@ -2354,12 +2672,16 @@ router.post(
             `store_ID = '${fromStore}'`,
             "1=1",
             req.hostname,
-            req.protocol
+            req.protocol,
           );
           console.log("updateCustomerStore", updateCustomerStore);
 
           if (updateCustomerStore === -1) {
-            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+            req.flash(
+              "error",
+              "Action failed, please check input and try again",
+            );
+            return res.redirect("back");
           }
 
           const updateadminStore = await DataUpdate(
@@ -2367,12 +2689,16 @@ router.post(
             `store_ID = '${fromStore}'`,
             `id = '${id}'`,
             req.hostname,
-            req.protocol
+            req.protocol,
           );
           console.log("updateadminStore", updateadminStore);
 
           if (updateadminStore === -1) {
-            req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+            req.flash(
+              "error",
+              "Action failed, please check input and try again",
+            );
+            return res.redirect("back");
           }
         }
 
@@ -2385,30 +2711,44 @@ router.post(
     } catch (error) {
       console.log(error);
     }
-  }
+  },
 );
 
 // <<<<<<<<<<<<<<<<<<< Test Print Endpoints >>>>>>>>>>>>>>>>>>
 router.get("/test-print-invoice", auth, async (req, res) => {
   try {
-    const masterstore = await DataFind("SELECT * FROM tbl_master_shop WHERE id=1");
+    const masterstore = await DataFind(
+      "SELECT * FROM tbl_master_shop WHERE id=1",
+    );
     const ms = masterstore[0] || {};
-    const format = req.query.format !== undefined ? parseInt(req.query.format) : (ms.invoice_printer_format || 1);
-    const printerName = req.query.printer || ms.invoice_printer_name || "Default Printer";
+    const format =
+      req.query.format !== undefined
+        ? parseInt(req.query.format)
+        : ms.invoice_printer_format || 1;
+    const printerName =
+      req.query.printer || ms.invoice_printer_name || "Default Printer";
     const symbol = ms.currency_symbol || "$";
 
-    const formatName = format === 0 ? "A4 Full Sheet" : format === 2 ? "58mm Thermal POS" : "80mm Thermal POS";
-    const widthStyle = format === 0 ? "max-width: 780px; margin: 20px auto; padding: 30px; font-family: 'Segoe UI', Tahoma, sans-serif;"
-      : format === 2 ? "width: 54mm; margin: 0 auto; padding: 8px 4px; font-family: monospace; font-size: 11px;"
-        : "width: 76mm; margin: 0 auto; padding: 12px 6px; font-family: monospace; font-size: 12px;";
+    const formatName =
+      format === 0
+        ? "A4 Full Sheet"
+        : format === 2
+          ? "58mm Thermal POS"
+          : "80mm Thermal POS";
+    const widthStyle =
+      format === 0
+        ? "max-width: 780px; margin: 20px auto; padding: 30px; font-family: 'Segoe UI', Tahoma, sans-serif;"
+        : format === 2
+          ? "width: 54mm; margin: 0 auto; padding: 8px 4px; font-family: monospace; font-size: 11px;"
+          : "width: 76mm; margin: 0 auto; padding: 12px 6px; font-family: monospace; font-size: 12px;";
 
     const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Test Invoice Print - ${ms.app_name || ''}</title>
+  <title>Test Invoice Print - ${ms.app_name || ""}</title>
   <style>
-    @page { margin: 2mm; size: ${format === 0 ? 'A4' : 'auto'}; }
+    @page { margin: 2mm; size: ${format === 0 ? "A4" : "auto"}; }
     body { margin: 0; padding: 0; background: #f8fafc; color: #0f172a; }
     .no-print-bar { background: #0081ee; color: #fff; padding: 10px 15px; font-family: sans-serif; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
     .no-print-bar button { background: #fff; color: #0081ee; border: none; padding: 6px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
@@ -2439,7 +2779,7 @@ router.get("/test-print-invoice", auth, async (req, res) => {
 
   <div class="print-sheet">
     <div class="center border-b">
-      <h2 style="margin: 4px 0;">${ms.app_name || ''}</h2>
+      <h2 style="margin: 4px 0;">${ms.app_name || ""}</h2>
       <div style="font-size: 0.9em;">Premium Garment Care & Laundry</div>
       <div style="font-size: 0.85em; color: #64748b;">123 Main Commercial Ave &bull; Tel: (555) 019-2834</div>
     </div>
@@ -2492,7 +2832,7 @@ router.get("/test-print-invoice", auth, async (req, res) => {
     <div class="center border-t" style="margin-top: 14px; font-size: 0.85em; color: #475569;">
       <div>*** SUCCESSFUL TEST RECEIPT ***</div>
       <div>Invoice Printer: ${formatName}</div>
-      <div style="margin-top: 6px;">Thank you for choosing ${ms.app_name || ''}!</div>
+      <div style="margin-top: 6px;">Thank you for choosing ${ms.app_name || ""}!</div>
     </div>
   </div>
 
@@ -2514,29 +2854,43 @@ router.get("/test-print-invoice", auth, async (req, res) => {
 
 router.get("/test-print-tag", auth, async (req, res) => {
   try {
-    const masterstore = await DataFind("SELECT * FROM tbl_master_shop WHERE id=1");
+    const masterstore = await DataFind(
+      "SELECT * FROM tbl_master_shop WHERE id=1",
+    );
     const ms = masterstore[0] || {};
-    const format = req.query.format !== undefined ? parseInt(req.query.format) : (ms.tag_printer_format || 0);
-    const printerName = req.query.printer || ms.tag_printer_name || "Default Tag Printer";
+    const format =
+      req.query.format !== undefined
+        ? parseInt(req.query.format)
+        : ms.tag_printer_format || 0;
+    const printerName =
+      req.query.printer || ms.tag_printer_name || "Default Tag Printer";
 
-    const formatName = format === 0 ? '2" × 1" (50×25mm) Barcode Label'
-      : format === 1 ? '3" × 2" (75×50mm) Garment Cloth Tag'
-        : format === 2 ? '80mm Continuous Tag Roll'
-          : 'A4 Sheet Multi-Stickers';
+    const formatName =
+      format === 0
+        ? '2" × 1" (50×25mm) Barcode Label'
+        : format === 1
+          ? '3" × 2" (75×50mm) Garment Cloth Tag'
+          : format === 2
+            ? "80mm Continuous Tag Roll"
+            : "A4 Sheet Multi-Stickers";
 
-    const widthStyle = format === 0 ? "width: 50mm; height: 25mm; padding: 2mm 3mm; font-size: 9px;"
-      : format === 1 ? "width: 75mm; height: 50mm; padding: 4mm 5mm; font-size: 11px;"
-        : format === 2 ? "width: 76mm; padding: 6mm 4mm; font-size: 11px;"
-          : "width: 100%; max-width: 750px; padding: 20px; font-size: 12px;";
+    const widthStyle =
+      format === 0
+        ? "width: 50mm; height: 25mm; padding: 2mm 3mm; font-size: 9px;"
+        : format === 1
+          ? "width: 75mm; height: 50mm; padding: 4mm 5mm; font-size: 11px;"
+          : format === 2
+            ? "width: 76mm; padding: 6mm 4mm; font-size: 11px;"
+            : "width: 100%; max-width: 750px; padding: 20px; font-size: 12px;";
 
     const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Test Tag Print - ${ms.app_name || ''}</title>
+  <title>Test Tag Print - ${ms.app_name || ""}</title>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <style>
-    @page { margin: 1mm; size: ${format === 3 ? 'A4' : 'auto'}; }
+    @page { margin: 1mm; size: ${format === 3 ? "A4" : "auto"}; }
     body { margin: 0; padding: 0; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; color: #000; }
     .no-print-bar { background: #0284c7; color: #fff; padding: 10px 15px; font-family: sans-serif; display: flex; justify-content: space-between; align-items: center; }
     .no-print-bar button { background: #fff; color: #0284c7; border: none; padding: 6px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
@@ -2545,7 +2899,7 @@ router.get("/test-print-tag", auth, async (req, res) => {
     .tag-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #000; padding-bottom: 2px; font-weight: bold; }
     .tag-body { margin-top: 2px; line-height: 1.25; }
     .barcode-wrap { text-align: center; margin: 2px 0; }
-    .barcode-svg { width: 100% !important; max-height: ${format === 0 ? '16px' : '26px'}; }
+    .barcode-svg { width: 100% !important; max-height: ${format === 0 ? "16px" : "26px"}; }
     @media print {
       .no-print-bar { display: none !important; }
       body { background: #fff !important; }
@@ -2566,23 +2920,25 @@ router.get("/test-print-tag", auth, async (req, res) => {
   <div class="tag-container">
     <div class="garment-tag">
       <div class="tag-header">
-        <span>${ms.app_name || ''}</span>
+        <span>${ms.app_name || ""}</span>
         <span>#ORD0392 [1/2]</span>
       </div>
       <div class="tag-body">
         <div><strong>Cust:</strong> Watson (17899888455)</div>
         <div><strong>Item:</strong> Men Silk Shirt &bull; <em>Dry Clean</em></div>
-        ${format !== 0 ? '<div><strong>Deliv:</strong> ' + new Date().toLocaleDateString() + ' (Express)</div>' : ''}
+        ${format !== 0 ? "<div><strong>Deliv:</strong> " + new Date().toLocaleDateString() + " (Express)</div>" : ""}
       </div>
       <div class="barcode-wrap">
         <svg id="barcode1" class="barcode-svg"></svg>
       </div>
     </div>
 
-    ${format === 2 ? `
+    ${
+      format === 2
+        ? `
     <div class="garment-tag">
       <div class="tag-header">
-        <span>${ms.app_name || ''}</span>
+        <span>${ms.app_name || ""}</span>
         <span>#ORD0392 [2/2]</span>
       </div>
       <div class="tag-body">
@@ -2592,7 +2948,9 @@ router.get("/test-print-tag", auth, async (req, res) => {
       <div class="barcode-wrap">
         <svg id="barcode2" class="barcode-svg"></svg>
       </div>
-    </div>` : ''}
+    </div>`
+        : ""
+    }
   </div>
 
   <script>
@@ -2647,7 +3005,7 @@ router.get("/mail", auth, async (req, res) => {
 `);
     if (accessdata.mutibranch == false || rolldetail[0].mail.includes("read")) {
       var data = await DataFind(
-        "SELECT * FROM tbl_email WHERE store_id=" + store + ""
+        "SELECT * FROM tbl_email WHERE store_id=" + store + "",
       );
       res.render("mailsetting", {
         accessdata,
@@ -2663,15 +3021,15 @@ router.get("/mail", auth, async (req, res) => {
 
 router.post("/mailsetting", auth, async (req, res) => {
   try {
-    if (process.env.DISABLE_DB_WRITE === 'true') {
-      req.flash('error', 'For demo purpose we disabled crud operations!!');
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/");
     }
     const { id, roll, store, loginas } = req.user;
     const { host, port, username, password, frommail, status } = req.body;
 
     var data = await DataFind(
-      "SELECT * FROM tbl_email WHERE store_id=" + store + ""
+      "SELECT * FROM tbl_email WHERE store_id=" + store + "",
     );
 
     if (data.length > 0) {
@@ -2684,11 +3042,12 @@ router.post("/mailsetting", auth, async (req, res) => {
         `host='${host}', port='${port}', username='${username}', password='${password}', frommail='${frommail}', status='${status}'`,
         `store_id=${store}`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (updateEmailSettings === -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
     } else {
       // await DataFind(
@@ -2700,11 +3059,12 @@ router.post("/mailsetting", auth, async (req, res) => {
         `host,port,username,password,frommail,status, store_id`,
         `'${host}','${port}','${username}','${password}','${frommail}','${status}',${store}`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (email == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
     }
 
@@ -2716,8 +3076,8 @@ router.post("/mailsetting", auth, async (req, res) => {
 });
 
 router.post("/rollstatus/:id", auth, async (req, res) => {
-  if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
+  if (process.env.DISABLE_DB_WRITE === "true") {
+    req.flash("error", "For demo purpose we disabled crud operations!!");
     return res.redirect(req.get("Referrer") || "/");
   }
   console.log("req.body", req.body.status);
@@ -2735,17 +3095,18 @@ router.post("/rollstatus/:id", auth, async (req, res) => {
     `roll_status='${status}'`,
     `id='${req.params.id}'`,
     req.hostname,
-    req.protocol
+    req.protocol,
   );
 
   if (updateRollStatus === -1) {
-    req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+    req.flash("error", "Action failed, please check input and try again");
+    return res.redirect("back");
   }
 });
 
 router.post("/storestatus/:id", auth, async (req, res) => {
-  if (process.env.DISABLE_DB_WRITE === 'true') {
-    req.flash('error', 'For demo purpose we disabled crud operations!!');
+  if (process.env.DISABLE_DB_WRITE === "true") {
+    req.flash("error", "For demo purpose we disabled crud operations!!");
     return res.redirect(req.get("Referrer") || "/");
   }
   console.log("req.body", req.body.status);
@@ -2766,11 +3127,12 @@ router.post("/storestatus/:id", auth, async (req, res) => {
     `approved='${status}'`,
     `store_ID='${req.params.id}'`,
     req.hostname,
-    req.protocol
+    req.protocol,
   );
 
   if (updateAdmin === -1) {
-    req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+    req.flash("error", "Action failed, please check input and try again");
+    return res.redirect("back");
   }
 
   const updateStore = await DataUpdate(
@@ -2778,19 +3140,20 @@ router.post("/storestatus/:id", auth, async (req, res) => {
     `status='${status}'`,
     `id='${req.params.id}'`,
     req.hostname,
-    req.protocol
+    req.protocol,
   );
 
   if (updateStore === -1) {
-    req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+    req.flash("error", "Action failed, please check input and try again");
+    return res.redirect("back");
   }
 });
 
 router.post("/rollUp/:id", async (req, res) => {
   try {
     console.log("body", req.body);
-    if (process.env.DISABLE_DB_WRITE === 'true') {
-      req.flash('error', 'For demo purpose we disabled crud operations!!');
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/");
     }
     var {
@@ -2891,7 +3254,7 @@ router.post("/rollUp/:id", async (req, res) => {
       : (account = "");
 
     const findroll = await DataFind(
-      `SELECT * FROM tbl_staff_roll WHERE id='${req.params.id}'`
+      `SELECT * FROM tbl_staff_roll WHERE id='${req.params.id}'`,
     );
     console.log("findroll", findroll);
     console.log("req.body", req.body);
@@ -2946,18 +3309,19 @@ router.post("/rollUp/:id", async (req, res) => {
         rollUpdateFields,
         `id = '${req.params.id}'`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (newroll === -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       req.flash("success", "Your Roll Updated !");
       res.redirect("back");
     } else {
       const findtype = await DataFind(
-        `SELECT * FROM tbl_roll WHERE rollType='${rollType}'`
+        `SELECT * FROM tbl_roll WHERE rollType='${rollType}'`,
       );
 
       //   var qury = `INSERT INTO tbl_staff_roll (customers, orders, expense, service, reports, tools, mail,
@@ -2977,11 +3341,12 @@ router.post("/rollUp/:id", async (req, res) => {
          '${master}', '${sms}', '${staff}', '${pos}', '${rollaccess}', '${account}', '${coupon}',
          '${branch_n_store}', '${master_setting}', '${Pay_Out}','${findtype[0].id}','${req.params.id}'`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (newroll == -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       // const insertdata = await DataFind(
@@ -2993,11 +3358,12 @@ router.post("/rollUp/:id", async (req, res) => {
         `roll_id = '${newroll.insertId}'`,
         `id = '${req.params.id}'`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
 
       if (updateRollId === -1) {
-        req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+        req.flash("error", "Action failed, please check input and try again");
+        return res.redirect("back");
       }
 
       req.flash("success", "New Roll Added !");
@@ -3014,7 +3380,7 @@ router.get("/rolldetailstaff/:id", async (req, res) => {
     console.log("req.params.id", req.params.id);
 
     const newroll = await DataFind(
-      "SELECT * FROM tbl_staff_roll WHERE id=" + id + " "
+      "SELECT * FROM tbl_staff_roll WHERE id=" + id + " ",
     );
     console.log(newroll);
 
@@ -3028,13 +3394,13 @@ router.get("/staffroll/:id", auth, async (req, res) => {
   try {
     const staffid = req.params.id;
     const storeid = await DataFind(
-      "SELECT roll_id FROM tbl_admin WHERE id=" + staffid + ""
+      "SELECT roll_id FROM tbl_admin WHERE id=" + staffid + "",
     );
 
     console.log(storeid);
 
     const rolllist = await DataFind(
-      `SELECT tbl_roll.id, tbl_roll.roll ,tbl_roll.rollType FROM tbl_roll  WHERE delet_flage=0 AND roll_status='active' AND roll_id=${storeid[0].roll_id}`
+      `SELECT tbl_roll.id, tbl_roll.roll ,tbl_roll.rollType FROM tbl_roll  WHERE delet_flage=0 AND roll_status='active' AND roll_id=${storeid[0].roll_id}`,
     );
 
     res.status(200).json({ rolllist, storeid });
@@ -3045,29 +3411,29 @@ router.get("/staffroll/:id", auth, async (req, res) => {
 
 router.post("/staffroll/:id", auth, async (req, res) => {
   try {
-    console.log("req.body", req.body.status);
-    console.log("req.params.id", req.params.id);
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      return res.status(403).json({ success: false, message: "For demo purpose we disabled crud operations!!" });
+    }
 
-    let status = req.body.status === "active" ? "1" : "0";
-    console.log(status);
-
-    // await DataFind(
-    //   `UPDATE tbl_admin SET approved='${status}' WHERE id='${req.params.id}'`
-    // );
+    const rawStatus = req.body.status;
+    const status = (rawStatus === "active" || rawStatus === "1" || rawStatus === 1 || rawStatus === true) ? "1" : "0";
 
     const updateAdminStatus = await DataUpdate(
       "tbl_admin",
       `approved = '${status}'`,
       `id = '${req.params.id}'`,
       req.hostname,
-      req.protocol
+      req.protocol,
     );
 
     if (updateAdminStatus === -1) {
-      req.flash("error", "Action failed, please check input and try again"); return res.redirect("back");
+      return res.status(400).json({ success: false, message: "Action failed, please check input and try again" });
     }
+
+    return res.status(200).json({ success: true, status });
   } catch (error) {
-    console.log(error);
+    console.error("Error updating staff status:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
 
@@ -3114,7 +3480,7 @@ router.post("/download", auth, async (req, res) => {
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   res.setHeader(
     "Content-Type",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   );
   res.send(buffer);
 });

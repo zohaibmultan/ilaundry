@@ -15,6 +15,18 @@
 
         <div class="content-body">
             <div class="container-fluid" style="min-height: 100vh;">
+                <%
+                    const isMasterUser = (accessdata?.logas === 'master' || (accessdata?.roll && accessdata.roll.rollType === 'master'));
+                    const isStaffUser = accessdata?.topbardata?.is_staff != 0;
+                    const accountPermissions = (accessdata?.roll?.account || '');
+
+                    // Master user: ALWAYS show edit and delete
+                    // Staff user: ONLY show edit and delete if staff has permission
+                    // Store user: has store manager access
+                    const finalCanEdit = isMasterUser || (isStaffUser ? accountPermissions.includes('edit') : (typeof canEdit !== 'undefined' ? canEdit : true));
+                    const finalCanDelete = isMasterUser || (isStaffUser ? accountPermissions.includes('delete') : (typeof canDelete !== 'undefined' ? canDelete : true));
+                    const finalCanWrite = isMasterUser || (isStaffUser ? accountPermissions.includes('write') : (typeof canWrite !== 'undefined' ? canWrite : true));
+                %>
                 <div class="row">
                     <div class="d-none">
                         <input type="hiden" name="sym" value="<%= accessdata?.symbol %>">
@@ -82,13 +94,15 @@
                                     </h3>
                                     <small class="text-muted"><%= language.Account_List_Subtitle || 'Manage financial store accounts, balances, and payment methods' %></small>
                                 </div>
+                                <% if (finalCanWrite) { %>
                                 <div>
                                     <button   
-                                        class="btn btn-sm btn-primary <%= canWrite ? '' : 'd-none' %>"
+                                        class="btn btn-sm btn-primary"
                                         data-bs-toggle="modal" data-bs-target="#account_add">
                                         <i class="fa fa-plus me-2"></i><%= language.Add_New_Account %>
                                     </button>
                                 </div>
+                                <% } %>
                             </div>
 
                             <div class="card-body p-4">
@@ -104,10 +118,11 @@
                                                 <th scope="col">
                                                     <%= language.Balance_Info %>
                                                 </th>
-                                                <th scope="col"
-                                                    class="text-center <%= (canEdit || canDelete) ? '' : 'd-none' %>">
+                                                <% if (finalCanEdit || finalCanDelete) { %>
+                                                <th scope="col" class="text-center">
                                                     <%= language.Action %>
                                                 </th>
+                                                <% } %>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -153,24 +168,36 @@
                                                             </b>
                                                         </div>
                                                     </td>
+                                                    <% if (finalCanEdit || finalCanDelete) { %>
                                                     <td class="text-center">
                                                         <div class="tbl-action-group">
+                                                            <% if (finalCanEdit) { %>
                                                             <a href="#"
-                                                                class="btn-tbl-action btn-tbl-edit update_Account <%= canEdit ? '' : 'd-none' %>"
-                                                                data-bs-toggle="modal" id="update_Account"
+                                                                class="btn-tbl-action btn-tbl-edit update_Account"
+                                                                data-bs-toggle="modal"
                                                                 data-bs-target="#account_update" data-id="<%= data.id %>"
                                                                 data-titel="<%= data.ac_name %>"
                                                                 data-number="<%= data.ac_number %>"
                                                                 data-descrip="<%= data.ac_decrip %>"
                                                                 title="<%= language.Edit || 'Edit' %>">
                                                                 <i class="fas fa-pencil-alt"></i></a>
+                                                            <% } %>
 
-                                                            <a href="/account/deletaccount/<%=data.id %>"
-                                                                class="btn-tbl-action btn-tbl-delete <%= canDelete ? '' : 'd-none' %>"
+                                                            <% if (finalCanDelete) { %>
+                                                            <button type="button"
+                                                                class="btn-tbl-action btn-tbl-delete btn-delete-account"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#deleteAccountModal"
+                                                                data-id="<%= data.id %>"
+                                                                data-name="<%= data.ac_name %>"
+                                                                data-number="<%= data.ac_number %>"
                                                                 title="<%= language.Delete || 'Delete' %>">
-                                                                <i class="fa fa-trash"></i></a>
+                                                                <i class="fa fa-trash"></i>
+                                                            </button>
+                                                            <% } %>
                                                         </div>   
                                                     </td>
+                                                    <% } %>
                                                 </tr>
 
 
@@ -293,6 +320,7 @@
             </div>
         </div>
         <!-- Modal update -->
+        <% if (finalCanEdit) { %>
         <div class="modal fade" id="account_update">
             <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
                 <div class="modal-content">
@@ -340,7 +368,9 @@
                 </div>
             </div>
         </div>
+        <% } %>
         <!-- Modal add -->
+        <% if (finalCanWrite) { %>
         <div class="modal fade" id="account_add">
             <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
                 <div class="modal-content">
@@ -411,7 +441,36 @@
                 </div>
             </div>
         </div>
+        <% } %>
+
+        <!-- Modal delete confirm -->
+        <% if (finalCanDelete) { %>
+        <div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+                <div class="modal-content text-center p-3" style="border-radius: 16px;">
+                    <div class="modal-body pt-4">
+                        <div class="mb-3">
+                            <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; justify-content: center; color: #ef4444; font-size: 28px;">
+                                <i class="fa fa-trash-alt"></i>
+                            </div>
+                        </div>
+                        <h4 class="mb-2 fw-bold text-dark"><%= language.Delete_Account || language.Delete || 'Delete Account' %></h4>
+                        <p class="text-muted mb-1"><%= language.Are_you_sure_delete || 'Are you sure you want to delete this account?' %></p>
+                        <p class="fw-bold text-danger fs-5 mb-3" id="deleteAccountModalTitle"></p>
+                        <p class="text-xs text-muted mb-4"><%= language.Action_cannot_be_undone || 'This action cannot be undone.' %></p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+                            </button>
+                            <a href="#" id="deleteAccountConfirmBtn" class="btn btn-danger">
+                                <i class="fa fa-trash me-2"></i><%= language.Delete || 'Yes, Delete' %>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+        <% } %>
         <!--********************************** Footer start***********************************-->
         <%- include('templet/footer')-%>
 
@@ -466,6 +525,17 @@
       e.preventDefault(); 
     }
   });
+  });
+
+  // Populate Delete Modal
+  $(document).on('click', '.btn-delete-account', function () {
+    const id = $(this).attr('data-id');
+    const name = $(this).attr('data-name') || '';
+    const number = $(this).attr('data-number') || '';
+    const displayTitle = name + (number ? ' (' + number + ')' : '');
+
+    $('#deleteAccountModalTitle').text(displayTitle || ('#' + id));
+    $('#deleteAccountConfirmBtn').attr('href', '/account/deletaccount/' + id);
   });
 </script>
 </body>

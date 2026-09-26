@@ -96,19 +96,35 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            <%= language.Coustomer_Detail %>
+                            <%= language.Edit_Expence_Category_Type || 'Edit Expense Category Type' %> 
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <form action="" id="editexpcattype_form" method="post" class="need-validation">
 
+                            <div class="col-md-12 mb-3 <%= ismulty ? '': 'd-none' %>">
+                                <div class="form-group">
+                                    <label class="form-label"><strong>
+                                            <%= language.Store_List %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <select class="form-control wide mb-3" name="storeid" id="edit_expcattype_storeid">
+                                        <option value="" selected disabled> Select Store </option>
+                                        <% storeList.forEach(function(x){ %>
+                                            <option value="<%= x.id %>">
+                                                <%= x.name %>
+                                            </option>
+                                            <% }) %>
+                                    </select>
+                                </div>
+                            </div>
+
                             <div class="row g-1 align-items-center">
                                 <div class="form-group">
                                     <label><strong>
                                             <%= language.Type_Name %>
                                         </strong></label>
-                                    <input type="text" class="form-control" id="name" name="name" required>
+                                    <input type="text" class="form-control" id="edit_category_type_name" name="name" required>
                                 </div>
                             </div>
                     </div>
@@ -187,6 +203,33 @@
 
         </div>
 
+        <!-- Modal delete confirm -->
+        <div class="modal fade" id="deleteExpCatTypeModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+                <div class="modal-content text-center p-3" style="border-radius: 16px;">
+                    <div class="modal-body pt-4">
+                        <div class="mb-3">
+                            <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; justify-content: center; color: #ef4444; font-size: 28px;">
+                                <i class="fa fa-trash-alt"></i>
+                            </div>
+                        </div>
+                        <h4 class="mb-2 fw-bold text-dark"><%= language.Delete_Expence_Category_Type || 'Delete Category Type' %></h4>
+                        <p class="text-muted mb-1"><%= language.Are_you_sure_delete || 'Are you sure you want to delete this expense category type?' %></p>
+                        <p class="fw-bold text-danger fs-5 mb-3" id="deleteExpCatTypeModalTitle"></p>
+                        <p class="text-xs text-muted mb-4"><%= language.Action_cannot_be_undone || 'This action cannot be undone.' %></p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+                            </button>
+                            <a href="#" id="deleteExpCatTypeConfirmBtn" class="btn btn-danger">
+                                <i class="fa fa-trash me-2"></i><%= language.Delete || 'Yes, Delete' %>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
         <!--**********************************
             Footer start
@@ -245,22 +288,26 @@
                                 className: 'text-center',
                                 render: function(data, type, row) {
                                     const editBtn = row.canEdit ? `
-                                        <a href="#" class="btn-tbl-action btn-tbl-edit" 
+                                        <a href="#" class="btn-tbl-action btn-tbl-edit btn-edit-cattype" 
                                            id="action" data-bs-toggle="modal"
                                            data-bs-target="#editexpcattype"
                                            data-name="${escapeHtml(row.type_name)}" 
+                                           data-storeid="${row.store_id || ''}"
                                            data-id="${row.id}"
                                            title="<%= language.Edit || 'Edit' %>">
                                             <i class="fas fa-pencil-alt"></i>
                                         </a>` : '';
 
                                     const deleteBtn = row.canDelete ? `
-                                        <a href="/expense/deletcategorytype/${row.id}" 
-                                           class="btn-tbl-action btn-tbl-delete" 
-                                           id="delete"
-                                           title="<%= language.Delete || 'Delete' %>">
+                                        <button type="button"
+                                            class="btn-tbl-action btn-tbl-delete btn-delete-cattype" 
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteExpCatTypeModal"
+                                            data-id="${row.id}"
+                                            data-name="${escapeHtml(row.type_name)}"
+                                            title="<%= language.Delete || 'Delete' %>">
                                             <i class="fa fa-trash"></i>
-                                        </a>` : '';
+                                        </button>` : '';
 
                                     return `<div class="tbl-action-group">${editBtn}${deleteBtn}</div>`;
                                 }
@@ -281,6 +328,30 @@
                             }
                         });
 
+                        // Populate Edit Modal
+                        $(document).on('click', '.btn-edit-cattype', function () {
+                            const id = $(this).attr('data-id');
+                            const cleanId = String(id).replace(/['"]/g, '').trim();
+                            const name = $(this).attr('data-name') || '';
+                            const storeId = $(this).attr('data-storeid') || '';
+
+                            $('#editexpcattype_form').attr('action', '/expense/updatecategorytype/' + cleanId);
+                            $('#edit_category_type_name').val(name);
+                            if ($('#edit_expcattype_storeid').length) {
+                                $('#edit_expcattype_storeid').val(storeId).trigger('change');
+                            }
+                        });
+
+                        // Populate Delete Modal
+                        $(document).on('click', '.btn-delete-cattype', function () {
+                            const id = $(this).attr('data-id');
+                            const cleanId = String(id).replace(/['"]/g, '').trim();
+                            const name = $(this).attr('data-name') || '';
+
+                            $('#deleteExpCatTypeModalTitle').text(name || ('#' + cleanId));
+                            $('#deleteExpCatTypeConfirmBtn').attr('href', '/expense/deletcategorytype/' + cleanId);
+                        });
+
                         $('#addexpcattype').on('shown.bs.modal', function () {
                             $('#coupon_storlist_update').select2({
                                 dropdownParent: $('#addexpcattype'),
@@ -288,6 +359,16 @@
                                 width: '100%',
                                 allowClear: true
                             });
+                        });
+
+                        $('#editexpcattype').on('shown.bs.modal', function () {
+                            if ($('#edit_expcattype_storeid').length) {
+                                $('#edit_expcattype_storeid').select2({
+                                    dropdownParent: $('#editexpcattype'),
+                                    placeholder: 'Select Store',
+                                    width: '100%'
+                                });
+                            }
                         });
                     });
                 </script>

@@ -72,3 +72,44 @@ This document establishes the universal rules and constraints for the **iLaundry
 4. **Thermal Printer Exemption**:
    * Physical printer media queries and page dimensions (`@page { size: 80mm auto; margin: 0; }`) for 80mm / 58mm thermal receipts and 75mm / 50mm garment wash tags are exempt from this restriction.
 
+### G. Express Route Response Guarantee (Critical)
+1. **Never leave any route branch without an explicit HTTP response**:
+   * Every Express route handler (`router.get`, `router.post`, etc.) must return a response (`res.json(...)`, `res.redirect(...)`, or `res.status(...).send(...)`) across **all** code paths—including success blocks, validation failures, demo write checks, and `catch` blocks.
+   * ❌ Leaving an async route handler to finish without calling a response method causes client AJAX requests to hang indefinitely until browser timeout.
+2. For AJAX/API endpoints (such as status switches or JSON lookups):
+   * Always respond with JSON: `return res.status(200).json({ success: true, ... });`.
+   * On error or unauthorized state: `return res.status(400|403|500).json({ success: false, message: ... });`.
+
+### H. MySQL Boolean & Status Flag Typing Invariant
+1. In the iLaundry database schema, boolean flags (e.g. `approved`, `active`, `delet_flage`, `roll_status`) are frequently stored as `VARCHAR` strings (`'1'` / `'0'`).
+2. **Never use strict integer equality (`=== 1`) on database status fields**:
+   * ❌ `if (data === 1)` (Fails silently when `data` is string `'1'`).
+   * ✅ `if (String(data) === '1')` or `if (Number(data) === 1)` or `if (data == 1)`.
+3. In inline toggle switches:
+   * Read the direct DOM state (`this.checked`) instead of calculating toggled states from rendered data parameters.
+   * Normalize backend inputs:
+     ```javascript
+     const status = (raw === 'active' || raw === '1' || raw === 1 || raw === true) ? '1' : '0';
+     ```
+
+### I. DataTables Dynamic Modal Actions & Submission Guard
+1. **No Duplicate IDs on Row Elements**:
+   * Action buttons rendered per row inside DataTables must use CSS classes (`.btn-staff-edit`, `.btn-manage-role`, `.btn-delete`), **never** repeated `id="..."` attributes.
+2. **Dual-Binding Modal Population**:
+   * Bind modal population to both row button click AND Bootstrap's `show.bs.modal` event (`e.relatedTarget`) to guarantee fields and dynamic form `action` URLs are assigned regardless of how the modal is triggered.
+3. **Property vs. Attribute Invariant**:
+   * Always use `.prop('checked', boolean)` for checkboxes and switches; never use `.attr('checked', ...)`.
+   * Always use `.val(value)` for inputs and selects; never use `.attr('value', ...)`.
+4. **Form Submission Destination Guard**:
+   * Any modal form whose `action` URL is dynamically assigned via JavaScript must include an explicit submit guard to prevent browser navigation to a blank page or 404:
+     ```javascript
+     $('#formId').on('submit', function (e) {
+         const action = $(this).attr('action');
+         if (!action || action === '' || action.includes('undefined')) {
+             e.preventDefault();
+             alert('Invalid destination: please re-open the dialog and try again.');
+             return false;
+         }
+     });
+     ```
+

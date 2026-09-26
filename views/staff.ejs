@@ -99,216 +99,325 @@
         <!--********** Content body end **********-->
 
         <!-- Modal update -->
-        <div class="modal fade" id="staff_update">
-            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <%= language.Edit_Staff_Details %>
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal fade" id="staff_update" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+                <div class="modal-content border-0 shadow rounded-3">
+                    <div class="modal-header py-3 px-4 border-bottom bg-light-subtle d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="p-2 bg-primary-subtle text-primary rounded-3 d-inline-flex align-items-center justify-content-center">
+                                <i class="fa fa-user-edit fs-5"></i>
+                            </div>
+                            <div>
+                                <h5 class="modal-title fw-bold text-dark mb-0">
+                                    <%= language.Edit_Staff_Details || 'Edit Staff Member' %>
+                                </h5>
+                                <small class="text-muted fs-12">Update employee profile, login credentials, and branch assignment</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
-                        <form action="" id="update_staff_form" method="post" class="need-validation">
-
-                            <div class="row g-1 align-items-center">
-                                <div class="form-group">
-                                    <label><strong>
-                                            <%= language.Staff_Name %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control " name="name_update" id="name_update"
-                                        placeholder="Enter Staff Name" required>
+                    <form action="" id="update_staff_form" method="post" class="need-validation" novalidate>
+                        <div class="modal-body p-4">
+                            <div class="row g-3">
+                                <!-- Staff Name -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="name_update">
+                                        <%= language.Staff_Name || 'Staff Full Name' %> <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted"><i class="fa fa-user"></i></span>
+                                        <input type="text" class="form-control" name="name_update" id="name_update"
+                                            placeholder="Enter Staff Name" required>
+                                    </div>
+                                    <div class="invalid-feedback">Staff name is required.</div>
                                 </div>
 
-                                <div class="form-group">
-                                    <label><strong>
-                                            <%= language.Phone_Number %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control " name="number_update" id="number_update"
-                                        placeholder="Enter Phone Number" required>
+                                <!-- Phone Number -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="number_update">
+                                        <%= language.Phone_Number || 'Contact Phone Number' %> <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted"><i class="fa fa-phone"></i></span>
+                                        <input type="tel" class="form-control" name="number_update" id="number_update"
+                                            placeholder="Enter Phone Number" required>
+                                    </div>
+                                    <div class="invalid-feedback">Valid phone number is required.</div>
                                 </div>
 
-                                <div class="form-group">
-                                    <label><strong>
-                                            <%= language.Email %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <input type="email" class="form-control " name="email_update" id="email_update"
-                                        placeholder="Enter Email" required>
+                                <!-- Email Address -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="email_update">
+                                        <%= language.Email || 'Email Address' %> <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted"><i class="fa fa-envelope"></i></span>
+                                        <input type="email" class="form-control" name="email_update" id="email_update"
+                                            placeholder="e.g. staff@icleaners.com" required>
+                                    </div>
+                                    <div class="invalid-feedback">Valid email is required.</div>
                                 </div>
 
-                                <div class="form-group">
-                                    <label><strong>
-                                            <%= language.Username %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control " name="username_update" id="username_update"
-                                        placeholder="Enter User Name" required>
+                                <!-- Username -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="username_update">
+                                        <%= language.Username || 'Login Username' %> <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted"><i class="fa fa-user-tag"></i></span>
+                                        <input type="text" class="form-control" name="username_update" id="username_update"
+                                            placeholder="Enter User Name" required autocomplete="off">
+                                    </div>
+                                    <div class="invalid-feedback">Username is required.</div>
                                 </div>
 
-                                 <div class="form-group">
-                                    <label><strong>
-                                            <%= language.Password %>
-                                        </strong></label>
-                                    <input type="text" class="form-control" name="password_update" id="password_update"
-                                        placeholder="Update Password (leave blank to keep current)">
+                                <!-- Password (Optional on update) -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="password_update">
+                                        <%= language.Password || 'Update Password' %>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted"><i class="fa fa-lock"></i></span>
+                                        <input type="password" class="form-control" name="password_update" id="password_update"
+                                            placeholder="Leave blank to keep current" autocomplete="new-password">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleStaffPassword('password_update', this)" title="Toggle password visibility">
+                                            <i class="fa fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted fs-11">Leave blank unless you wish to change credentials.</small>
                                 </div>
 
-                                <div class="form-group">
-                                    <label><strong>
-                                            <%= language.Store || language.Shop_Name || 'Assigned Store' %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <select class="form-control" name="store_update" id="store_update" required>
-                                        <option value="" disabled selected>Select Assigned Store</option>
-                                        <% if (typeof storeList !== 'undefined' && storeList.length > 0) { %>
-                                            <% storeList.forEach(function(s){ %>
-                                                <option value="<%= s.id %>"><%= s.name %></option>
-                                            <% }) %>
-                                        <% } %>
-                                    </select>
+                                <!-- Assigned Store -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="store_update">
+                                        <%= language.Store || language.Shop_Name || 'Assigned Store' %> <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted"><i class="fa fa-store"></i></span>
+                                        <select class="form-select" name="store_update" id="store_update" required>
+                                            <option value="" disabled selected>Select Assigned Store</option>
+                                            <% if (typeof storeList !== 'undefined' && storeList.length > 0) { %>
+                                                <% storeList.forEach(function(s){ %>
+                                                    <option value="<%= s.id %>"><%= s.name %></option>
+                                                <% }) %>
+                                            <% } %>
+                                        </select>
+                                    </div>
+                                    <div class="invalid-feedback">Please select an assigned store.</div>
                                 </div>
 
-                                <div class="form-group">
+                                <input type="hidden" name="roll_list_update" id="roll_list_update" value="">
 
-                                    <input type="hidden" name="roll_list_update" id="roll_list_update" value="">
-                                </div>
-
-                                <div class="form-group">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="active_update"
-                                            name="active_update" value="1">
-                                        <label class="form-check-label" for="employee">
-                                            <%= language.Is_Active %> ?
-                                        </label>
+                                <!-- Active Status Card -->
+                                <div class="col-12">
+                                    <div class="p-3 bg-light-subtle rounded-3 border d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="fa fa-shield-alt text-primary fs-5"></i>
+                                            <div>
+                                                <div class="fw-bold text-dark fs-13"><%= language.Is_Active || 'Active Authorization' %></div>
+                                                <small class="text-muted fs-11">Allow this staff member to log in and access system functions</small>
+                                            </div>
+                                        </div>
+                                        <div class="form-check form-switch m-0 fs-5">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="active_update"
+                                                name="active_update" value="1">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                    </div>
+                        </div>
 
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                    <i class="fa fa-times me-2"></i><%= language.Cancel %>
+                        <div class="modal-footer py-3 px-4 border-top bg-light-subtle d-flex justify-content-between align-items-center">
+                            <small class="text-muted"><i class="fa fa-info-circle me-1"></i> Required fields are marked with <span class="text-danger">*</span></small>
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-outline-secondary px-3 py-2 fw-semibold" data-bs-dismiss="modal">
+                                    <i class="fa fa-times me-1"></i><%= language.Cancel || 'Cancel' %>
                                 </button>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fa fa-save me-2"></i><%= language.Save %>
+                                <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2">
+                                    <i class="fa fa-save"></i><%= language.Save || 'Save Changes' %>
                                 </button>
                             </div>
-                        </form>
-
-
-
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
 
         <!-- Modal add -->
-        <div class="modal fade" id="staff_add">
-            <div class="modal-dialog  modal-dialog-scrollable" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <%= language.Add_New_Staff %>
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form action="/tool/addstaff" method="post" class="need-validation">
-
-                            <div class="row g-1 align-items-center">
-                                <div class="form-group">
-                                    <label><strong>
-                                            <%= language.Staff_Name %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control " name="name" id="name"
-                                        placeholder="Enter Staff Name" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label><strong>
-                                            <%= language.Phone_Number %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control " name="number" id="number"
-                                        placeholder="Enter Phone Number" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label><strong>
-                                            <%= language.Email %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <input type="email" class="form-control " name="email" id="email"
-                                        placeholder="Enter Email" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label><strong>
-                                            <%= language.Username %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control " name="username" id="username"
-                                        placeholder="Enter User Name" required>
-                                </div>
-
-                                 <div class="form-group">
-                                    <label><strong>
-                                            <%= language.Password %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <input type="password" class="form-control " name="password" id="password"
-                                        placeholder="Enter Password" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label><strong>
-                                            <%= language.Store || language.Shop_Name || 'Assigned Store' %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <select class="form-control" name="store_id" id="store_id" required>
-                                        <option value="" disabled selected>Select Assigned Store</option>
-                                        <% if (typeof storeList !== 'undefined' && storeList.length > 0) { %>
-                                            <% storeList.forEach(function(s){ %>
-                                                <option value="<%= s.id %>"><%= s.name %></option>
-                                            <% }) %>
-                                        <% } %>
-                                    </select>
-                                </div>
-
-                                <div class="form-group">
-                                    <!-- <label class="form-label"><strong>
-                                            <%= language.Roll_List %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <select class="def form-control wide mb-3" name="roll_list" id="roll_list">
-                                        <option value selected disabled>Select Roll</option>
-                                        <% rolldata.forEach(function(data, i){ %>
-                                            <option value="<%= data.id %>" data-roll-type="<%= data.rollType %>">
-                                                <%= data.roll %>
-                                            </option>
-                                            <% }) %>
-                                    </select> -->
-                                    <input type="hidden" name="roll_list" value="<%= rolldata[0]?.id %>">
-                                </div>
-
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="active" name="active" value="0">
-                                    <label class="form-check-label" for="employee">
-                                        <%= language.Is_Active %> ?
-                                    </label>
-                                </div>
-
+        <div class="modal fade" id="staff_add" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+                <div class="modal-content border-0 shadow rounded-3">
+                    <div class="modal-header py-3 px-4 border-bottom bg-light-subtle d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="p-2 bg-primary-subtle text-primary rounded-3 d-inline-flex align-items-center justify-content-center">
+                                <i class="fa fa-user-plus fs-5"></i>
                             </div>
+                            <div>
+                                <h5 class="modal-title fw-bold text-dark mb-0">
+                                    <%= language.Add_New_Staff || 'Add New Staff Member' %>
+                                </h5>
+                                <small class="text-muted fs-12">Create a new employee profile and assign branch access</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="fa fa-times me-2"></i><%= language.Cancel %>
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa fa-save me-2"></i><%= language.Save %>
-                        </button>
-                    </div>
+                    <form action="/tool/addstaff" method="post" class="need-validation" novalidate>
+                        <div class="modal-body p-4">
+                            <div class="row g-3">
+                                <!-- Staff Name -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="name">
+                                        <%= language.Staff_Name || 'Staff Full Name' %> <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted"><i class="fa fa-user"></i></span>
+                                        <input type="text" class="form-control" name="name" id="name"
+                                            placeholder="Enter Staff Name" required>
+                                    </div>
+                                    <div class="invalid-feedback">Staff name is required.</div>
+                                </div>
 
+                                <!-- Phone Number -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="number">
+                                        <%= language.Phone_Number || 'Contact Phone Number' %> <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted"><i class="fa fa-phone"></i></span>
+                                        <input type="tel" class="form-control" name="number" id="number"
+                                            placeholder="Enter Phone Number" required>
+                                    </div>
+                                    <div class="invalid-feedback">Valid phone number is required.</div>
+                                </div>
 
+                                <!-- Email Address -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="email">
+                                        <%= language.Email || 'Email Address' %> <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted"><i class="fa fa-envelope"></i></span>
+                                        <input type="email" class="form-control" name="email" id="email"
+                                            placeholder="e.g. staff@icleaners.com" required>
+                                    </div>
+                                    <div class="invalid-feedback">Valid email is required.</div>
+                                </div>
+
+                                <!-- Username -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="username">
+                                        <%= language.Username || 'Login Username' %> <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted"><i class="fa fa-user-tag"></i></span>
+                                        <input type="text" class="form-control" name="username" id="username"
+                                            placeholder="Enter User Name" required autocomplete="off">
+                                    </div>
+                                    <div class="invalid-feedback">Username is required.</div>
+                                </div>
+
+                                <!-- Password -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="password">
+                                        <%= language.Password || 'Login Password' %> <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted"><i class="fa fa-lock"></i></span>
+                                        <input type="password" class="form-control" name="password" id="password"
+                                            placeholder="Enter Password" required autocomplete="new-password">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleStaffPassword('password', this)" title="Toggle password visibility">
+                                            <i class="fa fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="invalid-feedback">Password is required.</div>
+                                </div>
+
+                                <!-- Assigned Store -->
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="store_id">
+                                        <%= language.Store || language.Shop_Name || 'Assigned Store' %> <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted"><i class="fa fa-store"></i></span>
+                                        <select class="form-select" name="store_id" id="store_id" required>
+                                            <option value="" disabled selected>Select Assigned Store</option>
+                                            <% if (typeof storeList !== 'undefined' && storeList.length > 0) { %>
+                                                <% storeList.forEach(function(s){ %>
+                                                    <option value="<%= s.id %>"><%= s.name %></option>
+                                                <% }) %>
+                                            <% } %>
+                                        </select>
+                                    </div>
+                                    <div class="invalid-feedback">Please select an assigned store.</div>
+                                </div>
+
+                                <input type="hidden" name="roll_list" value="<%= rolldata[0]?.id %>">
+
+                                <!-- Active Status Card -->
+                                <div class="col-12">
+                                    <div class="p-3 bg-light-subtle rounded-3 border d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="fa fa-shield-alt text-success fs-5"></i>
+                                            <div>
+                                                <div class="fw-bold text-dark fs-13"><%= language.Is_Active || 'Active Authorization' %></div>
+                                                <small class="text-muted fs-11">Authorize this staff member immediately upon creation</small>
+                                            </div>
+                                        </div>
+                                        <div class="form-check form-switch m-0 fs-5">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="active" name="active" value="1" checked>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer py-3 px-4 border-top bg-light-subtle d-flex justify-content-between align-items-center">
+                            <small class="text-muted"><i class="fa fa-info-circle me-1"></i> Required fields are marked with <span class="text-danger">*</span></small>
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-outline-secondary px-3 py-2 fw-semibold" data-bs-dismiss="modal">
+                                    <i class="fa fa-times me-1"></i><%= language.Cancel || 'Cancel' %>
+                                </button>
+                                <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2">
+                                    <i class="fa fa-save"></i><%= language.Save || 'Create Staff' %>
+                                </button>
+                            </div>
+                        </div>
                     </form>
                 </div>
-
             </div>
         </div>
 
-
-
+        <!-- Modal delete confirm -->
+        <div class="modal fade" id="deleteStaffModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content text-center p-3 border-0 shadow rounded-4">
+                    <div class="modal-body pt-4">
+                        <div class="mb-3">
+                            <div class="p-3 bg-danger-subtle text-danger rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                                <i class="fa fa-trash-alt fs-3"></i>
+                            </div>
+                        </div>
+                        <h4 class="mb-2 fw-bold text-dark"><%= language.Delete_Staff || language.Delete || 'Delete Staff Member' %></h4>
+                        <p class="text-muted mb-2"><%= language.Are_you_sure_delete || 'Are you sure you want to delete this staff member?' %></p>
+                        <p class="fw-bold text-danger fs-5 mb-2" id="deleteStaffModalName"></p>
+                        <div class="alert alert-danger py-2 px-3 mb-3 text-start small border-0 bg-danger-subtle text-danger-emphasis rounded-3">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            <strong><%= language.Warning || 'Warning' %>:</strong>
+                            <%= language.Delete_staff_warning || 'This will permanently remove this staff member and revoke their system login access.' %>
+                        </div>
+                        <p class="text-muted mb-4 small"><%= language.Action_cannot_be_undone || 'This action cannot be undone.' %></p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-outline-secondary px-3 py-2 fw-semibold" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+                            </button>
+                            <a href="#" id="deleteStaffConfirmBtn" class="btn btn-danger px-4 py-2 fw-semibold d-inline-flex align-items-center">
+                                <i class="fa fa-trash me-2"></i><%= language.Delete || 'Yes, Delete' %>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- user roll -->
 
@@ -326,13 +435,6 @@
                         <form action="/tool/rollUp/" id="updateroll_form_master" method="post" class="need-validation">
 
                             <div class="row g-1 align-items-center">
-                                <!-- <div class="form-group">
-                                    <label><strong>
-                                            <%= language.Name %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="name_update" name="name_update"
-                                        placeholder="Enter Name" required>
-                                </div> -->
 
                                 <div class="form-group d-none">
                                     <input type="hidden" value="master" name="rollType">
@@ -957,118 +1059,6 @@
                                     </div>
                                 </div>
 
-
-
-
-
-                                <!-- <div class="form-group">
-                                    <div class="d-flex align-items-center">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Tools %>
-                                            </strong></label>
-                                        <div class="form-check col-2 ms-4">
-                                            <input class="form-check-input" type="checkbox" id="update_tools_read"
-                                                name="tools" value="read">
-                                            <label class="form-check-label" for="update_tools_read">
-                                                <%= language.Read %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2 invisible">
-                                            <input class="form-check-input" type="checkbox" id="update_tools_write"
-                                                name="tools" value="write">
-                                            <label class="form-check-label" for="update_tools_write">
-                                                <%= language.Write %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2 invisible">
-                                            <input class="form-check-input" type="checkbox" id="update_tools_edit"
-                                                name="tools" value="edit">
-                                            <label class="form-check-label" for="update_tools_edit">
-                                                <%= language.Edit %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2 invisible">
-                                            <input class="form-check-input" type="checkbox" id="update_tools_delete"
-                                                name="tools" value="delete">
-                                            <label class="form-check-label" for="update_tools_delete">
-                                                <%= language.Delete %>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div> -->
-
-                                <!-- <div class="form-group">
-                                    <div class="d-flex align-items-center  ">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Email %>
-                                            </strong></label>
-                                        <div class="form-check col-2 ms-4">
-                                            <input class="form-check-input" type="checkbox" id="update_mail_read"
-                                                name="mail" value="read">
-                                            <label class="form-check-label" for="update_mail_read">
-                                                <%= language.Read %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox" id="update_mail_write"
-                                                name="mail" value="write">
-                                            <label class="form-check-label" for="update_mail_write">
-                                                <%= language.Write %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox" id="update_mail_edit"
-                                                name="mail" value="edit">
-                                            <label class="form-check-label" for="update_mail_edit">
-                                                <%= language.Edit %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox" id="update_mail_delete"
-                                                name="mail" value="delete">
-                                            <label class="form-check-label" for="update_mail_delete">
-                                                <%= language.Delete %>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div> -->
-
-                                <!-- <div class="form-group">
-                                    <div class="d-flex align-items-center  ">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Store_Settings %>
-                                            </strong></label>
-                                        <div class="form-check col-2 ms-4">
-                                            <input class="form-check-input" type="checkbox" id="update_master_read"
-                                                name="master" value="read">
-                                            <label class="form-check-label" for="update_master_read">
-                                                <%= language.Read %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox" id="update_master_write"
-                                                name="master" value="write">
-                                            <label class="form-check-label" for="update_master_write">
-                                                <%= language.Write %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox" id="update_master_edit"
-                                                name="master" value="edit">
-                                            <label class="form-check-label" for="update_master_edit">
-                                                <%= language.Edit %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox" id="update_master_delete"
-                                                name="master" value="delete">
-                                            <label class="form-check-label" for="update_master_delete">
-                                                <%= language.Delete %>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div> -->
-
                                 <div class="form-group">
                                     <div class="d-flex align-items-center">
                                         <label class="form-label col-2"><strong>
@@ -1110,50 +1100,6 @@
                                     </div>
                                 </div>
 
-                                <!-- <div class="form-group">
-                                    <div class="d-flex align-items-center">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Account %>
-                                            </strong></label>
-                                        <div class="form-check col-2 ms-4">
-                                            <input class="form-check-input" type="checkbox" id="update_account_read"
-                                                name="account" value="read">
-                                            <label class="form-check-label" for="update_account_read">
-                                                <%= language.Read %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox" id="update_account_write"
-                                                name="account" value="write">
-                                            <label class="form-check-label" for="update_account_write">
-                                                <%= language.Write %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox" id="update_account_edit"
-                                                name="account" value="edit">
-                                            <label class="form-check-label" for="update_account_edit">
-                                                <%= language.Edit %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox" id="update_account_delete"
-                                                name="account" value="delete">
-                                            <label class="form-check-label" for="update_account_delete">
-                                                <%= language.Delete %>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div> -->
-
-                                <!-- <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="rollactive" name="active"
-                                        value="0">
-                                    <label class="form-check-label" for="employee">
-                                        <%= language.Is_Active %> ?
-                                    </label>
-                                </div> -->
-
                             </div>
                     </div>
 
@@ -1173,835 +1119,551 @@
             </div>
         </div>
 
-        <div class="modal fade " id="roll_list_update_store">
-            <div class="modal-dialog  modal-dialog-scrollable" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <%= language.Edit_Role_List %>
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <!-- Modal Edit Staff Role (Store) -->
+        <div class="modal fade" id="roll_list_update_store" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+                <form action="/tool/rollUp/" id="updateroll_form_store" class="modal-content border-0 shadow rounded-4 updateroll_store_form need-validation" method="post">
+                    <input type="hidden" value="store" name="rollType" id="roll_type_store">
+                    <input type="hidden" id="name_update_store" name="name_update" value="Store Staff">
+
+                    <div class="modal-header py-3 px-4 border-bottom bg-light-subtle d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="p-2 bg-primary-subtle text-primary rounded-3 d-inline-flex align-items-center justify-content-center">
+                                <i class="fa fa-user-shield fs-4"></i>
+                            </div>
+                            <div>
+                                <h5 class="modal-title fw-bold text-dark mb-0">
+                                    <%= language.Edit_Role_List || 'Manage Staff Permissions' %><span id="roleModalStaffName" class="text-primary fs-6 ms-2"></span>
+                                </h5>
+                                <small class="text-muted fs-12">Configure granular module permissions and action capabilities for this staff member</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
-                        <form action="/coustomer/update/" id="updateroll_store_form" method="post"
-                            class="need-validation">
 
-                            <div class="row g-1 align-items-center">
-                                <!-- <div class="form-group">
-                                    <label><strong>
-                                            <%= language.Name %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="name_update_store" name="name_update"
-                                        placeholder="Enter Name" required>
-                                </div> -->
-
-                                <div class="form-group d-none">
-                                    <input type="hidden" value="store" name="rollType">
+                    <div class="modal-body p-4 overflow-auto" style="max-height: calc(100vh - 210px);">
+                            <!-- Permission Control Bar -->
+                            <div class="p-3 bg-light-subtle rounded-3 border d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fa fa-info-circle text-primary fs-5"></i>
+                                    <span class="fs-13 text-muted">Checked capabilities grant access to specific actions within each module.</span>
                                 </div>
-
-                                <div class="form-group">
-                                    <div class="d-flex align-items-center ">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.POS %>
-                                            </strong></label>
-                                        <% if(rolldata[0]?.pos?.includes('read')){ %>
-                                            <div class="form-check col-2 ms-4">
-                                                <input class="form-check-input" type="checkbox"
-                                                    id="updatestore_pos_read" name="pos" value="read">
-                                                <label class="form-check-label" for="update_pos_read">
-                                                    <%= language.Read %>
-                                                </label>
-                                            </div>
-                                            <%}%>
-                                                <% if(rolldata[0]?.pos?.includes('write')){ %>
-                                                    <div class="form-check col-2 ms-3">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            id="updatestore_pos_write" name="pos" value="write">
-                                                        <label class="form-check-label" for="update_pos_write">
-                                                            <%= language.Write %>
-                                                        </label>
-                                                    </div>
-                                                    <%}%>
-                                                        <% if(rolldata[0]?.pos?.includes('edit')){ %>
-                                                            <div class="form-check col-2 ms-3 invisible">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    id="updatestore_pos_edit" name="pos" value="edit">
-                                                                <label class="form-check-label" for="update_pos_edit">
-                                                                    <%= language.Edit %>
-                                                                </label>
-                                                            </div>
-                                                            <%}%>
-                                                                <% if(rolldata[0]?.pos?.includes('delete')){ %>
-                                                                    <div class="form-check col-2 ms-3 invisible">
-                                                                        <input class="form-check-input" type="checkbox"
-                                                                            id="updatestore_pos_delete" name="pos"
-                                                                            value="delete">
-                                                                        <label class="form-check-label"
-                                                                            for="update_pos_delete">
-                                                                            <%= language.Delete %>
-                                                                        </label>
-                                                                    </div>
-                                                                    <%}%>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <div class="d-flex align-items-center ">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Orders %>
-                                            </strong></label>
-
-                                        <% if(rolldata[0]?.orders?.includes('read')){ %>
-
-                                            <div class="form-check col-2 ms-4">
-                                                <input class="form-check-input" type="checkbox"
-                                                    id="updatestore_orders_read" name="orders" value="read">
-                                                <label class="form-check-label" for="update_orders_read">
-                                                    <%= language.Read %>
-                                                </label>
-                                            </div>
-                                            <%}%>
-
-                                                <% if(rolldata[0]?.orders?.includes('write')){ %>
-
-                                                    <div class="form-check col-2 ms-3">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            id="updatestore_orders_write" name="orders" value="write">
-                                                        <label class="form-check-label" for="update_orders_write">
-                                                            <%= language.Write %>
-                                                        </label>
-                                                    </div>
-                                                    <%}%>
-
-                                                        <% if(rolldata[0]?.orders?.includes('edit')){ %>
-
-                                                            <div class="form-check col-2 ms-3">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    id="updatestore_orders_edit" name="orders"
-                                                                    value="edit">
-                                                                <label class="form-check-label"
-                                                                    for="update_orders_edit">
-                                                                    <%= language.Edit %>
-                                                                </label>
-                                                            </div>
-                                                            <%}%>
-
-                                                                <% if(rolldata[0]?.orders?.includes('delete')){ %>
-
-                                                                    <div class="form-check col-2 ms-2">
-                                                                        <input class="form-check-input" type="checkbox"
-                                                                            id="updatestore_orders_delete" name="orders"
-                                                                            value="delete">
-                                                                        <label class="form-check-label"
-                                                                            for="updatestore_orders_delete">
-                                                                            <%= language.Delete %>
-                                                                        </label>
-                                                                    </div>
-                                                                    <%}%>
-
-
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <div class="d-flex align-items-center ">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Customers %>
-                                            </strong></label>
-
-                                        <% if(rolldata[0]?.customers?.includes('read')){ %>
-                                            <div class="form-check col-2 ms-4">
-                                                <input class="form-check-input" type="checkbox"
-                                                    id="updatestore_customers_read" name="customers" value="read">
-                                                <label class="form-check-label" for="update_customers_read">
-                                                    <%= language.Read %>
-                                                </label>
-                                            </div>
-                                            <% } %>
-
-                                                <% if(rolldata[0]?.customers?.includes('write')){ %>
-                                                    <div class="form-check col-2 ms-3">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            id="updatestore_customers_write" name="customers"
-                                                            value="write">
-                                                        <label class="form-check-label" for="update_customers_write">
-                                                            <%= language.Write %>
-                                                        </label>
-                                                    </div>
-                                                    <% } %>
-
-                                                        <% if(rolldata[0]?.customers?.includes('edit')){ %>
-                                                            <div class="form-check col-2 ms-3">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    id="updatestore_customers_edit" name="customers"
-                                                                    value="edit">
-                                                                <label class="form-check-label"
-                                                                    for="update_customers_edit">
-                                                                    <%= language.Edit %>
-                                                                </label>?
-                                                            </div>
-                                                            <% } %>
-
-                                                                <% if(rolldata[0]?.customers?.includes('delete')){ %>
-                                                                    <div class="form-check col-2 ms-3">
-                                                                        <input class="form-check-input" type="checkbox"
-                                                                            id="updatestore_customers_delete"
-                                                                            name="customers" value="delete">
-                                                                        <label class="form-check-label"
-                                                                            for="update_customers_delete">
-                                                                            <%= language.Delete %>
-                                                                        </label>
-                                                                    </div>
-                                                                    <% } %>
-
-                                    </div>
-                                </div>
-
-                                <!-- 
-                                <div class="form-group">
-                                    <div class="d-flex align-items-center">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Coupon %>
-                                            </strong></label>
-                                        <div class="form-check col-2 ms-4">
-                                            <input class="form-check-input" type="checkbox" id="updatestore_coupon_read"
-                                                name="couponname" value="read">
-                                            <label class="form-check-label" for="updatestore_coupon_read">
-                                                <%= language.Read %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox" id="updatestore_coupon_write"
-                                                name="couponname" value="write">
-                                            <label class="form-check-label" for="updatestore_coupon_write">
-                                                <%= language.Write %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox" id="updatestore_coupon_edit"
-                                                name="couponname" value="edit">
-                                            <label class="form-check-label" for="updatestore_coupon_edit">
-                                                <%= language.Edit %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox" id="updatestore_coupon_delete"
-                                                name="couponname" value="delete">
-                                            <label class="form-check-label" for="updatestore_coupon_delete">
-                                                <%= language.Delete %>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div> -->
-
-
-                                <div class="form-group">
-                                    <div class="d-flex align-items-center">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Expence %>
-                                            </strong></label>
-
-                                        <% if(rolldata[0]?.expense?.includes('read')){ %>
-                                            <div class="form-check col-2 ms-4">
-                                                <input class="form-check-input" type="checkbox"
-                                                    id="updatestore_expense_read" name="expense" value="read">
-                                                <label class="form-check-label" for="update_expense_read">
-                                                    <%= language.Read %>
-                                                </label>
-                                            </div>
-                                            <% } %>
-
-                                                <% if(rolldata[0]?.expense?.includes('write')){ %>
-                                                    <div class="form-check col-2 ms-3">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            id="updatestore_expense_write" name="expense" value="write">
-                                                        <label class="form-check-label" for="update_expense_write">
-                                                            <%= language.Write %>
-                                                        </label>
-                                                    </div>
-                                                    <% } %>
-
-                                                        <% if(rolldata[0]?.expense?.includes('edit')){ %>
-                                                            <div class="form-check col-2 ms-3">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    id="updatestore_expense_edit" name="expense"
-                                                                    value="edit">
-                                                                <label class="form-check-label"
-                                                                    for="update_expense_edit">
-                                                                    <%= language.Edit %>
-                                                                </label>
-                                                            </div>
-                                                            <% } %>
-
-                                                                <% if(rolldata[0]?.expense?.includes('delete')){ %>
-                                                                    <div class="form-check col-2 ms-3">
-                                                                        <input class="form-check-input" type="checkbox"
-                                                                            id="updatestore_expense_delete"
-                                                                            name="expense" value="delete">
-                                                                        <label class="form-check-label"
-                                                                            for="update_expense_delete">
-                                                                            <%= language.Delete %>
-                                                                        </label>
-                                                                    </div>
-                                                                    <% } %>
-
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <div class="d-flex align-items-center">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Services %>
-                                            </strong></label>
-
-                                        <% if(rolldata[0]?.service?.includes('read')){ %>
-                                            <div class="form-check col-2 ms-4">
-                                                <input class="form-check-input" type="checkbox"
-                                                    id="updatestore_service_read" name="service" value="read">
-                                                <label class="form-check-label" for="update_service_read">
-                                                    <%= language.Read %>
-                                                </label>
-                                            </div>
-                                            <% } %>
-
-                                                <% if(rolldata[0]?.service?.includes('write')){ %>
-                                                    <div class="form-check col-2 ms-3">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            id="updatestore_service_write" name="service" value="write">
-                                                        <label class="form-check-label" for="update_service_write">
-                                                            <%= language.Write %>
-                                                        </label>
-                                                    </div>
-                                                    <% } %>
-
-                                                        <% if(rolldata[0]?.service?.includes('edit')){ %>
-                                                            <div class="form-check col-2 ms-3">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    id="updatestore_service_edit" name="service"
-                                                                    value="edit">
-                                                                <label class="form-check-label"
-                                                                    for="update_service_edit">
-                                                                    <%= language.Edit %>
-                                                                </label>
-                                                            </div>
-                                                            <% } %>
-
-                                                                <% if(rolldata[0]?.service?.includes('delete')){ %>
-                                                                    <div class="form-check col-2 ms-3">
-                                                                        <input class="form-check-input" type="checkbox"
-                                                                            id="updatestore_service_delete"
-                                                                            name="service" value="delete">
-                                                                        <label class="form-check-label"
-                                                                            for="update_service_delete">
-                                                                            <%= language.Delete %>
-                                                                        </label>
-                                                                    </div>
-                                                                    <% } %>
-
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <div class="d-flex align-items-center">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Account %>
-                                            </strong></label>
-
-                                        <% if(rolldata[0]?.account?.includes('read')){ %>
-                                            <div class="form-check col-2 ms-4">
-                                                <input class="form-check-input" type="checkbox"
-                                                    id="updatestore_account_read" name="account" value="read">
-                                                <label class="form-check-label" for="updatestore_account_read">
-                                                    <%= language.Read %>
-                                                </label>
-                                            </div>
-                                            <% } %>
-                                                <% if(rolldata[0]?.account?.includes('write')){ %>
-                                                    <div class="form-check col-2 ms-2">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            id="updatestore_account_write" name="account" value="write">
-                                                        <label class="form-check-label" for="updatestore_account_write">
-                                                            <%= language.Write %>
-                                                        </label>
-                                                    </div>
-                                                    <% } %>
-                                                        <% if(rolldata[0]?.account?.includes('edit')){ %>
-                                                            <div class="form-check col-2 ms-2">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    id="updatestore_account_edit" name="account"
-                                                                    value="edit">
-                                                                <label class="form-check-label"
-                                                                    for="updatestore_account_edit">
-                                                                    <%= language.Edit %>
-                                                                </label>
-                                                            </div>
-                                                            <% } %>
-                                                                <% if(rolldata[0]?.account?.includes('delete')){ %>
-                                                                    <div class="form-check col-2 ms-2">
-                                                                        <input class="form-check-input" type="checkbox"
-                                                                            id="updatestore_account_delete"
-                                                                            name="account" value="delete">
-                                                                        <label class="form-check-label"
-                                                                            for="updatestore_account_delete">
-                                                                            <%= language.Delete %>
-                                                                        </label>
-                                                                    </div>
-                                                                    <% } %>
-                                    </div>
-                                </div>
-
-                                <!-- <div class="form-group">
-                                    <div class="d-flex align-items-center">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Branch %> /<%= language.Store %>
-                                            </strong></label>
-                                        <div class="form-check col-2 ms-4">
-                                            <input class="form-check-input" type="checkbox"
-                                                id="updatestore_branch_n_store_read" name="branch_n_store" value="read">
-                                            <label class="form-check-label"
-                                                for="updatestore_branch_n_store_read">Read</label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox"
-                                                id="updatestore_branch_n_store_write" name="branch_n_store" value="write">
-                                            <label class="form-check-label"
-                                                for="updatestore_branch_n_store_write">Write</label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox"
-                                                id="updatestore_branch_n_store_edit" name="branch_n_store" value="edit">
-                                            <label class="form-check-label"
-                                                for="updatestore_branch_n_store_edit">Edit</label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox"
-                                                id="updatestore_branch_n_store_delete" name="branch_n_store" value="delete">
-                                            <label class="form-check-label"
-                                                for="updatestore_branch_n_store_delete">Delete</label>
-                                        </div>
-                                    </div>
-                                </div> -->
-
-                                <div class="form-group">
-                                    <div class="d-flex align-items-center ">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Reports %>
-                                            </strong></label>
-                                        <% if(rolldata[0]?.reports?.includes('read')) { %>
-                                            <div class="form-check col-2 ms-4">
-                                                <input class="form-check-input" type="checkbox"
-                                                    id="updatestore_reports_read" name="reports" value="read">
-                                                <label class="form-check-label" for="update_reports_read">
-                                                    <%= language.Read %>
-                                                </label>
-                                            </div>
-                                            <% } %>
-                                                <% if(rolldata[0]?.reports?.includes('write')) { %>
-                                                    <div class="form-check col-2 ms-3 invisible">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            id="updatestore_reports_write" name="reports" value="write">
-                                                        <label class="form-check-label" for="update_reports_write">
-                                                            <%= language.Write %>
-                                                        </label>
-                                                    </div>
-                                                    <% } %>
-                                                        <% if(rolldata[0]?.reports?.includes('edit')) { %>
-                                                            <div class="form-check col-2 ms-3 invisible">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    id="updatestore_reports_edit" name="reports"
-                                                                    value="edit">
-                                                                <label class="form-check-label"
-                                                                    for="update_reports_edit">
-                                                                    <%= language.Edit %>
-                                                                </label>
-                                                            </div>
-                                                            <% } %>
-                                                                <% if(rolldata[0]?.reports?.includes('delete')) { %>
-                                                                    <div class="form-check col-2 ms-3 invisible">
-                                                                        <input class="form-check-input" type="checkbox"
-                                                                            id="updatestore_reports_delete"
-                                                                            name="reports" value="delete">
-                                                                        <label class="form-check-label"
-                                                                            for="update_reports_delete">
-                                                                            <%= language.Delete %>
-                                                                        </label>
-                                                                    </div>
-                                                                    <% } %>
-                                    </div>
-                                </div>
-
-                                <!-- <div class="form-group">
-                                    <div class="d-flex align-items-center">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Tools %>
-                                            </strong></label>
-                                        <div class="form-check col-2 ms-4">
-                                            <input class="form-check-input" type="checkbox" id="updatestore_tools_read"
-                                                name="tools" value="read">
-                                            <label class="form-check-label" for="updatestore_tools_read">
-                                                <%= language.Read %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2 invisible">
-                                            <input class="form-check-input" type="checkbox" id="updatestore_tools_write"
-                                                name="tools" value="write">
-                                            <label class="form-check-label" for="updatestore_tools_write">
-                                                <%= language.Write %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2 invisible">
-                                            <input class="form-check-input" type="checkbox" id="updatestore_tools_edit"
-                                                name="tools" value="edit">
-                                            <label class="form-check-label" for="updatestore_tools_edit">
-                                                <%= language.Edit %>
-                                            </label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2 invisible">
-                                            <input class="form-check-input" type="checkbox"
-                                                id="updatestore_tools_delete" name="tools" value="delete">
-                                            <label class="form-check-label" for="updatestore_tools_delete">
-                                                <%= language.Delete %>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div> -->
-
-                                <div class="form-group">
-                                    <div class="d-flex align-items-center">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Role %>
-                                            </strong></label>
-
-                                        <% if(rolldata[0]?.rollaccess?.includes('read')) { %>
-                                            <div class="form-check col-2 ms-4">
-                                                <input class="form-check-input" type="checkbox"
-                                                    id="updatestore_roll_read" name="rollaccess" value="read">
-                                                <label class="form-check-label" for="updatestore_roll_read">
-                                                    <%= language.Read %>
-                                                </label>
-                                            </div>
-                                            <% } %>
-                                                <% if(rolldata[0]?.rollaccess?.includes('write')) { %>
-                                                    <div class="form-check col-2 ms-2">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            id="updatestore_roll_write" name="rollaccess" value="write">
-                                                        <label class="form-check-label" for="updatestore_roll_write">
-                                                            <%= language.Write %>
-                                                        </label>
-                                                    </div>
-                                                    <% } %>
-                                                        <% if(rolldata[0]?.rollaccess?.includes('edit')) { %>
-                                                            <div class="form-check col-2 ms-2">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    id="updatestore_roll_edit" name="rollaccess"
-                                                                    value="edit">
-                                                                <label class="form-check-label"
-                                                                    for="updatestore_roll_edit">
-                                                                    <%= language.Edit %>
-                                                                </label>
-                                                            </div>
-                                                            <% } %>
-                                                                <% if(rolldata[0]?.rollaccess?.includes('delete')) { %>
-                                                                    <div class="form-check col-2 ms-2 invisible">
-                                                                        <input class="form-check-input" type="checkbox"
-                                                                            id="updatestore_roll_delete"
-                                                                            name="rollaccess" value="delete">
-                                                                        <label class="form-check-label"
-                                                                            for="updatestore_roll_delete">
-                                                                            <%= language.Delete %>
-                                                                        </label>
-                                                                    </div>
-                                                                    <% } %>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <div class="d-flex align-items-center ">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Email %>
-                                            </strong></label>
-                                        <% if(rolldata[0]?.mail?.includes('read')) { %>
-
-                                            <div class="form-check col-2 ms-4">
-                                                <input class="form-check-input" type="checkbox"
-                                                    id="updatestore_mail_read" name="mail" value="read">
-                                                <label class="form-check-label" for="updatestore_mail_read">
-                                                    <%= language.Read %>
-                                                </label>
-                                            </div>
-                                            <% } %>
-                                                <% if(rolldata[0]?.mail?.includes('write')) { %>
-                                                    <div class="form-check col-2 ms-2">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            id="updatestore_mail_write" name="mail" value="write">
-                                                        <label class="form-check-label" for="updatestore_mail_write">
-                                                            <%= language.Write %>
-                                                        </label>
-                                                    </div>
-                                                    <% } %>
-                                                        <% if(rolldata[0]?.mail?.includes('edit')) { %>
-                                                            <div class="form-check col-2 ms-2">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    id="updatestore_mail_edit" name="mail" value="edit">
-                                                                <label class="form-check-label"
-                                                                    for="updatestore_mail_edit">
-                                                                    <%= language.Edit %>
-                                                                </label>?
-                                                            </div>
-                                                            <% } %>
-                                                                <% if(rolldata[0]?.mail?.includes('delete')) { %>
-                                                                    <div class="form-check col-2 ms-2">
-                                                                        <input class="form-check-input" type="checkbox"
-                                                                            id="updatestore_mail_delete" name="mail"
-                                                                            value="delete">
-                                                                        <label class="form-check-label"
-                                                                            for="updatestore_mail_delete">
-                                                                            <%= language.Delete %>
-                                                                        </label>
-                                                                    </div>
-                                                                    <% } %>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <div class="d-flex align-items-center">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Store_Settings %>
-                                            </strong></label>
-                                        <% if(rolldata[0]?.master?.includes('read')) { %>
-                                            <div class="form-check col-2 ms-4">
-                                                <input class="form-check-input" type="checkbox"
-                                                    id="updatestore_master_read" name="master" value="read">
-                                                <label class="form-check-label" for="updatestore_master_read">
-                                                    <%= language.Read %>
-                                                </label>
-                                            </div>
-                                            <% } %>
-                                                <% if(rolldata[0]?.master?.includes('write')) { %>
-                                                    <div class="form-check col-2 ms-3 invisible">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            id="updatestore_master_write" name="master" value="write">
-                                                        <label class="form-check-label" for="updatestore_master_write">
-                                                            <%= language.Write %>
-                                                        </label>
-                                                    </div>
-                                                    <% } %>
-                                                        <% if(rolldata[0]?.master?.includes('edit')) { %>
-                                                            <div class="form-check col-2 ms-3">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    id="updatestore_master_edit" name="master"
-                                                                    value="edit">
-                                                                <label class="form-check-label"
-                                                                    for="updatestore_master_edit">
-                                                                    <%= language.Edit %>
-                                                                </label>
-                                                            </div>?
-                                                            <% } %>
-                                                                <% if(rolldata[0]?.master?.includes('delete')) { %>
-                                                                    <div class="form-check col-2 ms-3 invisible">
-                                                                        <input class="form-check-input" type="checkbox"
-                                                                            id="updatestore_master_delete" name="master"
-                                                                            value="delete">
-                                                                        <label class="form-check-label"
-                                                                            for="updatestore_master_delete">
-                                                                            <%= language.Delete %>
-                                                                        </label>
-                                                                    </div>
-                                                                    <% } %>
-                                    </div>
-                                </div>
-
-                                <!-- <div class="form-group">
-                                    <div class="d-flex align-items-center  ">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Master_Settings %>
-                                            </strong></label>
-                                        <div class="form-check col-2 ms-4">
-                                            <input class="form-check-input" type="checkbox"
-                                                id="updatestore_master_setting_read" name="master_setting" value="read">
-                                            <label class="form-check-label"
-                                                for="updatestore_master_setting_read">Read</label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox"
-                                                id="updatestore_master_setting_write" name="master_setting" value="write">
-                                            <label class="form-check-label"
-                                                for="updatestore_master_setting_write">Write</label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox"
-                                                id="updatestore_master_setting_edit" name="master_setting" value="edit">
-                                            <label class="form-check-label"
-                                                for="updatestore_master_setting_edit">Edit</label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox"
-                                                id="updatestore_master_setting_delete" name="master_setting" value="delete">
-                                            <label class="form-check-label"
-                                                for="updatestore_master_setting_delete">Delete</label>
-                                        </div>
-                                    </div>
-                                </div> -->
-
-                                <!-- <div class="form-group">
-                                    <div class="d-flex align-items-center  ">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Pay_Out %>
-                                            </strong></label>
-                                        <div class="form-check col-2 ms-4">
-                                            <input class="form-check-input" type="checkbox" id="updatestore_Pay_Out_read"
-                                                name="Pay_Out" value="read">
-                                            <label class="form-check-label" for="updatestore_Pay_Out_read">Read</label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox" id="updatestore_Pay_Out_write"
-                                                name="Pay_Out" value="write">
-                                            <label class="form-check-label" for="updatestore_Pay_Out_write">Write</label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox" id="updatestore_Pay_Out_edit"
-                                                name="Pay_Out" value="edit">
-                                            <label class="form-check-label" for="updatestore_Pay_Out_edit">Edit</label>
-                                        </div>
-                                        <div class="form-check col-2 ms-2">
-                                            <input class="form-check-input" type="checkbox" id="updatestore_Pay_Out_delete"
-                                                name="Pay_Out" value="delete">
-                                            <label class="form-check-label" for="updatestore_Pay_Out_delete">Delete</label>
-                                        </div>
-                                    </div>
-                                </div> -->
-
-                                <div class="form-group">
-                                    <div class="d-flex align-items-center">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.Staff %>
-                                            </strong></label>
-
-                                        <% if(rolldata[0]?.staff?.includes('read')) { %>
-                                            <div class="form-check col-2 ms-4">
-                                                <input class="form-check-input" type="checkbox"
-                                                    id="updatestore_staff_read" name="staff" value="read">
-                                                <label class="form-check-label" for="update_staff_read">
-                                                    <%= language.Read %>
-                                                </label>
-                                            </div>
-                                            <% } %>
-
-                                                <% if(rolldata[0]?.staff?.includes('write')) { %>
-                                                    <div class="form-check col-2 ms-3">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            id="updatestore_staff_write" name="staff" value="write">
-                                                        <label class="form-check-label" for="updatestore_staff_write">
-                                                            <%= language.Write %>
-                                                        </label>
-                                                    </div>
-                                                    <% } %>
-
-                                                        <% if(rolldata[0]?.staff?.includes('edit')) { %>
-                                                            <div class="form-check col-2 ms-3">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    id="updatestore_staff_edit" name="staff"
-                                                                    value="edit">
-                                                                <label class="form-check-label" for="update_staff_edit">
-                                                                    <%= language.Edit %>
-                                                                </label>
-                                                            </div>
-                                                            <% } %>
-
-                                                                <% if(rolldata[0]?.staff?.includes('delete')) { %>
-                                                                    <div class="form-check col-2 ms-3">
-                                                                        <input class="form-check-input" type="checkbox"
-                                                                            id="updatestore_staff_delete" name="staff"
-                                                                            value="delete">
-                                                                        <label class="form-check-label"
-                                                                            for="update_staff_delete">
-                                                                            <%= language.Delete %>
-                                                                        </label>
-                                                                    </div>
-                                                                    <% } %>
-
-                                    </div>
-                                </div>
-
-
-                                <div class="form-group">
-                                    <div class="d-flex align-items-center">
-                                        <label class="form-label col-2"><strong>
-                                                <%= language.SMS %>
-                                            </strong></label>
-
-                                        <% if(rolldata[0]?.sms?.includes('read')) { %>
-                                            <div class="form-check col-2 ms-4">
-                                                <input class="form-check-input" type="checkbox"
-                                                    id="updatestore_sms_read" name="sms" value="read">
-                                                <label class="form-check-label" for="update_sms_read">
-                                                    <%= language.Read %>
-                                                </label>
-                                            </div>
-                                            <% } %>
-
-                                                <% if(rolldata[0]?.sms?.includes('write')) { %>
-                                                    <div class="form-check col-2 ms-3">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            id="updatestore_sms_write" name="sms" value="write">
-                                                        <label class="form-check-label" for="update_sms_write">
-                                                            <%= language.Write %>
-                                                        </label>
-                                                    </div>
-                                                    <% } %>
-
-                                                        <% if(rolldata[0]?.sms?.includes('edit')) { %>
-                                                            <div class="form-check col-2 ms-3">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    id="updatestore_sms_edit" name="sms" value="edit">
-                                                                <label class="form-check-label" for="update_sms_edit">
-                                                                    <%= language.Edit %>
-                                                                </label>
-                                                            </div>
-                                                            <% } %>
-
-                                                                <% if(rolldata[0]?.sms?.includes('delete')) { %>
-                                                                    <div class="form-check col-2 ms-3">
-                                                                        <input class="form-check-input" type="checkbox"
-                                                                            id="updatestore_sms_delete" name="sms"
-                                                                            value="delete">
-                                                                        <label class="form-check-label"
-                                                                            for="update_sms_delete">
-                                                                            <%= language.Delete %>
-                                                                        </label>
-                                                                    </div>
-                                                                    <% } %>
-
-                                    </div>
-                                </div>
-
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="rollactive" name="active"
-                                        value="0">
-                                    <label class="form-check-label" for="employee">
-                                        <%= language.Is_Active %> ?
-                                    </label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary fw-semibold" id="btnSelectAllPerms">
+                                        <i class="fa fa-check-double me-1"></i><%= language.Select_All || 'Select All' %>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold" id="btnDeselectAllPerms">
+                                        <i class="fa fa-times me-1"></i><%= language.Deselect_All || 'Deselect All' %>
+                                    </button>
                                 </div>
                             </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="fa fa-times me-2"></i><%= language.Cancel %>
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa fa-save me-2"></i><%= language.Save %>
-                        </button>
-                    </div>
-                    </form>
 
+                            <!-- Two-Column Module Permissions Grid -->
+                            <div class="row g-3">
+                                <!-- 1. POS System -->
+                                <div class="col-12 col-md-6">
+                                    <div class="card border shadow-sm rounded-3 h-100 mb-0">
+                                        <div class="card-header py-2 px-3 bg-light-subtle d-flex align-items-center justify-content-between border-bottom">
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <i class="fa fa-cash-register text-primary"></i>
+                                                <span><%= language.POS || 'Point of Sale (POS)' %></span>
+                                            </div>
+                                            <div class="form-check form-switch m-0" title="Toggle all permissions for this module">
+                                                <input class="form-check-input module-toggle-switch" type="checkbox" role="switch" data-module="pos">
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_pos_read" name="pos" value="read">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_pos_read">
+                                                        <i class="fa fa-eye text-primary me-1"></i><%= language.Read || 'Read' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_pos_write" name="pos" value="write">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_pos_write">
+                                                        <i class="fa fa-plus-circle text-success me-1"></i><%= language.Write || 'Write' %>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
+                                <!-- 2. Orders -->
+                                <div class="col-12 col-md-6">
+                                    <div class="card border shadow-sm rounded-3 h-100 mb-0">
+                                        <div class="card-header py-2 px-3 bg-light-subtle d-flex align-items-center justify-content-between border-bottom">
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <i class="fa fa-receipt text-info"></i>
+                                                <span><%= language.Orders || 'Orders & Laundry' %></span>
+                                            </div>
+                                            <div class="form-check form-switch m-0" title="Toggle all permissions for this module">
+                                                <input class="form-check-input module-toggle-switch" type="checkbox" role="switch" data-module="orders">
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_orders_read" name="orders" value="read">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_orders_read">
+                                                        <i class="fa fa-eye text-primary me-1"></i><%= language.Read || 'Read' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_orders_write" name="orders" value="write">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_orders_write">
+                                                        <i class="fa fa-plus-circle text-success me-1"></i><%= language.Write || 'Write' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_orders_edit" name="orders" value="edit">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_orders_edit">
+                                                        <i class="fa fa-edit text-warning me-1"></i><%= language.Edit || 'Edit' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_orders_delete" name="orders" value="delete">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_orders_delete">
+                                                        <i class="fa fa-trash-alt text-danger me-1"></i><%= language.Delete || 'Delete' %>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
+                                <!-- 3. Customers -->
+                                <div class="col-12 col-md-6">
+                                    <div class="card border shadow-sm rounded-3 h-100 mb-0">
+                                        <div class="card-header py-2 px-3 bg-light-subtle d-flex align-items-center justify-content-between border-bottom">
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <i class="fa fa-users text-primary"></i>
+                                                <span><%= language.Customers || 'Customers' %></span>
+                                            </div>
+                                            <div class="form-check form-switch m-0" title="Toggle all permissions for this module">
+                                                <input class="form-check-input module-toggle-switch" type="checkbox" role="switch" data-module="customers">
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_customers_read" name="customers" value="read">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_customers_read">
+                                                        <i class="fa fa-eye text-primary me-1"></i><%= language.Read || 'Read' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_customers_write" name="customers" value="write">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_customers_write">
+                                                        <i class="fa fa-plus-circle text-success me-1"></i><%= language.Write || 'Write' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_customers_edit" name="customers" value="edit">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_customers_edit">
+                                                        <i class="fa fa-edit text-warning me-1"></i><%= language.Edit || 'Edit' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_customers_delete" name="customers" value="delete">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_customers_delete">
+                                                        <i class="fa fa-trash-alt text-danger me-1"></i><%= language.Delete || 'Delete' %>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                </div>
+                                <!-- 4. Expenses -->
+                                <div class="col-12 col-md-6">
+                                    <div class="card border shadow-sm rounded-3 h-100 mb-0">
+                                        <div class="card-header py-2 px-3 bg-light-subtle d-flex align-items-center justify-content-between border-bottom">
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <i class="fa fa-wallet text-danger"></i>
+                                                <span><%= language.Expence || 'Expenses' %></span>
+                                            </div>
+                                            <div class="form-check form-switch m-0" title="Toggle all permissions for this module">
+                                                <input class="form-check-input module-toggle-switch" type="checkbox" role="switch" data-module="expense">
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_expense_read" name="expense" value="read">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_expense_read">
+                                                        <i class="fa fa-eye text-primary me-1"></i><%= language.Read || 'Read' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_expense_write" name="expense" value="write">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_expense_write">
+                                                        <i class="fa fa-plus-circle text-success me-1"></i><%= language.Write || 'Write' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_expense_edit" name="expense" value="edit">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_expense_edit">
+                                                        <i class="fa fa-edit text-warning me-1"></i><%= language.Edit || 'Edit' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_expense_delete" name="expense" value="delete">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_expense_delete">
+                                                        <i class="fa fa-trash-alt text-danger me-1"></i><%= language.Delete || 'Delete' %>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 5. Services -->
+                                <div class="col-12 col-md-6">
+                                    <div class="card border shadow-sm rounded-3 h-100 mb-0">
+                                        <div class="card-header py-2 px-3 bg-light-subtle d-flex align-items-center justify-content-between border-bottom">
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <i class="fa fa-concierge-bell text-secondary"></i>
+                                                <span><%= language.Services || 'Services & Pricing' %></span>
+                                            </div>
+                                            <div class="form-check form-switch m-0" title="Toggle all permissions for this module">
+                                                <input class="form-check-input module-toggle-switch" type="checkbox" role="switch" data-module="service">
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_service_read" name="service" value="read">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_service_read">
+                                                        <i class="fa fa-eye text-primary me-1"></i><%= language.Read || 'Read' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_service_write" name="service" value="write">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_service_write">
+                                                        <i class="fa fa-plus-circle text-success me-1"></i><%= language.Write || 'Write' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_service_edit" name="service" value="edit">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_service_edit">
+                                                        <i class="fa fa-edit text-warning me-1"></i><%= language.Edit || 'Edit' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_service_delete" name="service" value="delete">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_service_delete">
+                                                        <i class="fa fa-trash-alt text-danger me-1"></i><%= language.Delete || 'Delete' %>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 6. Accounts -->
+                                <div class="col-12 col-md-6">
+                                    <div class="card border shadow-sm rounded-3 h-100 mb-0">
+                                        <div class="card-header py-2 px-3 bg-light-subtle d-flex align-items-center justify-content-between border-bottom">
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <i class="fa fa-money-bill-wave text-success"></i>
+                                                <span><%= language.Account || 'Accounts & Ledgers' %></span>
+                                            </div>
+                                            <div class="form-check form-switch m-0" title="Toggle all permissions for this module">
+                                                <input class="form-check-input module-toggle-switch" type="checkbox" role="switch" data-module="account">
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_account_read" name="account" value="read">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_account_read">
+                                                        <i class="fa fa-eye text-primary me-1"></i><%= language.Read || 'Read' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_account_write" name="account" value="write">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_account_write">
+                                                        <i class="fa fa-plus-circle text-success me-1"></i><%= language.Write || 'Write' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_account_edit" name="account" value="edit">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_account_edit">
+                                                        <i class="fa fa-edit text-warning me-1"></i><%= language.Edit || 'Edit' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_account_delete" name="account" value="delete">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_account_delete">
+                                                        <i class="fa fa-trash-alt text-danger me-1"></i><%= language.Delete || 'Delete' %>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 7. Reports -->
+                                <div class="col-12 col-md-6">
+                                    <div class="card border shadow-sm rounded-3 h-100 mb-0">
+                                        <div class="card-header py-2 px-3 bg-light-subtle d-flex align-items-center justify-content-between border-bottom">
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <i class="fa fa-chart-line text-primary"></i>
+                                                <span><%= language.Reports || 'Reports & Analytics' %></span>
+                                            </div>
+                                            <div class="form-check form-switch m-0" title="Toggle all permissions for this module">
+                                                <input class="form-check-input module-toggle-switch" type="checkbox" role="switch" data-module="reports">
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_reports_read" name="reports" value="read">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_reports_read">
+                                                        <i class="fa fa-eye text-primary me-1"></i><%= language.Read || 'Read & View Reports' %>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 8. Roles -->
+                                <div class="col-12 col-md-6">
+                                    <div class="card border shadow-sm rounded-3 h-100 mb-0">
+                                        <div class="card-header py-2 px-3 bg-light-subtle d-flex align-items-center justify-content-between border-bottom">
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <i class="fa fa-user-lock text-warning"></i>
+                                                <span><%= language.Role || 'Role Management' %></span>
+                                            </div>
+                                            <div class="form-check form-switch m-0" title="Toggle all permissions for this module">
+                                                <input class="form-check-input module-toggle-switch" type="checkbox" role="switch" data-module="rollaccess">
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_roll_read" name="rollaccess" value="read">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_roll_read">
+                                                        <i class="fa fa-eye text-primary me-1"></i><%= language.Read || 'Read' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_roll_write" name="rollaccess" value="write">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_roll_write">
+                                                        <i class="fa fa-plus-circle text-success me-1"></i><%= language.Write || 'Write' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_roll_edit" name="rollaccess" value="edit">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_roll_edit">
+                                                        <i class="fa fa-edit text-warning me-1"></i><%= language.Edit || 'Edit' %>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 9. Email -->
+                                <div class="col-12 col-md-6">
+                                    <div class="card border shadow-sm rounded-3 h-100 mb-0">
+                                        <div class="card-header py-2 px-3 bg-light-subtle d-flex align-items-center justify-content-between border-bottom">
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <i class="fa fa-envelope text-info"></i>
+                                                <span><%= language.Email || 'Email Notifications' %></span>
+                                            </div>
+                                            <div class="form-check form-switch m-0" title="Toggle all permissions for this module">
+                                                <input class="form-check-input module-toggle-switch" type="checkbox" role="switch" data-module="mail">
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_mail_read" name="mail" value="read">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_mail_read">
+                                                        <i class="fa fa-eye text-primary me-1"></i><%= language.Read || 'Read' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_mail_write" name="mail" value="write">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_mail_write">
+                                                        <i class="fa fa-plus-circle text-success me-1"></i><%= language.Write || 'Write' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_mail_edit" name="mail" value="edit">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_mail_edit">
+                                                        <i class="fa fa-edit text-warning me-1"></i><%= language.Edit || 'Edit' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_mail_delete" name="mail" value="delete">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_mail_delete">
+                                                        <i class="fa fa-trash-alt text-danger me-1"></i><%= language.Delete || 'Delete' %>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 10. Store Settings -->
+                                <div class="col-12 col-md-6">
+                                    <div class="card border shadow-sm rounded-3 h-100 mb-0">
+                                        <div class="card-header py-2 px-3 bg-light-subtle d-flex align-items-center justify-content-between border-bottom">
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <i class="fa fa-store text-primary"></i>
+                                                <span><%= language.Store_Settings || 'Store Settings' %></span>
+                                            </div>
+                                            <div class="form-check form-switch m-0" title="Toggle all permissions for this module">
+                                                <input class="form-check-input module-toggle-switch" type="checkbox" role="switch" data-module="master">
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_master_read" name="master" value="read">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_master_read">
+                                                        <i class="fa fa-eye text-primary me-1"></i><%= language.Read || 'Read' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_master_edit" name="master" value="edit">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_master_edit">
+                                                        <i class="fa fa-edit text-warning me-1"></i><%= language.Edit || 'Edit' %>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 11. Staff Management -->
+                                <div class="col-12 col-md-6">
+                                    <div class="card border shadow-sm rounded-3 h-100 mb-0">
+                                        <div class="card-header py-2 px-3 bg-light-subtle d-flex align-items-center justify-content-between border-bottom">
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <i class="fa fa-user-tie text-success"></i>
+                                                <span><%= language.Staff || 'Staff Management' %></span>
+                                            </div>
+                                            <div class="form-check form-switch m-0" title="Toggle all permissions for this module">
+                                                <input class="form-check-input module-toggle-switch" type="checkbox" role="switch" data-module="staff">
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_staff_read" name="staff" value="read">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_staff_read">
+                                                        <i class="fa fa-eye text-primary me-1"></i><%= language.Read || 'Read' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_staff_write" name="staff" value="write">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_staff_write">
+                                                        <i class="fa fa-plus-circle text-success me-1"></i><%= language.Write || 'Write' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_staff_edit" name="staff" value="edit">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_staff_edit">
+                                                        <i class="fa fa-edit text-warning me-1"></i><%= language.Edit || 'Edit' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_staff_delete" name="staff" value="delete">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_staff_delete">
+                                                        <i class="fa fa-trash-alt text-danger me-1"></i><%= language.Delete || 'Delete' %>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 12. SMS Messaging -->
+                                <div class="col-12 col-md-6">
+                                    <div class="card border shadow-sm rounded-3 h-100 mb-0">
+                                        <div class="card-header py-2 px-3 bg-light-subtle d-flex align-items-center justify-content-between border-bottom">
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <i class="fa fa-sms text-info"></i>
+                                                <span><%= language.SMS || 'SMS Messaging' %></span>
+                                            </div>
+                                            <div class="form-check form-switch m-0" title="Toggle all permissions for this module">
+                                                <input class="form-check-input module-toggle-switch" type="checkbox" role="switch" data-module="sms">
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_sms_read" name="sms" value="read">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_sms_read">
+                                                        <i class="fa fa-eye text-primary me-1"></i><%= language.Read || 'Read' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_sms_write" name="sms" value="write">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_sms_write">
+                                                        <i class="fa fa-plus-circle text-success me-1"></i><%= language.Write || 'Write' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_sms_edit" name="sms" value="edit">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_sms_edit">
+                                                        <i class="fa fa-edit text-warning me-1"></i><%= language.Edit || 'Edit' %>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input perm-chk" type="checkbox" id="updatestore_sms_delete" name="sms" value="delete">
+                                                    <label class="form-check-label fs-13 fw-semibold text-dark" for="updatestore_sms_delete">
+                                                        <i class="fa fa-trash-alt text-danger me-1"></i><%= language.Delete || 'Delete' %>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Active Status Card -->
+                                <!-- <div class="col-12">
+                                    <div class="p-3 bg-light-subtle rounded-3 border d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="fa fa-shield-alt text-primary fs-5"></i>
+                                            <div>
+                                                <div class="fw-bold text-dark fs-13"><%= language.Is_Active || 'Role Active Status' %></div>
+                                                <small class="text-muted fs-11">When active, staff member operates with these permissions</small>
+                                            </div>
+                                        </div>
+                                        <div class="form-check form-switch m-0 fs-5">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="rollactive" name="active" value="1" checked>
+                                        </div>
+                                    </div>
+                                </div> -->
+                            </div>
+                        </div>
+
+                        <div class="modal-footer py-3 px-4 border-top bg-light-subtle d-flex justify-content-between align-items-center">
+                            <small class="text-muted"><i class="fa fa-lock me-1"></i> Permissions are applied immediately upon saving.</small>
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-outline-secondary px-3 py-2 fw-semibold" data-bs-dismiss="modal">
+                                    <i class="fa fa-times me-1"></i><%= language.Cancel || 'Cancel' %>
+                                </button>
+                                <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2">
+                                    <i class="fa fa-save"></i><%= language.Save || 'Save Permissions' %>
+                                </button>
+                            </div>
+                        </div>
+                </form>
             </div>
         </div>
 
         </div>
+
+    
 
         <!--**********************************
             Footer start
@@ -2104,19 +1766,38 @@
                           .replace(/'/g, '&#039;');
                     }
 
-                    function changeStaffStatus(id, currentApproved) {
-                        const status = currentApproved === 1 ? 'deactive' : 'active';
+                    function changeStaffStatus(id, currentApproved, checkboxElem) {
+                        let newStatus = 'active';
+                        if (checkboxElem) {
+                            newStatus = checkboxElem.checked ? 'active' : 'deactive';
+                        } else {
+                            const isCurrentlyActive = (String(currentApproved) === '1');
+                            newStatus = isCurrentlyActive ? 'deactive' : 'active';
+                        }
+
+                        if (checkboxElem) {
+                            $(checkboxElem).prop('disabled', true);
+                        }
+
                         $.ajax({
                             type: 'POST',
                             url: `/tool/staffroll/${id}`,
-                            data: { status: status },
+                            data: { status: newStatus },
                             success: function (res) {
+                                if (checkboxElem) {
+                                    $(checkboxElem).prop('disabled', false);
+                                }
                                 if (window.staffTable) {
                                     window.staffTable.ajax.reload(null, false);
                                 }
                             },
                             error: function(err) {
                                 console.error('Failed to change staff status', err);
+                                if (checkboxElem) {
+                                    $(checkboxElem).prop('disabled', false);
+                                    checkboxElem.checked = !checkboxElem.checked;
+                                }
+                                alert('Failed to update staff status in database. Please try again.');
                             }
                         });
                     }
@@ -2157,10 +1838,10 @@
                                 {
                                     data: 'approved',
                                     render: function(data, type, row) {
-                                        const isChecked = data === 1 ? 'checked' : '';
+                                        const isChecked = (String(data) === '1') ? 'checked' : '';
                                         return `
                                             <div class="form-check form-switch d-inline-block">
-                                                <input class="form-check-input" type="checkbox" id="active${row.id}" ${isChecked} onchange="changeStaffStatus('${row.id}', ${data})">
+                                                <input class="form-check-input" type="checkbox" id="active${row.id}" ${isChecked} onchange="changeStaffStatus('${row.id}', '${data}', this)">
                                             </div>
                                         `;
                                     }
@@ -2173,17 +1854,28 @@
                                     render: function(data, type, row) {
                                         let html = '<div class="tbl-action-group justify-content-center">';
                                         if (row.canEdit) {
-                                            html += `<a href="#" class="btn-dt-action btn-edit btn-staff-edit" id="update_staff" data-bs-toggle="modal" data-bs-target="#staff_update" 
+                                            html += `<a href="#" class="btn-dt-action btn-edit btn-staff-edit" data-bs-toggle="modal" data-bs-target="#staff_update" 
                                                         data-id="${row.id}" data-name="${escapeHtml(row.name)}" data-number="${escapeHtml(row.number)}" 
                                                         data-roll_id="${row.roll_id}" data-email="${escapeHtml(row.email)}" data-username="${escapeHtml(row.username)}" 
                                                         data-password="${escapeHtml(row.password)}" data-store-id="${row.store_ID}" data-approved="${row.approved}" 
                                                         title="<%= language.Edit || 'Edit' %>"><i class="fas fa-pencil-alt"></i></a>`;
                                         }
                                         if (row.canDelete) {
-                                            html += `<a href="/tool/deletstaff/${row.id}" class="btn-dt-action btn-delete" title="<%= language.Delete || 'Delete' %>" onclick="return confirm('<%= language.Are_you_sure_delete || 'Are you sure you want to delete this staff?' %>');"><i class="fa fa-trash"></i></a>`;
+                                            html += `<button type="button" class="btn-dt-action btn-delete btn-delete-staff" 
+                                                        data-bs-toggle="modal" data-bs-target="#deleteStaffModal" 
+                                                        data-id="${row.id}" data-name="${escapeHtml(row.name || '')}" 
+                                                        title="<%= language.Delete || 'Delete' %>">
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>`;
                                         }
                                         if (row.canEdit) {
-                                            html += `<a class="btn-dt-action btn-info" data-bs-toggle="modal" data-bs-target="#roll_list_update_${row.rollType}" data-roll-id="${row.roll_id}" data-roll-type="${row.rollType}" id="rollmanege${row.rollType}" title="<%= language.Role || 'Manage Role' %>"><i class="fas fa-tasks"></i></a>`;
+                                            html += `<a href="#" class="btn-dt-action btn-info btn-manage-role" 
+                                                        data-bs-toggle="modal" data-bs-target="#roll_list_update_${row.rollType}" 
+                                                        data-roll-id="${row.roll_id}" data-rollup-id="${row.roll_id}" 
+                                                        data-roll-type="${row.rollType}" data-staff-name="${escapeHtml(row.name || '')}" 
+                                                        id="rollmanege${row.rollType}" title="<%= language.Role || 'Manage Role' %>">
+                                                        <i class="fas fa-tasks"></i>
+                                                    </a>`;
                                         }
                                         html += '</div>';
                                         return html;
@@ -2200,12 +1892,238 @@
                         });
                     });
 
-                    $(document).on('click', '#update_staff', function () {
-                        const storeId = $(this).attr('data-store-id');
+                    function populateStaffUpdateModal(button) {
+                        const $btn = $(button);
+                        const id = $btn.attr('data-id');
+                        const name = $btn.attr('data-name') || '';
+                        const number = $btn.attr('data-number') || '';
+                        const email = $btn.attr('data-email') || '';
+                        const username = $btn.attr('data-username') || '';
+                        const rollId = $btn.attr('data-roll_id') || '';
+                        const storeId = $btn.attr('data-store-id') || '';
+                        const approved = $btn.attr('data-approved');
+
+                        if (id) {
+                            $('#update_staff_form').attr('action', '/tool/updatestaff/' + id);
+                        }
+
+                        $('#name_update').val(name);
+                        $('#number_update').val(number);
+                        $('#email_update').val(email);
+                        $('#username_update').val(username);
+                        $('#password_update').val('');
+                        $('#roll_list_update').val(rollId);
+
                         if (storeId) {
                             $('#store_update').val(storeId);
                         }
+
+                        $('#active_update').prop('checked', String(approved) === '1');
+                    }
+
+                    $(document).on('click', '.btn-staff-edit, #update_staff', function () {
+                        populateStaffUpdateModal(this);
                     });
+
+                    $('#staff_update').on('show.bs.modal', function (e) {
+                        if (e.relatedTarget) {
+                            populateStaffUpdateModal(e.relatedTarget);
+                        }
+                    });
+
+                    $('#update_staff_form').on('submit', function (e) {
+                        const action = $(this).attr('action');
+                        if (!action || action === '' || action === '/tool/updatestaff/' || action.includes('undefined')) {
+                            e.preventDefault();
+                            alert('Invalid destination: please re-open the edit dialog and try again.');
+                            return false;
+                        }
+                    });
+
+                    $(document).on('click', '.btn-delete-staff', function () {
+                        const staffId = $(this).attr('data-id');
+                        const cleanId = String(staffId).replace(/['"]/g, '').trim();
+                        const staffName = $(this).attr('data-name') || '';
+
+                        $('#deleteStaffModalName').text(staffName ? ('"' + staffName + '"') : ('#' + cleanId));
+                        $('#deleteStaffConfirmBtn').attr('href', '/tool/deletstaff/' + cleanId);
+                    });
+
+                    // Manage Role Modal: Setup & Dynamic Population
+                    $('[id^="roll_list_update_"]').on('show.bs.modal', function (e) {
+                        const button = $(e.relatedTarget);
+                        const rollId = button.attr('data-roll-id') || button.attr('data-rollup-id') || button.data('roll-id') || button.data('rollup-id');
+                        const rollType = button.attr('data-roll-type') || button.data('roll-type') || 'store';
+                        const staffName = button.attr('data-staff-name') || button.data('staff-name') || '';
+
+                        if (staffName) {
+                            $('#roleModalStaffName').text(`- ${staffName}`);
+                        } else {
+                            $('#roleModalStaffName').text('');
+                        }
+
+                        if (rollId) {
+                            const cleanRollId = String(rollId).replace(/['"]/g, '').trim();
+                            const targetAction = `/tool/rollUp/${cleanRollId}`;
+                            
+                            // Set action on both form ID variations to avoid blank page
+                            $('#updateroll_form_' + rollType).attr('action', targetAction);
+                            $('#updateroll_' + rollType + '_form').attr('action', targetAction);
+                            $('#updateroll_form_store').attr('action', targetAction);
+                            $('#updateroll_store_form').attr('action', targetAction);
+
+                            debugger
+                            // Load existing permissions via AJAX
+                            $.ajax({
+                                type: 'GET',
+                                url: `/tool/rolldetailstaff/${cleanRollId}`,
+                                success: function (res) {
+                                    debugger
+                                    const rd = (res && res.rolldata) ? res.rolldata : {};
+
+                                    function checkPerm(selector, permVal, action) {
+                                        const checked = Boolean(permVal && typeof permVal === 'string' && permVal.includes(action));
+                                        $(selector).prop('checked', checked);
+                                    }
+
+                                    // POS
+                                    checkPerm('#updatestore_pos_read', rd.pos, 'read');
+                                    checkPerm('#updatestore_pos_write', rd.pos, 'write');
+
+                                    // Orders
+                                    checkPerm('#updatestore_orders_read', rd.orders, 'read');
+                                    checkPerm('#updatestore_orders_write', rd.orders, 'write');
+                                    checkPerm('#updatestore_orders_edit', rd.orders, 'edit');
+                                    checkPerm('#updatestore_orders_delete', rd.orders, 'delete');
+
+                                    // Customers
+                                    checkPerm('#updatestore_customers_read', rd.customers, 'read');
+                                    checkPerm('#updatestore_customers_write', rd.customers, 'write');
+                                    checkPerm('#updatestore_customers_edit', rd.customers, 'edit');
+                                    checkPerm('#updatestore_customers_delete', rd.customers, 'delete');
+
+                                    // Expense
+                                    checkPerm('#updatestore_expense_read', rd.expense, 'read');
+                                    checkPerm('#updatestore_expense_write', rd.expense, 'write');
+                                    checkPerm('#updatestore_expense_edit', rd.expense, 'edit');
+                                    checkPerm('#updatestore_expense_delete', rd.expense, 'delete');
+
+                                    // Service
+                                    checkPerm('#updatestore_service_read', rd.service, 'read');
+                                    checkPerm('#updatestore_service_write', rd.service, 'write');
+                                    checkPerm('#updatestore_service_edit', rd.service, 'edit');
+                                    checkPerm('#updatestore_service_delete', rd.service, 'delete');
+
+                                    // Account
+                                    checkPerm('#updatestore_account_read', rd.account, 'read');
+                                    checkPerm('#updatestore_account_write', rd.account, 'write');
+                                    checkPerm('#updatestore_account_edit', rd.account, 'edit');
+                                    checkPerm('#updatestore_account_delete', rd.account, 'delete');
+
+                                    // Reports
+                                    checkPerm('#updatestore_reports_read', rd.reports, 'read');
+
+                                    // Roles
+                                    checkPerm('#updatestore_roll_read', rd.rollaccess, 'read');
+                                    checkPerm('#updatestore_roll_write', rd.rollaccess, 'write');
+                                    checkPerm('#updatestore_roll_edit', rd.rollaccess, 'edit');
+
+                                    // Mail
+                                    checkPerm('#updatestore_mail_read', rd.mail, 'read');
+                                    checkPerm('#updatestore_mail_write', rd.mail, 'write');
+                                    checkPerm('#updatestore_mail_edit', rd.mail, 'edit');
+                                    checkPerm('#updatestore_mail_delete', rd.mail, 'delete');
+
+                                    // Master / Store Settings
+                                    checkPerm('#updatestore_master_read', rd.master, 'read');
+                                    checkPerm('#updatestore_master_edit', rd.master, 'edit');
+
+                                    // Staff
+                                    checkPerm('#updatestore_staff_read', rd.staff, 'read');
+                                    checkPerm('#updatestore_staff_write', rd.staff, 'write');
+                                    checkPerm('#updatestore_staff_edit', rd.staff, 'edit');
+                                    checkPerm('#updatestore_staff_delete', rd.staff, 'delete');
+
+                                    // SMS
+                                    checkPerm('#updatestore_sms_read', rd.sms, 'read');
+                                    checkPerm('#updatestore_sms_write', rd.sms, 'write');
+                                    checkPerm('#updatestore_sms_edit', rd.sms, 'edit');
+                                    checkPerm('#updatestore_sms_delete', rd.sms, 'delete');
+
+                                    // Active toggle
+                                    $('#rollactive').prop('checked', rd.active !== 0 && rd.active !== '0');
+
+                                    // Update module switches state
+                                    syncModuleSwitches();
+                                }
+                            });
+                        }
+                    });
+
+                    // Sync module switch state with checkboxes
+                    function syncModuleSwitches() {
+                        $('#roll_list_update_store .card').each(function () {
+                            const card = $(this);
+                            const chks = card.find('.perm-chk');
+                            const sw = card.find('.module-toggle-switch');
+                            if (chks.length > 0 && sw.length > 0) {
+                                const allChecked = chks.filter(':checked').length === chks.length;
+                                sw.prop('checked', allChecked);
+                            }
+                        });
+                    }
+
+                    // Per-Module Toggle Switch
+                    $(document).on('change', '.module-toggle-switch', function () {
+                        const isChecked = $(this).is(':checked');
+                        const card = $(this).closest('.card');
+                        card.find('.perm-chk').prop('checked', isChecked);
+                    });
+
+                    // Update switch when child permission checkbox changes
+                    $(document).on('change', '.perm-chk', function () {
+                        syncModuleSwitches();
+                    });
+
+                    // Global Select All / Deselect All
+                    $(document).on('click', '#btnSelectAllPerms', function () {
+                        $('#roll_list_update_store .perm-chk').prop('checked', true);
+                        $('#roll_list_update_store .module-toggle-switch').prop('checked', true);
+                    });
+
+                    $(document).on('click', '#btnDeselectAllPerms', function () {
+                        $('#roll_list_update_store .perm-chk').prop('checked', false);
+                        $('#roll_list_update_store .module-toggle-switch').prop('checked', false);
+                    });
+
+                    // Form Submission Safety Guard: Prevent submitting to invalid or default route
+                    $(document).on('submit', '#updateroll_form_store, #updateroll_store_form', function (e) {
+                        const action = $(this).attr('action');
+                        if (!action || action === '/coustomer/update/' || action.includes('undefined')) {
+                            e.preventDefault();
+                            alert('Invalid destination: please re-open the role dialog and try again.');
+                            return false;
+                        }
+                    });
+
+                    function toggleStaffPassword(inputId, btn) {
+                        const input = document.getElementById(inputId);
+                        if (!input) return;
+                        const icon = btn.querySelector('i');
+                        if (input.type === 'password') {
+                            input.type = 'text';
+                            if (icon) {
+                                icon.classList.remove('fa-eye');
+                                icon.classList.add('fa-eye-slash');
+                            }
+                        } else {
+                            input.type = 'password';
+                            if (icon) {
+                                icon.classList.remove('fa-eye-slash');
+                                icon.classList.add('fa-eye');
+                            }
+                        }
+                    }
                 </script>
 </body>
 

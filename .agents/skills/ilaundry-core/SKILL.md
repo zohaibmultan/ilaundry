@@ -104,3 +104,51 @@ When truncating transactional tables (`tbl_order`, `tbl_order_payment`, `tbl_car
 * `tbl_roll` & `tbl_staff_roll`: System and role permission maps.
 * `tbl_master_shop`: Global branding, currency, timezone, and thermal printer hardware settings.
 * `tbl_services_type`, `tbl_services`, `tbl_addons`: Starter laundry/dry cleaning catalog.
+
+## 9. Express Route Response & Error Handling Contract
+
+Every Express route handler must guarantee an HTTP response across every execution branch:
+* **AJAX / API Endpoints** (e.g. `/tool/staffroll/:id`, `/tool/rolldetailstaff/:id`):
+  ```javascript
+  router.post("/status-toggle/:id", auth, async (req, res) => {
+    try {
+      if (process.env.DISABLE_DB_WRITE === "true") {
+        return res.status(403).json({ success: false, message: "Demo mode write disabled" });
+      }
+      const rawStatus = req.body.status;
+      const status = (rawStatus === "active" || rawStatus === "1" || rawStatus === 1 || rawStatus === true) ? "1" : "0";
+
+      const result = await DataUpdate("tbl_admin", `approved='${status}'`, `id='${req.params.id}'`, req.hostname, req.protocol);
+      if (result === -1) {
+        return res.status(400).json({ success: false, message: "Update failed" });
+      }
+      return res.status(200).json({ success: true, status });
+    } catch (error) {
+      console.error("Status update error:", error);
+      return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  });
+  ```
+* **Full-Page Form Submissions**:
+  Always finish with `req.flash(...)` and `return res.redirect(...)`. Never return hanging promises without response termination.
+
+## 10. Database Boolean Normalization & Status Toggling Standard
+
+* **MySQL Storage**: In this project, status flags (`approved`, `active`, `delet_flage`) are frequently typed as `VARCHAR(45)` storing `'1'` or `'0'`.
+* **Comparison in Templates/JS**:
+  * ❌ `data === 1` (Fails if data is string `'1'`)
+  * ✅ `String(data) === '1'` or `Number(data) === 1` or `data == 1`
+* **Controller Normalization**:
+  ```javascript
+  const status = (raw === "active" || raw === "1" || raw === 1 || raw === true) ? "1" : "0";
+  ```
+
+## 11. Modal Dialog Scrolling & Responsive Form Layout Pattern
+
+* **Modal Dialog Architecture**:
+  * Always include `.modal-dialog-centered` and `.modal-dialog-scrollable` on modals containing multi-field forms or role permission matrices.
+  * Ensures `.modal-header` and `.modal-footer` remain stationary while `.modal-body` scrolls smoothly.
+* **Responsive Two-Column Layout**:
+  * Use Bootstrap 5 grid: `<div class="row g-3">` with `<div class="col-12 col-md-6">` for fields.
+  * Use `<div class="col-12">` for full-width cards (e.g. Active status switch or permission accordions).
+

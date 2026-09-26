@@ -33,29 +33,43 @@
                             <div class="cc-container">
                                 <!-- Left Column: Info, Heading, Shortcuts, Feature Tags -->
                                 <div class="cc-left">
-                                    <div class="cc-pill-badge">
+                                    <div class="cc-pill-badge mb-2">
                                         <span class="cc-dot"></span>
-                                        <span>COMMAND CENTER</span>
+                                        <span><%= language.Command_Center || 'Command Center' %></span>
                                         <span class="cc-sep">&bull;</span>
-                                        <span>RECENT ORDER</span>
+                                        <span><%= language.Live_Overview || 'Live Overview' %></span>
                                     </div>
 
-                                    <h1 class="cc-title">
-                                        <%= (roll && roll.rollType==='master' ) ? 'Manager' : ((roll && roll.name) ?
-                                            roll.name : 'Manager' ) %>
-                                    </h1>
+                                    <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                                        <h1 class="cc-title mb-0">
+                                            <%= language.Welcome_back || 'Welcome back' %>, <%= accessdata?.topbardata?.name || 'Administrator' %>
+                                        </h1>
+                                        <span class="badge bg-primary bg-opacity-10 text-white px-3 py-1 fs-12 fw-semibold">
+                                            <i class="fas fa-user-shield me-1"></i>
+                                            <%= (roll && roll.rollType==='master' ) ? (language.Master_Admin || 'Master Admin') : ((roll && roll.name) ? roll.name : (language.Store_Manager || 'Store Manager') ) %>
+                                        </span>
+                                    </div>
 
-                                    <p class="cc-subtitle">
-                                        Track sales, orders, customer activity, and operational status from one clean
-                                        view. Use the shortcuts below to jump into the parts of the app you use most
-                                        often.
+                                    <p class="cc-subtitle mb-3">
+                                        <%= language.Dashboard_Hero_Subtitle || 'Monitor real-time sales revenue, active order throughput, and branch operations from a single unified view. Jump directly to high-frequency actions below:' %>
                                     </p>
 
-                                    <div class="cc-shortcuts">
-                                        <a href="/order/list" class="btn cc-btn-primary">View Orders</a>
-                                        <a href="/coustomer/list" class="btn cc-btn-outline">Customers</a>
-                                        <a href="/report/daily" class="btn cc-btn-outline">Reports</a>
-                                        <a href="/services/list" class="btn cc-btn-outline">Services</a>
+                                    <div class="cc-shortcuts mb-0">
+                                        <a href="/admin" class="btn cc-btn-primary">
+                                            <i class="fas fa-cash-register me-1"></i> <%= language.POS_Screen || 'POS Screen' %>
+                                        </a>
+                                        <a href="/order/list" class="btn cc-btn-outline">
+                                            <i class="fas fa-boxes me-1"></i> <%= language.Orders %>
+                                        </a>
+                                        <a href="/coustomer/list" class="btn cc-btn-outline">
+                                            <i class="fas fa-users me-1"></i> <%= language.Customers %>
+                                        </a>
+                                        <a href="/report/daily" class="btn cc-btn-outline">
+                                            <i class="fas fa-chart-pie me-1"></i> <%= language.Daily_Reports %>
+                                        </a>
+                                        <a href="/services/list" class="btn cc-btn-outline">
+                                            <i class="fas fa-tshirt me-1"></i> <%= language.Services %>
+                                        </a>
                                     </div>
                                 </div>
 
@@ -65,10 +79,10 @@
                                         <div
                                             class="cc-snapshot-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                                             <div class="d-flex align-items-center gap-2">
-                                                <span class="cc-snapshot-title">LIVE SNAPSHOT</span>
+                                                <i class="fas fa-tachometer-alt text-primary"></i>
+                                                <span class="cc-snapshot-title mb-0"><%= language.Live_Performance_Snapshot || 'Live Performance Snapshot' %></span>
                                                 <% if (isScopedUser) { %>
-                                                    <span class="badge bg-primary text-white"
-                                                        style="font-size: 0.75rem;">
+                                                    <span class="badge bg-primary text-white rounded-pill px-2 py-1 fs-12">
                                                         <i class="fas fa-store me-1"></i>
                                                         <%= currentStoreName %>
                                                     </span>
@@ -80,7 +94,7 @@
                                                         <select id="dashboard-store-filter"
                                                             class="form-select form-select-sm py-1 px-2 border-0 shadow-sm"
                                                             style="font-size: 0.8rem; font-weight: 600; border-radius: 8px; background-color: #f8fafc; color: #1e293b; min-width: 160px;">
-                                                            <option value="all" selected>All Stores (Combined)</option>
+                                                            <option value="all" selected><%= language.All_Stores_Combined || 'All Stores (Combined)' %></option>
                                                             <% storeList.forEach(function(st) { %>
                                                                 <option value="<%= st.id %>">
                                                                     <%= st.name %>
@@ -91,52 +105,68 @@
                                                     <% } %>
                                                         <span class="cc-updating-badge">
                                                             <span class="cc-pulse-dot"></span>
-                                                            <span>updating</span>
+                                                            <span><%= language.Live_Sync || 'Live Sync' %></span>
                                                         </span>
                                             </div>
                                         </div>
 
                                         <div class="cc-metrics-grid">
                                             <!-- SALES -->
-                                            <div class="cc-metric-tile">
-                                                <span class="cc-metric-label">SALES</span>
+                                            <div class="cc-metric-tile tile-sales">
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <span class="cc-metric-label"><%= language.Total_Sales || 'TOTAL SALES' %></span>
+                                                    <i class="fas fa-wallet text-primary"></i>
+                                                </div>
                                                 <div class="cc-metric-value-wrap">
-                                                    <span class="cc-metric-value" id="stat-sales">
+                                                    <span class="cc-metric-value text-primary" id="stat-sales">
                                                         <%= accessdata?.masterstore?.currency_symbol || '$' %>
                                                             <%= Number(data?.tottalsales || 0).toLocaleString('en-US', {
                                                                 minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
                                                     </span>
                                                 </div>
+                                                <span class="fs-11 text-muted mt-1"><i class="fas fa-arrow-up text-success me-1"></i><%= language.Gross_Revenue || 'Gross Revenue' %></span>
                                             </div>
 
                                             <!-- ORDERS -->
-                                            <div class="cc-metric-tile">
-                                                <span class="cc-metric-label">ORDERS</span>
+                                            <div class="cc-metric-tile tile-orders">
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <span class="cc-metric-label"><%= language.Total_Orders || 'TOTAL ORDERS' %></span>
+                                                    <i class="fas fa-shopping-bag text-success"></i>
+                                                </div>
                                                 <div class="cc-metric-value-wrap">
-                                                    <span class="cc-metric-value" id="stat-orders">
+                                                    <span class="cc-metric-value text-dark" id="stat-orders">
                                                         <%= Number(data?.totalorder || 0).toLocaleString('en-US') %>
                                                     </span>
                                                 </div>
+                                                <span class="fs-11 text-muted mt-1"><i class="fas fa-check-circle text-success me-1"></i><%= language.Active_Volume || 'Active Volume' %></span>
                                             </div>
 
                                             <!-- SERVICES -->
-                                            <div class="cc-metric-tile">
-                                                <span class="cc-metric-label">SERVICES</span>
+                                            <div class="cc-metric-tile tile-services">
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <span class="cc-metric-label"><%= language.Services || 'SERVICES' %></span>
+                                                    <i class="fas fa-tshirt text-info"></i>
+                                                </div>
                                                 <div class="cc-metric-value-wrap">
-                                                    <span class="cc-metric-value" id="stat-services">
+                                                    <span class="cc-metric-value text-dark" id="stat-services">
                                                         <%= Number(data?.totalservices || 0).toLocaleString('en-US') %>
                                                     </span>
                                                 </div>
+                                                <span class="fs-11 text-muted mt-1"><i class="fas fa-tags text-info me-1"></i><%= language.Catalog_Offerings || 'Catalog Offerings' %></span>
                                             </div>
 
                                             <!-- CUSTOMERS -->
-                                            <div class="cc-metric-tile">
-                                                <span class="cc-metric-label">CUSTOMERS</span>
+                                            <div class="cc-metric-tile tile-customers">
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <span class="cc-metric-label"><%= language.Customers || 'CUSTOMERS' %></span>
+                                                    <i class="fas fa-user-friends text-warning"></i>
+                                                </div>
                                                 <div class="cc-metric-value-wrap">
-                                                    <span class="cc-metric-value" id="stat-customers">
+                                                    <span class="cc-metric-value text-dark" id="stat-customers">
                                                         <%= Number(data?.totalcustomer || 0).toLocaleString('en-US') %>
                                                     </span>
                                                 </div>
+                                                <span class="fs-11 text-muted mt-1"><i class="fas fa-users text-warning me-1"></i><%= language.Client_Profiles || 'Client Profiles' %></span>
                                             </div>
                                         </div>
                                     </div>
@@ -158,13 +188,13 @@
                                         </div>
                                         <div>
                                             <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
-                                                Per-Store Counters &amp; Performance
+                                                <%= language.Per_Store_Counters || 'Per-Store Counters & Performance' %>
                                             </h3>
-                                            <small class="text-muted">Live counters breakdown across each individual store location</small>
+                                            <small class="text-muted"><%= language.Per_Store_Subtitle || 'Live counters breakdown across each individual store location' %></small>
                                         </div>
                                     </div>
                                     <span class="badge bg-light text-dark fw-bold py-2 px-3 fs-14 border rounded-pill">
-                                        <%= storeStatsList.length %> Active Stores
+                                        <%= storeStatsList.length %> <%= language.Active_Stores || 'Active Stores' %>
                                     </span>
                                 </div>
                                 <div class="card-body p-0">
@@ -173,12 +203,12 @@
                                             <thead
                                                 style="background-color: #f8fafc; color: #475569; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">
                                                 <tr>
-                                                    <th class="ps-4 py-3">Store Name</th>
-                                                    <th class="py-3 text-end">Sales</th>
-                                                    <th class="py-3 text-center">Orders</th>
-                                                    <th class="py-3 text-center">Services</th>
-                                                    <th class="py-3 text-center">Customers</th>
-                                                    <th class="pe-4 py-3 text-end">Quick Action</th>
+                                                    <th class="ps-4 py-3"><%= language.Store_Name || 'Store Name' %></th>
+                                                    <th class="py-3 text-end"><%= language.Sales || 'Sales' %></th>
+                                                    <th class="py-3 text-center"><%= language.Orders %></th>
+                                                    <th class="py-3 text-center"><%= language.Services %></th>
+                                                    <th class="py-3 text-center"><%= language.Customers %></th>
+                                                    <th class="pe-4 py-3 text-end"><%= language.Quick_Action || 'Quick Action' %></th>
                                                 </tr>
                                             </thead>
                                             <tbody style="font-size: 0.9rem; color: #1e293b;">
@@ -232,7 +262,7 @@
                                                             <button type="button"
                                                                 class="btn btn-outline-primary btn-xs filter-store-btn"
                                                                 data-store-id="<%= s.store_id %>">
-                                                                <i class="fas fa-filter me-1"></i> Snapshot
+                                                                <i class="fas fa-filter me-1"></i> <%= language.Snapshot || 'Snapshot' %>
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -372,7 +402,18 @@
                             <div class="col-xl-6 col-lg-12 col-sm-12">
                                 <div class="card border-0 shadow-sm rounded-3">
                                     <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                        <h4 class="card-title mb-0 fw-bold">Total Order Chart</h4>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="rounded-3 bg-primary bg-opacity-10 text-white d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                                                <i class="fas fa-shopping-bag fs-5"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="card-title mb-0 fw-bold"><%= language.Total_Order_Volume || 'Total Order Volume' %></h4>
+                                                <small class="text-muted"><%= language.Order_Volume_Subtitle || 'Monthly and daily order intake throughput' %></small>
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-light text-muted border px-2 py-1 fs-12 rounded-pill">
+                                            <i class="fas fa-chart-bar me-1 text-primary"></i> <%= language.Order_Analytics || 'Order Analytics' %>
+                                        </span>
                                     </div>
                                     <div class="card-body p-4">
                                         <canvas id="barChart_2"></canvas>
@@ -384,7 +425,18 @@
                             <div class="col-xl-6 col-lg-12 col-sm-12">
                                 <div class="card border-0 shadow-sm rounded-3">
                                     <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                        <h4 class="card-title mb-0 fw-bold">Total Sales Chart ( <span class="symbol">)</span></h4>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="rounded-3 bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                                                <i class="fas fa-chart-line fs-5"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="card-title mb-0 fw-bold"><%= language.Total_Sales_Revenue || 'Total Sales Revenue' %> (<span class="symbol"><%= accessdata?.symbol || '$' %></span>)</h4>
+                                                <small class="text-muted"><%= language.Sales_Revenue_Subtitle || 'Revenue stream and sales trend analysis' %></small>
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-light text-muted border px-2 py-1 fs-12 rounded-pill">
+                                            <i class="fas fa-dollar-sign me-1 text-success"></i> <%= language.Sales_Analytics || 'Sales Analytics' %>
+                                        </span>
                                     </div>
                                     <div class="card-body p-4">
                                         <canvas id="areaChart_2"></canvas>

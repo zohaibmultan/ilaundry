@@ -83,6 +83,21 @@
         });
     })();
 </script>
+<script>
+    window.APP_LANG = "<%= typeof language_name !== 'undefined' ? language_name : 'en' %>";
+    window.APP_IS_RTL = <%= typeof isRTL !== 'undefined' && isRTL ? 'true' : 'false' %>;
+    window.__ = function(key, fallback) {
+        var dict = <%- typeof langJson !== 'undefined' ? langJson : '{}' %>;
+        return dict[key] || fallback || (key ? String(key).replace(/_/g, ' ') : '');
+    };
+    if (window.APP_IS_RTL) {
+        document.documentElement.setAttribute('dir', 'rtl');
+        document.documentElement.classList.add('rtl');
+    } else {
+        document.documentElement.setAttribute('dir', 'ltr');
+        document.documentElement.classList.remove('rtl');
+    }
+</script>
 <title>
     <%= accessdata?.masterstore?.app_name %>
 </title>

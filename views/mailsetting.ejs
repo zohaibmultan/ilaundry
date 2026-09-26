@@ -1,222 +1,487 @@
 <!DOCTYPE html>
 <html lang="en" class="h-100">
 
-
 <head>
     <!-- meta and links start -->
     <%- include('templet/meta')-%>
-
 </head>
 
 <body>
-        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
-        <!--********** Content body start **********-->
+    <%- include('templet/preloder_topbar_sidebar', { titel: accessdata?.topbardata?.name })-%>
+    
+    <!--********** Content body start **********-->
+    <div class="content-body">
+        <div class="container-fluid" style="min-height: 100vh;">
+            <% 
+                const mail = (data && data.length > 0) ? data[0] : {};
+                const isConfigured = Boolean(mail.host && mail.username);
+                const isActive = mail.status == 1;
+                const canEdit = accessdata && accessdata.roll && accessdata.roll.mail ? accessdata.roll.mail.includes('edit') : true;
+            %>
 
-        <div class="content-body">
-
-            <div class="container-fluid" style="min-height: 100vh;">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm rounded-3">
-                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <!-- Page Header Card -->
+            <div class="row mb-2">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="p-3 bg-primary-subtle text-primary rounded-3 d-inline-flex align-items-center justify-content-center">
+                                    <i class="fa fa-envelope fs-4"></i>
+                                </div>
                                 <div>
-                                    <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
-                                        <i class="fa fa-envelope text-primary me-2"></i><%= language.Email_Setting %>
+                                    <h3 class="mb-1 fw-bold text-dark d-flex align-items-center gap-2">
+                                        <%= language.Email_Setting || 'Email & SMTP Configuration' %>
                                     </h3>
-                                    <small class="text-muted"><%= language.Email_Setting_Subtitle || 'Configure SMTP mail host, port, security credentials, and email notification sender' %></small>
+                                    <p class="text-muted mb-0 fs-13">
+                                        <%= language.Email_Setting_Subtitle || 'Configure outgoing SMTP mail server, authentication credentials, and automated invoice delivery' %>
+                                    </p>
                                 </div>
                             </div>
-                            <div class="card-body p-4">
-                                <div class="p-5">
-                                    <% if(data.length> 0){%>
-                                        <% data.forEach(function(data){ %>
-                                            <form action="/tool/mailsetting" method="post" class="need-validation">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <!-- Status Badge -->
+                                <% if (isConfigured && isActive) { %>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fw-semibold d-inline-flex align-items-center gap-1" id="header_status_badge">
+                                        <i class="fa fa-check-circle"></i> SMTP Active
+                                    </span>
+                                <% } else if (isConfigured && !isActive) { %>
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill fw-semibold d-inline-flex align-items-center gap-1" id="header_status_badge">
+                                        <i class="fa fa-pause-circle"></i> SMTP Paused
+                                    </span>
+                                <% } else { %>
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2 rounded-pill fw-semibold d-inline-flex align-items-center gap-1" id="header_status_badge">
+                                        <i class="fa fa-exclamation-circle"></i> Not Configured
+                                    </span>
+                                <% } %>
 
-                                                <div class="row g-4 justify-content-center">
-
-
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">
-                                                            <%= language.Mail_Host %> <span class="text-danger">*</span>
-                                                        </label>
-                                                        <input type="text" placeholder="Enter Mail Host"
-                                                            class="form-control" name="host" value="<%= data.host %>"
-                                                            required>
-
-                                                    </div>
-
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">
-                                                            <%= language.Mail_Port %> <span class="text-danger">*</span>
-                                                        </label>
-                                                        <input type="number" class="form-control"
-                                                            placeholder="Enter Mail Port" name="port"
-                                                            value="<%= data.port %>" required>
-                                                    </div>
-
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">
-                                                            <%= language.Mail_Username %> <span
-                                                                    class="text-danger">*</span>
-                                                        </label>
-                                                        <input type="email" placeholder="Enter Mail Username"
-                                                            class="form-control" name="username"
-                                                            value="<%= data.username %>" required>
-
-                                                    </div>
-
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">
-                                                            <%= language.Mail_Password %> <span
-                                                                    class="text-danger">*</span>
-                                                        </label>
-                                                        <input type="text" class="form-control"
-                                                            placeholder="Enter Mail Password" name="password"
-                                                            value="<%= data.password %>" required>
-                                                    </div>
-
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">
-                                                            <%= language.From_Email_ID %> <span
-                                                                    class="text-danger">*</span>
-                                                        </label>
-                                                        <input type="email" placeholder="Enter From Email ID"
-                                                            class="form-control" name="frommail"
-                                                            value="<%= data.frommail %>" required>
-
-                                                    </div>
-
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">
-                                                            <%= language.Status %>
-                                                        </label>
-                                                        <select class="default-select form-control wide mb-3"
-                                                            name="status">
-                                                            <option value="1" <%=data.status==1 ? 'selected' : '' %>
-                                                                >Active</option>
-                                                            <option value="0" <%=data.status==0 ? 'selected' : '' %>
-                                                                >Deatctive</option>
-                                                        </select>
-                                                    </div>
-
-
-
-                                                    <hr>
-                                                    <button type="submit" class="btn btn-primary mt-5 col-6 <%= accessdata.roll.mail.includes('edit') ?'':'d-none' %>">
-                                                        <i class="fa fa-save me-2"></i><%= language.Save_Data %>
-                                                    </button>
-                                                </div>
-                                            </form>
-                                            <%})%>
-                                                <%}else{%>
-                                                    <form action="/tool/mailsetting" method="post"
-                                                        class="need-validation">
-
-                                                        <div class="row g-4 justify-content-center">
-
-
-                                                            <div class="col-md-6">
-                                                                <label class="form-label">
-                                                                    <%= language.Mail_Host %> <span
-                                                                            class="text-danger">*</span>
-                                                                </label>
-                                                                <input type="text" placeholder="Enter Mail Host"
-                                                                    class="form-control" name="host" value="" required>
-
-                                                            </div>
-
-                                                            <div class="col-md-6">
-                                                                <label class="form-label">
-                                                                    <%= language.Mail_Port %> <span
-                                                                            class="text-danger">*</span>
-                                                                </label>
-                                                                <input type="number" class="form-control"
-                                                                    placeholder="Enter Mail Port" name="port" value=""
-                                                                    required>
-                                                            </div>
-
-                                                            <div class="col-md-6">
-                                                                <label class="form-label">
-                                                                    <%= language.Mail_Username %> <span
-                                                                            class="text-danger">*</span>
-                                                                </label>
-                                                                <input type="email" placeholder="Enter Mail Username"
-                                                                    class="form-control" name="username" value=""
-                                                                    required>
-
-                                                            </div>
-
-                                                            <div class="col-md-6">
-                                                                <label class="form-label">
-                                                                    <%= language.Mail_Password %> <span
-                                                                            class="text-danger">*</span>
-                                                                </label>
-                                                                <input type="text" class="form-control"
-                                                                    placeholder="Enter Mail Password" name="password"
-                                                                    value="" required>
-                                                            </div>
-
-                                                            <div class="col-md-6">
-                                                                <label class="form-label">
-                                                                    <%= language.From_Email_ID %> <span
-                                                                            class="text-danger">*</span>
-                                                                </label>
-                                                                <input type="email" placeholder="Enter From Email ID"
-                                                                    class="form-control" name="frommail" value=""
-                                                                    required>
-
-                                                            </div>
-
-                                                            <div class="col-md-6">
-                                                                <label class="form-label">
-                                                                    <%= language.Status %>
-                                                                </label>
-                                                                <select class="default-select form-control wide mb-3"
-                                                                    name="status">
-                                                                    <option value="1">Active</option>
-                                                                    <option value="0">Deatctive</option>
-                                                                </select>
-                                                            </div>
-
-
-
-                                                            <hr>
-
-                                                            <button type="submit" class="btn btn-primary mt-5 col-6 <%= accessdata.roll.mail.includes('edit') ?'':'d-none' %>">
-                                                                <i class="fa fa-save me-2"></i><%= language.Save_Data %>
-                                                            </button>   
-                                                        </div>
-                                                    </form>
-                                                    <%}%>   
-                                </div>
+                                <a href="/index" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1">
+                                    <i class="fa fa-arrow-left"></i> <%= language.Back_to_Dashboard || 'Dashboard' %>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Main Form -->
+            <form action="/tool/mailsetting" method="post" class="need-validation" id="mailSettingForm" novalidate>
+                <div class="row g-4">
+                    
+                    <!-- Left Column: Core SMTP Configuration (8 Cols) -->
+                    <div class="col-12 col-xl-8">
+                        
+                        <!-- Section 1: Server & Transmission Connection -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                        <i class="fa fa-server text-primary me-2"></i><%= language.Mail_Host || 'SMTP Server Setup' %>
+                                    </h5>
+                                    <small class="text-muted">Specify the outgoing relay server address and secure transmission port</small>
+                                </div>
+                                <span class="badge bg-light text-secondary border px-2 py-1 fs-11">Step 1 of 2</span>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-3">
+                                    
+                                    <!-- Mail Host -->
+                                    <div class="col-12 col-md-7">
+                                        <label class="form-label fw-semibold" for="mail_host">
+                                            <%= language.Mail_Host || 'Mail Host (SMTP Server)' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-globe"></i></span>
+                                            <input type="text" class="form-control font-monospace" id="mail_host" name="host" 
+                                                value="<%= mail.host || '' %>" placeholder="e.g. smtp.gmail.com" required <%= canEdit ? '' : 'readonly' %>>
+                                        </div>
+                                        <div class="invalid-feedback">Please provide a valid SMTP mail host.</div>
+                                        
+                                        <!-- Provider Preset Chips -->
+                                        <% if (canEdit) { %>
+                                        <div class="mt-2 d-flex flex-wrap gap-1 align-items-center">
+                                            <span class="fs-11 text-muted me-1 fw-semibold text-uppercase">Presets:</span>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill host-preset-btn" data-host="smtp.gmail.com" data-port="587">Gmail</button>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill host-preset-btn" data-host="smtp.office365.com" data-port="587">Outlook 365</button>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill host-preset-btn" data-host="smtp.mail.yahoo.com" data-port="587">Yahoo</button>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill host-preset-btn" data-host="smtp.sendgrid.net" data-port="587">SendGrid</button>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill host-preset-btn" data-host="smtp.mailgun.org" data-port="587">Mailgun</button>
+                                        </div>
+                                        <% } %>
+                                    </div>
+
+                                    <!-- Mail Port -->
+                                    <div class="col-12 col-md-5">
+                                        <label class="form-label fw-semibold" for="mail_port">
+                                            <%= language.Mail_Port || 'SMTP Port' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-network-wired"></i></span>
+                                            <input type="number" class="form-control font-monospace" id="mail_port" name="port" 
+                                                value="<%= mail.port || '' %>" placeholder="587" min="1" max="65535" required <%= canEdit ? '' : 'readonly' %>>
+                                        </div>
+                                        <div class="invalid-feedback">Please specify a valid port number.</div>
+
+                                        <!-- Port Preset Chips -->
+                                        <% if (canEdit) { %>
+                                        <div class="mt-2 d-flex flex-wrap gap-1 align-items-center">
+                                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill port-preset-btn" data-port="587">587 (TLS)</button>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill port-preset-btn" data-port="465">465 (SSL)</button>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill port-preset-btn" data-port="25">25 (Plain)</button>
+                                        </div>
+                                        <% } %>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Authentication Credentials & Sender Profile -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                        <i class="fa fa-user-shield text-info me-2"></i><%= language.Mail_Username || 'Credentials & Sender Profile' %>
+                                    </h5>
+                                    <small class="text-muted">Account login details and recipient-facing email address</small>
+                                </div>
+                                <span class="badge bg-light text-secondary border px-2 py-1 fs-11">Step 2 of 2</span>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-3">
+
+                                    <!-- Mail Username -->
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold" for="mail_username">
+                                            <%= language.Mail_Username || 'SMTP Account Username / Email' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-user"></i></span>
+                                            <input type="text" class="form-control" id="mail_username" name="username" 
+                                                value="<%= mail.username || '' %>" placeholder="e.g. notifications@yourdomain.com" required <%= canEdit ? '' : 'readonly' %>>
+                                        </div>
+                                        <small class="text-muted fs-11">Username or full email address used to authenticate with the SMTP server.</small>
+                                    </div>
+
+                                    <!-- Mail Password -->
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold" for="mail_password">
+                                            <%= language.Mail_Password || 'SMTP Password / App Password' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-key"></i></span>
+                                            <input type="password" class="form-control" id="mail_password" name="password" 
+                                                value="<%= mail.password || '' %>" placeholder="Enter password or app password" required <%= canEdit ? '' : 'readonly' %> autocomplete="new-password">
+                                            <% if (canEdit) { %>
+                                            <button type="button" class="btn btn-outline-secondary" id="togglePasswordBtn" title="Toggle password visibility">
+                                                <i class="fa fa-eye" id="passwordEyeIcon"></i>
+                                            </button>
+                                            <% } %>
+                                        </div>
+                                        <small class="text-muted fs-11">For Gmail / Workspace, generate a 16-digit <strong>App Password</strong> in Google Account Security.</small>
+                                    </div>
+
+                                    <!-- From Email ID -->
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold" for="mail_frommail">
+                                            <%= language.From_Email_ID || 'From Email Address (Sender)' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-paper-plane"></i></span>
+                                            <input type="email" class="form-control" id="mail_frommail" name="frommail" 
+                                                value="<%= mail.frommail || '' %>" placeholder="e.g. orders@yourdomain.com" required <%= canEdit ? '' : 'readonly' %>>
+                                        </div>
+                                        <small class="text-muted fs-11">The email address displayed in the "From" header of customer invoice emails.</small>
+                                    </div>
+
+                                    <!-- Status Mode -->
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold" for="mail_status">
+                                            <%= language.Status || 'Service Status' %>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-toggle-on"></i></span>
+                                            <select class="form-select" id="mail_status" name="status" <%= canEdit ? '' : 'disabled' %>>
+                                                <option value="1" <%= (mail.status == 1 || mail.status === undefined || mail.status === '') ? 'selected' : '' %>>
+                                                    Active — Deliver Invoices &amp; Receipts
+                                                </option>
+                                                <option value="0" <%= (mail.status == 0) ? 'selected' : '' %>>
+                                                    Disabled — Pause All Outgoing Emails
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <small class="text-muted fs-11">When disabled, orders and invoices will be processed without attempting email delivery.</small>
+                                    </div>
+
+                                </div>
+                            </div>
+                            
+                            <!-- Card Actions Footer -->
+                            <div class="card-footer border-top py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div class="text-muted fs-12 d-flex align-items-center gap-1">
+                                    <i class="fa fa-lock text-success"></i> Credentials stored encrypted in the database
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <% if (canEdit) { %>
+                                    <button type="reset" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" id="resetFormBtn">
+                                        <i class="fa fa-undo me-1"></i> Reset Changes
+                                    </button>
+                                    <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2" id="submitFormBtn">
+                                        <i class="fa fa-save"></i> <%= language.Save_Data || 'Save Configuration' %>
+                                    </button>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Right Column: Status Summary, Quick Guides & Triggers (4 Cols) -->
+                    <div class="col-12 col-xl-4">
+                        
+                        <!-- Card 1: Live Status & Configuration Overview -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4">
+                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                    <i class="fa fa-satellite-dish text-primary me-2"></i>Service Summary
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                
+                                <!-- Status Banner -->
+                                <div class="p-3 border rounded-3 mb-3 d-flex align-items-center justify-content-between <%= isActive && isConfigured ? 'bg-success-subtle border-success-subtle' : 'bg-light border' %>" id="summary_banner">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="daily-metric-icon <%= isActive && isConfigured ? 'icon-delivered' : 'icon-expense' %>">
+                                            <i class="fa <%= isActive && isConfigured ? 'fa-check' : 'fa-power-off' %>" id="summary_banner_icon"></i>
+                                        </div>
+                                        <div>
+                                            <span class="text-muted small d-block">SMTP Service</span>
+                                            <strong class="text-dark fs-14" id="summary_status_text">
+                                                <%= (isActive && isConfigured) ? 'Active & Ready' : (isConfigured ? 'Paused / Disabled' : 'Unconfigured') %>
+                                            </strong>
+                                        </div>
+                                    </div>
+                                    <span class="badge <%= isActive && isConfigured ? 'bg-success text-white' : 'bg-secondary text-white' %> rounded-pill px-3 py-1" id="summary_badge">
+                                        <%= (isActive && isConfigured) ? 'Online' : 'Offline' %>
+                                    </span>
+                                </div>
+
+                                <!-- Key Settings List -->
+                                <ul class="list-group list-group-flush border rounded-3 mb-3">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
+                                        <span class="text-muted fs-12"><i class="fa fa-globe text-primary me-2"></i>Mail Server:</span>
+                                        <span class="fw-semibold font-monospace text-dark text-break fs-12" id="summary_host"><%= mail.host || '—' %></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
+                                        <span class="text-muted fs-12"><i class="fa fa-network-wired text-info me-2"></i>Port / Protocol:</span>
+                                        <span class="badge bg-light text-dark font-monospace border px-2 py-1 fs-12" id="summary_port"><%= mail.port ? (mail.port + ' (TCP)') : '—' %></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
+                                        <span class="text-muted fs-12"><i class="fa fa-user text-secondary me-2"></i>Username:</span>
+                                        <span class="text-dark text-truncate fs-12 max-w-150" id="summary_user" title="<%= mail.username || '' %>"><%= mail.username || '—' %></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
+                                        <span class="text-muted fs-12"><i class="fa fa-paper-plane text-success me-2"></i>From Header:</span>
+                                        <span class="text-dark text-truncate fs-12 max-w-150" id="summary_from" title="<%= mail.frommail || '' %>"><%= mail.frommail || '—' %></span>
+                                    </li>
+                                </ul>
+
+                                <% if (canEdit) { %>
+                                <div class="d-grid">
+                                    <button type="button" class="btn btn-outline-primary btn-sm py-2 fw-semibold" onclick="$('#submitFormBtn').click()">
+                                        <i class="fa fa-save me-1"></i> Apply &amp; Save Changes
+                                    </button>
+                                </div>
+                                <% } %>
+
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Quick SMTP Provider Reference -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4">
+                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                    <i class="fa fa-lightbulb text-warning me-2"></i>Quick Setup Guide
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                
+                                <!-- Gmail Guide -->
+                                <div class="p-3 border rounded-3 mb-3 bg-light-subtle">
+                                    <div class="fw-bold text-dark mb-1 d-flex align-items-center">
+                                        <i class="fab fa-google text-danger me-2"></i> Google Workspace / Gmail
+                                    </div>
+                                    <div class="fs-12 text-muted">
+                                        1. Enable <strong>2-Step Verification</strong> on your Google Account.<br>
+                                        2. Go to <strong>Security &gt; App Passwords</strong>.<br>
+                                        3. Create an App Password for <strong>Mail</strong>.<br>
+                                        4. Use Host: <code class="text-primary">smtp.gmail.com</code> | Port: <code class="text-primary">587</code>.<br>
+                                        5. Paste the 16-character code into the Password field.
+                                    </div>
+                                </div>
+
+                                <!-- Microsoft 365 Guide -->
+                                <div class="p-3 border rounded-3 mb-3 bg-light-subtle">
+                                    <div class="fw-bold text-dark mb-1 d-flex align-items-center">
+                                        <i class="fab fa-microsoft text-info me-2"></i> Microsoft 365 / Outlook
+                                    </div>
+                                    <div class="fs-12 text-muted">
+                                        Host: <code class="text-primary">smtp.office365.com</code> | Port: <code class="text-primary">587</code> (STARTTLS)<br>
+                                        Ensure SMTP AUTH is enabled on the tenant mailbox.
+                                    </div>
+                                </div>
+
+                                <!-- Custom Domain / cPanel -->
+                                <div class="p-3 border rounded-3 bg-light-subtle">
+                                    <div class="fw-bold text-dark mb-1 d-flex align-items-center">
+                                        <i class="fa fa-hdd text-secondary me-2"></i> Custom Domain / cPanel
+                                    </div>
+                                    <div class="fs-12 text-muted">
+                                        Host: <code class="text-primary">mail.yourdomain.com</code><br>
+                                        Port: <code class="text-primary">465</code> (SSL) or <code class="text-primary">587</code> (TLS).
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Automated Notifications Info -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4">
+                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                    <i class="fa fa-envelope-open-text text-success me-2"></i>Automated Triggers
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="d-flex flex-column gap-3">
+                                    <div class="d-flex align-items-start gap-2">
+                                        <i class="fa fa-check-circle text-success mt-1"></i>
+                                        <div class="fs-12">
+                                            <strong class="text-dark d-block">POS Order Invoices</strong>
+                                            Sent immediately when a customer booking is created with valid customer email.
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-start gap-2">
+                                        <i class="fa fa-check-circle text-success mt-1"></i>
+                                        <div class="fs-12">
+                                            <strong class="text-dark d-block">Ready for Pickup Alerts</strong>
+                                            Notifies clients as soon as garments are cleaned, ironed, and ready.
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-start gap-2">
+                                        <i class="fa fa-check-circle text-success mt-1"></i>
+                                        <div class="fs-12">
+                                            <strong class="text-dark d-block">Payment Confirmations</strong>
+                                            Dispatches payment transaction receipts upon partial or full settlements.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </form>
 
         </div>
+    </div>
+    <!--********** Content body end **********-->
 
-        <!--********** Content body end **********-->
+    <!--********************************** Footer start ***********************************-->
+    <%- include('templet/footer')-%>
+    <!--********************************** Footer end ***********************************-->
 
+    <!--********** Main wrapper end **********-->
+    <%- include('templet/script')-%>
 
-        </div>
-        <!--**********************************
-            Footer start
-        ***********************************-->
-        <%- include('templet/footer')-%>
+    <script>
+        $(document).ready(function () {
+            // 1. Password Visibility Toggle
+            $('#togglePasswordBtn').on('click', function () {
+                const passInput = $('#mail_password');
+                const eyeIcon = $('#passwordEyeIcon');
+                
+                if (passInput.attr('type') === 'password') {
+                    passInput.attr('type', 'text');
+                    eyeIcon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    passInput.attr('type', 'password');
+                    eyeIcon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
 
-            <!--**********************************
-            Footer end
-        ***********************************-->
+            // 2. Provider Presets Handler
+            $('.host-preset-btn').on('click', function () {
+                const host = $(this).data('host');
+                const port = $(this).data('port');
+                
+                if (host) $('#mail_host').val(host).trigger('input');
+                if (port) $('#mail_port').val(port).trigger('input');
 
-            </div>
+                $('.host-preset-btn').removeClass('btn-primary text-white').addClass('btn-outline-secondary');
+                $(this).removeClass('btn-outline-secondary').addClass('btn-primary text-white');
+            });
 
-            <!--********** Main wrapper end **********-->
-            <%- include('templet/script')-%>
+            // 3. Port Presets Handler
+            $('.port-preset-btn').on('click', function () {
+                const port = $(this).data('port');
+                if (port) $('#mail_port').val(port).trigger('input');
 
+                $('.port-preset-btn').removeClass('btn-primary text-white').addClass('btn-outline-secondary');
+                $(this).removeClass('btn-outline-secondary').addClass('btn-primary text-white');
+            });
+
+            // 4. Live Sync with Right Overview Card
+            function syncOverview() {
+                const host = $('#mail_host').val().trim();
+                const port = $('#mail_port').val().trim();
+                const user = $('#mail_username').val().trim();
+                const from = $('#mail_frommail').val().trim();
+                const status = $('#mail_status').val();
+
+                $('#summary_host').text(host || '—');
+                $('#summary_port').text(port ? (port + ' (TCP)') : '—');
+                $('#summary_user').text(user || '—').attr('title', user);
+                $('#summary_from').text(from || '—').attr('title', from);
+
+                const isOnline = (status === '1' && host && user);
+                const banner = $('#summary_banner');
+                const bannerIcon = $('#summary_banner_icon');
+                const statusText = $('#summary_status_text');
+                const badge = $('#summary_badge');
+
+                if (isOnline) {
+                    banner.removeClass('bg-light').addClass('bg-success-subtle border-success-subtle');
+                    bannerIcon.removeClass('fa-power-off text-muted').addClass('fa-check text-success');
+                    statusText.text('Active & Ready');
+                    badge.removeClass('bg-secondary').addClass('bg-success').text('Online');
+                } else if (status === '0') {
+                    banner.removeClass('bg-success-subtle border-success-subtle').addClass('bg-light');
+                    bannerIcon.removeClass('fa-check text-success').addClass('fa-power-off text-muted');
+                    statusText.text('Paused / Disabled');
+                    badge.removeClass('bg-success').addClass('bg-secondary').text('Offline');
+                } else {
+                    banner.removeClass('bg-success-subtle border-success-subtle').addClass('bg-light');
+                    bannerIcon.removeClass('fa-check text-success').addClass('fa-exclamation-triangle text-muted');
+                    statusText.text('Incomplete Setup');
+                    badge.removeClass('bg-success').addClass('bg-secondary').text('Incomplete');
+                }
+            }
+
+            $('#mail_host, #mail_port, #mail_username, #mail_frommail, #mail_status').on('input change', syncOverview);
+
+            // 5. Form validation feedback
+            const form = document.getElementById('mailSettingForm');
+            if (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            }
+        });
+    </script>
 </body>
-
 
 </html>

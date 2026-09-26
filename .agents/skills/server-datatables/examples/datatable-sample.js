@@ -1,8 +1,3 @@
-/**
- * Canonical Server-Side DataTable initialization template for iLaundry.
- * Reusable across any admin list view.
- */
-
 $(document).ready(function () {
   const table = $('#sampleTable').DataTable({
     processing: true,

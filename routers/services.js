@@ -83,14 +83,12 @@ router.get("/list/data", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
     if (loginas == 0) {
-      return res
-        .status(403)
-        .json({
-          draw: parseInt(req.query.draw) || 1,
-          recordsTotal: 0,
-          recordsFiltered: 0,
-          data: [],
-        });
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
     }
 
     const rolldetail = await DataFind(`
@@ -119,14 +117,12 @@ router.get("/list/data", auth, async (req, res) => {
     ) {
       scopeConditions.push(`tbl_services.store_ID = '${store}'`);
     } else {
-      return res
-        .status(403)
-        .json({
-          draw: parseInt(req.query.draw) || 1,
-          recordsTotal: 0,
-          recordsFiltered: 0,
-          data: [],
-        });
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
     }
 
     const filterConditions = [];
@@ -213,11 +209,29 @@ router.get("/addservice", auth, async (req, res) => {
   WHERE sr.id = ${roll}
 `);
 
-    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+    const adminData = await DataFind(
+      `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
+    );
     const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
-    const isStoreUser = adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID).trim() !== "" && String(adminData[0].store_ID).trim() !== "0";
-    const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
-    const isMaster = rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && !isStaff && (!adminData[0].store_ID || adminData[0].store_ID == 0);
+    const isStoreUser =
+      adminData.length > 0 &&
+      adminData[0].store_ID &&
+      String(adminData[0].store_ID).trim() !== "" &&
+      String(adminData[0].store_ID).trim() !== "0";
+    const assignedStore =
+      adminData.length > 0 &&
+      adminData[0].store_ID &&
+      String(adminData[0].store_ID) !== "0"
+        ? String(adminData[0].store_ID)
+        : store
+          ? String(store)
+          : "";
+    const isMaster =
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].rollType === "master" &&
+      !isStaff &&
+      (!adminData[0].store_ID || adminData[0].store_ID == 0);
 
     let ismulty = false;
     let storeList = [];
@@ -231,7 +245,11 @@ router.get("/addservice", auth, async (req, res) => {
           "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0",
         );
       }
-    } else if (rolldetail && rolldetail.length > 0 && rolldetail[0].service.includes("write")) {
+    } else if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].service.includes("write")
+    ) {
       ismulty = false;
       storeList = [];
     } else {
@@ -268,32 +286,60 @@ router.post("/addservice", auth, upload.single("image"), async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-    if (rolldetail && rolldetail.length > 0 && rolldetail[0].service.includes("write")) {
+    if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].service.includes("write")
+    ) {
       var img = req.file ? req.file.filename : "";
 
       var { name, service_type, service_price, active, storeid } = req.body;
 
-      const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+      const adminData = await DataFind(
+        `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
+      );
       const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
-      const isStoreUser = adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID).trim() !== "" && String(adminData[0].store_ID).trim() !== "0";
-      const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
-      const isMaster = rolldetail[0].rollType === "master" && !isStaff && (!adminData[0].store_ID || adminData[0].store_ID == 0);
+      const isStoreUser =
+        adminData.length > 0 &&
+        adminData[0].store_ID &&
+        String(adminData[0].store_ID).trim() !== "" &&
+        String(adminData[0].store_ID).trim() !== "0";
+      const assignedStore =
+        adminData.length > 0 &&
+        adminData[0].store_ID &&
+        String(adminData[0].store_ID) !== "0"
+          ? String(adminData[0].store_ID)
+          : store
+            ? String(store)
+            : "";
+      const isMaster =
+        rolldetail[0].rollType === "master" &&
+        !isStaff &&
+        (!adminData[0].store_ID || adminData[0].store_ID == 0);
 
       // A store default user or staff can ONLY add services to their assigned store
       if (!isMaster || isStaff || isStoreUser) {
         storeid = assignedStore;
       }
 
-      if (!storeid || String(storeid).trim() === "" || String(storeid).trim() === "0") {
+      if (
+        !storeid ||
+        String(storeid).trim() === "" ||
+        String(storeid).trim() === "0"
+      ) {
         req.flash("error", "Please select a valid store for this service!");
         return res.redirect(req.get("Referrer") || "/services/list");
       }
 
       service_type = service_type
-        ? (Array.isArray(service_type) ? service_type.join(",") : service_type)
+        ? Array.isArray(service_type)
+          ? service_type.join(",")
+          : service_type
         : "";
       service_price = service_price
-        ? (Array.isArray(service_price) ? service_price.join(",") : service_price)
+        ? Array.isArray(service_price)
+          ? service_price.join(",")
+          : service_price
         : "0";
       active = active ? "0" : "1";
 
@@ -333,25 +379,50 @@ router.get("/deletservices/:id", auth, async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-    if (rolldetail && rolldetail.length > 0 && rolldetail[0].service.includes("delete")) {
+    if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].service.includes("delete")
+    ) {
       var dataid = req.params.id;
 
-      const serviceCheck = await DataFind(`SELECT id, store_ID FROM tbl_services WHERE id = '${dataid}'`);
+      const serviceCheck = await DataFind(
+        `SELECT id, store_ID FROM tbl_services WHERE id = '${dataid}'`,
+      );
       if (!serviceCheck || serviceCheck.length === 0) {
         req.flash("error", "Service not found!");
         return res.redirect(req.get("Referrer") || "/services/list");
       }
 
-      const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+      const adminData = await DataFind(
+        `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
+      );
       const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
-      const isStoreUser = adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID).trim() !== "" && String(adminData[0].store_ID).trim() !== "0";
-      const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
-      const isMaster = rolldetail[0].rollType === "master" && !isStaff && (!adminData[0].store_ID || adminData[0].store_ID == 0);
+      const isStoreUser =
+        adminData.length > 0 &&
+        adminData[0].store_ID &&
+        String(adminData[0].store_ID).trim() !== "" &&
+        String(adminData[0].store_ID).trim() !== "0";
+      const assignedStore =
+        adminData.length > 0 &&
+        adminData[0].store_ID &&
+        String(adminData[0].store_ID) !== "0"
+          ? String(adminData[0].store_ID)
+          : store
+            ? String(store)
+            : "";
+      const isMaster =
+        rolldetail[0].rollType === "master" &&
+        !isStaff &&
+        (!adminData[0].store_ID || adminData[0].store_ID == 0);
 
       // Verify store ownership: store user or staff can ONLY delete services from their assigned store
       if (!isMaster || isStaff || isStoreUser) {
         if (String(serviceCheck[0].store_ID) !== String(assignedStore)) {
-          req.flash("error", "You are not authorized to delete services belonging to another store!");
+          req.flash(
+            "error",
+            "You are not authorized to delete services belonging to another store!",
+          );
           return res.redirect(req.get("Referrer") || "/services/list");
         }
       }
@@ -392,7 +463,11 @@ router.get("/updateService/:id", auth, async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-    if (rolldetail && rolldetail.length > 0 && rolldetail[0].service.includes("edit")) {
+    if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].service.includes("edit")
+    ) {
       var dataid = req.params.id;
       const servicesdata = await DataFind(
         "SELECT * FROM tbl_services WHERE id=" + dataid + "",
@@ -402,16 +477,35 @@ router.get("/updateService/:id", auth, async (req, res) => {
         return res.redirect(req.get("Referrer") || "/services/list");
       }
 
-      const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+      const adminData = await DataFind(
+        `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
+      );
       const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
-      const isStoreUser = adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID).trim() !== "" && String(adminData[0].store_ID).trim() !== "0";
-      const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
-      const isMaster = rolldetail[0].rollType === "master" && !isStaff && (!adminData[0].store_ID || adminData[0].store_ID == 0);
+      const isStoreUser =
+        adminData.length > 0 &&
+        adminData[0].store_ID &&
+        String(adminData[0].store_ID).trim() !== "" &&
+        String(adminData[0].store_ID).trim() !== "0";
+      const assignedStore =
+        adminData.length > 0 &&
+        adminData[0].store_ID &&
+        String(adminData[0].store_ID) !== "0"
+          ? String(adminData[0].store_ID)
+          : store
+            ? String(store)
+            : "";
+      const isMaster =
+        rolldetail[0].rollType === "master" &&
+        !isStaff &&
+        (!adminData[0].store_ID || adminData[0].store_ID == 0);
 
       // Verify store ownership: store user or staff can ONLY edit services belonging to their assigned store
       if (!isMaster || isStaff || isStoreUser) {
         if (String(servicesdata[0].store_ID) !== String(assignedStore)) {
-          req.flash("error", "You are not authorized to edit services belonging to another store!");
+          req.flash(
+            "error",
+            "You are not authorized to edit services belonging to another store!",
+          );
           return res.redirect(req.get("Referrer") || "/services/list");
         }
       }
@@ -422,8 +516,12 @@ router.get("/updateService/:id", auth, async (req, res) => {
           "",
       );
 
-      const typeID = servicesdata[0].services_type_id ? servicesdata[0].services_type_id.split(",") : [];
-      const price = servicesdata[0].services_type_price ? servicesdata[0].services_type_price.split(",") : [];
+      const typeID = servicesdata[0].services_type_id
+        ? servicesdata[0].services_type_id.split(",")
+        : [];
+      const price = servicesdata[0].services_type_price
+        ? servicesdata[0].services_type_price.split(",")
+        : [];
 
       res.render("edit_service", {
         services: servicesdata[0],
@@ -463,23 +561,48 @@ router.post(
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-      if (rolldetail && rolldetail.length > 0 && rolldetail[0].service.includes("edit")) {
-        const serviceCheck = await DataFind(`SELECT id, store_ID FROM tbl_services WHERE id = '${req.params.id}'`);
+      if (
+        rolldetail &&
+        rolldetail.length > 0 &&
+        rolldetail[0].service.includes("edit")
+      ) {
+        const serviceCheck = await DataFind(
+          `SELECT id, store_ID FROM tbl_services WHERE id = '${req.params.id}'`,
+        );
         if (!serviceCheck || serviceCheck.length === 0) {
           req.flash("error", "Service not found!");
           return res.redirect(req.get("Referrer") || "/services/list");
         }
 
-        const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+        const adminData = await DataFind(
+          `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
+        );
         const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
-        const isStoreUser = adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID).trim() !== "" && String(adminData[0].store_ID).trim() !== "0";
-        const assignedStore = (adminData.length > 0 && adminData[0].store_ID && String(adminData[0].store_ID) !== '0') ? String(adminData[0].store_ID) : (store ? String(store) : '');
-        const isMaster = rolldetail[0].rollType === "master" && !isStaff && (!adminData[0].store_ID || adminData[0].store_ID == 0);
+        const isStoreUser =
+          adminData.length > 0 &&
+          adminData[0].store_ID &&
+          String(adminData[0].store_ID).trim() !== "" &&
+          String(adminData[0].store_ID).trim() !== "0";
+        const assignedStore =
+          adminData.length > 0 &&
+          adminData[0].store_ID &&
+          String(adminData[0].store_ID) !== "0"
+            ? String(adminData[0].store_ID)
+            : store
+              ? String(store)
+              : "";
+        const isMaster =
+          rolldetail[0].rollType === "master" &&
+          !isStaff &&
+          (!adminData[0].store_ID || adminData[0].store_ID == 0);
 
         // Verify store ownership: store user or staff can ONLY update services in their assigned store
         if (!isMaster || isStaff || isStoreUser) {
           if (String(serviceCheck[0].store_ID) !== String(assignedStore)) {
-            req.flash("error", "You are not authorized to update services belonging to another store!");
+            req.flash(
+              "error",
+              "You are not authorized to update services belonging to another store!",
+            );
             return res.redirect(req.get("Referrer") || "/services/list");
           }
         }
@@ -611,14 +734,12 @@ router.get("/type/data", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
     if (loginas == 0) {
-      return res
-        .status(403)
-        .json({
-          draw: parseInt(req.query.draw) || 1,
-          recordsTotal: 0,
-          recordsFiltered: 0,
-          data: [],
-        });
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
     }
 
     const rolldetail = await DataFind(`
@@ -647,14 +768,12 @@ router.get("/type/data", auth, async (req, res) => {
     ) {
       scopeConditions.push(`tbl_services_type.store_ID = '${store}'`);
     } else {
-      return res
-        .status(403)
-        .json({
-          draw: parseInt(req.query.draw) || 1,
-          recordsTotal: 0,
-          recordsFiltered: 0,
-          data: [],
-        });
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
     }
 
     const filterConditions = [];
@@ -1025,14 +1144,12 @@ router.get("/addon/data", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
     if (loginas == 0) {
-      return res
-        .status(403)
-        .json({
-          draw: parseInt(req.query.draw) || 1,
-          recordsTotal: 0,
-          recordsFiltered: 0,
-          data: [],
-        });
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
     }
 
     const rolldetail = await DataFind(`
@@ -1061,14 +1178,12 @@ router.get("/addon/data", auth, async (req, res) => {
     ) {
       scopeConditions.push(`tbl_addons.store_ID = '${store}'`);
     } else {
-      return res
-        .status(403)
-        .json({
-          draw: parseInt(req.query.draw) || 1,
-          recordsTotal: 0,
-          recordsFiltered: 0,
-          data: [],
-        });
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
     }
 
     const filterConditions = [];
@@ -1320,19 +1435,37 @@ router.get("/csv_file", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
 
-    res.render("add_csv", {
+    const isMasterOrStore =
+      (accessdata?.logas === "master" || accessdata?.isstore === true) &&
+      accessdata?.topbardata?.is_staff == 0;
+    if (!isMasterOrStore) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/services/list");
+    }
+
+    return res.render("add_csv", {
       accessdata,
       language: req.language_data,
       language_name: req.language_name,
     });
   } catch (error) {
     console.log(error);
+    return res.redirect("/services/list");
   }
 });
 
 router.get("/demo_csv", auth, async (req, res) => {
   try {
     const accessdata = await access(req.user);
+
+    const isMasterOrStore =
+      (accessdata?.logas === "master" || accessdata?.isstore === true) &&
+      accessdata?.topbardata?.is_staff == 0;
+    if (!isMasterOrStore) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/services/list");
+    }
+
     let workbook = new Excel.Workbook();
     let worksheet = workbook.addWorksheet("Service_list");
 
@@ -1374,6 +1507,7 @@ router.get("/demo_csv", auth, async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+    return res.redirect("/services/list");
   }
 });
 
@@ -1384,6 +1518,15 @@ router.post(
   async (req, res) => {
     try {
       const accessdata = await access(req.user);
+
+      const isMasterOrStore =
+        (accessdata?.logas === "master" || accessdata?.isstore === true) &&
+        accessdata?.topbardata?.is_staff == 0;
+      if (!isMasterOrStore) {
+        req.flash("error", "Your Are Not Authorized For this");
+        return res.redirect("/services/list");
+      }
+
       var filename = path.join(
         __dirname,
         "../public/uploads/" + req.file.filename,
@@ -1519,6 +1662,7 @@ router.post(
         });
     } catch (error) {
       console.log(44444, error);
+      return res.redirect("/services/list");
     }
   },
 );

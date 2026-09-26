@@ -236,6 +236,31 @@
             </div>
         </div>
 
+        <!-- Modal delete confirm -->
+        <div class="modal fade" id="deleteAddonModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+                <div class="modal-content text-center p-3" style="border-radius: 16px;">
+                    <div class="modal-body pt-4">
+                        <div class="mb-3">
+                            <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; justify-content: center; color: #ef4444; font-size: 28px;">
+                                <i class="fa fa-trash-alt"></i>
+                            </div>
+                        </div>
+                        <h4 class="mb-2 fw-bold text-dark"><%= language.Delete_Addon || language.Delete || 'Delete Addon' %></h4>
+                        <p class="text-muted mb-1"><%= language.Are_you_sure_delete || 'Are you sure you want to delete this addon?' %></p>
+                        <p class="fw-bold text-danger fs-5 mb-3" id="deleteAddonModalTitle"></p>
+                        <p class="text-xs text-muted mb-4"><%= language.Action_cannot_be_undone || 'This action cannot be undone.' %></p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+                            </button>
+                            <a href="#" id="deleteAddonConfirmBtn" class="btn btn-danger">
+                                <i class="fa fa-trash me-2"></i><%= language.Delete || 'Yes, Delete' %>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <!--**********************************
             Footer start
@@ -324,12 +349,16 @@
                                         </a>` : '';
 
                                     const deleteBtn = row.canDelete ? `
-                                        <a href="/services/deletaddon/${row.id}" 
-                                           class="btn-tbl-action btn-tbl-delete" 
-                                           id="delete" 
+                                        <button type="button" 
+                                           class="btn-tbl-action btn-tbl-delete btn-delete-addon" 
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#deleteAddonModal"
+                                           data-id="${row.id}"
+                                           data-name="${escapeHtml(row.addon || '')}"
+                                           data-price="${row.price}"
                                            title="<%= language.Delete || 'Delete' %>">
                                             <i class="fa fa-trash"></i>
-                                        </a>` : '';
+                                        </button>` : '';
 
                                     return `<div class="tbl-action-group">${editBtn}${deleteBtn}</div>`;
                                 }
@@ -358,6 +387,22 @@
                                 width: '100%',
                                 allowClear: true
                             });
+                        });
+
+                        // Populate Delete Modal
+                        $(document).on('click', '.btn-delete-addon', function () {
+                            const id = $(this).attr('data-id');
+                            const cleanId = String(id).replace(/['"]/g, '').trim();
+                            const name = $(this).attr('data-name') || '';
+                            const price = $(this).attr('data-price') || '';
+
+                            const formattedPrice = (window.formatDtCurrency && typeof window.formatDtCurrency === 'function' && price) 
+                                ? window.formatDtCurrency(price) 
+                                : price;
+                            const displayTitle = name + (formattedPrice ? ' (' + formattedPrice + ')' : '');
+
+                            $('#deleteAddonModalTitle').text(displayTitle || ('#' + cleanId));
+                            $('#deleteAddonConfirmBtn').attr('href', '/services/deletaddon/' + cleanId);
                         });
                     });
                 </script>

@@ -94,58 +94,68 @@
 
               <div class="dropdown-menu dropdown-menu-end lang-glass-menu shadow-lg">
                 <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
-                  <span class="fs-12 fw-bold text-uppercase text-secondary">Select Language</span>
+                  <span class="fs-12 fw-bold text-uppercase text-secondary"><%= language.Select_Language || 'Select Language' %></span>
                   <i class="fa fa-globe text-primary fs-12"></i>
                 </div>
                 <div class="lang-grid more_lang active">
-                  <div class="lang-grid-item lang" id="en" data-lang="ltr" data-value="en">
+                  <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'en') ? 'active' : '' %>" id="en" data-lang="ltr" data-value="en">
                     <i class="flag-icon flag-icon-us rounded-1"></i>
                     <span class="lang-txt flex-grow-1">English</span>
+                    <% if (typeof language_name !== 'undefined' && language_name === 'en') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
                   </div>
-                  <div class="lang-grid-item lang" id="in" data-lang="ltr" data-value="in">
+                  <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'in') ? 'active' : '' %>" id="in" data-lang="ltr" data-value="in">
                     <i class="flag-icon flag-icon-in rounded-1"></i>
                     <span class="lang-txt flex-grow-1">Hindi</span>
+                    <% if (typeof language_name !== 'undefined' && language_name === 'in') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
                   </div>
-                  <div class="lang-grid-item lang" id="pt" data-lang="ltr" data-value="pt">
+                  <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'pt') ? 'active' : '' %>" id="pt" data-lang="ltr" data-value="pt">
                     <i class="flag-icon flag-icon-pt rounded-1"></i>
                     <span class="lang-txt flex-grow-1">Português</span>
+                    <% if (typeof language_name !== 'undefined' && language_name === 'pt') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
                   </div>
-                  <div class="lang-grid-item lang" id="es" data-lang="ltr" data-value="es">
+                  <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'es') ? 'active' : '' %>" id="es" data-lang="ltr" data-value="es">
                     <i class="flag-icon flag-icon-es rounded-1"></i>
                     <span class="lang-txt flex-grow-1">Español</span>
+                    <% if (typeof language_name !== 'undefined' && language_name === 'es') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
                   </div>
-                  <div class="lang-grid-item lang" id="fr" data-lang="ltr" data-value="fr">
+                  <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'fr') ? 'active' : '' %>" id="fr" data-lang="ltr" data-value="fr">
                     <i class="flag-icon flag-icon-fr rounded-1"></i>
                     <span class="lang-txt flex-grow-1">Français</span>
+                    <% if (typeof language_name !== 'undefined' && language_name === 'fr') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
                   </div>
-                  <div class="lang-grid-item lang" id="cn" data-lang="ltr" data-value="cn">
+                  <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'cn') ? 'active' : '' %>" id="cn" data-lang="ltr" data-value="cn">
                     <i class="flag-icon flag-icon-cn rounded-1"></i>
                     <span class="lang-txt flex-grow-1">中文</span>
+                    <% if (typeof language_name !== 'undefined' && language_name === 'cn') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
                   </div>
-                  <div class="lang-grid-item lang" id="ae" data-lang="rtl" data-value="ae">
+                  <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'ae') ? 'active' : '' %>" id="ae" data-lang="rtl" data-value="ae">
                     <i class="flag-icon flag-icon-ae rounded-1"></i>
                     <span class="lang-txt flex-grow-1">العربية</span>
+                    <% if (typeof language_name !== 'undefined' && language_name === 'ae') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
                   </div>
-                  <div class="lang-grid-item lang" id="id" data-lang="ltr" data-value="id">
+                  <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'id') ? 'active' : '' %>" id="id" data-lang="ltr" data-value="id">
                     <i class="flag-icon flag-icon-id rounded-1"></i>
                     <span class="lang-txt flex-grow-1">Bahasa</span>
+                    <% if (typeof language_name !== 'undefined' && language_name === 'id') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
                   </div>
-                  <div class="lang-grid-item lang" id="ph" data-lang="ltr" data-value="ph">
+                  <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'ph') ? 'active' : '' %>" id="ph" data-lang="ltr" data-value="ph">
                     <i class="flag-icon flag-icon-ph rounded-1"></i>
                     <span class="lang-txt flex-grow-1">Filipino</span>
+                    <% if (typeof language_name !== 'undefined' && language_name === 'ph') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
                   </div>
-                  <div class="lang-grid-item lang" id="uk" data-lang="ltr" data-value="uk">
+                  <div class="lang-grid-item lang <%= (typeof language_name !== 'undefined' && language_name === 'uk') ? 'active' : '' %>" id="uk" data-lang="ltr" data-value="uk">
                     <i class="flag-icon flag-icon-uk rounded-1"></i>
                     <span class="lang-txt flex-grow-1">Ukrainian</span>
+                    <% if (typeof language_name !== 'undefined' && language_name === 'uk') { %><i class="fa fa-check fs-10 text-primary ms-auto"></i><% } %>
                   </div>
                 </div>
               </div>
-              <input type="hidden" id="hidden_lang" value="<%= language_name %>">
+              <input type="hidden" id="hidden_lang" value="<%= typeof language_name !== 'undefined' ? language_name : 'en' %>">
             </li>
 
             <!-- Notifications Dropdown -->
             <li class="nav-item dropdown notification_dropdown me-2">
-              <a class="header-icon-btn" href="#" role="button" data-bs-toggle="dropdown" title="Notifications">
+              <a class="header-icon-btn" href="#" role="button" data-bs-toggle="dropdown" title="<%= language.Notifications || 'Notifications' %>">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -157,12 +167,12 @@
               <div class="dropdown-menu dropdown-menu-end notification-glass-menu shadow-lg">
                 <div class="notif-header">
                   <div class="d-flex align-items-center gap-2">
-                    <h6 class="mb-0 fw-bold">Notifications</h6>
+                    <h6 class="mb-0 fw-bold"><%= language.Notifications || 'Notifications' %></h6>
                     <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1 fs-11">
                       <%= accessdata?.notification_data ? accessdata.notification_data.length : 0 %>
                     </span>
                   </div>
-                  <a href="/admin/notification" class="fs-12 text-primary text-decoration-none fw-medium">View All</a>
+                  <a href="/admin/notification" class="fs-12 text-primary text-decoration-none fw-medium"><%= language.View_All || 'View All' %></a>
                 </div>
                 <div class="widget-media dz-scroll" style="max-height: 340px; overflow-y: auto; overflow-x: hidden;">
                   <% if(accessdata?.notification_data?.length > 0){ %>
@@ -183,7 +193,7 @@
                   <% } else { %>
                     <div class="text-center py-4 text-muted">
                       <i class="fa fa-bell-slash fs-2 mb-2 d-block text-secondary opacity-50"></i>
-                      <span class="fs-12">No notifications found</span>
+                      <span class="fs-12"><%= language.No_Notifications_Found || 'No notifications found' %></span>
                     </div>
                   <% } %>
                 </div>
@@ -499,9 +509,11 @@
                                       <li><a href="/services/addon">
                                           <%= language.Addons %>
                                         </a></li>
+                                      <% if ((accessdata?.logas === 'master' || accessdata?.isstore === true) && accessdata?.topbardata?.is_staff == 0) { %>
                                       <li><a href="/services/csv_file">
                                           <%= language.Bulk_Upload_Services %>
                                         </a></li>
+                                      <% } %>
                                     </ul>
                                   </li>
                                   <% } %>

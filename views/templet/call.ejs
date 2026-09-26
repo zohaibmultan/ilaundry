@@ -102,15 +102,17 @@
 
 
    $(document).on('click', '#action', function () {
-      var id = $(this).attr('data-id')
-      var act = "/expense/updatecategorytype/'" + id + "'"
+      var id = $(this).attr('data-id');
+      var cleanId = String(id).replace(/['"]/g, '').trim();
+      var act = "/expense/updatecategorytype/" + cleanId;
+      var typeName = $(this).attr('data-name') || '';
 
-      $('#name').attr('value', ($(this).attr('data-name')))
-      $("#editexpcattype_form").attr('action', act)
+      $('#name, #edit_category_type_name').val(typeName).attr('value', typeName);
+      $("#editexpcattype_form").attr('action', act);
    })
 
 
-   $(document).on('click', '#expcataction, .btn-tbl-edit', function () {
+   $(document).on('click', '#expcataction', function () {
       var baseUrl = window.location.origin;
       var storeid = $(this).attr('data-storeid');
       var cattypeid = $(this).attr('data-exp_cat_type_id');
@@ -197,7 +199,7 @@
       }
    });
 
-   $(document).on('click', '#expaction, .btn-tbl-edit', function () {
+   $(document).on('click', '#expaction', function () {
       var baseUrl = window.location.origin;
       var storeid = $(this).attr('data-storeid');
       var cat = $(this).attr('data-category');
@@ -1908,11 +1910,11 @@
             url: baseUrl + "/admin/paymentdata/",
             dataType: 'json',
             success: function (res) {
-               $('#POS_payment_type_list').html('<option value="0"  disabled>Choose Payment Type</option>')
+               $('#POS_payment_type_list').html('<option value="0" disabled selected>Choose Payment Type</option>')
                $.each(res.payment, function (index, value) {
                   $('#POS_payment_type_list').append('<option value="' + value.id + '">' + value.ac_name + '</option>')
                })
-               $("#POS_payment_type_list").prop('required', true);
+               $("#POS_payment_type_list").prop('required', false);
                $('.default-select').selectpicker('refresh');
                let orderDateMin = $('#POS_order_date').val() || new Date(res.cart.order_date).toLocaleDateString('en-CA');
                 let chosenDel = $('#POS_delivery_date').val() || new Date(res.cart.delivery_date).toLocaleDateString('en-CA');

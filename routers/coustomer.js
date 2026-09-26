@@ -17,7 +17,7 @@ router.get("/list", auth, async (req, res) => {
   const multiy = await DataFind(
     "SELECT type , customer_selection FROM tbl_master_shop"
   );
-  if (multiy[0].type == 1 && multiy[0].customer_selection == 0) {
+  if (multiy[0].type == 1 && multiy[0].customer_selection == 1) {
     var ismulty = true;
   } else {
     var ismulty = false;

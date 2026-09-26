@@ -457,7 +457,10 @@ router.post("/login", async (req, res) => {
 
     if (lang == undefined) {
       const lang_data = jwt.sign({ lang: "en" }, process.env.TOKEN);
-      res.cookie("lang", lang_data);
+      res.cookie("lang", lang_data, {
+        path: "/",
+        maxAge: 365 * 24 * 60 * 60 * 1000,
+      });
     }
 
     req.flash("success", `${data[0].name}, Welcome back!!`);
@@ -872,6 +875,51 @@ router.get("/index", auth, async (req, res) => {
       if (sName.length > 0) storeName = sName[0].name;
     }
 
+    if (isStaff) {
+      const canAccessPos = Boolean(
+        rolldetail[0]?.pos &&
+        (rolldetail[0].pos.includes("read") || rolldetail[0].pos.includes("write"))
+      );
+      const canReadOrders = Boolean(rolldetail[0]?.orders && rolldetail[0].orders.includes("read"));
+      const canReadReports = Boolean(rolldetail[0]?.reports && rolldetail[0].reports.includes("read"));
+
+      const staffStats = await DataFind(`
+        SELECT 
+          COALESCE(SUM(CASE WHEN order_status != '6' THEN gross_total ELSE 0 END), 0) AS staff_sales,
+          COUNT(CASE WHEN order_status != '6' THEN id ELSE NULL END) AS staff_orders
+        FROM tbl_order
+        WHERE (created_by = '1,${id}' OR created_by = '${id}')
+      `);
+
+      const recentOrder = await DataFind(`
+        SELECT tbl_order.order_id, tbl_order.id, tbl_order.order_date, tbl_order.gross_total, tbl_order.paid_amount, tbl_order.store_id, tbl_order.order_status, tbl_customer.name as customer, tbl_orderstatus.status, tbl_store.name as store
+        FROM tbl_order
+        JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id  
+        JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
+        LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
+        WHERE (tbl_order.created_by = '1,${id}' OR tbl_order.created_by = '${id}')
+        ORDER BY tbl_order.id DESC 
+        LIMIT 10
+      `);
+
+      return res.render("staff_dashboard", {
+        accessdata,
+        data: {
+          totalorder: staffStats[0]?.staff_orders || 0,
+          tottalsales: staffStats[0]?.staff_sales || 0,
+        },
+        recentOrder: recentOrder || [],
+        roll: rolldetail[0],
+        language: req.language_data,
+        language_name: req.language_name,
+        storeName,
+        isStaff: true,
+        canAccessPos,
+        canReadOrders,
+        canReadReports
+      });
+    }
+
     if (isStoreScoped && activeStoreId) {
       // Store view: strictly scoped to assigned store (both store user and staff)
       const storeStats = await DataFind(`
@@ -932,7 +980,7 @@ router.get("/index", auth, async (req, res) => {
           (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE order_status != '6') AS tottalsales,
           (SELECT COUNT(*) FROM tbl_order WHERE order_status != '6') AS totalorder,
           (SELECT COUNT(*) FROM tbl_services) AS totalservices,
-          (SELECT COUNT(*) FROM tbl_customer WHERE delet_flage != '1') AS totalcustomer
+          (SELECT COUNT(*) FROM tbl_customer WHERE delet_flage != '1' AND approved = '1' AND name != 'Walk in Customer') AS totalcustomer
       `);
 
       const storeList = await DataFind(
@@ -946,7 +994,7 @@ router.get("/index", auth, async (req, res) => {
           COALESCE(SUM(CASE WHEN o.order_status != '6' THEN o.gross_total ELSE 0 END), 0) AS tottalsales,
           COUNT(DISTINCT CASE WHEN o.order_status != '6' THEN o.id ELSE NULL END) AS totalorder,
           (SELECT COUNT(*) FROM tbl_services WHERE store_ID = s.id) AS totalservices,
-          (SELECT COUNT(*) FROM tbl_customer WHERE (store_ID = s.id OR reffstore = s.id) AND delet_flage != '1') AS totalcustomer
+          (SELECT COUNT(*) FROM tbl_customer WHERE store_ID = s.id AND delet_flage != '1' AND approved = '1' AND name != 'Walk in Customer') AS totalcustomer
         FROM tbl_store s
         LEFT JOIN tbl_order o ON s.id = o.store_id
         WHERE s.status = 1 AND s.delete_flage = 0
@@ -1021,6 +1069,22 @@ router.get("/api/dashboard-stats", auth, async (req, res) => {
           : null;
 
     const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+
+    if (isStaff) {
+      const staffStats = await DataFind(`
+        SELECT 
+          COALESCE(SUM(CASE WHEN order_status != '6' THEN gross_total ELSE 0 END), 0) AS tottalsales,
+          COUNT(CASE WHEN order_status != '6' THEN id ELSE NULL END) AS totalorder
+        FROM tbl_order
+        WHERE (created_by = '1,${id}' OR created_by = '${id}')
+      `);
+
+      return res.status(200).json({
+        success: true,
+        data: staffStats[0] || { tottalsales: 0, totalorder: 0 },
+        isStaff: true
+      });
+    }
 
     let isStoreRole = false;
     if (roll) {
@@ -1250,6 +1314,7 @@ router.post("/updatestaff", auth, upload.single("image"), async (req, res) => {
       req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/");
     }
+
     const { id, roll, store, loginas } = req.user;
     const { name, number, email, username, password } = req.body;
 
@@ -1260,6 +1325,7 @@ router.post("/updatestaff", auth, upload.single("image"), async (req, res) => {
         id +
         "",
     );
+
     if (checkname.length > 0) {
       req.flash("error", "This User Name Alredy Register!!!!");
       return res.redirect(req.get("Referrer") || "/");
@@ -1281,6 +1347,7 @@ router.post("/updatestaff", auth, upload.single("image"), async (req, res) => {
     const checkstore_email = await DataFind(
       "SELECT * FROM tbl_admin WHERE email='" + email + "' AND id !=" + id + "",
     );
+
     if (checkstore_email.length > 0) {
       req.flash("error", "This Email Alredy Register!!!!");
       return res.redirect(req.get("Referrer") || "/");
@@ -1296,39 +1363,17 @@ router.post("/updatestaff", auth, upload.single("image"), async (req, res) => {
       hashpass = OldData[0].password;
     }
 
-    if (req.file) {
-      // await DataFind(`UPDATE tbl_admin SET name='${name}',number='${number}',email='${email}',username='${username}',
-      //       password='${hashpass}',img='${req.file.filename}' WHERE id='${id}'`);
+    const data = await DataUpdate(
+      `tbl_admin`,
+      `name='${name}',number='${number}',email='${email}',username='${username}', password='${hashpass}'`,
+      `id=${id}`,
+      req.hostname,
+      req.protocol,
+    );
 
-      const data = await DataUpdate(
-        `tbl_admin`,
-        `name='${name}',number='${number}',email='${email}',username='${username}', password='${hashpass}',img='${req.file.filename}'`,
-        `id=${id}`,
-        req.hostname,
-        req.protocol,
-      );
-
-      if (data == -1) {
-        req.flash("error", "Action failed, please check input and try again");
-        return res.redirect("back");
-      }
-    } else {
-      // await DataFind(`UPDATE tbl_admin SET name='${name}',number='${number}',email='${email}',username='${username}',
-      //       password='${hashpass}' WHERE id='${id}'`);
-
-      const data = await DataUpdate(
-        `tbl_admin`,
-        `name='${name}',number='${number}',email='${email}',username='${username}',
-            password='${hashpass}'`,
-        `id=${id}`,
-        req.hostname,
-        req.protocol,
-      );
-
-      if (data == -1) {
-        req.flash("error", "Action failed, please check input and try again");
-        return res.redirect("back");
-      }
+    if (data == -1) {
+      req.flash("error", "Action failed, please check input and try again");
+      return res.redirect("back");
     }
 
     req.flash("success", "Profile Detail Update!!!!");
@@ -1351,9 +1396,9 @@ router.get("/logout", auth, async (req, res) => {
 router.get("/lang/:id", async (req, res) => {
   try {
     const token = jwt.sign({ lang: req.params.id }, process.env.TOKEN);
-    res.cookie("lang", token);
+    res.cookie("lang", token, { path: "/", maxAge: 365 * 24 * 60 * 60 * 1000 });
 
-    res.status(200).json({ token });
+    res.status(200).json({ token, lang: req.params.id });
   } catch (error) {
     console.log(error);
   }

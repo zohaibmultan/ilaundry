@@ -323,8 +323,8 @@ body[data-theme-version="light"] {
 
 .deznav .metismenu>li>a {
   border-radius: 10px !important;
-  margin: 2px 10px !important;
-  padding: 10px 14px !important;
+  margin: 2px 10px 2px 10px !important;
+  padding: 10px 7px !important;
   transition: all 0.2s ease !important;
 }
 
@@ -874,7 +874,7 @@ textarea.form-control:focus {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   padding-left: 12px !important;
-  padding-right: 32px !important;
+  padding-right: 50px !important;
   position: relative !important;
 }
 
@@ -923,6 +923,54 @@ textarea.form-control:focus {
 
 [data-theme-version="dark"] .select2-container--default .select2-selection--single .select2-selection__arrow b {
   border-color: #94a3b8 transparent transparent transparent !important;
+}
+
+/* Select2 Clear (Cross) Icon - Positioned beside dropdown arrow with enlarged click target */
+.select2-container--default .select2-selection--single .select2-selection__clear {
+  position: absolute !important;
+  right: 30px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  float: none !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  z-index: 2 !important;
+  padding: 2px 4px !important;
+  transition: color 0.18s ease, transform 0.18s ease !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__clear:hover {
+  color: #ef4444 !important;
+  transform: translateY(-50%) scale(1.15) !important;
+}
+
+[data-theme-version="dark"] .select2-container--default .select2-selection--single .select2-selection__clear {
+  color: #64748b !important;
+}
+
+[data-theme-version="dark"] .select2-container--default .select2-selection--single .select2-selection__clear:hover {
+  color: #f87171 !important;
+}
+
+/* RTL Support for Select2 Single Clear Icon & Arrow */
+[direction="rtl"] .select2-container .select2-selection--single,
+[direction="rtl"] .select2-container--default .select2-selection--single {
+  padding-left: 50px !important;
+  padding-right: 12px !important;
+}
+
+[direction="rtl"] .select2-container .select2-selection--single .select2-selection__arrow,
+[direction="rtl"] .select2-container--default .select2-selection--single .select2-selection__arrow {
+  left: 10px !important;
+  right: auto !important;
+}
+
+[direction="rtl"] .select2-container--default .select2-selection--single .select2-selection__clear {
+  left: 30px !important;
+  right: auto !important;
 }
 
 .select2-dropdown {

@@ -1034,8 +1034,8 @@ router.get("/export-profit-loss/:id", auth, async (req, res) => {
     const data = await getProfitLossData({ store, startdate, enddate });
 
     let workbook = new Excel.Workbook();
-    workbook.creator = "iLaundry";
-    workbook.lastModifiedBy = "iLaundry";
+    workbook.creator = "iCleaners";
+    workbook.lastModifiedBy = "iCleaners";
     workbook.created = new Date();
 
     // SHEET 1: Executive Summary

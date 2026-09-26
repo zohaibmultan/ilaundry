@@ -1,0 +1,2129 @@
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>iCleaners &bull; Complete Documentation & User Manual</title>
+    <meta
+      name="description"
+      content="Official documentation, installation guide (Linux, cPanel, IIS), database configuration, hardware printing server setup, and comprehensive screen-by-screen user manual for iCleaners."
+    />
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- FontAwesome 6 -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --doc-primary: #0066eb;
+        --doc-primary-hover: #0052be;
+        --doc-accent-red: #dc2626;
+        --doc-sidebar-width: 290px;
+        --doc-font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        --doc-font-mono: "JetBrains Mono", monospace;
+      }
+
+      [data-bs-theme="dark"] {
+        --doc-bg-body: #0b1120;
+        --doc-bg-sidebar: #0f172a;
+        --doc-bg-card: #1e293b;
+        --doc-border: rgba(255, 255, 255, 0.08);
+        --doc-text: #f1f5f9;
+        --doc-text-muted: #94a3b8;
+        --doc-code-bg: #090d16;
+      }
+
+      [data-bs-theme="light"] {
+        --doc-bg-body: #f8fafc;
+        --doc-bg-sidebar: #ffffff;
+        --doc-bg-card: #ffffff;
+        --doc-border: #e2e8f0;
+        --doc-text: #0f172a;
+        --doc-text-muted: #64748b;
+        --doc-code-bg: #1e293b;
+      }
+
+      body {
+        font-family: var(--doc-font-sans);
+        background-color: var(--doc-bg-body);
+        color: var(--doc-text);
+        line-height: 1.65;
+        font-size: 0.95rem;
+      }
+
+      /* Fixed Header */
+      .doc-navbar {
+        height: 64px;
+        background: var(--doc-bg-sidebar);
+        border-bottom: 1px solid var(--doc-border);
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        backdrop-filter: blur(8px);
+      }
+
+      /* Sidebar Navigation */
+      .doc-sidebar {
+        width: var(--doc-sidebar-width);
+        position: fixed;
+        top: 64px;
+        bottom: 0;
+        left: 0;
+        background: var(--doc-bg-sidebar);
+        border-right: 1px solid var(--doc-border);
+        overflow-y: auto;
+        padding: 1.25rem 1rem 3rem 1rem;
+        z-index: 1010;
+        scrollbar-width: thin;
+      }
+
+      .doc-sidebar-heading {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--doc-text-muted);
+        margin: 1.25rem 0 0.5rem 0.5rem;
+      }
+
+      .doc-nav-link {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.45rem 0.65rem;
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: var(--doc-text);
+        text-decoration: none;
+        border-radius: 6px;
+        transition: all 0.15s ease-in-out;
+        margin-bottom: 2px;
+      }
+
+      .doc-nav-link:hover {
+        background: rgba(0, 102, 235, 0.08);
+        color: var(--doc-primary);
+      }
+
+      .doc-nav-link.active {
+        background: var(--doc-primary);
+        color: #ffffff !important;
+        font-weight: 600;
+      }
+
+      .doc-nav-link.active i {
+        color: #ffffff !important;
+      }
+
+      .doc-nav-link i {
+        width: 18px;
+        font-size: 0.95rem;
+        color: var(--doc-text-muted);
+      }
+
+      /* Main Content Area */
+      .doc-main {
+        margin-left: var(--doc-sidebar-width);
+        padding: 2.5rem 3rem 5rem 3rem;
+        max-width: 1200px;
+      }
+
+      @media (max-width: 991.98px) {
+        .doc-sidebar {
+          transform: translateX(-100%);
+          transition: transform 0.25s ease-in-out;
+        }
+        .doc-sidebar.show {
+          transform: translateX(0);
+        }
+        .doc-main {
+          margin-left: 0;
+          padding: 1.5rem 1rem 4rem 1rem;
+        }
+      }
+
+      /* Cards & Containers */
+      .doc-card {
+        background: var(--doc-bg-card);
+        border: 1px solid var(--doc-border);
+        border-radius: 12px;
+        padding: 1.75rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .doc-section-title {
+        font-size: 1.75rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .doc-section-subtitle {
+        font-size: 1.05rem;
+        color: var(--doc-text-muted);
+        margin-bottom: 1.75rem;
+      }
+
+      .doc-h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-top: 1.75rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      /* Code Blocks */
+      .doc-code-block {
+        background: #0d1117;
+        color: #c9d1d9;
+        font-family: var(--doc-font-mono);
+        font-size: 0.86rem;
+        border-radius: 8px;
+        position: relative;
+        margin: 1rem 0 1.5rem 0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+      }
+
+      .doc-code-header {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.4rem 1rem;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        color: #8b949e;
+      }
+
+      .doc-code-content {
+        padding: 1rem 1.25rem;
+        overflow-x: auto;
+        margin: 0;
+      }
+
+      .btn-copy-code {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        color: #c9d1d9;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .btn-copy-code:hover {
+        background: var(--doc-primary);
+        color: #fff;
+      }
+
+      /* Callout Alerts */
+      .doc-callout {
+        border-left: 4px solid var(--doc-primary);
+        background: rgba(0, 102, 235, 0.06);
+        padding: 1rem 1.25rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1.25rem 0;
+      }
+
+      .doc-callout-warning {
+        border-left-color: #f59e0b;
+        background: rgba(245, 158, 11, 0.08);
+      }
+
+      .doc-callout-danger {
+        border-left-color: var(--doc-accent-red);
+        background: rgba(220, 38, 38, 0.08);
+      }
+
+      .doc-callout-success {
+        border-left-color: #10b981;
+        background: rgba(16, 185, 129, 0.08);
+      }
+
+      /* Screen Card in User Manual */
+      .screen-card {
+        border: 1px solid var(--doc-border);
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        background: var(--doc-bg-card);
+      }
+
+      .screen-card-header {
+        background: rgba(0, 102, 235, 0.04);
+        padding: 0.9rem 1.25rem;
+        border-bottom: 1px solid var(--doc-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .screen-card-body {
+        padding: 1.25rem;
+      }
+
+      .field-tag {
+        font-family: var(--doc-font-mono);
+        font-size: 0.8rem;
+        background: rgba(0, 102, 235, 0.1);
+        color: var(--doc-primary);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 600;
+      }
+
+      /* Badges */
+      .badge-role {
+        font-size: 0.72rem;
+        padding: 0.25rem 0.55rem;
+        border-radius: 20px;
+        font-weight: 600;
+      }
+      .badge-admin {
+        background: #e0e7ff;
+        color: #3730a3;
+      }
+      .badge-manager {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .badge-cashier {
+        background: #fef9c3;
+        color: #854d0e;
+      }
+      .badge-all {
+        background: #f1f5f9;
+        color: #334155;
+      }
+
+      /* Sticky Search */
+      .doc-search-wrapper {
+        position: relative;
+        margin-bottom: 1rem;
+      }
+      .doc-search-wrapper i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--doc-text-muted);
+        font-size: 0.85rem;
+      }
+      .doc-search-input {
+        padding-left: 34px;
+        font-size: 0.85rem;
+        border-radius: 6px;
+        background: var(--doc-bg-body);
+        border: 1px solid var(--doc-border);
+        color: var(--doc-text);
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ==================== TOP NAVIGATION ==================== -->
+    <header
+      class="doc-navbar d-flex align-items-center justify-content-between px-3 px-lg-4"
+    >
+      <div class="d-flex align-items-center gap-3">
+        <!-- Mobile Toggle -->
+        <button
+          class="btn btn-outline-secondary d-lg-none btn-sm"
+          id="sidebarToggle"
+          aria-label="Toggle Sidebar"
+        >
+          <i class="fa fa-bars"></i>
+        </button>
+
+        <!-- Logo & Title -->
+        <a
+          href="#overview"
+          class="d-flex align-items-center gap-2 text-decoration-none"
+        >
+          <div
+            style="
+              font-weight: 800;
+              font-size: 1.35rem;
+              color: #0056d2;
+              letter-spacing: -0.03em;
+            "
+          >
+            <span style="color: #c8102e">i</span>Cleaners
+          </div>
+          <span
+            class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-11 px-2"
+            >v1.0.0</span
+          >
+        </a>
+      </div>
+
+      <!-- Right Controls -->
+      <div class="d-flex align-items-center gap-2">
+        <a
+          href="https://codecanyon.net"
+          target="_blank"
+          class="btn btn-sm btn-outline-primary d-none d-sm-inline-flex align-items-center gap-1"
+        >
+          <i class="fa fa-shopping-cart"></i> CodeCanyon
+        </a>
+        <button
+          class="btn btn-sm btn-outline-secondary"
+          id="themeToggle"
+          title="Toggle Light/Dark Mode"
+        >
+          <i class="fa fa-moon" id="themeIcon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ==================== LEFT SIDEBAR ==================== -->
+    <nav class="doc-sidebar" id="docSidebar">
+      <!-- Live Search -->
+      <div class="doc-search-wrapper">
+        <i class="fa fa-search"></i>
+        <input
+          type="text"
+          class="form-control form-control-sm doc-search-input"
+          id="sidebarSearch"
+          placeholder="Search documentation..."
+        />
+      </div>
+
+      <div class="doc-sidebar-heading">Getting Started</div>
+      <a href="#overview" class="doc-nav-link active"
+        ><i class="fa fa-rocket"></i> Overview & Slogans</a
+      >
+      <a href="#requirements" class="doc-nav-link"
+        ><i class="fa fa-laptop-code"></i> System Requirements</a
+      >
+      <a href="#demo-credentials" class="doc-nav-link"
+        ><i class="fa fa-key"></i> Demo Credentials</a
+      >
+
+      <div class="doc-sidebar-heading">Build & Run</div>
+      <a href="#local-setup" class="doc-nav-link"
+        ><i class="fa fa-terminal"></i> How to Run & Build</a
+      >
+      <a href="#env-database" class="doc-nav-link"
+        ><i class="fa fa-database"></i> Database & Environment</a
+      >
+
+      <div class="doc-sidebar-heading">Production Deployment</div>
+      <a href="#deploy-linux" class="doc-nav-link"
+        ><i class="fa-brands fa-linux"></i> Linux (Ubuntu / Nginx)</a
+      >
+      <a href="#deploy-cpanel" class="doc-nav-link"
+        ><i class="fa fa-cogs"></i> cPanel (Node.js App)</a
+      >
+      <a href="#deploy-iis" class="doc-nav-link"
+        ><i class="fa-brands fa-windows"></i> Windows Server (IIS)</a
+      >
+
+      <div class="doc-sidebar-heading">Hardware & Printing</div>
+      <a href="#silent-printing" class="doc-nav-link"
+        ><i class="fa fa-print"></i> Silent Printing Server</a
+      >
+      <a href="#cloth-tags" class="doc-nav-link"
+        ><i class="fa fa-tags"></i> Garment Wash Tags</a
+      >
+
+      <div class="doc-sidebar-heading">Screen-by-Screen Manual</div>
+      <a href="#screen-auth" class="doc-nav-link"
+        ><i class="fa fa-sign-in-alt"></i> 1. Authentication & Login</a
+      >
+      <a href="#screen-dashboard" class="doc-nav-link"
+        ><i class="fa fa-gauge-high"></i> 2. Dashboard Command Center</a
+      >
+      <a href="#screen-pos" class="doc-nav-link"
+        ><i class="fa fa-cash-register"></i> 3. Point of Sale (POS)</a
+      >
+      <a href="#screen-orders" class="doc-nav-link"
+        ><i class="fa fa-boxes-packing"></i> 4. Orders & Tracking</a
+      >
+      <a href="#screen-customers" class="doc-nav-link"
+        ><i class="fa fa-users"></i> 5. Customers & Ledger</a
+      >
+      <a href="#screen-services" class="doc-nav-link"
+        ><i class="fa fa-shirt"></i> 6. Services, Types & Addons</a
+      >
+      <a href="#screen-cash" class="doc-nav-link"
+        ><i class="fa fa-wallet"></i> 7. Cash Drawer & Expenses</a
+      >
+      <a href="#screen-stores" class="doc-nav-link"
+        ><i class="fa fa-store"></i> 8. Multi-Store / Branches</a
+      >
+      <a href="#screen-reports" class="doc-nav-link"
+        ><i class="fa fa-chart-line"></i> 9. Reports & P&L Analysis</a
+      >
+      <a href="#screen-tools" class="doc-nav-link"
+        ><i class="fa fa-sliders"></i> 10. Tools, Settings & Roles</a
+      >
+      <a href="#screen-languages" class="doc-nav-link"
+        ><i class="fa fa-language"></i> 11. 10 Languages & RTL</a
+      >
+
+      <div class="doc-sidebar-heading">Support</div>
+      <a href="#troubleshooting" class="doc-nav-link"
+        ><i class="fa fa-life-ring"></i> Troubleshooting & FAQ</a
+      >
+    </nav>
+
+    <!-- ==================== MAIN CONTENT AREA ==================== -->
+    <main class="doc-main">
+      <img
+        src="title.jpg"
+        style="
+          width: 100%;
+          margin-bottom: 1rem;
+          border-radius: 15px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        "
+      />
+      <!-- ==================== 1. OVERVIEW ==================== -->
+      <section id="overview" class="doc-card">
+        <div
+          class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2"
+        >
+          <h1 class="doc-section-title m-0">
+            <i class="fa fa-shirt text-primary"></i> iCleaners Documentation
+          </h1>
+          <span
+            class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fw-semibold"
+          >
+            Commercial Release v1.0.0
+          </span>
+        </div>
+        <p class="doc-section-subtitle">
+          Multi-Store Laundry & Dry Cleaning Management System with Silent
+          Thermal POS & Wash Tag Printing
+        </p>
+
+        <div
+          class="p-3 mb-4 rounded-3 bg-primary text-white"
+          style="background: linear-gradient(135deg, #0056d2 0%, #00368a 100%)"
+        >
+          <h5 class="fw-bold mb-1">
+            <i class="fa fa-bullhorn me-2"></i> Official Slogan & Tagline
+          </h5>
+          <p class="mb-0 fs-6 opacity-90">
+            <em
+              >"Scale Your Laundry Business from a Single Shop to a Multi-Store
+              Franchise with Zero-Click Silent Hardware Printing."</em
+            >
+          </p>
+        </div>
+
+        <p>
+          <strong>iCleaners</strong> is a complete end-to-end Enterprise
+          Resource Planning (ERP) and Point of Sale (POS) system engineered
+          specifically for single-store laundromats, boutique dry cleaners,
+          alteration workshops, and multi-branch commercial franchises. Built
+          with <strong>Node.js, Express, and MySQL</strong>, it delivers
+          high-performance web order management paired with a standalone
+          <strong>Silent Hardware Printing Server</strong> for zero-delay
+          receipts and garment tag generation.
+        </p>
+
+        <div class="row g-3 mt-2">
+          <div class="col-md-4">
+            <div class="p-3 border rounded-3 bg-body-tertiary h-100">
+              <h6 class="fw-bold text-primary mb-1">
+                <i class="fa fa-print me-1"></i> Silent POS Hardware
+              </h6>
+              <p class="small text-muted mb-0">
+                Direct ESC/POS spooling on port 4321 with zero browser print
+                dialogs, 80mm/58mm tickets, and 75mm/50mm garment cloth tags.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="p-3 border rounded-3 bg-body-tertiary h-100">
+              <h6 class="fw-bold text-primary mb-1">
+                <i class="fa fa-store me-1"></i> Multi-Store Franchises
+              </h6>
+              <p class="small text-muted mb-0">
+                Isolated store accounts, branch manager credentials, custom
+                commission percentage payouts, and central master administrative
+                oversight.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="p-3 border rounded-3 bg-body-tertiary h-100">
+              <h6 class="fw-bold text-primary mb-1">
+                <i class="fa fa-globe me-1"></i> 10 Languages + RTL
+              </h6>
+              <p class="small text-muted mb-0">
+                Pre-translated in 10 languages (EN, IN, PT, ES, FR, CN, AE, ID,
+                PH, UK) with native Right-to-Left (RTL) layout switching for
+                Arabic.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 2. REQUIREMENTS ==================== -->
+      <section id="requirements" class="doc-card">
+        <h2 class="doc-section-title">
+          <i class="fa fa-laptop-code text-primary"></i> System Requirements
+        </h2>
+        <p class="doc-section-subtitle">
+          Prerequisites for server hosting, cashier workstations, and hardware
+          peripherals.
+        </p>
+
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 25%">Component</th>
+                <th style="width: 35%">Minimum Specification</th>
+                <th style="width: 40%">Recommended (Production)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Operating System</strong></td>
+                <td>Ubuntu 20.04 / Windows 10 / Windows Server</td>
+                <td>Ubuntu 22.04 LTS or Windows Server 2019/2022</td>
+              </tr>
+              <tr>
+                <td><strong>Node.js Runtime</strong></td>
+                <td>v16.14.0 LTS</td>
+                <td><strong>v18.x or v20.x LTS</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Database</strong></td>
+                <td>MySQL 5.7+ / MariaDB 10.3+</td>
+                <td><strong>MySQL 8.0+ / MariaDB 10.6+</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Memory (RAM)</strong></td>
+                <td>1 GB RAM</td>
+                <td>2 GB to 4 GB RAM</td>
+              </tr>
+              <tr>
+                <td><strong>Storage Space</strong></td>
+                <td>500 MB free disk space</td>
+                <td>10 GB+ SSD (for store logos, service photos & backups)</td>
+              </tr>
+              <tr>
+                <td><strong>Thermal Receipt Printer</strong></td>
+                <td>Any 58mm ESC/POS USB printer</td>
+                <td>
+                  <strong>80mm Thermal Receipt Printer (USB / Ethernet)</strong>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Garment Tag Printer</strong></td>
+                <td>Standard thermal / ink printer</td>
+                <td>
+                  <strong
+                    >75mm &times; 50mm Continuous Nylon Roll Tag Printer</strong
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ==================== 3. DEMO CREDENTIALS ==================== -->
+      <section id="demo-credentials" class="doc-card">
+        <h2 class="doc-section-title">
+          <i class="fa fa-key text-primary"></i> Default Demo Credentials
+        </h2>
+        <p class="doc-section-subtitle">
+          Pre-configured administrative, store manager, and cashier accounts.
+        </p>
+
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="p-3 border rounded-3 bg-body-tertiary">
+              <div
+                class="d-flex justify-content-between align-items-center mb-2"
+              >
+                <span class="badge badge-role badge-admin">Master Admin</span>
+                <i class="fa fa-shield-halved text-primary"></i>
+              </div>
+              <div class="small mb-1">
+                <strong>Username:</strong> <code>admin</code>
+              </div>
+              <div class="small mb-2">
+                <strong>Password:</strong> <code>123456</code>
+              </div>
+              <p class="text-muted small mb-0">
+                Full global master access: store creation, system settings,
+                payouts, all reports.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="p-3 border rounded-3 bg-body-tertiary">
+              <div
+                class="d-flex justify-content-between align-items-center mb-2"
+              >
+                <span class="badge badge-role badge-manager"
+                  >Store Manager</span
+                >
+                <i class="fa fa-user-tie text-success"></i>
+              </div>
+              <div class="small mb-1">
+                <strong>Username:</strong> <code>manager</code>
+              </div>
+              <div class="small mb-2">
+                <strong>Password:</strong> <code>123456</code>
+              </div>
+              <p class="text-muted small mb-0">
+                Branch store oversight: store-scoped POS, store orders, branch
+                staff, local cash drawer.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="p-3 border rounded-3 bg-body-tertiary">
+              <div
+                class="d-flex justify-content-between align-items-center mb-2"
+              >
+                <span class="badge badge-role badge-cashier">Cashier</span>
+                <i class="fa fa-cash-register text-warning"></i>
+              </div>
+              <div class="small mb-1">
+                <strong>Username:</strong> <code>cashier</code>
+              </div>
+              <div class="small mb-2">
+                <strong>Password:</strong> <code>123456</code>
+              </div>
+              <p class="text-muted small mb-0">
+                Cashier POS booking, thermal receipt & garment cloth tag
+                printing, order status updates.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 4. HOW TO RUN & BUILD ==================== -->
+      <section id="local-setup" class="doc-card">
+        <h2 class="doc-section-title">
+          <i class="fa fa-terminal text-primary"></i> How to Run & Build the
+          Project
+        </h2>
+        <p class="doc-section-subtitle">
+          Local development, compilation commands, and running the application
+          daemon.
+        </p>
+
+        <h3 class="doc-h3">Step 1: Install Dependencies</h3>
+        <p>Open your command line in the project root directory and execute:</p>
+        <div class="doc-code-block">
+          <div class="doc-code-header">
+            <span>Bash / PowerShell</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre class="doc-code-content"><code>npm install</code></pre>
+        </div>
+
+        <h3 class="doc-h3">
+          Step 2: Running in Development Mode (with Live Reload)
+        </h3>
+        <div class="doc-code-block">
+          <div class="doc-code-header">
+            <span>Bash / PowerShell</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre
+            class="doc-code-content"
+          ><code># Starts nodemon watching server files and dev-reload
+npm start</code></pre>
+        </div>
+        <p>The console will output:</p>
+        <div class="doc-code-block">
+          <pre
+            class="doc-code-content"
+          ><code>✅ [Database] Successfully connected to MySQL at 127.0.0.1:3306/icleaners
+server running on port http://localhost:5000/</code></pre>
+        </div>
+
+        <h3 class="doc-h3">
+          Step 3: Running with PM2 (Production Process Manager)
+        </h3>
+        <div class="doc-code-block">
+          <div class="doc-code-header">
+            <span>Production PM2</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre class="doc-code-content"><code># Install PM2 globally
+npm install -g pm2
+
+# Start the application
+pm2 start app.js --name "icleaners"
+
+# Configure automatic startup on system reboot
+pm2 startup
+pm2 save</code></pre>
+        </div>
+      </section>
+
+      <!-- ==================== 5. DATABASE & ENV ==================== -->
+      <section id="env-database" class="doc-card">
+        <h2 class="doc-section-title">
+          <i class="fa fa-database text-primary"></i> Database & Environment
+          Configuration
+        </h2>
+        <p class="doc-section-subtitle">
+          Configuring <code>config.env</code> and importing the SQL schema.
+        </p>
+
+        <h3 class="doc-h3">The <code>config.env</code> File</h3>
+        <p>
+          Locate or create <code>config.env</code> in the application root
+          directory:
+        </p>
+
+        <div class="doc-code-block">
+          <div class="doc-code-header">
+            <span>config.env</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre class="doc-code-content"><code>PORT=5000
+DATABASE=icleaners_db
+USER_NAME=root
+PASS_WORD=your_database_password
+HOST_NAME=127.0.0.1
+PORT_NAME=3306
+TOKEN_KEY=any_secure_random_hash_string_for_jwt
+TOKEN=another_secure_hash_for_language_cookies</code></pre>
+        </div>
+
+        <h3 class="doc-h3">Importing Database Schema</h3>
+        <p>
+          Import the included SQL schema file located at
+          <code>database/lndry.sql</code>:
+        </p>
+        <div class="doc-code-block">
+          <div class="doc-code-header">
+            <span>MySQL CLI</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre class="doc-code-content"><code># 1. Create the database
+mysql -u root -p -e "CREATE DATABASE icleaners_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# 2. Import the schema and seed data
+mysql -u root -p icleaners_db < database/lndry.sql</code></pre>
+        </div>
+      </section>
+
+      <!-- ==================== 6. LINUX DEPLOYMENT ==================== -->
+      <section id="deploy-linux" class="doc-card">
+        <h2 class="doc-section-title">
+          <i class="fa-brands fa-linux text-primary"></i> Deploying on Linux
+          (Ubuntu 20.04 / 22.04 LTS)
+        </h2>
+        <p class="doc-section-subtitle">
+          Complete production setup with Nginx reverse proxy, PM2, and Let's
+          Encrypt SSL.
+        </p>
+
+        <div class="doc-callout doc-callout-success">
+          <strong>Recommended Architecture:</strong> Nginx handles SSL
+          termination and port 80/443 traffic, reverse-proxying requests to the
+          Node.js application running on <code>127.0.0.1:5000</code>.
+        </div>
+
+        <h3 class="doc-h3">Step 1: Install Node.js, MySQL, and Nginx</h3>
+        <div class="doc-code-block">
+          <div class="doc-code-header">
+            <span>Ubuntu Bash</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre class="doc-code-content"><code># Update repositories
+sudo apt update && sudo apt upgrade -y
+
+# Install Node.js 18.x LTS via NodeSource
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs nginx mysql-server git
+
+# Verify installations
+node -v && npm -v && mysql --version</code></pre>
+        </div>
+
+        <h3 class="doc-h3">Step 2: Upload Files & Install Dependencies</h3>
+        <div class="doc-code-block">
+          <div class="doc-code-header">
+            <span>Ubuntu Bash</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre
+            class="doc-code-content"
+          ><code># Clone or move files to /var/www/icleaners
+sudo mkdir -p /var/www/icleaners
+sudo chown -R $USER:$USER /var/www/icleaners
+cd /var/www/icleaners
+
+# Install project packages
+npm install --production
+
+# Create config.env with your database credentials
+nano config.env</code></pre>
+        </div>
+
+        <h3 class="doc-h3">Step 3: Setup Nginx Reverse Proxy</h3>
+        <p>
+          Create a new Nginx virtual host configuration:
+          <code>sudo nano /etc/nginx/sites-available/icleaners.conf</code>
+        </p>
+        <div class="doc-code-block">
+          <div class="doc-code-header">
+            <span>/etc/nginx/sites-available/icleaners.conf</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre class="doc-code-content"><code>server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+
+    client_max_body_size 50M;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}</code></pre>
+        </div>
+
+        <div class="doc-code-block">
+          <div class="doc-code-header">
+            <span>Enable Site & Certbot SSL</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre
+            class="doc-code-content"
+          ><code># Enable configuration and test syntax
+sudo ln -s /etc/nginx/sites-available/icleaners.conf /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+
+# Install free SSL certificate via Certbot
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com</code></pre>
+        </div>
+
+        <h3 class="doc-h3">Step 4: Launch Application with PM2</h3>
+        <div class="doc-code-block">
+          <div class="doc-code-header">
+            <span>PM2 Daemon</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre class="doc-code-content"><code>sudo npm install -g pm2
+cd /var/www/icleaners
+pm2 start app.js --name "icleaners"
+pm2 startup
+pm2 save</code></pre>
+        </div>
+      </section>
+
+      <!-- ==================== 7. CPANEL DEPLOYMENT ==================== -->
+      <section id="deploy-cpanel" class="doc-card">
+        <h2 class="doc-section-title">
+          <i class="fa fa-cogs text-primary"></i> Deploying on cPanel Shared /
+          VPS Hosting
+        </h2>
+        <p class="doc-section-subtitle">
+          Using cPanel "Setup Node.js App" (Phusion Passenger) & MySQL Database
+          Wizard.
+        </p>
+
+        <h3 class="doc-h3">Step 1: Create Database in cPanel</h3>
+        <ol>
+          <li>Log in to your <strong>cPanel Dashboard</strong>.</li>
+          <li>Open <strong>MySQL&reg; Database Wizard</strong>.</li>
+          <li>
+            Create a database name (e.g., <code>cpaneluser_icleaners</code>).
+          </li>
+          <li>
+            Create a database username and generate a strong password. Save
+            these credentials.
+          </li>
+          <li>
+            Under Privileges, select <strong>ALL PRIVILEGES</strong> and click
+            <em>Make Changes</em>.
+          </li>
+          <li>
+            Open <strong>phpMyAdmin</strong> from cPanel, select your newly
+            created database, go to the <strong>Import</strong> tab, choose
+            <code>database/lndry.sql</code> from the unzipped package, and click
+            <strong>Go</strong>.
+          </li>
+        </ol>
+
+        <h3 class="doc-h3">Step 2: Upload Application Files</h3>
+        <ol>
+          <li>Open <strong>File Manager</strong> in cPanel.</li>
+          <li>
+            Navigate to your root home folder (e.g.
+            <code>/home/cpaneluser/</code>).
+          </li>
+          <li>Create a folder named <code>icleaners_app</code>.</li>
+          <li>
+            Upload the application ZIP and extract all files inside
+            <code>/home/cpaneluser/icleaners_app/</code>.
+          </li>
+          <li>
+            Edit <code>config.env</code> with your cPanel database credentials:
+            <div class="doc-code-block">
+              <pre class="doc-code-content"><code>PORT=5000
+DATABASE=cpaneluser_icleaners
+USER_NAME=cpaneluser_dbuser
+PASS_WORD=your_database_password
+HOST_NAME=localhost
+PORT_NAME=3306
+TOKEN_KEY=secret_jwt_token_key</code></pre>
+            </div>
+          </li>
+        </ol>
+
+        <h3 class="doc-h3">Step 3: Setup Node.js App in cPanel</h3>
+        <ol>
+          <li>
+            In cPanel, click <strong>Setup Node.js App</strong> (under the
+            Software section).
+          </li>
+          <li>Click the blue <strong>Create Application</strong> button.</li>
+          <li>
+            Configure the form parameters:
+            <ul>
+              <li>
+                <strong>Node.js version:</strong> Select <code>18.x</code> or
+                <code>20.x</code>.
+              </li>
+              <li>
+                <strong>Application mode:</strong> Select
+                <code>Production</code>.
+              </li>
+              <li>
+                <strong>Application root:</strong> Type
+                <code>icleaners_app</code>.
+              </li>
+              <li>
+                <strong>Application URL:</strong> Select your domain or
+                subdomain (e.g. <code>laundry.yourdomain.com</code>).
+              </li>
+              <li>
+                <strong>Application startup file:</strong> Type
+                <code>app.js</code>.
+              </li>
+            </ul>
+          </li>
+          <li>Click <strong>Create</strong>.</li>
+          <li>
+            Once created, click <strong>Run NPM Install</strong> to
+            automatically install all dependencies.
+          </li>
+          <li>
+            Click <strong>Restart</strong>. Your application is now live on your
+            domain!
+          </li>
+        </ol>
+      </section>
+
+      <!-- ==================== 8. WINDOWS SERVER / IIS DEPLOYMENT ==================== -->
+      <section id="deploy-iis" class="doc-card">
+        <h2 class="doc-section-title">
+          <i class="fa-brands fa-windows text-primary"></i> Deploying on Windows
+          Server (IIS)
+        </h2>
+        <p class="doc-section-subtitle">
+          Configuring Internet Information Services (IIS) with the included
+          <code>web.config</code> and NSSM service.
+        </p>
+
+        <div class="doc-callout">
+          <strong>Pre-Packaged Feature:</strong> The application root already
+          includes a custom <code>web.config</code> configured for URL Rewrite
+          Reverse Proxying to port 5000 with 50MB file upload limits!
+        </div>
+
+        <h3 class="doc-h3">Step 1: Install Required Windows Modules</h3>
+        <ol>
+          <li>
+            Install <strong>Node.js for Windows</strong> (v18.x LTS or v20.x
+            LTS) from
+            <a href="https://nodejs.org" target="_blank">nodejs.org</a>.
+          </li>
+          <li>
+            Install <strong>MySQL Server</strong> (or Laragon / MariaDB) on
+            Windows.
+          </li>
+          <li>
+            In <strong>Server Manager</strong> &rarr; Add Roles and Features
+            &rarr; Enable <strong>Web Server (IIS)</strong>.
+          </li>
+          <li>
+            Download and install the official Microsoft IIS extensions:
+            <ul>
+              <li>
+                <a
+                  href="https://www.iis.net/downloads/microsoft/url-rewrite"
+                  target="_blank"
+                  ><strong>URL Rewrite 2.1</strong></a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://www.iis.net/downloads/microsoft/application-request-routing"
+                  target="_blank"
+                  ><strong>Application Request Routing (ARR) 3.0</strong></a
+                >
+              </li>
+            </ul>
+          </li>
+          <li>
+            Open <strong>IIS Manager</strong>, click the top Server Node &rarr;
+            open <strong>Application Request Routing</strong> &rarr; click
+            <em>Server Proxy Settings</em> in the right panel &rarr; check
+            <strong>Enable proxy</strong> &rarr; click <em>Apply</em>.
+          </li>
+        </ol>
+
+        <h3 class="doc-h3">
+          Step 2: Deploy Files & Verify <code>web.config</code>
+        </h3>
+        <p>
+          Place the application folder in
+          <code>C:\inetpub\wwwroot\icleaners</code>. The included
+          <code>web.config</code> automatically handles reverse proxy routing:
+        </p>
+
+        <div class="doc-code-block">
+          <div class="doc-code-header">
+            <span>web.config</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre
+            class="doc-code-content"
+          ><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;configuration&gt;
+  &lt;system.webServer&gt;
+    &lt;security&gt;
+      &lt;requestFiltering&gt;
+        &lt;requestLimits maxAllowedContentLength="52428800" /&gt;
+      &lt;/requestFiltering&gt;
+    &lt;/security&gt;
+    &lt;rewrite&gt;
+      &lt;rules&gt;
+        &lt;rule name="ReverseProxyToNode" stopProcessing="true"&gt;
+          &lt;match url="(.*)" /&gt;
+          &lt;action type="Rewrite" url="http://127.0.0.1:5000/{R:1}" /&gt;
+        &lt;/rule&gt;
+      &lt;/rules&gt;
+    &lt;/rewrite&gt;
+    &lt;httpErrors existingResponse="PassThrough" /&gt;
+  &lt;/system.webServer&gt;
+&lt;/configuration&gt;</code></pre>
+        </div>
+
+        <h3 class="doc-h3">
+          Step 3: Run Node.js as a Background Windows Service (NSSM)
+        </h3>
+        <p>
+          To ensure Node.js restarts automatically upon server reboots without
+          leaving a command window open:
+        </p>
+        <div class="doc-code-block">
+          <div class="doc-code-header">
+            <span>Command Prompt (Run as Administrator)</span>
+            <button class="btn-copy-code" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre
+            class="doc-code-content"
+          ><code># Download NSSM (Non-Sucking Service Manager) from nssm.cc
+# In elevated CMD, install service:
+nssm install iCleanersService "C:\Program Files\nodejs\node.exe" "app.js"
+nssm set iCleanersService AppDirectory "C:\inetpub\wwwroot\icleaners"
+nssm start iCleanersService</code></pre>
+        </div>
+      </section>
+
+      <!-- ==================== 9. SILENT PRINTING SERVER ==================== -->
+      <section id="silent-printing" class="doc-card">
+        <h2 class="doc-section-title">
+          <i class="fa fa-print text-primary"></i> Silent Printing Server &
+          Dual-Mode Printing
+        </h2>
+        <p class="doc-section-subtitle">
+          Zero-dialog background hardware ticket printing over port 4321.
+        </p>
+
+        <div class="text-center my-4">
+          <img
+            src="silent_printing_workflow.jpg"
+            alt="How Silent POS Printing Works"
+            class="img-fluid rounded-3 border shadow-sm"
+            style="max-height: 480px"
+          />
+        </div>
+
+        <h3 class="doc-h3">How Silent Printing Operates</h3>
+        <ol>
+          <li>
+            The cashier clicks <strong>"Complete Order & Print"</strong> inside
+            the POS interface.
+          </li>
+          <li>
+            The browser JavaScript client checks if the local print bridge on
+            <code>http://127.0.0.1:4321</code> is alive.
+          </li>
+          <li>
+            If online, it dispatches an asynchronous HTTP POST payload
+            containing raw ESC/POS commands or formatted thermal HTML.
+          </li>
+          <li>
+            The local printing daemon directly feeds the OS spooler queue.
+            <strong
+              >The receipt prints in ~50ms without displaying the browser print
+              dialog!</strong
+            >
+          </li>
+        </ol>
+
+        <div class="doc-callout doc-callout-warning">
+          <h6 class="fw-bold mb-1">
+            <i class="fa fa-shield-halved me-1"></i> Automatic Browser Fallback
+            Rule
+          </h6>
+          <p class="small mb-0">
+            If the cashier's computer does not have the desktop printing server
+            running or port 4321 is unreachable, iCleaners
+            <strong
+              >instantly falls back to standard browser printing
+              (<code>window.print()</code>)</strong
+            >. Cashiers are never blocked!
+          </p>
+        </div>
+
+        <h3 class="doc-h3" id="cloth-tags">Garment Cloth Wash Tag System</h3>
+        <p>
+          In laundry and dry cleaning operations, paper tags dissolve in
+          washers. iCleaners generates continuous roll
+          <strong>waterproof garment wash tags (75mm &times; 50mm)</strong> with
+          Code128 barcodes rendered via <code>JsBarcode</code>:
+        </p>
+        <ul>
+          <li>
+            <strong>Unique Tag Sequence:</strong> Every garment piece receives
+            an individual tag (e.g., <code>ORD-1001-01</code>,
+            <code>ORD-1001-02</code>).
+          </li>
+          <li>
+            <strong>Customer & Rack Info:</strong> Includes customer name, store
+            telephone, garment service type, and assigned conveyor rack number.
+          </li>
+          <li>
+            <strong>Wash Care Symbols:</strong> Automatically indicates dry
+            clean only, delicate wash, or steam press instructions.
+          </li>
+        </ul>
+      </section>
+
+      <!-- ==================== 10. SCREEN-BY-SCREEN MANUAL ==================== -->
+      <section id="manual" class="doc-card">
+        <h2 class="doc-section-title">
+          <i class="fa fa-book-open text-primary"></i> Screen-by-Screen User
+          Manual
+        </h2>
+        <p class="doc-section-subtitle">
+          Comprehensive guide to every module, form, table, and operational
+          workflow in iCleaners.
+        </p>
+
+        <!-- Screen 1: Auth -->
+        <div class="screen-card" id="screen-auth">
+          <div class="screen-card-header">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="fa fa-sign-in-alt text-primary me-2"></i> 1.
+                Authentication & Password Recovery
+              </h5>
+              <span class="text-muted small"
+                >Route: <code>/</code>, <code>/login</code>,
+                <code>/forgot-password</code>,
+                <code>/reset-password</code></span
+              >
+            </div>
+            <span class="badge badge-role badge-all">All Roles</span>
+          </div>
+          <div class="screen-card-body">
+            <p>
+              The secure gateway to iCleaners, supporting encrypted login
+              sessions and self-service password retrieval.
+            </p>
+            <h6>Key Elements & Functions:</h6>
+            <ul>
+              <li>
+                <span class="field-tag">Language Switcher:</span> Floating
+                top-right dropdown allowing users to select any of the 10
+                languages (including Arabic RTL) prior to signing in.
+              </li>
+              <li>
+                <span class="field-tag">Theme Toggle:</span> Instant light/dark
+                mode switch preserved across browser refreshes.
+              </li>
+              <li>
+                <span class="field-tag">Username & Password:</span>
+                Authenticates against bcrypt password hashes and verifies role
+                status (Master Admin, Manager, Cashier, or Customer).
+              </li>
+              <li>
+                <span class="field-tag">Remember Me:</span> Stores an encrypted
+                persistent session cookie.
+              </li>
+              <li>
+                <span class="field-tag">Forgot Password:</span> Verifies
+                username or registered email and dispatches a secure
+                cryptographic reset link via SMTP.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Screen 2: Dashboard -->
+        <div class="screen-card" id="screen-dashboard">
+          <div class="screen-card-header">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="fa fa-gauge-high text-primary me-2"></i> 2. Command
+                Center Dashboard
+              </h5>
+              <span class="text-muted small">Route: <code>/index</code></span>
+            </div>
+            <div>
+              <span class="badge badge-role badge-admin">Master Admin</span>
+              <span class="badge badge-role badge-manager">Store Manager</span>
+            </div>
+          </div>
+          <div class="screen-card-body">
+            <p>
+              The real-time operational cockpit providing high-level KPIs, store
+              volume analytics, and quick-action POS shortcuts.
+            </p>
+            <h6>Key Elements & Functions:</h6>
+            <ul>
+              <li>
+                <span class="field-tag">Command Center Header:</span> Greets
+                logged-in staff, displays active franchise/store scope, and
+                includes quick-action POS and report buttons.
+              </li>
+              <li>
+                <span class="field-tag">4 Primary KPI Metric Tiles:</span>
+                <ul>
+                  <li>
+                    <strong>TOTAL SALES:</strong> Aggregate gross revenue with
+                    store currency symbol.
+                  </li>
+                  <li>
+                    <strong>TOTAL ORDERS:</strong> Lifetime order volume across
+                    all branches.
+                  </li>
+                  <li>
+                    <strong>SERVICES:</strong> Total active catalog services
+                    offered.
+                  </li>
+                  <li>
+                    <strong>CUSTOMERS:</strong> Total registered customer client
+                    base.
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <span class="field-tag"
+                  >Store Performance Breakdown Table:</span
+                >
+                Lists all registered branch locations with individual store
+                orders, gross turnover, active manager name, and direct POS
+                access link.
+              </li>
+              <li>
+                <span class="field-tag">Analytical Charts:</span> Interactive
+                monthly order volume trend charts and sales revenue breakdown
+                powered by Chart.js.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Screen 3: POS -->
+        <div class="screen-card" id="screen-pos">
+          <div class="screen-card-header">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="fa fa-cash-register text-primary me-2"></i> 3.
+                Interactive Point of Sale (POS)
+              </h5>
+              <span class="text-muted small"
+                >Route: <code>/admin/pos</code></span
+              >
+            </div>
+            <div>
+              <span class="badge badge-role badge-admin">Admin</span>
+              <span class="badge badge-role badge-manager">Manager</span>
+              <span class="badge badge-role badge-cashier">Cashier</span>
+            </div>
+          </div>
+          <div class="screen-card-body">
+            <p>
+              The heartbeat of store operations, facilitating fast customer
+              checkouts, service selection, and instant ticket printing.
+            </p>
+            <h6>Key Elements & Functions:</h6>
+            <ul>
+              <li>
+                <span class="field-tag">Store Selector:</span> Master admins can
+                switch between branch stores; branch managers and cashiers are
+                locked to their assigned store.
+              </li>
+              <li>
+                <span class="field-tag">Customer Selection & +Add Modal:</span>
+                Fast search customer dropdown with an instant modal to create
+                new clients without leaving the cart.
+              </li>
+              <li>
+                <span class="field-tag">Service Grid & Search Bar:</span> Visual
+                cards representing laundry services with garment illustrations,
+                unit pricing, and real-time category filtering.
+              </li>
+              <li>
+                <span class="field-tag">Cart Breakdown Table:</span> Itemized
+                list of selected services, quantity increments, piece colors,
+                and garment inspection notes.
+              </li>
+              <li>
+                <span class="field-tag">+Addons Button:</span> Attach dynamic
+                surcharges per item (express 24h delivery, starch, stain
+                remover, fragrance wash).
+              </li>
+              <li>
+                <span class="field-tag">Coupons & Discounts:</span> Apply
+                percentage or fixed promo codes directly to order subtotal.
+              </li>
+              <li>
+                <span class="field-tag">Silent Print Status Pill:</span> Green
+                dot indicates Desktop Print Bridge is online on port 4321; red
+                dot alerts cashier that fallback browser printing will be used.
+              </li>
+              <li>
+                <span class="field-tag">Payment Button:</span> Triggers payment
+                modal supporting Cash, Card, Advance Ledger, and UPI, followed
+                by immediate receipt & tag printing.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Screen 4: Orders -->
+        <div class="screen-card" id="screen-orders">
+          <div class="screen-card-header">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="fa fa-boxes-packing text-primary me-2"></i> 4. Order
+                Management & Status Lifecycle
+              </h5>
+              <span class="text-muted small"
+                >Route: <code>/order/list</code>,
+                <code>/order/detail/:id</code></span
+              >
+            </div>
+            <span class="badge badge-role badge-all">All Roles</span>
+          </div>
+          <div class="screen-card-body">
+            <p>
+              Tracks all customer orders through the 5-stage cleaning lifecycle
+              with server-side pagination and barcode scanning.
+            </p>
+            <h6>Key Elements & Functions:</h6>
+            <ul>
+              <li>
+                <span class="field-tag">Status Flow Badges:</span>
+                <span class="badge bg-warning text-dark me-1">Pending</span>
+                <span class="badge bg-info text-dark me-1">Processing</span>
+                <span class="badge bg-primary me-1">Ready for Pickup</span>
+                <span class="badge bg-success me-1">Delivered</span>
+                <span class="badge bg-danger">Cancelled</span>
+              </li>
+              <li>
+                <span class="field-tag">Server-Side DataTable:</span> Debounced
+                400ms search by customer name, order number (e.g.
+                <code>#ORD0066</code>), mobile phone, or store branch.
+              </li>
+              <li>
+                <span class="field-tag">Action Buttons:</span>
+                <ul>
+                  <li>
+                    <strong>View Details:</strong> Inspect full itemized
+                    invoice, customer address, payment status, and order
+                    timeline.
+                  </li>
+                  <li>
+                    <strong>Reprint Receipt:</strong> Re-sends thermal receipt
+                    to the printer or opens native print preview.
+                  </li>
+                  <li>
+                    <strong>Print Cloth Tags:</strong> Generates individual
+                    garment wash tags with Code128 barcodes.
+                  </li>
+                  <li>
+                    <strong>Update Status:</strong> Transition order status
+                    (e.g., mark as "Ready" triggers automated SMS/Email
+                    notification).
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Screen 5: Customers -->
+        <div class="screen-card" id="screen-customers">
+          <div class="screen-card-header">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="fa fa-users text-primary me-2"></i> 5. Customer Hub &
+                Customer Ledger
+              </h5>
+              <span class="text-muted small"
+                >Route: <code>/coustomer/list</code>,
+                <code>/account/coustomer_ledger/:id</code></span
+              >
+            </div>
+            <div>
+              <span class="badge badge-role badge-admin">Admin</span>
+              <span class="badge badge-role badge-manager">Manager</span>
+            </div>
+          </div>
+          <div class="screen-card-body">
+            <p>
+              Complete customer relationship management including prepaid
+              wallets, credit accounts, and debit/credit ledger histories.
+            </p>
+            <h6>Key Elements & Functions:</h6>
+            <ul>
+              <li>
+                <span class="field-tag">Customer Profile:</span> Name, mobile
+                number, email, delivery street address, tax registration number.
+              </li>
+              <li>
+                <span class="field-tag">Customer Ledger:</span> Comprehensive
+                financial audit trail of every credit (advance deposits,
+                payments) and debit (order invoices, unpaid balances).
+              </li>
+              <li>
+                <span class="field-tag">Add Balance / Deposit:</span> Accept
+                advance payments into the customer's prepaid account to be drawn
+                down during POS checkouts.
+              </li>
+              <li>
+                <span class="field-tag">SMS / Email Notification:</span>
+                Dispatches transactional updates and pickup reminders directly
+                to the client.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Screen 6: Services -->
+        <div class="screen-card" id="screen-services">
+          <div class="screen-card-header">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="fa fa-shirt text-primary me-2"></i> 6. Services,
+                Service Types & Add-ons
+              </h5>
+              <span class="text-muted small"
+                >Route: <code>/services/list</code>,
+                <code>/services/type</code>, <code>/services/addon</code>,
+                <code>/services/csv_file</code></span
+              >
+            </div>
+            <div>
+              <span class="badge badge-role badge-admin">Master Admin</span>
+              <span class="badge badge-role badge-manager">Store Manager</span>
+            </div>
+          </div>
+          <div class="screen-card-body">
+            <p>
+              Configure cleaning services, garment categories, dynamic
+              modifiers, and bulk spreadsheet upload.
+            </p>
+            <h6>Key Elements & Functions:</h6>
+            <ul>
+              <li>
+                <span class="field-tag">Services List:</span> Create garments
+                with photo upload, title, default base price, unit type (piece,
+                kg, pair, meter), and category assignment.
+              </li>
+              <li>
+                <span class="field-tag">Service Types:</span> High-level
+                categories (Dry Cleaning, Laundry Wash & Fold, Steam Pressing,
+                Leather Care, Alterations).
+              </li>
+              <li>
+                <span class="field-tag">Addons:</span> Optional service
+                modifiers with extra charges (Express Delivery +$5.00, Scented
+                Softener +$2.00, Heavy Starch +$1.50).
+              </li>
+              <li>
+                <span class="field-tag">Bulk CSV Import:</span> Download sample
+                CSV template and bulk upload hundreds of laundry services in
+                seconds.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Screen 7: Cash -->
+        <div class="screen-card" id="screen-cash">
+          <div class="screen-card-header">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="fa fa-wallet text-primary me-2"></i> 7. Cash Drawer &
+                Expense Tracking
+              </h5>
+              <span class="text-muted small"
+                >Route: <code>/account/list</code>,
+                <code>/expense/list</code></span
+              >
+            </div>
+            <div>
+              <span class="badge badge-role badge-admin">Admin</span>
+              <span class="badge badge-role badge-manager">Manager</span>
+            </div>
+          </div>
+          <div class="screen-card-body">
+            <p>
+              Audit store cash float, track miscellaneous operational expenses,
+              and maintain balanced cash drawers.
+            </p>
+            <h6>Key Elements & Functions:</h6>
+            <ul>
+              <li>
+                <span class="field-tag">Store Cash Accounts:</span> View current
+                cash in drawer, bank accounts, and digital payment balances.
+              </li>
+              <li>
+                <span class="field-tag">Deposit / Withdrawal:</span> Record
+                cashier float additions, bank drops, and cash transfers.
+              </li>
+              <li>
+                <span class="field-tag">Expense Tracker:</span> Log store
+                operational costs (detergent purchases, electricity bills,
+                hanger restocking, machinery maintenance) with category tagging.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Screen 8: Stores -->
+        <div class="screen-card" id="screen-stores">
+          <div class="screen-card-header">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="fa fa-store text-primary me-2"></i> 8. Multi-Store /
+                Branch Franchise Management
+              </h5>
+              <span class="text-muted small"
+                >Route: <code>/tool/storelist</code>, <code>/tool/store</code>,
+                <code>/account/payout</code></span
+              >
+            </div>
+            <span class="badge badge-role badge-admin">Master Admin Only</span>
+          </div>
+          <div class="screen-card-body">
+            <p>
+              Oversee franchise branches, configure store branding, set
+              commission percentages, and disburse payouts.
+            </p>
+            <h6>Key Elements & Functions:</h6>
+            <ul>
+              <li>
+                <span class="field-tag">Store Registration & Approval:</span>
+                Approve new branch self-registrations or create corporate
+                branches manually.
+              </li>
+              <li>
+                <span class="field-tag">Store Settings:</span> Individual store
+                logos, telephone, street address, tax/VAT number, and invoice
+                footer customization.
+              </li>
+              <li>
+                <span class="field-tag">Franchise Commission:</span> Set
+                store-specific commission percentage rates (e.g. 10% franchise
+                royalty fee).
+              </li>
+              <li>
+                <span class="field-tag">Payout Management:</span> Generate
+                branch payout statements, track pending vs. paid franchise
+                commissions, and export payout receipts.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Screen 9: Reports -->
+        <div class="screen-card" id="screen-reports">
+          <div class="screen-card-header">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="fa fa-chart-line text-primary me-2"></i> 9. Reports &
+                Business Intelligence Suite
+              </h5>
+              <span class="text-muted small"
+                >Route: <code>/report/daily</code>, <code>/report/order</code>,
+                <code>/report/sales</code>,
+                <code>/report/profit-loss</code></span
+              >
+            </div>
+            <div>
+              <span class="badge badge-role badge-admin">Master Admin</span>
+              <span class="badge badge-role badge-manager">Store Manager</span>
+            </div>
+          </div>
+          <div class="screen-card-body">
+            <p>
+              Executive financial analytics with date filtering, store scoping,
+              and 1-click Excel export.
+            </p>
+            <h6>Available Reports:</h6>
+            <ul>
+              <li>
+                <span class="field-tag">Daily Report:</span> End-of-day
+                reconciliation of cash vs card vs digital sales.
+              </li>
+              <li>
+                <span class="field-tag">Order Report:</span> Comprehensive order
+                log filtered by date range, delivery state, and store branch.
+              </li>
+              <li>
+                <span class="field-tag">Sales Report:</span> Gross sales,
+                discount deductions, delivery surcharges, and net revenue.
+              </li>
+              <li>
+                <span class="field-tag">Tax / VAT Report:</span> Exact breakdown
+                of collected tax liabilities for government compliance.
+              </li>
+              <li>
+                <span class="field-tag">Profit & Loss (P&L):</span> Real-time
+                profitability statement calculating Net Margin (Gross Sales
+                &minus; Store Expenses).
+              </li>
+              <li>
+                <span class="field-tag">Export to Excel:</span> Downloads
+                formatted <code>.xlsx</code> spreadsheets with executive
+                summaries and itemized sheets.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Screen 10: Tools -->
+        <div class="screen-card" id="screen-tools">
+          <div class="screen-card-header">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="fa fa-sliders text-primary me-2"></i> 10. Tools,
+                Master Settings & Role Permissions
+              </h5>
+              <span class="text-muted small"
+                >Route: <code>/tool/setting</code>, <code>/tool/mail</code>,
+                <code>/tool/roll</code>, <code>/tool/staff</code></span
+              >
+            </div>
+            <span class="badge badge-role badge-admin">Master Admin Only</span>
+          </div>
+          <div class="screen-card-body">
+            <p>
+              System-wide parameters, SMTP mail server setup, SMS gateways, and
+              granular staff role permissions.
+            </p>
+            <h6>Key Elements & Functions:</h6>
+            <ul>
+              <li>
+                <span class="field-tag">Master Settings:</span> Application
+                name, global logo, favicon, currency symbol, default timezone,
+                tax percentage, and terms & conditions.
+              </li>
+              <li>
+                <span class="field-tag">Mail Settings (SMTP):</span> Host, port,
+                username, password, and sender address for automated invoice
+                emails and password resets.
+              </li>
+              <li>
+                <span class="field-tag">Role & Permission Matrix:</span> Create
+                custom staff roles and toggle granular <code>create</code>,
+                <code>read</code>, <code>edit</code>, and
+                <code>delete</code> permissions across all 14 modules.
+              </li>
+              <li>
+                <span class="field-tag">Staff Management:</span> Create cashier
+                and manager accounts, assign to specific stores, and enforce
+                password policies.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Screen 11: Languages -->
+        <div class="screen-card" id="screen-languages">
+          <div class="screen-card-header">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="fa fa-language text-primary me-2"></i> 11.
+                Multi-Lingual Engine & Native RTL Support
+              </h5>
+              <span class="text-muted small"
+                >Global Topbar & Login Switcher</span
+              >
+            </div>
+            <span class="badge badge-role badge-all">All Roles</span>
+          </div>
+          <div class="screen-card-body">
+            <p>
+              Instant language switching across all 10 pre-installed world
+              languages with native Right-to-Left (RTL) layout switching for
+              Arabic.
+            </p>
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                  <tr>
+                    <th>Code</th>
+                    <th>Language</th>
+                    <th>Native Script</th>
+                    <th>Direction</th>
+                    <th>Parity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>en</code></td>
+                    <td>English</td>
+                    <td>English</td>
+                    <td>LTR</td>
+                    <td>466 keys (100%)</td>
+                  </tr>
+                  <tr>
+                    <td><code>in</code></td>
+                    <td>Hindi</td>
+                    <td>हिन्दी</td>
+                    <td>LTR</td>
+                    <td>466 keys (100%)</td>
+                  </tr>
+                  <tr>
+                    <td><code>pt</code></td>
+                    <td>Portuguese</td>
+                    <td>Português</td>
+                    <td>LTR</td>
+                    <td>466 keys (100%)</td>
+                  </tr>
+                  <tr>
+                    <td><code>es</code></td>
+                    <td>Spanish</td>
+                    <td>Español</td>
+                    <td>LTR</td>
+                    <td>466 keys (100%)</td>
+                  </tr>
+                  <tr>
+                    <td><code>fr</code></td>
+                    <td>French</td>
+                    <td>Français</td>
+                    <td>LTR</td>
+                    <td>466 keys (100%)</td>
+                  </tr>
+                  <tr>
+                    <td><code>cn</code></td>
+                    <td>Chinese</td>
+                    <td>中文</td>
+                    <td>LTR</td>
+                    <td>466 keys (100%)</td>
+                  </tr>
+                  <tr>
+                    <td><code>ae</code></td>
+                    <td>Arabic</td>
+                    <td>العربية</td>
+                    <td><strong>RTL (Right-to-Left)</strong></td>
+                    <td>466 keys (100%)</td>
+                  </tr>
+                  <tr>
+                    <td><code>id</code></td>
+                    <td>Indonesian</td>
+                    <td>Bahasa Indonesia</td>
+                    <td>LTR</td>
+                    <td>466 keys (100%)</td>
+                  </tr>
+                  <tr>
+                    <td><code>ph</code></td>
+                    <td>Filipino</td>
+                    <td>Tagalog</td>
+                    <td>LTR</td>
+                    <td>466 keys (100%)</td>
+                  </tr>
+                  <tr>
+                    <td><code>uk</code></td>
+                    <td>Ukrainian</td>
+                    <td>Українська</td>
+                    <td>LTR</td>
+                    <td>466 keys (100%)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 11. TROUBLESHOOTING ==================== -->
+      <section id="troubleshooting" class="doc-card">
+        <h2 class="doc-section-title">
+          <i class="fa fa-life-ring text-primary"></i> Troubleshooting & FAQ
+        </h2>
+        <p class="doc-section-subtitle">
+          Common questions, solutions, and developer support channels.
+        </p>
+
+        <div class="accordion" id="faqAccordion">
+          <!-- FAQ 1 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button
+                class="accordion-button"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#faq1"
+              >
+                Error: "EADDRINUSE: address already in use :::5000"
+              </button>
+            </h2>
+            <div
+              id="faq1"
+              class="accordion-collapse collapse show"
+              data-bs-parent="#faqAccordion"
+            >
+              <div class="accordion-body">
+                This indicates that another Node.js instance or background
+                service is already running on port 5000. Either terminate the
+                existing process using <code>taskkill /F /IM node.exe</code> on
+                Windows or <code>killall -9 node</code> on Linux, or change
+                <code>PORT=5090</code> in your <code>config.env</code> file.
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ 2 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button
+                class="accordion-button collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#faq2"
+              >
+                Why does the POS say "Silent Print: Offline"?
+              </button>
+            </h2>
+            <div
+              id="faq2"
+              class="accordion-collapse collapse"
+              data-bs-parent="#faqAccordion"
+            >
+              <div class="accordion-body">
+                This means the local desktop printing utility is not running on
+                the cashier workstation. Launch the
+                <code>pos-printing-server</code> executable. Once running on
+                port 4321, the status pill will turn green. Even if offline, the
+                application will automatically fall back to standard browser
+                printing (<code>window.print()</code>) so no orders are lost.
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ 3 -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button
+                class="accordion-button collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#faq3"
+              >
+                How do I add a new currency symbol or change tax rate?
+              </button>
+            </h2>
+            <div
+              id="faq3"
+              class="accordion-collapse collapse"
+              data-bs-parent="#faqAccordion"
+            >
+              <div class="accordion-body">
+                Log in as <strong>Master Admin</strong> &rarr; navigate to
+                <strong>Tools &rarr; Master Settings</strong>. Here you can
+                configure the currency symbol (e.g., <code>$</code>,
+                <code>&euro;</code>, <code>&pound;</code>,
+                <code>&dollar;</code>, <code>د.إ</code>, <code>₹</code>),
+                default VAT/tax percentage, and receipt header/footer text.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="pt-4 border-top text-center text-muted small">
+        <p class="mb-1">
+          &copy; 2026 <strong>iCleaners</strong> &mdash; Multi-Store Laundry &
+          Dry Cleaning Management System.
+        </p>
+        <p class="mb-0">
+          Exclusively available on
+          <a
+            href="https://codecanyon.net"
+            target="_blank"
+            class="text-decoration-none"
+            >Envato CodeCanyon</a
+          >. Built with Node.js, Express, MySQL & Bootstrap 5.
+        </p>
+      </footer>
+    </main>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Interactive Documentation Scripts -->
+    <script>
+      // Copy Code Helper
+      function copyCode(btn) {
+        const codeBlock = btn.closest(".doc-code-block").querySelector("code");
+        if (!codeBlock) return;
+        navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+          const originalText = btn.innerText;
+          btn.innerText = "Copied!";
+          btn.classList.add("bg-success", "text-white");
+          setTimeout(() => {
+            btn.innerText = originalText;
+            btn.classList.remove("bg-success", "text-white");
+          }, 2000);
+        });
+      }
+
+      // Theme Toggle (Dark/Light)
+      const themeToggle = document.getElementById("themeToggle");
+      const themeIcon = document.getElementById("themeIcon");
+      const htmlElement = document.documentElement;
+
+      function applyTheme(theme) {
+        htmlElement.setAttribute("data-bs-theme", theme);
+        if (theme === "dark") {
+          themeIcon.classList.remove("fa-moon");
+          themeIcon.classList.add("fa-sun");
+        } else {
+          themeIcon.classList.remove("fa-sun");
+          themeIcon.classList.add("fa-moon");
+        }
+        localStorage.setItem("doc_theme", theme);
+      }
+
+      const savedTheme = localStorage.getItem("doc_theme") || "light";
+      applyTheme(savedTheme);
+
+      themeToggle.addEventListener("click", () => {
+        const current = htmlElement.getAttribute("data-bs-theme");
+        applyTheme(current === "dark" ? "light" : "dark");
+      });
+
+      // Mobile Sidebar Toggle
+      const sidebarToggle = document.getElementById("sidebarToggle");
+      const docSidebar = document.getElementById("docSidebar");
+      if (sidebarToggle && docSidebar) {
+        sidebarToggle.addEventListener("click", () => {
+          docSidebar.classList.toggle("show");
+        });
+      }
+
+      // Live Sidebar Search Filtering
+      const searchInput = document.getElementById("sidebarSearch");
+      if (searchInput) {
+        searchInput.addEventListener("input", function () {
+          const q = this.value.toLowerCase().trim();
+          const links = document.querySelectorAll(".doc-sidebar .doc-nav-link");
+          links.forEach((link) => {
+            const text = link.innerText.toLowerCase();
+            if (text.includes(q)) {
+              link.style.display = "flex";
+            } else {
+              link.style.display = "none";
+            }
+          });
+        });
+      }
+
+      // Scrollspy Active Navigation Link Update
+      window.addEventListener("scroll", () => {
+        const sections = document.querySelectorAll(
+          'section[id], div[id^="screen-"]',
+        );
+        let currentId = "";
+        sections.forEach((section) => {
+          const sectionTop = section.offsetTop - 100;
+          if (window.pageYOffset >= sectionTop) {
+            currentId = section.getAttribute("id");
+          }
+        });
+
+        if (currentId) {
+          document
+            .querySelectorAll(".doc-sidebar .doc-nav-link")
+            .forEach((link) => {
+              link.classList.remove("active");
+              if (link.getAttribute("href") === "#" + currentId) {
+                link.classList.add("active");
+              }
+            });
+        }
+      });
+    </script>
+  </body>
+</html>

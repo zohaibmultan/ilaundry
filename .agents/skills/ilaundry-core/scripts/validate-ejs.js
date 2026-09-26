@@ -1,9 +1,3 @@
-/**
- * EJS Template Syntax & Compilation Linter for iLaundry.
- * Scans all .ejs files in views/ to detect parse errors, unclosed tags, or accidental `<% -` spacing.
- * Usage: node .agents/skills/ilaundry-core/scripts/validate-ejs.js
- */
-
 const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
