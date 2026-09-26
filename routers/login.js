@@ -68,13 +68,27 @@ router.get("/", async (req, res) => {
 
     let rollverify = await DataFind(`SELECT * FROM tbl_roll`);
 
+    const show_demo_accounts = process.env.show_demo_accounts !== undefined
+      ? String(process.env.show_demo_accounts).trim().toLowerCase() === "true"
+      : true;
+    const enable_store_signup = process.env.enable_store_signup !== undefined
+      ? String(process.env.enable_store_signup).trim().toLowerCase() === "true"
+      : true;
+
     res.render("login", {
       data: masterstore && masterstore.length > 0 ? masterstore[0] : {},
       rollverify: rollverify || [],
+      show_demo_accounts,
+      enable_store_signup,
     });
   } catch (err) {
     console.error("Root / route error:", err);
-    res.render("login", { data: {}, rollverify: [] });
+    res.render("login", {
+      data: {},
+      rollverify: [],
+      show_demo_accounts: true,
+      enable_store_signup: true,
+    });
   }
 });
 
@@ -539,6 +553,13 @@ router.get("/register", async (req, res) => {
 
 // store register render router
 router.get("/shopregister", async (req, res) => {
+  const isStoreSignupEnabled = process.env.enable_store_signup !== undefined
+    ? String(process.env.enable_store_signup).trim().toLowerCase() === "true"
+    : true;
+  if (!isStoreSignupEnabled) {
+    return res.redirect("/");
+  }
+
   const masterstore = await DataFind(
     "SELECT * FROM tbl_master_shop where id=1",
   );
@@ -654,6 +675,13 @@ router.post("/register", async (req, res) => {
 // store register post router
 router.post("/shopregister", upload.single("logo"), async (req, res) => {
   try {
+    const isStoreSignupEnabled = process.env.enable_store_signup !== undefined
+      ? String(process.env.enable_store_signup).trim().toLowerCase() === "true"
+      : true;
+    if (!isStoreSignupEnabled) {
+      return res.redirect("/");
+    }
+
     const {
       name,
       number,

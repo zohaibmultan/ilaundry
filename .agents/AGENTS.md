@@ -1,6 +1,6 @@
-# iLaundry Workspace Rules & Development Standards
+# iCleaners Workspace Rules & Development Standards
 
-This document establishes the universal rules and constraints for the **iLaundry** web application. All agent sessions operating within this repository must adhere to these standards.
+This document establishes the universal rules and constraints for the **iCleaners** web application. All agent sessions operating within this repository must adhere to these standards.
 
 ---
 
@@ -81,7 +81,7 @@ This document establishes the universal rules and constraints for the **iLaundry
    * On error or unauthorized state: `return res.status(400|403|500).json({ success: false, message: ... });`.
 
 ### H. MySQL Boolean & Status Flag Typing Invariant
-1. In the iLaundry database schema, boolean flags (e.g. `approved`, `active`, `delet_flage`, `roll_status`) are frequently stored as `VARCHAR` strings (`'1'` / `'0'`).
+1. In the iCleaners database schema, boolean flags (e.g. `approved`, `active`, `delet_flage`, `roll_status`) are frequently stored as `VARCHAR` strings (`'1'` / `'0'`).
 2. **Never use strict integer equality (`=== 1`) on database status fields**:
    * ❌ `if (data === 1)` (Fails silently when `data` is string `'1'`).
    * ✅ `if (String(data) === '1')` or `if (Number(data) === 1)` or `if (data == 1)`.
@@ -112,4 +112,34 @@ This document establishes the universal rules and constraints for the **iLaundry
          }
      });
      ```
+
+### J. Feature Flags & Environment Toggle Invariant
+1. **Normalization & Fallback**:
+   * All boolean flags in `config.env` (e.g. `show_demo_accounts`, `enable_store_signup`) must be parsed with case-insensitive string normalization:
+     ```javascript
+     const isEnabled = process.env.FLAG !== undefined
+       ? String(process.env.FLAG).trim().toLowerCase() === "true"
+       : true; // Default fallback to true for backward compatibility
+     ```
+2. **Global View Availability**:
+   * Register feature flags in `app.js` under `res.locals` so that all EJS templates have reliable, safe access without undefined variable errors:
+     ```javascript
+     res.locals.show_demo_accounts = ...;
+     res.locals.enable_store_signup = ...;
+     ```
+3. **Double-Guard Rule (UI + Route Interception)**:
+   * When a feature toggle disables a feature (e.g. `enable_store_signup = false`), you must **not** merely hide the link/button in the UI.
+   * You **must** also guard the corresponding backend route handlers (`GET` and `POST`) to intercept direct URL access and redirect to `/` or return an unauthorized response.
+4. **Template & Script Cleanup**:
+   * When omitting a feature from an EJS template (`<% if (flag) { %>`), omit both the DOM markup AND any accompanying JavaScript event listeners (e.g., button click handlers) to prevent dead event listeners in the DOM.
+
+### K. Staff Role Scoping & Permission Guard Invariant
+1. **Master vs. Staff Authority**:
+   * Master admin accounts (`loginas === 1` or `tbl_admin.store_ID` empty/master) always have unconditional access to administrative actions (bulk upload, edit, delete).
+   * Staff accounts (`is_staff === 1` or `loginas === 'staff'`) must always be gated against their specific permission record in `tbl_staff_roll`.
+2. **Dedicated Staff Dashboard**:
+   * When a staff user logs in, render a tailored, lightweight staff dashboard showing only the orders and sales created by that specific staff member (`created_by === staff_id`) and their recent activity, rather than store-wide or system-wide counters.
+3. **Action Button Permission Guards**:
+   * In DataTables and details views, never render Edit/Delete action buttons for staff members unless the corresponding permission (e.g., `orders === '1'`, `account === '1'`) is explicitly verified.
+
 

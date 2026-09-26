@@ -1,6 +1,6 @@
 # Web Application Integration Guide — POS Silent Printing Server
 
-This guide explains how to connect any web application (Vanilla JS, React, Vue, Angular, or Node.js/EJS like iLaundry) to the **POS Printing Server** to print receipts, kitchen slips, barcodes, and tags silently without the browser print dialog (`Ctrl+P`).
+This guide explains how to connect any web application (Vanilla JS, React, Vue, Angular, or Node.js/EJS like iCleaners) to the **POS Printing Server** to print receipts, kitchen slips, barcodes, and tags silently without the browser print dialog (`Ctrl+P`).
 
 ---
 
@@ -159,7 +159,7 @@ Copy `client/pos-print-client.js` to your web app's public folder (e.g. `public/
       { type: "align", value: "center" },
       { type: "bold", value: true },
       { type: "size", value: "double" },
-      { type: "text", value: "iLAUNDRY POS" },
+      { type: "text", value: "iCLEANERS POS" },
       { type: "size", value: "normal" },
       { type: "bold", value: false },
       { type: "text", value: "Order #: " + order.id },
@@ -221,7 +221,7 @@ async function silentPrint(htmlContent, printerName = null) {
 
 ---
 
-## 4. Specific Integration Guide for this Project (`iLaundry` POS)
+## 4. Specific Integration Guide for this Project (`iCleaners` POS)
 
 In this project, receipts are generated in `views/posprint.ejs` and triggered from `views/pos.ejs`.
 

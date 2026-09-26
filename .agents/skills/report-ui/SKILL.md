@@ -1,7 +1,7 @@
 ---
 name: report-ui
 description: >-
-  Standardized UI/UX pattern for all iLaundry report pages. Covers the
+  Standardized UI/UX pattern for all iCleaners report pages. Covers the
   unified header card, filter bar, KPI metric cards, detailed breakdown
   table, and AJAX data refresh architecture.
 ---

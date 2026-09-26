@@ -1,4 +1,4 @@
-# iLaundry &bull; Point-of-Sale & Laundry Management Platform
+# iCleaners &bull; Point-of-Sale & Laundry Management Platform
 
 Complete multi-store laundry and dry cleaning operations management platform built with Node.js, Express, MySQL, and EJS. Features dedicated POS receipt printing, automated cloth wash tag generation with Code128 barcodes, multi-branch tracking, expense management, and customer ledgers.
 
@@ -27,8 +27,8 @@ Complete multi-store laundry and dry cleaning operations management platform bui
 ### 2. Clone & Dependencies
 ```bash
 # Clone repository
-git clone https://github.com/zohaibmultan/ilaundry.git
-cd ilaundry
+git clone https://github.com/zohaibmultan/ilaundry.git icleaners
+cd icleaners
 
 # Install production and development dependencies
 npm install
@@ -138,8 +138,8 @@ Ensure Windows Server has IIS installed, then download and install these two man
 
 ### Step 3: Configure Website in IIS
 1. In IIS Manager, right-click **Sites** &rarr; **Add Website...** (or select the **Default Web Site**).
-2. Set **Site name**: `iLaundry`.
-3. Set **Physical path**: Path to the repository root directory (e.g. `C:\inetpub\wwwroot\ilaundry` or `E:\Products\Laragon_Laundary\www`).
+2. Set **Site name**: `iCleaners`.
+3. Set **Physical path**: Path to the repository root directory (e.g. `C:\inetpub\wwwroot\icleaners` or `E:\Products\Laragon_Laundary\www`).
 4. Set **Binding**:
    - Type: `http` &bull; IP: `All Unassigned` &bull; Port: `80` &bull; Host name: `laundry.yourdomain.com` (or leave blank for IP-only).
 5. Click **OK**.
@@ -194,8 +194,8 @@ npm install -g pm2 pm2-windows-startup
 pm2-startup install
 
 # Navigate to project root and start the application
-cd "C:\inetpub\wwwroot\ilaundry"
-pm2 start app.js --name "ilaundry"
+cd "C:\inetpub\wwwroot\icleaners"
+pm2 start app.js --name "icleaners"
 
 # Save the process list to auto-start on boot
 pm2 save
@@ -210,7 +210,7 @@ pm2 save
 | Symptom | Cause | Resolution |
 |---|---|---|
 | **HTTP 500.19** | Missing URL Rewrite module | Download and install URL Rewrite 2.1 x64, then restart IIS (`iisreset`). |
-| **HTTP 502.3 Bad Gateway** | Node.js process is stopped or ARR Proxy is disabled | 1. Ensure ARR "Enable proxy" is checked in Server Proxy Settings.<br>2. Check `pm2 status` to verify `ilaundry` is online. |
+| **HTTP 502.3 Bad Gateway** | Node.js process is stopped or ARR Proxy is disabled | 1. Ensure ARR "Enable proxy" is checked in Server Proxy Settings.<br>2. Check `pm2 status` to verify `icleaners` is online. |
 | **HTTP 404 Not Found on static assets** | Rewrite rule rewrite target mismatch | Ensure `web.config` has `{R:1}` capturing the full URI path to pass to Node. |
 | **Uploads fail with 413 or 500** | Upload size exceeds IIS limit | Verify `<requestLimits maxAllowedContentLength="52428800" />` is active in `web.config`. |
 
@@ -256,11 +256,11 @@ sudo ufw enable
 # Clone to web directory
 sudo mkdir -p /var/www
 cd /var/www
-sudo git clone https://github.com/zohaibmultan/ilaundry.git
-cd ilaundry
+sudo git clone https://github.com/zohaibmultan/ilaundry.git icleaners
+cd icleaners
 
 # Set ownership
-sudo chown -R $USER:$USER /var/www/ilaundry
+sudo chown -R $USER:$USER /var/www/icleaners
 
 # Install dependencies
 npm install --production
@@ -272,8 +272,8 @@ nano config.env
 
 ### Step 4: Configure Upload Directory Permissions
 ```bash
-sudo chown -R www-data:www-data /var/www/ilaundry/public/uploads
-sudo chmod -R 775 /var/www/ilaundry/public/uploads
+sudo chown -R www-data:www-data /var/www/icleaners/public/uploads
+sudo chmod -R 775 /var/www/icleaners/public/uploads
 ```
 
 ### Step 5: Start Node.js with PM2 and systemd
@@ -282,7 +282,7 @@ sudo chmod -R 775 /var/www/ilaundry/public/uploads
 sudo npm install -g pm2
 
 # Start the application on port 5000
-pm2 start app.js --name "ilaundry"
+pm2 start app.js --name "icleaners"
 
 # Generate and configure systemd startup script
 pm2 startup systemd
@@ -296,7 +296,7 @@ pm2 save
 Create a new server block configuration file:
 
 ```bash
-sudo nano /etc/nginx/sites-available/ilaundry
+sudo nano /etc/nginx/sites-available/icleaners
 ```
 
 Paste the following production Nginx configuration:
@@ -338,7 +338,7 @@ server {
 
     # Serve static assets directly (optional optimization)
     location /public/ {
-        alias /var/www/ilaundry/public/;
+        alias /var/www/icleaners/public/;
         expires 7d;
         add_header Cache-Control "public, max-age=604800";
     }
@@ -348,7 +348,7 @@ server {
 Enable site and test configuration:
 ```bash
 # Enable site
-sudo ln -s /etc/nginx/sites-available/ilaundry /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/icleaners /etc/nginx/sites-enabled/
 
 # Test syntax
 sudo nginx -t
@@ -367,9 +367,9 @@ Certbot automatically configures HTTPS redirection and schedules auto-renewal vi
 ### Linux Troubleshooting Guide
 | Symptom | Cause | Resolution |
 |---|---|---|
-| **502 Bad Gateway** | Node.js process is down | Run `pm2 status` and `pm2 logs ilaundry`. Check if `config.env` has valid MySQL credentials. |
+| **502 Bad Gateway** | Node.js process is down | Run `pm2 status` and `pm2 logs icleaners`. Check if `config.env` has valid MySQL credentials. |
 | **502 Bad Gateway (SELinux enabled)** | SELinux blocks Nginx network connections | On RHEL/AlmaLinux run: `sudo setsebool -P httpd_can_network_connect 1`. |
-| **Permission Denied on uploads** | Nginx/Express cannot write to `public/uploads` | Run `sudo chown -R www-data:www-data /var/www/ilaundry/public/uploads && sudo chmod -R 775 /var/www/ilaundry/public/uploads`. |
+| **Permission Denied on uploads** | Nginx/Express cannot write to `public/uploads` | Run `sudo chown -R www-data:www-data /var/www/icleaners/public/uploads && sudo chmod -R 775 /var/www/icleaners/public/uploads`. |
 
 ---
 
@@ -389,16 +389,16 @@ Most modern cPanel hosting providers (Namecheap, Hostinger, cPanel CloudLinux, A
 You can deploy your code via Git or File Manager:
 - **Method A (cPanel Git™ Version Control)**:
   1. In cPanel, click **Git™ Version Control**.
-  2. Click **Create**, paste your repository clone URL, and set repository path to `/home/cpaneluser/ilaundry`.
+  2. Click **Create**, paste your repository clone URL, and set repository path to `/home/cpaneluser/icleaners`.
   3. Click **Create** &bull; **Update from Remote**.
 - **Method B (cPanel File Manager)**:
   1. On your local machine, zip the repository files (exclude `node_modules`).
   2. In cPanel **File Manager**, navigate to your home directory (`/home/cpaneluser/`).
-  3. Create a folder named `ilaundry` (keep it outside `public_html` for maximum security).
-  4. Upload and extract the zip file into `/home/cpaneluser/ilaundry`.
+  3. Create a folder named `icleaners` (keep it outside `public_html` for maximum security).
+  4. Upload and extract the zip file into `/home/cpaneluser/icleaners`.
 
 ### Step 3: Configure `config.env`
-In cPanel File Manager, edit or create `/home/cpaneluser/ilaundry/config.env`:
+In cPanel File Manager, edit or create `/home/cpaneluser/icleaners/config.env`:
 
 ```env
 PORT=5000
@@ -419,7 +419,7 @@ DISABLE_DB_WRITE=false
 3. Fill in the application fields:
    - **Node.js version**: Select `20.x` (or `18.x` LTS).
    - **Application mode**: `Production`.
-   - **Application root**: `ilaundry` (the relative folder path inside your home directory).
+   - **Application root**: `icleaners` (the relative folder path inside your home directory).
    - **Application URL**: Select your domain or subdomain (e.g., `laundry.yourdomain.com`).
    - **Application startup file**: `app.js`.
    - **Passenger log file**: (optional, e.g. `passenger.log`).
@@ -428,7 +428,7 @@ DISABLE_DB_WRITE=false
 ### Step 5: Install Dependencies via NPM
 1. After creating the app, cPanel will display a command to enter the Node.js virtual environment at the top of the page, for example:
    ```bash
-   source /home/cpaneluser/nodevenv/ilaundry/20/bin/activate && cd /home/cpaneluser/ilaundry
+   source /home/cpaneluser/nodevenv/icleaners/20/bin/activate && cd /home/cpaneluser/icleaners
    ```
 2. You can install dependencies in one of two ways:
    - **Via cPanel Web UI**: Scroll to the **Detected configuration files** section, click on `package.json`, and click **Run NPM Install**.
@@ -444,9 +444,9 @@ Verify or add the Passenger directives inside `.htaccess`:
 
 ```apache
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
-PassengerAppRoot "/home/cpaneluser/ilaundry"
+PassengerAppRoot "/home/cpaneluser/icleaners"
 PassengerBaseURI "/"
-PassengerNodejs "/home/cpaneluser/nodevenv/ilaundry/20/bin/node"
+PassengerNodejs "/home/cpaneluser/nodevenv/icleaners/20/bin/node"
 PassengerAppType node
 PassengerStartupFile app.js
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
@@ -464,8 +464,8 @@ Whenever you edit code, update `.env`, or pull changes:
 - In the cPanel **Setup Node.js App** page, click the **Restart** button.
 - Alternatively, via terminal or file manager, create or touch the restart file:
   ```bash
-  mkdir -p /home/cpaneluser/ilaundry/tmp
-  touch /home/cpaneluser/ilaundry/tmp/restart.txt
+  mkdir -p /home/cpaneluser/icleaners/tmp
+  touch /home/cpaneluser/icleaners/tmp/restart.txt
   ```
 
 ### cPanel Troubleshooting Guide
@@ -512,15 +512,15 @@ npm start                    # Run Electron app with system tray icon
 ```bash
 git pull origin main
 npm install --production     # If dependencies changed
-pm2 reload ilaundry          # Zero-downtime reload on PM2
+pm2 reload icleaners          # Zero-downtime reload on PM2
 # Or on cPanel: touch tmp/restart.txt
 ```
 
 ### PM2 Process Monitoring
 ```bash
 pm2 status                  # View uptime & memory consumption
-pm2 logs ilaundry           # Live error/stdout stream
-pm2 restart ilaundry        # Force restart
+pm2 logs icleaners           # Live error/stdout stream
+pm2 restart icleaners        # Force restart
 ```
 
 ### Database Backup & Restore
@@ -536,4 +536,4 @@ mysql -u root -p -P 3306 lndry < backup_2026-09-23.sql
 
 ## 📄 License & Support
 
-&copy; iLaundry Platform. All rights reserved. For commercial inquiries and customization, contact the development team.
+&copy; iCleaners Platform. All rights reserved. For commercial inquiries and customization, contact the development team.

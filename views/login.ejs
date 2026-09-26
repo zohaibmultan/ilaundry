@@ -237,6 +237,7 @@
                     </button>
                 </form>
 
+                <% if (typeof show_demo_accounts === 'undefined' || show_demo_accounts) { %>
                 <!-- Quick Demo Credentials Pill Bar -->
                 <div class="auth-demo-bar">
                     <div class="fs-11 fw-bold text-muted text-uppercase tracking-wider">
@@ -268,6 +269,7 @@
                         <i class="fas fa-key fs-10 text-muted opacity-75"></i> Default Password: <code class="auth-demo-code">123456</code>
                     </div>
                 </div>
+                <% } %>
 
 
 
@@ -288,7 +290,7 @@
                             <a href="/register" class="btn btn-sm btn-outline-primary fw-semibold px-3 py-2 fs-14">
                                 <i class="fas fa-user-plus me-1"></i> Customer Sign Up
                             </a>
-                            <% if (data?.type=='1' ) { %>
+                            <% if (data?.type=='1' && (typeof enable_store_signup === 'undefined' || enable_store_signup)) { %>
                                 <a href="/shopregister"
                                     class="btn btn-sm btn-outline-secondary fw-semibold px-3 py-2 fs-14">
                                     <i class="fas fa-store me-1"></i> Store Sign Up
@@ -381,6 +383,7 @@
                 applyAuthTheme(newTheme);
             });
 
+            <% if (typeof show_demo_accounts === 'undefined' || show_demo_accounts) { %>
             // Quick Demo Credential buttons
             $('#demo_master_admin').on('click', function () {
                 $('input[name=username]').val('admin');
@@ -411,6 +414,7 @@
                 $('#login_password').val('123456');
                 toastr.info('Loaded credentials for <b>Customer</b> (customer)', { timeOut: 2500, escapeHtml: false });
             });
+            <% } %>
             // Language selector click handler
             $(document).on('click', '.lang', function () {
                 var lang = $(this).attr('data-value');

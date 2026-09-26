@@ -38,6 +38,12 @@ conn.query("SELECT timezone FROM tbl_master_shop where id=1", (err, row) => {
 
   app.use((req, res, next) => {
     res.locals.scriptFile = `<script src="/vendor/global/global.min.js"></script>\n<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>\n<script src="/Changes/jquery-ui.min.js"></script>`;
+    res.locals.show_demo_accounts = process.env.show_demo_accounts !== undefined
+      ? String(process.env.show_demo_accounts).trim().toLowerCase() === "true"
+      : true;
+    res.locals.enable_store_signup = process.env.enable_store_signup !== undefined
+      ? String(process.env.enable_store_signup).trim().toLowerCase() === "true"
+      : true;
     next();
   });
 

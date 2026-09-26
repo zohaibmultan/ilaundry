@@ -1,14 +1,14 @@
 ---
 name: pos-printing
 description: >-
-  Thermal receipt and garment cloth tag printing workflow for iLaundry.
+  Thermal receipt and garment cloth tag printing workflow for iCleaners.
   Covers the local printing server (port 4321), POSPrintClient API, silent printing,
   Code128 barcode generation via JsBarcode, and native Chrome print fallback.
 ---
 
 # POS Printing Workflow & Runbook
 
-This skill provides step-by-step guidance for maintaining and extending thermal invoice and cloth tag printing in iLaundry.
+This skill provides step-by-step guidance for maintaining and extending thermal invoice and cloth tag printing in iCleaners.
 
 ## Architecture
 

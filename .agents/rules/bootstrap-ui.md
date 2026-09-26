@@ -1,7 +1,7 @@
 # Rule: Pure Bootstrap UI & Custom CSS Prohibition
 
 ## Purpose
-Ensures consistent visual design, clean templates, maintainability, and responsiveness across the iLaundry application by strictly adhering to standard Bootstrap components and utilities while eliminating custom, unmaintainable CSS.
+Ensures consistent visual design, clean templates, maintainability, and responsiveness across the iCleaners application by strictly adhering to standard Bootstrap components and utilities while eliminating custom, unmaintainable CSS.
 
 ## Invariant Rules
 1. **Always Use Bootstrap Components & Grid**:

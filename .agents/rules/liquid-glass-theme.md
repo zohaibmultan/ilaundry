@@ -1,7 +1,7 @@
 # Rule: Liquid Glass Design System (`liquid-glass-theme.css`)
 
 ## Purpose
-Documents the glassmorphism design system conventions used across all modernized iLaundry pages. All agents must follow these naming patterns and critical CSS techniques when modifying or extending `public/css/liquid-glass-theme.css`.
+Documents the glassmorphism design system conventions used across all modernized iCleaners pages. All agents must follow these naming patterns and critical CSS techniques when modifying or extending `public/css/liquid-glass-theme.css`.
 
 ## File
 `public/css/liquid-glass-theme.css` — Loaded globally via `views/templet/meta.ejs` (line 111). **Changes here affect ALL pages.**

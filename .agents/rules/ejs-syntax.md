@@ -25,4 +25,4 @@ Prevents runtime JavaScript parse errors in browsers when embedding server-side 
 
 ## Verification
 Before committing template changes, run the validation tool:
-`node .agents/skills/ilaundry-core/scripts/validate-ejs.js`
+`node .agents/skills/icleaners-core/scripts/validate-ejs.js`

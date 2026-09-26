@@ -14,6 +14,49 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
+-- Dumping structure for procedure icleaners.reset_all_auto_increment
+DELIMITER //
+CREATE PROCEDURE `reset_all_auto_increment`()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE tname VARCHAR(255);
+    DECLARE cname VARCHAR(255);
+    DECLARE cur CURSOR FOR 
+        SELECT table_name, column_name
+        FROM information_schema.columns
+        WHERE table_schema = DATABASE()
+          AND extra LIKE '%auto_increment%';
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    OPEN cur;
+
+    read_loop: LOOP
+        FETCH cur INTO tname, cname;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        SET @sql1 = CONCAT('SET @num := 0');
+        PREPARE stmt1 FROM @sql1;
+        EXECUTE stmt1;
+        DEALLOCATE PREPARE stmt1;
+
+        SET @sql2 = CONCAT('UPDATE `', tname, '` SET `', cname, '` = @num := (@num + 1)');
+        PREPARE stmt2 FROM @sql2;
+        EXECUTE stmt2;
+        DEALLOCATE PREPARE stmt2;
+
+        SET @sql3 = CONCAT('ALTER TABLE `', tname, '` AUTO_INCREMENT = 1');
+        PREPARE stmt3 FROM @sql3;
+        EXECUTE stmt3;
+        DEALLOCATE PREPARE stmt3;
+
+    END LOOP;
+
+    CLOSE cur;
+END//
+DELIMITER ;
+
 -- Dumping structure for table icleaners.tbl_account
 CREATE TABLE IF NOT EXISTS `tbl_account` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -26,7 +69,7 @@ CREATE TABLE IF NOT EXISTS `tbl_account` (
   `delet_flage` varchar(255) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb3;
 
 -- Dumping data for table icleaners.tbl_account: ~0 rows (approximately)
 
@@ -39,7 +82,7 @@ CREATE TABLE IF NOT EXISTS `tbl_addons` (
   `store_ID` varchar(45) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=68 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb3;
 
 -- Dumping data for table icleaners.tbl_addons: ~0 rows (approximately)
 
@@ -60,11 +103,11 @@ CREATE TABLE IF NOT EXISTS `tbl_admin` (
   `reset_token` varchar(255) DEFAULT NULL,
   `reset_token_expires` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb3;
 
 -- Dumping data for table icleaners.tbl_admin: ~1 rows (approximately)
 INSERT INTO `tbl_admin` (`id`, `name`, `number`, `email`, `username`, `password`, `store_ID`, `roll_id`, `approved`, `delet_flage`, `img`, `is_staff`, `reset_token`, `reset_token_expires`) VALUES
-	(1, 'Admin', '+1-800-555-0100', 'admin@laundry.com', 'admin', '$2b$10$hDuu1RmCgeCC5HQdI1j1o.i8IHN9D6WGKz1hQNmjjfvoWHf/0ZEby', '', '1', '1', '0', NULL, '0', NULL, NULL);
+	(1, 'Super Admin', '591', 'vifa@mailinator.com', 'admin', '$2b$10$Kcy3ygObycEoThshBB1nZebfcYeq4szHbHsyI7065mukEoGSsZoyG', '', '1', '1', '0', NULL, '0', NULL, NULL);
 
 -- Dumping structure for table icleaners.tbl_cart
 CREATE TABLE IF NOT EXISTS `tbl_cart` (
@@ -91,11 +134,9 @@ CREATE TABLE IF NOT EXISTS `tbl_cart` (
   `tax_amount` float NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb3;
 
--- Dumping data for table icleaners.tbl_cart: ~1 rows (approximately)
-INSERT INTO `tbl_cart` (`id`, `created_by`, `store_id`, `customer_id`, `order_date`, `service_list_id`, `order_id`, `addon_id`, `addon_price`, `delivery_date`, `extra_discount`, `coupon_id`, `coupon_discount`, `tax`, `sub_total`, `gross_total`, `paid_amount`, `payment_type`, `balance`, `notes`, `tax_amount`) VALUES
-	(1, '1,1', '0', '0', '2026-09-25 04:46:08', '0', '#ORD0001', '0', 0, '2026-09-25 04:46:08', 0, '0', 0, 0, 0, 0, 0, '0', 0, ' ', 0);
+-- Dumping data for table icleaners.tbl_cart: ~0 rows (approximately)
 
 -- Dumping structure for table icleaners.tbl_cart_servicelist
 CREATE TABLE IF NOT EXISTS `tbl_cart_servicelist` (
@@ -110,7 +151,7 @@ CREATE TABLE IF NOT EXISTS `tbl_cart_servicelist` (
   `service_img` varchar(255) NOT NULL DEFAULT ' ',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=133 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb3;
 
 -- Dumping data for table icleaners.tbl_cart_servicelist: ~0 rows (approximately)
 
@@ -145,7 +186,7 @@ CREATE TABLE IF NOT EXISTS `tbl_coupon` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`),
   UNIQUE KEY `code_UNIQUE` (`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3;
 
 -- Dumping data for table icleaners.tbl_coupon: ~0 rows (approximately)
 
@@ -168,11 +209,9 @@ CREATE TABLE IF NOT EXISTS `tbl_customer` (
   `reset_token_expires` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=84 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb3;
 
--- Dumping data for table icleaners.tbl_customer: ~1 rows (approximately)
-INSERT INTO `tbl_customer` (`id`, `name`, `number`, `email`, `address`, `taxnumber`, `username`, `password`, `store_ID`, `main_roll_id`, `reffstore`, `approved`, `delet_flage`, `reset_token`, `reset_token_expires`) VALUES
-	(1, 'Walk in customer', NULL, NULL, NULL, NULL, NULL, NULL, '1', NULL, '1', 1, '0', NULL, NULL);
+-- Dumping data for table icleaners.tbl_customer: ~0 rows (approximately)
 
 -- Dumping structure for table icleaners.tbl_email
 CREATE TABLE IF NOT EXISTS `tbl_email` (
@@ -186,7 +225,7 @@ CREATE TABLE IF NOT EXISTS `tbl_email` (
   `status` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
 
 -- Dumping data for table icleaners.tbl_email: ~0 rows (approximately)
 
@@ -206,7 +245,7 @@ CREATE TABLE IF NOT EXISTS `tbl_expense` (
   `transection_id` int DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb3;
 
 -- Dumping data for table icleaners.tbl_expense: ~0 rows (approximately)
 
@@ -219,7 +258,7 @@ CREATE TABLE IF NOT EXISTS `tbl_exp_cat` (
   `store_ID` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=79 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb3;
 
 -- Dumping data for table icleaners.tbl_exp_cat: ~0 rows (approximately)
 
@@ -231,7 +270,7 @@ CREATE TABLE IF NOT EXISTS `tbl_exp_cat_type` (
   `store_ID` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb3;
 
 -- Dumping data for table icleaners.tbl_exp_cat_type: ~0 rows (approximately)
 
@@ -284,9 +323,9 @@ CREATE TABLE IF NOT EXISTS `tbl_notification` (
   `received` varchar(45) NOT NULL,
   `notification` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=70 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb3;
 
--- Dumping data for table icleaners.tbl_notification: ~63 rows (approximately)
+-- Dumping data for table icleaners.tbl_notification: ~0 rows (approximately)
 
 -- Dumping structure for table icleaners.tbl_order
 CREATE TABLE IF NOT EXISTS `tbl_order` (
@@ -319,9 +358,9 @@ CREATE TABLE IF NOT EXISTS `tbl_order` (
   `transferred_from_store_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=66 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb3;
 
--- Dumping data for table icleaners.tbl_order: ~63 rows (approximately)
+-- Dumping data for table icleaners.tbl_order: ~0 rows (approximately)
 
 -- Dumping structure for table icleaners.tbl_orderstatus
 CREATE TABLE IF NOT EXISTS `tbl_orderstatus` (
@@ -332,6 +371,14 @@ CREATE TABLE IF NOT EXISTS `tbl_orderstatus` (
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb3;
 
 -- Dumping data for table icleaners.tbl_orderstatus: ~7 rows (approximately)
+INSERT INTO `tbl_orderstatus` (`id`, `status`) VALUES
+	(1, 'Pending'),
+	(2, 'Processing'),
+	(3, 'Ready To deliver'),
+	(4, 'Deliver'),
+	(5, 'Returned'),
+	(6, 'Cancelled'),
+	(7, 'Transfer to other Store');
 
 -- Dumping structure for table icleaners.tbl_order_payment
 CREATE TABLE IF NOT EXISTS `tbl_order_payment` (
@@ -343,9 +390,9 @@ CREATE TABLE IF NOT EXISTS `tbl_order_payment` (
   `reference_number` varchar(191) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb3;
 
--- Dumping data for table icleaners.tbl_order_payment: ~47 rows (approximately)
+-- Dumping data for table icleaners.tbl_order_payment: ~0 rows (approximately)
 
 -- Dumping structure for table icleaners.tbl_roll
 CREATE TABLE IF NOT EXISTS `tbl_roll` (
@@ -373,12 +420,12 @@ CREATE TABLE IF NOT EXISTS `tbl_roll` (
   `delet_flage` varchar(45) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb3;
 
 -- Dumping data for table icleaners.tbl_roll: ~4 rows (approximately)
 INSERT INTO `tbl_roll` (`id`, `roll`, `rollType`, `orders`, `expense`, `service`, `reports`, `tools`, `mail`, `master`, `sms`, `staff`, `pos`, `customers`, `master_setting`, `branch_n_store`, `Pay_Out`, `account`, `coupon`, `rollaccess`, `roll_status`, `delet_flage`) VALUES
 	(1, 'Master', 'master', 'read,edit,delete', 'read,write,edit,delete', 'read,write,edit,delete', 'read', 'read', '', '', 'read,write,edit,delete', 'read,write,edit,delete', 'read,write', 'read,write,edit,delete', 'read,edit', 'read,write,edit', 'read', '', 'read,write,edit,delete', 'read,edit', 'active', '0'),
-	(2, 'Store', 'store', 'read,edit,delete', 'read,write,edit,delete', 'read,write,edit,delete', 'read', 'read', 'read,edit', 'read,edit', 'read,write,edit,delete', 'read,write,edit,delete', 'read,write,edit', 'read,write,edit,delete', '', '', '', 'read,write,edit,delete', '', 'read,edit', 'active', '0'),
+	(2, 'Store', 'store', 'read,edit,delete', 'read,write,edit,delete', 'read,write,edit,delete', 'read', 'read', 'read,edit', 'read,edit', 'read,write,edit,delete', 'read,write,edit,delete', 'read,write,edit', 'read,write,edit,delete', '', '', '', 'read,write,edit,delete', 'read,write,edit,delete', 'read,edit', 'active', '0'),
 	(3, 'Customer', 'customer', 'read', '', '', '', '', '', '', '', '', 'read,write', '', '', '', '', '', '', '', 'active', '0'),
 	(4, 'Order Delete', 'store', 'read,delete', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'active', '0');
 
@@ -393,9 +440,9 @@ CREATE TABLE IF NOT EXISTS `tbl_services` (
   `status` varchar(45) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=257 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb3;
 
--- Dumping data for table icleaners.tbl_services: ~106 rows (approximately)
+-- Dumping data for table icleaners.tbl_services: ~0 rows (approximately)
 
 -- Dumping structure for table icleaners.tbl_services_type
 CREATE TABLE IF NOT EXISTS `tbl_services_type` (
@@ -405,9 +452,9 @@ CREATE TABLE IF NOT EXISTS `tbl_services_type` (
   `store_ID` varchar(45) DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=119 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb3;
 
--- Dumping data for table icleaners.tbl_services_type: ~60 rows (approximately)
+-- Dumping data for table icleaners.tbl_services_type: ~0 rows (approximately)
 
 -- Dumping structure for table icleaners.tbl_staff_roll
 CREATE TABLE IF NOT EXISTS `tbl_staff_roll` (
@@ -433,7 +480,7 @@ CREATE TABLE IF NOT EXISTS `tbl_staff_roll` (
   `staff_id` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `is_staff` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table icleaners.tbl_staff_roll: ~1 rows (approximately)
 INSERT INTO `tbl_staff_roll` (`id`, `pos`, `orders`, `customers`, `coupon`, `expense`, `service`, `branch_n_store`, `staff`, `sms`, `rollaccess`, `master_setting`, `reports`, `tools`, `mail`, `master`, `Pay_Out`, `account`, `main_roll_id`, `staff_id`, `is_staff`) VALUES
@@ -464,9 +511,9 @@ CREATE TABLE IF NOT EXISTS `tbl_store` (
   `admin_id` varchar(45) DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb3;
 
--- Dumping data for table icleaners.tbl_store: ~5 rows (approximately)
+-- Dumping data for table icleaners.tbl_store: ~0 rows (approximately)
 
 -- Dumping structure for table icleaners.tbl_transections
 CREATE TABLE IF NOT EXISTS `tbl_transections` (
@@ -482,9 +529,9 @@ CREATE TABLE IF NOT EXISTS `tbl_transections` (
   `date` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=82 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb3;
 
--- Dumping data for table icleaners.tbl_transections: ~77 rows (approximately)
+-- Dumping data for table icleaners.tbl_transections: ~0 rows (approximately)
 
 -- Dumping structure for table icleaners.tbl_validate
 CREATE TABLE IF NOT EXISTS `tbl_validate` (
@@ -493,7 +540,7 @@ CREATE TABLE IF NOT EXISTS `tbl_validate` (
   `hashs` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `hashs1` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table icleaners.tbl_validate: ~1 rows (approximately)
 INSERT INTO `tbl_validate` (`id`, `data`, `hashs`, `hashs1`) VALUES

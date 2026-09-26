@@ -1,14 +1,14 @@
 ---
 name: server-datatables
 description: >-
-  Standardized Server-Side DataTables pattern for iLaundry.
+  Standardized Server-Side DataTables pattern for iCleaners.
   Includes backend pagination/filtering protocol, 400ms search debounce,
   and uniform CSS classes for badges and action icons.
 ---
 
 # Server-Side DataTables Workflow & Pattern
 
-This skill documents the standard architecture for tabular data views across all iLaundry modules.
+This skill documents the standard architecture for tabular data views across all iCleaners modules.
 
 ## Architecture
 

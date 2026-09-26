@@ -1,14 +1,14 @@
 ---
-name: ilaundry-core
+name: icleaners-core
 description: >-
-  Core backend architecture, database conventions, routing, and template safety in iLaundry.
+  Core backend architecture, database conventions, routing, and template safety in iCleaners.
   Includes middleware patterns (auth, access), MySQL helper functions (DataFind, DataInsert),
   and the EJS template compilation linter.
 ---
 
-# iLaundry Core Architecture & Conventions
+# iCleaners Core Architecture & Conventions
 
-This skill provides architectural guidance for developing and debugging backend routes, database interactions, and templates in iLaundry.
+This skill provides architectural guidance for developing and debugging backend routes, database interactions, and templates in iCleaners.
 
 ## 1. Directory Layout
 * `app.js`: Express application bootstrap, middleware setup, route mounting.
@@ -34,7 +34,7 @@ The application uses global helper functions (defined in `database/` or `middlew
 
 ## 4. EJS Template Compilation & Validation
 Run the validator anytime EJS templates are created or modified:
-`node .agents/skills/ilaundry-core/scripts/validate-ejs.js`
+`node .agents/skills/icleaners-core/scripts/validate-ejs.js`
 
 ## 5. Store Scoping & Cascading Deletions
 When deleting a store or major parent entity, ensure all related child records are cleaned up in order to maintain referential integrity:
@@ -151,4 +151,66 @@ Every Express route handler must guarantee an HTTP response across every executi
 * **Responsive Two-Column Layout**:
   * Use Bootstrap 5 grid: `<div class="row g-3">` with `<div class="col-12 col-md-6">` for fields.
   * Use `<div class="col-12">` for full-width cards (e.g. Active status switch or permission accordions).
+
+## 12. Environment Feature Flags & Double-Guarding Blueprint
+
+* **Configuration**:
+  Define explicit flags in `config.env`:
+  ```env
+  show_demo_accounts=true
+  enable_store_signup=true
+  ```
+* **Global Injection in `app.js`**:
+  ```javascript
+  app.use((req, res, next) => {
+    res.locals.show_demo_accounts = process.env.show_demo_accounts !== undefined
+      ? String(process.env.show_demo_accounts).trim().toLowerCase() === "true"
+      : true;
+    res.locals.enable_store_signup = process.env.enable_store_signup !== undefined
+      ? String(process.env.enable_store_signup).trim().toLowerCase() === "true"
+      : true;
+    next();
+  });
+  ```
+* **Double-Guarding Routes**:
+  Whenever a feature is disabled, both the UI links AND route handlers must be protected:
+  ```javascript
+  router.get("/shopregister", async (req, res) => {
+    const isStoreSignupEnabled = process.env.enable_store_signup !== undefined
+      ? String(process.env.enable_store_signup).trim().toLowerCase() === "true"
+      : true;
+    if (!isStoreSignupEnabled) {
+      return res.redirect("/");
+    }
+    // Proceed with registration view...
+  });
+  ```
+* **EJS Template Defensive Rendering**:
+  ```ejs
+  <% if (typeof show_demo_accounts === 'undefined' || show_demo_accounts) { %>
+      <!-- Demo accounts UI and scripts -->
+  <% } %>
+  ```
+
+## 13. Staff Permission Validation & Scoping Pattern
+
+* **Staff vs. Master Permission Checking**:
+  * Superadmin / Master (`loginas === 1` or empty `store_ID`): Unrestricted access.
+  * Staff (`is_staff === 1` or `loginas === 'staff'`): Access is determined by records in `tbl_staff_roll` linked to `tbl_admin.roll_id`.
+* **Staff Dashboard Scoping**:
+  * Staff view tailored metrics: count of orders and sum of sales where `created_by` or `staff_id` matches logged-in user:
+    ```sql
+    SELECT COUNT(id) as total_orders, COALESCE(SUM(total), 0) as total_sales
+    FROM tbl_order
+    WHERE staff_id = '${user.id}' AND delet_flage = 0
+    ```
+* **Action Button Guards in Views**:
+  In DataTables and list views, render actions only when permissions allow:
+  ```ejs
+  <% const canEdit = accessdata.logas == 1 || (accessdata.permissions && accessdata.permissions.orders == '1'); %>
+  <% if (canEdit) { %>
+      <a href="/order/edit/<%= order.id %>" class="btn btn-sm btn-outline-primary">Edit</a>
+  <% } %>
+  ```
+
 
