@@ -97,19 +97,19 @@
                                     
                                     <!-- Left Section: Basic Information -->
                                     <div class="col-lg-8">
-                                        <div class="p-3 border rounded">
+                                        <div class="p-3 border rounded overflow-visible position-relative">
                                             <h6 class="fw-bold mb-3 d-flex align-items-center">
                                                 <i class="fas fa-info-circle text-primary me-2"></i>
                                                 <%= language.Service_Information || 'Service Information' %>
                                             </h6>
 
                                             <% if (ismulty) { %>
-                                            <div class="mb-3">
+                                            <div class="mb-3 store-select-group position-relative">
                                                 <label class="form-label fw-bold">
                                                     <i class="fas fa-store text-primary me-1"></i>
                                                     <%= language.Store_List %> <span class="text-danger">*</span>
                                                 </label>
-                                                <select class="default-select form-control wide" name="storeid" id="add_servie_storelist">
+                                                <select class="default-select form-control wide" name="storeid" id="add_servie_storelist" data-container="body" required>
                                                     <option value="" selected disabled> Select Store </option>
                                                     <% storeList.forEach(function(x){ %>
                                                         <option value="<%= x.id %>"><%= x.name %></option>
@@ -120,13 +120,22 @@
                                             <input type="hidden" name="storeid" id="add_servie_storelist" value="<%= (typeof assigned_store_id !== 'undefined' && assigned_store_id) ? assigned_store_id : '1' %>">
                                             <% } %>
 
-                                            <div class="mb-3">
-                                                <label class="form-label fw-bold">
-                                                    <i class="fas fa-tag text-primary me-1"></i>
-                                                    <%= language.Service_Name %> <span class="text-danger">*</span>
-                                                </label>
-                                                <input type="text" placeholder="Enter Service Name (e.g. Dry Cleaning, Wash & Fold)" class="form-control" name="name" required>
-                                                <input type="hidden" id="servalid" value="0" min="1" required>
+                                            <div class="row g-3 mb-3">
+                                                <div class="col-md-8">
+                                                    <label class="form-label fw-bold">
+                                                        <i class="fas fa-tag text-primary me-1"></i>
+                                                        <%= language.Service_Name %> <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="text" placeholder="Enter Service Name (e.g. Dry Cleaning, Wash & Fold)" class="form-control" name="name" required>
+                                                    <input type="hidden" id="servalid" value="0" min="1" required>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold">
+                                                        <i class="fas fa-sort-numeric-down text-primary me-1"></i>
+                                                        Sequence No <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="number" placeholder="1" class="form-control" name="sequence_no" value="1" min="0" required>
+                                                </div>
                                             </div>
 
                                             <div class="pt-2">
@@ -197,13 +206,22 @@
                                                     <table class="table table-hover align-middle mb-0">
                                                         <thead>
                                                             <tr>
-                                                                <th class="ps-3 py-3" style="min-width: 250px;">
-                                                                    <%= language.Service_Type %> <span class="text-danger">*</span>
+                                                                <th class="ps-3 py-3" style="width: 120px;">
+                                                                    Sequence No <span class="text-danger">*</span>
                                                                 </th>
                                                                 <th class="py-3" style="min-width: 200px;">
+                                                                    <%= language.Service_Type %> <span class="text-danger">*</span>
+                                                                </th>
+                                                                <th class="py-3" style="min-width: 140px;">
                                                                     <%= language.Service_Price %> <span class="text-danger">*</span>
                                                                 </th>
-                                                                <th class="text-center py-3" style="width: 100px;">
+                                                                <th class="py-3" style="min-width: 130px;">
+                                                                    No of Items <span class="text-danger">*</span>
+                                                                </th>
+                                                                <th class="py-3" style="min-width: 160px;">
+                                                                    Ready Time (Mins) <span class="text-danger">*</span>
+                                                                </th>
+                                                                <th class="text-center py-3" style="width: 80px;">
                                                                     <%= language.Action %>
                                                                 </th>
                                                             </tr>

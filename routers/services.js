@@ -16,6 +16,42 @@ var {
 } = require("../middelwer/databaseQurey");
 var mysql = require("mysql2");
 const { paginateDataTable } = require("../middelwer/dataTableHelper");
+
+function normalizeParallelTiers(seqs, types, prices, items, readyTimes) {
+  const toArr = (v) => (v === undefined || v === null ? [] : Array.isArray(v) ? v : [v]);
+  const arrSeq = toArr(seqs);
+  const arrType = toArr(types);
+  const arrPrice = toArr(prices);
+  const arrItems = toArr(items);
+  const arrReady = toArr(readyTimes);
+
+  const length = Math.max(arrSeq.length, arrType.length, arrPrice.length, arrItems.length, arrReady.length);
+  const tiers = [];
+
+  for (let i = 0; i < length; i++) {
+    const typeId = arrType[i] ? String(arrType[i]).trim() : "";
+    if (!typeId) continue;
+    tiers.push({
+      seq: parseInt(arrSeq[i]) || (i + 1),
+      type: typeId,
+      price: arrPrice[i] !== undefined && String(arrPrice[i]).trim() !== "" ? String(arrPrice[i]).trim() : "0",
+      items: parseInt(arrItems[i]) || 1,
+      ready_time: parseInt(arrReady[i]) || 1440,
+    });
+  }
+
+  // Sort tiers by sequence number ASC
+  tiers.sort((a, b) => a.seq - b.seq);
+
+  return {
+    services_type_sequence: tiers.map((t) => t.seq).join(","),
+    services_type_id: tiers.map((t) => t.type).join(","),
+    services_type_price: tiers.map((t) => t.price).join(","),
+    services_type_items: tiers.map((t) => t.items).join(","),
+    services_type_ready_time: tiers.map((t) => t.ready_time).join(","),
+  };
+}
+
 // <<<<<<<<<<<<<<<<<<<SERVICE LIST ALL CRUD ROUTER>>>>>>>>>>>>>>>>>>>>>>
 
 router.get("/list", auth, async (req, res) => {
@@ -167,16 +203,19 @@ router.get("/list/data", auth, async (req, res) => {
       searchColumns: ["tbl_services.name", "tbl_store.name"],
       baseWhere: scopeConditions,
       filterWhere: filterConditions,
-      defaultOrder: "tbl_services.id DESC",
+      defaultOrder: "tbl_services.sequence_no ASC, tbl_services.id ASC",
       columnMap: {
         0: "tbl_services.id",
-        1: "tbl_services.name",
-        2: "tbl_store.name",
-        3: "tbl_services.status",
+        1: "tbl_services.sequence_no",
+        2: "tbl_services.name",
+        3: "tbl_services.id",
+        4: isMaster ? "tbl_store.name" : "tbl_services.status",
+        5: "tbl_services.status",
       },
       postProcess: async (rows) => {
         return rows.map((s) => ({
           id: s.id,
+          sequence_no: s.sequence_no !== undefined ? s.sequence_no : 0,
           name: s.name || "",
           image: s.image || "",
           serviceType: s.serviceType || "",
@@ -293,7 +332,17 @@ router.post("/addservice", auth, upload.single("image"), async (req, res) => {
     ) {
       var img = req.file ? req.file.filename : "";
 
-      var { name, service_type, service_price, active, storeid } = req.body;
+      var {
+        name,
+        sequence_no,
+        service_type_seq,
+        service_type,
+        service_price,
+        service_type_items,
+        service_type_ready_time,
+        active,
+        storeid,
+      } = req.body;
 
       const adminData = await DataFind(
         `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
@@ -331,22 +380,20 @@ router.post("/addservice", auth, upload.single("image"), async (req, res) => {
         return res.redirect(req.get("Referrer") || "/services/list");
       }
 
-      service_type = service_type
-        ? Array.isArray(service_type)
-          ? service_type.join(",")
-          : service_type
-        : "";
-      service_price = service_price
-        ? Array.isArray(service_price)
-          ? service_price.join(",")
-          : service_price
-        : "0";
+      const normalized = normalizeParallelTiers(
+        service_type_seq,
+        service_type,
+        service_price,
+        service_type_items,
+        service_type_ready_time,
+      );
       active = active ? "0" : "1";
+      const cleanSeqNo = parseInt(sequence_no) || 0;
 
       const newservtype = await DataInsert(
         `tbl_services`,
-        `name,image,services_type_id,services_type_price,store_ID,status`,
-        `'${name}', '${img}', '${service_type}', '${service_price}', '${storeid}', '${active}'`,
+        `name,image,sequence_no,services_type_sequence,services_type_id,services_type_price,services_type_items,services_type_ready_time,store_ID,status`,
+        `'${name}', '${img}', '${cleanSeqNo}', '${normalized.services_type_sequence}', '${normalized.services_type_id}', '${normalized.services_type_price}', '${normalized.services_type_items}', '${normalized.services_type_ready_time}', '${storeid}', '${active}'`,
         req.hostname,
         req.protocol,
       );
@@ -522,12 +569,36 @@ router.get("/updateService/:id", auth, async (req, res) => {
       const price = servicesdata[0].services_type_price
         ? servicesdata[0].services_type_price.split(",")
         : [];
+      const seqList = servicesdata[0].services_type_sequence
+        ? servicesdata[0].services_type_sequence.split(",")
+        : [];
+      const itemsList = servicesdata[0].services_type_items
+        ? servicesdata[0].services_type_items.split(",")
+        : [];
+      const readyList = servicesdata[0].services_type_ready_time
+        ? servicesdata[0].services_type_ready_time.split(",")
+        : [];
+
+      const tiers = [];
+      for (let i = 0; i < typeID.length; i++) {
+        const tId = typeID[i] ? typeID[i].trim() : "";
+        if (!tId) continue;
+        tiers.push({
+          id: tId,
+          price: price[i] !== undefined && price[i].trim() !== "" ? price[i].trim() : "0",
+          sequence: seqList[i] !== undefined && seqList[i].trim() !== "" ? parseInt(seqList[i]) : (i + 1),
+          items: itemsList[i] !== undefined && itemsList[i].trim() !== "" ? parseInt(itemsList[i]) : 1,
+          ready_time: readyList[i] !== undefined && readyList[i].trim() !== "" ? parseInt(readyList[i]) : 1440,
+        });
+      }
+      tiers.sort((a, b) => a.sequence - b.sequence);
 
       res.render("edit_service", {
         services: servicesdata[0],
         typedata: servicestypedata,
-        type: typeID,
-        price: price,
+        type: tiers.map((t) => t.id),
+        price: tiers.map((t) => t.price),
+        tiers: tiers,
         accessdata,
         language: req.language_data,
         language_name: req.language_name,
@@ -627,23 +698,30 @@ router.post(
           }
         }
 
-        var { name_update, service_type, service_price, active_update } =
-          req.body;
-        service_type
-          ? Array.isArray(service_type)
-            ? (service_type = service_type.join(","))
-            : service_type
-          : (service_type = "");
-        service_price
-          ? Array.isArray(service_price)
-            ? (service_price = service_price.join(","))
-            : service_price
-          : (service_price = 0);
-        active_update ? (active_update = 0) : (active_update = 1);
+        var {
+          name_update,
+          sequence_no_update,
+          service_type_seq,
+          service_type,
+          service_price,
+          service_type_items,
+          service_type_ready_time,
+          active_update,
+        } = req.body;
+
+        const normalized = normalizeParallelTiers(
+          service_type_seq,
+          service_type,
+          service_price,
+          service_type_items,
+          service_type_ready_time,
+        );
+        active_update = active_update ? 0 : 1;
+        const cleanSeqNo = parseInt(sequence_no_update) || 0;
 
         const newservtype = await DataUpdate(
           "tbl_services",
-          `name = '${name_update}', services_type_id = '${service_type}', services_type_price = '${service_price}', status = '${active_update}'`,
+          `name = '${name_update}', sequence_no = '${cleanSeqNo}', services_type_sequence = '${normalized.services_type_sequence}', services_type_id = '${normalized.services_type_id}', services_type_price = '${normalized.services_type_price}', services_type_items = '${normalized.services_type_items}', services_type_ready_time = '${normalized.services_type_ready_time}', status = '${active_update}'`,
           `id = ${req.params.id}`,
           req.hostname,
           req.protocol,

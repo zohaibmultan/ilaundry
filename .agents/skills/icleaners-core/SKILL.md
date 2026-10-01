@@ -213,4 +213,34 @@ Every Express route handler must guarantee an HTTP response across every executi
   <% } %>
   ```
 
+## 14. Automated Ready Schedule Engine (`middelwer/readyScheduleHelper.js`)
+
+The scheduling engine computes the automated pickup / ready date & time for orders:
+* `getEffectiveReadySchedule(storeId)`: Resolves active schedule. Queries `tbl_store` first; if any field is empty or `NULL`, falls back to `tbl_master_shop`.
+* `calculateReadyDateTime(intakeInput, schedule)`:
+  * Compares intake timestamp against `schedule.cutoffTime` (default: `13:00` / 1:00 PM).
+  * If before cutoff: requires `schedule.leadDays` (default 2 working days).
+  * If at or after cutoff: requires `schedule.leadDays + 1` (3 working days).
+  * Traverses calendar skipping any weekday not included in `schedule.workingDays` (default: `[1, 2, 3, 4, 5, 6]`, skips Sunday).
+  * Returns `{ readyDate: 'YYYY-MM-DD', readyTime: '16:00', readyDateTime: 'YYYY-MM-DD 16:00:00', isAfterCutoff: boolean }`.
+* **API Endpoint**: `GET /admin/calculate_ready_schedule` (`store_id`, `order_date`) returns dynamic JSON calculation for POS live updates.
+
+## 15. Non-Destructive Database Migrations Protocol
+
+To modify or extend production MySQL tables without downtime or data loss:
+1. **Never drop or recreate active tables**: Do not run `DROP TABLE` or import full overwrite dumps on production databases.
+2. **Column Inspection Pattern**:
+   ```javascript
+   const [cols] = await pool.query("SHOW COLUMNS FROM <table>");
+   const colNames = cols.map(c => c.Field);
+   if (!colNames.includes("new_column")) {
+       await pool.query("ALTER TABLE <table> ADD COLUMN new_column <TYPE> DEFAULT <VAL>");
+   }
+   ```
+3. **Always specify sensible `DEFAULT` or `NULL`**: Ensures existing rows remain valid immediately without data corruption.
+4. **Pre-Migration Backup Command**:
+   ```powershell
+   mysqldump --default-character-set=utf8mb4 --result-file=backup_pre_migration.sql -u root -p <dbname>
+   ```
+
 

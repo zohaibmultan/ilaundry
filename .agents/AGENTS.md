@@ -142,4 +142,26 @@ This document establishes the universal rules and constraints for the **iCleaner
 3. **Action Button Permission Guards**:
    * In DataTables and details views, never render Edit/Delete action buttons for staff members unless the corresponding permission (e.g., `orders === '1'`, `account === '1'`) is explicitly verified.
 
+### L. Non-Destructive Database Migrations (Zero Data Loss Invariant)
+1. **Never Drop Existing Tables or Overwrite Production Dumps**:
+   * Under no circumstances may an agent run `DROP TABLE`, `TRUNCATE` live data, or blindly import full SQL dumps over an existing active database.
+2. **Idempotent Column Additions**:
+   * All schema extensions must be executed using idempotent `SHOW COLUMNS FROM <table>` verification scripts or `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.
+   * New columns must always provide sensible `DEFAULT` values or allow `NULL` so existing records remain intact and valid without requiring manual data repair.
+3. **Automated Migration Runner**:
+   * Place database migration scripts in `scratch/` or `database/migrations/` following the `mysql2/promise` inspection pattern (e.g. `scratch/migrate_ready_schedule.js`), and execute them via Node.js before modifying dependent application code.
+
+### M. Automated Ready Schedule & Working Days Invariant
+1. **Two-Tier Configuration Fallback**:
+   * Global fallback defaults reside in `tbl_master_shop` (`ready_lead_days`, `ready_cutoff_time`, `ready_time`, `ready_working_days`).
+   * Store-level records in `tbl_store` inherit global defaults whenever branch fields are `NULL` or empty.
+2. **Cut-off Time & Working Days Rule**:
+   * Orders intake before `ready_cutoff_time` (e.g. `13:00` / 1:00 PM) require `ready_lead_days` (default 2 working days).
+   * Orders intake at or after `ready_cutoff_time` automatically add **+1 day** (3 working days).
+   * Closed days (e.g. Sunday = `0` not present in `ready_working_days`) must be skipped during calendar calculation.
+3. **POS Dual-State Override & Unified Timestamp Storage**:
+   * POS header renders side-by-side date (`#POS_delivery_date`) and time (`#POS_delivery_time`) inputs with a "Reset to Auto" (`#btn_auto_ready_schedule`) button.
+   * Manual edits by the cashier flag the state as manual and highlight the button in amber; clicking "Auto" recalculates automatically.
+   * Delivery dates are persisted in MySQL `timestamp` fields (`tbl_cart.delivery_date`, `tbl_order.delivery_date`) formatted as `YYYY-MM-DD HH:MM:00` to preserve both date and time across printing receipts and wash tags.
+
 

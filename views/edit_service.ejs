@@ -1,295 +1,313 @@
 <!DOCTYPE html>
 <html lang="en" class="h-100">
 
-
 <head>
     <!-- meta and links start -->
     <%- include('templet/meta')-%>
-
+    <style>
+        .service-preview-box {
+            border: 2px dashed rgba(148, 163, 184, 0.35);
+            border-radius: 1rem;
+            background: rgba(148, 163, 184, 0.05);
+            transition: all 0.25s ease;
+        }
+        .service-preview-box:hover {
+            border-color: var(--primary, #1d4ed8);
+            background: rgba(148, 163, 184, 0.08);
+        }
+        .service-preview-thumb-wrap {
+            width: 140px;
+            height: 140px;
+            border-radius: 0.85rem;
+            background: rgba(148, 163, 184, 0.1);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .service-preview-thumb-wrap img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        #tblPage tr td {
+            vertical-align: middle;
+        }
+        #tblPage #remove {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        #tblPage #remove:hover {
+            color: #fff;
+            background: #ef4444;
+            transform: scale(1.05);
+        }
+        .invalid-select {
+            border: 1px solid #ef4444 !important;
+        }
+    </style>
 </head>
 
 <body>
 
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
 
-    <style>
-        .form-control.is-invalid {
-            border-color: #FF6746 !important;
-            border-right: 1px #FF6746 solid !important;
-        }
-
-        .invalid-select {
-            border: 1px solid #FF6746 !important;
-            color: #484848 !important;
-            font-weight: 400;
-        }
-
-        .select2-container .select2-selection--single .invalid-select {
-            border: 1px solid #FF6746 !important;
-        }
-
-        .invalid-select:focus {
-            outline: none;
-            box-shadow: 0 0 0 0.15rem rgba(255, 103, 70, 0.25);
-        }
-
-
-        .select2-container .select2-selection--single {
-         
-            padding: 0.3125rem 1.25rem;
-            color: #080808;
-            height: 3.5rem;
-            border-radius: 0.5rem;
-            font-weight: 400;
-            background-color: transparent;
-        }
-
-
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 41px;
-            color: #484848;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 40px;
-            width: 25px;
-            position: absolute;
-            top: 6px;
-            right: 12px;
-            font-size: 16px;
-        }
-
-
-        .select2-container--default .select2-selection--single .select2-selection__arrow b {
-            border-style: solid;
-            border-width: 7px 6px 0 6px;
-            border-color: #999 transparent transparent transparent;
-            display: block;
-            width: 0;
-            height: 0;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            margin-top: -4px;
-            margin-left: -6px;
-        }
-
-
-        .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
-            border-width: 0 6px 7px 6px;
-            border-color: transparent transparent #999 transparent;
-        }
-
-
-        .select2-container--bootstrap4 .select2-results__option {
-            padding: 6px 12px;
-            font-size: 14px;
-            color: #484848;
-        }
-
-        .select2-container--bootstrap4 .select2-results__option--highlighted {
-            background-color: #f0f1f5;
-            color: #000;
-        }
-
-
-        #RemoveBox .select2-selection {
-            display: none;
-        }
-    </style>
-
-
-
-        <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
-        <!--********** Content body start **********-->
-
-        <div class="content-body">
-
-            <div class="container-fluid" style="min-height: 100vh;">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm rounded-3">
-
-                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <div>
-                                    <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
-                                        <i class="fa fa-edit text-primary me-2"></i><%= language.Edit_Services_Details %>
-                                    </h3>
-                                    <small class="text-muted"><%= language.Edit_Services_Subtitle || 'Update service pricing, details, and category configuration' %></small>
-                                </div>
-                                <div>
-                                    <button type="button" class="btn btn-sm btn-secondary" onclick="history.back()">
-                                        <i class="fa fa-arrow-left me-2"></i><%= language.Go_Back %>
-                                    </button>
-                                </div>
+    <!--********** Content body start **********-->
+    <div class="content-body">
+        <div class="container-fluid" style="min-height: 100vh;">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <!-- Card Header -->
+                        <div class="card-header border-bottom py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div>
+                                <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
+                                    <i class="fa fa-edit text-primary me-2"></i>
+                                    <%= language.Edit_Services_Details %>
+                                </h3>
+                                <small class="text-muted"><%= language.Edit_Services_Subtitle || 'Update service pricing, details, and category configuration' %></small>
                             </div>
-                            <div class="card-body p-4">
-                                <form action="/services/updateservices/<%=services.id %>" method="post"
-                                    class="need-validation" enctype="multipart/form-data">
-                                    <div class="row">
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-sm btn-secondary d-inline-flex align-items-center" onclick="history.back()">
+                                    <i class="fa fa-arrow-left me-2"></i>
+                                    <%= language.Go_Back %>
+                                </button>
+                            </div>
+                        </div>
 
+                        <!-- Card Body -->
+                        <div class="card-body p-4">
+                            <form action="/services/updateservices/<%= services.id %>" method="post" class="need-validation" enctype="multipart/form-data">
+                                <div class="row g-4">
+                                    
+                                    <!-- Left Section: Basic Information -->
+                                    <div class="col-lg-8">
+                                        <div class="p-3 border rounded overflow-visible position-relative">
+                                            <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                                <i class="fas fa-info-circle text-primary me-2"></i>
+                                                <%= language.Service_Information || 'Service Information' %>
+                                            </h6>
 
-                                        <!-- left side -->
-
-                                        <div class="col-xl-9">
-                                            <div class="row mt-3">
-                                                <div class="col-md-7" id="RemoveBox">
-                                                    <label class="form-label">
-                                                        <%= language.Service_Name %>
+                                            <div class="row g-3 mb-3">
+                                                <div class="col-md-8">
+                                                    <label class="form-label fw-bold">
+                                                        <i class="fas fa-tag text-primary me-1"></i>
+                                                        <%= language.Service_Name %> <span class="text-danger">*</span>
                                                     </label>
-                                                    <input type="text" placeholder="Enter Service Name"
-                                                        class="form-control" name="name_update"
-                                                        value="<%= services.name %>">
-                                                    <input type="hidden" id="servalid" value="0" min=1 required>
-                                                    <input type="hidden" id="add_servie_storelist"
-                                                        value="<%= services.store_ID %>">
+                                                    <input type="text" placeholder="Enter Service Name" class="form-control" name="name_update" value="<%= services.name %>" required>
+                                                    <input type="hidden" id="servalid" value="<%= (typeof tiers !== 'undefined' ? tiers.length : type.length) %>" min="1" required>
+                                                    <input type="hidden" id="add_servie_storelist" value="<%= services.store_ID %>">
                                                 </div>
-                                                <div class="col-md-4 ">
-                                                    <label class="btn btn-primary mt-4" for="file-1"
-                                                        style="width: 100%;">
-                                                        <i class="fa fa-camera me-2"></i><%= language.Upload_Image %>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold">
+                                                        <i class="fas fa-sort-numeric-down text-primary me-1"></i>
+                                                        Sequence No <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="number" placeholder="1" class="form-control" name="sequence_no_update" value="<%= (typeof services.sequence_no !== 'undefined') ? services.sequence_no : 0 %>" min="0" required>
+                                                </div>
+                                            </div>
+
+                                            <div class="pt-2">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="active" name="active_update" value="0" <%= services.status == 0 ? 'checked' : '' %>>
+                                                    <label class="form-check-label fw-bold" for="active">
+                                                        <%= language.Is_Active %> ?
                                                     </label>
                                                 </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- right side -->
-
-                                        <div class="col-xl-3">
-                                            <div class="center">
-                                                <div class="form-input">
-                                                    <div class="preview m-4 mt-0">
-                                                        <img id="file-preview" width="160"
-                                                            src="../../uploads/<%= services.image %>" alt="image">
-                                                    </div>
-                                                    <input class="d-none" type="file" id="file-1" name="image_update"
-                                                        accept="image/*" onchange="showPreview(event);">
-
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- table -->
-
-                                        <div class="col-xl-12">
-                                            <div class="table-responsive" style="overflow-x:unset !important;">
-                                                <table class="table table-responsive-sm" id="serviceType_tbl">
-                                                    <thead>
-                                                        <tr>
-
-                                                            <th>
-                                                                <%= language.Service_Type %>
-                                                            </th>
-                                                            <th>
-                                                                <%= language.Service_Price %>
-                                                            </th>
-                                                            <th>
-                                                                <%= language.Action %>
-                                                            </th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody id="tblPage">
-                                                        <% type.forEach(function(data, i){ %>
-                                                            <tr>
-                                                                <td>
-                                                                    <div class="input-group"><select
-                                                                            class="form-control service_type_Row"
-                                                                            name="service_type">
-                                                                            <% typedata.forEach(function(x){ %>
-                                                                                <option value="<%=x.id %>" <%=data==x.id
-                                                                                    ? 'selected' : '' %> > <%=
-                                                                                        x.services_type %>
-                                                                                </option>
-                                                                                <% }) %>
-                                                                        </select> </div>
-                                                                </td>
-                                                                <td>
-                                                                    <div class="input-group">
-                                                                        <input type="flot" name="service_price"
-                                                                            class="total form-control"
-                                                                            value="<%= price[i] %>">
-                                                                    </div>
-                                                                </td>
-                                                                <td><a id="remove"><i class="fa fa-times"></i></a></td>
-                                                            </tr>
-                                                            <% }) %>
-
-                                                    </tbody>
-                                                </table>
-
-                                                <div class="d-flex justify-content-end m-1">
-                                                    <button type="button" class="btn btn-outline-secondary btn-xs"
-                                                        id="add_service">
-                                                        <%= language.Add_Service_Type %>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="card-footer mt-4">
-                                            <div class="row">
-
-                                                <!-- left side -->
-                                                <div class="col-xl-9">
-                                                    <div class="form-group">
-                                                        <div class="form-check form-switch">
-                                                            <input class="form-check-input" type="checkbox" id="active"
-                                                                name="active_update" value="0" <%=services.status==0
-                                                                ? 'checked' : '' %> >
-                                                            <label class="form-check-label" for="active">
-                                                                <%= language.Is_Active %> ?
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <!-- right side -->
-                                                <div class="col-xl-3 d-flex gap-2">
-                                                    <button type="button" class="btn btn-secondary"
-                                                        onclick="history.back()">
-                                                        <i class="fa fa-times me-2"></i><%= language.Cancel %>
-                                                    </button>
-
-                                                    <button type="submit" id="add" class="btn btn-primary">
-                                                        <i class="fa fa-save me-2"></i><%= language.Submit %>
-                                                    </button>
-                                                </div>
-
+                                                <small class="text-muted d-block mt-1">
+                                                    Enable or disable this service across POS and online ordering
+                                                </small>
                                             </div>
                                         </div>
                                     </div>
-                                </form>
-                            </div>
+
+                                    <!-- Right Section: Image Upload & Preview -->
+                                    <div class="col-lg-4">
+                                        <div class="service-preview-box p-3 text-center d-flex flex-column align-items-center justify-content-center h-100">
+                                            <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                                <i class="fas fa-image text-primary me-2"></i>
+                                                <%= language.Service_Image || 'Service Image' %>
+                                            </h6>
+
+                                            <div class="service-preview-thumb-wrap mb-3 shadow-sm">
+                                                <img id="file-preview" src="../../uploads/<%= services.image %>" alt="Service Preview" onerror="this.src='../../images/one.png'">
+                                            </div>
+
+                                            <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                                                <label class="btn btn-primary mb-0 d-inline-flex align-items-center shadow-sm" for="file-1" id="Uploadfile-1">
+                                                    <i class="fa fa-camera me-2"></i>
+                                                    <%= language.Upload_Image %>
+                                                </label>
+                                                <button type="button" class="btn btn-danger d-inline-flex align-items-center" onclick="resetPreview()" title="<%= language.Reset || 'Reset' %>">
+                                                    <i class="fa fa-undo me-2"></i>
+                                                    <%= language.Reset || 'Reset' %>
+                                                </button>
+                                            </div>
+
+                                            <input class="d-none" type="file" id="file-1" name="image_update" accept="image/*" onchange="showPreview(event)">
+
+                                            <small class="text-muted mt-2">Recommended: PNG or JPG (Square, 400x400)</small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bottom Section: Service Types & Pricing Table -->
+                                    <div class="col-12 mt-2">
+                                        <div class="card border mb-0" style="height: auto;">
+                                            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2 py-3">
+                                                <div>
+                                                    <h6 class="mb-0 fw-bold d-flex align-items-center">
+                                                        <i class="fas fa-list-ol text-primary me-2"></i>
+                                                        <%= language.Service_Type || 'Service Types & Pricing' %>
+                                                    </h6>
+                                                    <small class="text-muted"><%= language.Add_pricing_tiers || 'Add at least one service tier with pricing (e.g. Normal, Express, Urgent)' %></small>
+                                                </div>
+                                                <button type="button" class="btn btn-primary d-inline-flex align-items-center shadow-sm" id="add_service">
+                                                    <i class="fa fa-plus me-2"></i>
+                                                    <%= language.Add_Service_Type %>
+                                                </button>
+                                            </div>
+
+                                            <div class="card-body p-0">
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover align-middle mb-0" id="serviceType_tbl">
+                                                        <thead>
+                                                            <tr>
+                                                                <th class="ps-3 py-3" style="width: 120px;">
+                                                                    Sequence No <span class="text-danger">*</span>
+                                                                </th>
+                                                                <th class="py-3" style="min-width: 200px;">
+                                                                    <%= language.Service_Type %> <span class="text-danger">*</span>
+                                                                </th>
+                                                                <th class="py-3" style="min-width: 140px;">
+                                                                    <%= language.Service_Price %> <span class="text-danger">*</span>
+                                                                </th>
+                                                                <th class="py-3" style="min-width: 130px;">
+                                                                    No of Items <span class="text-danger">*</span>
+                                                                </th>
+                                                                <th class="py-3" style="min-width: 160px;">
+                                                                    Ready Time (Mins) <span class="text-danger">*</span>
+                                                                </th>
+                                                                <th class="text-center py-3" style="width: 80px;">
+                                                                    <%= language.Action %>
+                                                                </th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="tblPage">
+                                                            <% (typeof tiers !== 'undefined' ? tiers : type.map((d, i) => ({ id: d, price: price[i], sequence: i+1, items: 1, ready_time: 1440 }))).forEach(function(tier, i){ %>
+                                                                <tr>
+                                                                    <td class="ps-3">
+                                                                        <input type="number" name="service_type_seq"
+                                                                            class="form-control text-center"
+                                                                            value="<%= tier.sequence %>" min="1" required>
+                                                                    </td>
+                                                                    <td>
+                                                                        <div class="form-group mb-0">
+                                                                            <select class="default-select form-control wide service_type_select" name="service_type" required>
+                                                                                <% typedata.forEach(function(x){ %>
+                                                                                    <option value="<%= x.id %>" <%= tier.id == x.id ? 'selected' : '' %>>
+                                                                                        <%= x.services_type %>
+                                                                                    </option>
+                                                                                <% }) %>
+                                                                            </select>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td>
+                                                                        <div class="form-group mb-0">
+                                                                            <input type="number" step="0.01" name="service_price"
+                                                                                class="total form-control"
+                                                                                value="<%= tier.price %>" min="0" required>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td>
+                                                                        <input type="number" name="service_type_items"
+                                                                            class="form-control text-center"
+                                                                            value="<%= tier.items %>" min="1" required>
+                                                                    </td>
+                                                                    <td>
+                                                                        <input type="number" name="service_type_ready_time"
+                                                                            class="form-control text-center"
+                                                                            value="<%= tier.ready_time %>" min="0" required>
+                                                                    </td>
+                                                                    <td class="text-center">
+                                                                        <a id="remove" style="cursor: pointer;" title="Remove tier">
+                                                                            <i class="fa fa-times"></i>
+                                                                        </a>
+                                                                    </td>
+                                                                </tr>
+                                                            <% }) %>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Footer Form Actions -->
+                                    <div class="col-12">
+                                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-3 border-top">
+                                            <button type="button" class="btn btn-secondary d-inline-flex align-items-center" onclick="history.back()">
+                                                <i class="fa fa-arrow-left me-2"></i>
+                                                <%= language.Go_Back || 'Back' %>
+                                            </button>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <button type="button" class="btn btn-secondary d-inline-flex align-items-center" onclick="history.back()">
+                                                    <i class="fa fa-times me-2"></i>
+                                                    <%= language.Cancel %>
+                                                </button>
+                                                <button type="submit" id="add" class="btn btn-primary d-inline-flex align-items-center shadow-sm">
+                                                    <i class="fa fa-save me-2"></i>
+                                                    <%= language.Submit %>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
-
-
         </div>
+    </div>
+    <!--********** Content body end **********-->
 
-        <!--********** Content body end **********-->
+    <!--**********************************Footer start***********************************-->
+    <%- include('templet/footer')-%>
+    <!--**********************************Footer end***********************************-->
 
+    </div>
+    <!--********** Main wrapper end **********-->
+    
+    <%- include('templet/script')-%>
 
-        </div>
-        <!--**********************************
-            Footer start
-        ***********************************-->
-        <%- include('templet/footer')-%>
+    <script>
+        const originalImageSrc = "../../uploads/<%= services.image %>";
 
-            <!--**********************************
-            Footer end
-        ***********************************-->
+        function showPreview(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const preview = document.getElementById('file-preview');
+                preview.src = URL.createObjectURL(file);
+            }
+        }
 
-            </div>
-
-            <!--********** Main wrapper end **********-->
-            <%- include('templet/script')-%>
-
-
+        function resetPreview() {
+            document.getElementById('file-preview').src = originalImageSrc || '../../images/one.png';
+            const fileInput = document.getElementById('file-1');
+            fileInput.value = '';
+        }
+    </script>
 
 </body>
-
 
 </html>

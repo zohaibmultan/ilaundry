@@ -12,6 +12,42 @@ var {
   DataFind,
 } = require("../middelwer/databaseQurey");
 const { paginateDataTable } = require("../middelwer/dataTableHelper");
+const {
+  getEffectiveReadySchedule,
+  calculateReadyDateTime,
+} = require("../middelwer/readyScheduleHelper");
+
+function formatMySQLDateTime(d, fallbackTime = "16:00:00") {
+  if (!d) return null;
+  if (typeof d === "string") {
+    let trimmed = d.trim();
+    if (trimmed.includes(" ") || trimmed.includes("T")) {
+      let dt = new Date(trimmed);
+      if (!isNaN(dt.getTime())) {
+        let Y = dt.getFullYear();
+        let M = String(dt.getMonth() + 1).padStart(2, "0");
+        let D = String(dt.getDate()).padStart(2, "0");
+        let H = String(dt.getHours()).padStart(2, "0");
+        let m = String(dt.getMinutes()).padStart(2, "0");
+        let s = String(dt.getSeconds()).padStart(2, "0");
+        return `${Y}-${M}-${D} ${H}:${m}:${s}`;
+      }
+    } else {
+      let t = fallbackTime.trim();
+      if (t.length === 5) t += ":00";
+      return `${trimmed} ${t}`;
+    }
+  } else if (d instanceof Date && !isNaN(d.getTime())) {
+    let Y = d.getFullYear();
+    let M = String(d.getMonth() + 1).padStart(2, "0");
+    let D = String(d.getDate()).padStart(2, "0");
+    let H = String(d.getHours()).padStart(2, "0");
+    let m = String(d.getMinutes()).padStart(2, "0");
+    let s = String(d.getSeconds()).padStart(2, "0");
+    return `${Y}-${M}-${D} ${H}:${m}:${s}`;
+  }
+  return String(d);
+}
 
 async function idfororder() {
   const orderiddata = await DataFind(
@@ -257,7 +293,8 @@ router.get("/pos", auth, async (req, res) => {
       // 5. Load services & addons for customer's store
       service_list = await DataFind(
         "SELECT * FROM tbl_services WHERE status=0 AND store_ID=" +
-          targetStoreId,
+          targetStoreId +
+          " ORDER BY sequence_no ASC, id ASC",
       );
       addonlist = await DataFind(
         "SELECT * FROM tbl_addons WHERE status=0 AND store_ID=" + targetStoreId,
@@ -411,7 +448,8 @@ router.get("/pos", auth, async (req, res) => {
         customerList = await getStoreScopedCustomers(targetStoreId);
         service_list = await DataFind(
           "SELECT * FROM tbl_services WHERE status=0 AND store_ID=" +
-            targetStoreId,
+            targetStoreId +
+            " ORDER BY sequence_no ASC, id ASC",
         );
         addonlist = await DataFind(
           "SELECT * FROM tbl_addons WHERE status=0 AND store_ID=" +
@@ -432,6 +470,19 @@ router.get("/pos", auth, async (req, res) => {
     orderid = cart[0].order_id;
     const splite_id = orderid.split(/[A-Za-z]/).join("");
 
+    const readySchedule = await getEffectiveReadySchedule(targetStoreId);
+    if (!cart[0].delivery_date || String(cart[0].delivery_date).slice(0, 10) === String(cart[0].order_date).slice(0, 10)) {
+      const autoReady = calculateReadyDateTime(cart[0].order_date || new Date(), readySchedule);
+      cart[0].delivery_date = autoReady.combinedTimestamp;
+      await DataUpdate(
+        `tbl_cart`,
+        `delivery_date='${autoReady.combinedTimestamp}'`,
+        `created_by='${loginas},${id}'`,
+        req.hostname,
+        req.protocol
+      );
+    }
+
     res.render("pos", {
       login,
       storeList,
@@ -442,6 +493,7 @@ router.get("/pos", auth, async (req, res) => {
       cartservice,
       cart: cart[0],
       accessdata,
+      readySchedule,
       isStaff: typeof isStaff !== "undefined" ? isStaff : false,
       staffStoreId: typeof staffStoreId !== "undefined" ? staffStoreId : null,
       staffStoreName:
@@ -459,6 +511,24 @@ router.get("/pos", auth, async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).send("Internal Server Error");
+  }
+});
+
+// Calculate Ready Schedule Endpoint
+router.get("/calculate_ready_schedule", auth, async (req, res) => {
+  try {
+    const storeId = req.query.store_id || req.user.store || 0;
+    const orderDate = req.query.order_date || new Date();
+    const schedule = await getEffectiveReadySchedule(storeId);
+    const result = calculateReadyDateTime(orderDate, schedule);
+    return res.status(200).json({
+      success: true,
+      schedule,
+      result,
+    });
+  } catch (error) {
+    console.error("Error calculating ready schedule:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -488,10 +558,10 @@ router.get("/edit/:id", auth, async (req, res) => {
     order_date[0].addon_data = order_date[0].addon_data || "";
 
     let service_list = await DataFind(
-      `SELECT * FROM tbl_services WHERE store_ID = '${order_date[0].store_id}' OR store_id = 0 OR store_id IS NULL`,
+      `SELECT * FROM tbl_services WHERE (store_ID = '${order_date[0].store_id}' OR store_id = 0 OR store_id IS NULL) AND status=0 ORDER BY sequence_no ASC, id ASC`,
     );
     if (!service_list || service_list.length === 0) {
-      service_list = await DataFind(`SELECT * FROM tbl_services`);
+      service_list = await DataFind(`SELECT * FROM tbl_services WHERE status=0 ORDER BY sequence_no ASC, id ASC`);
     }
 
     var cartservice = [];
@@ -513,9 +583,12 @@ router.get("/edit/:id", auth, async (req, res) => {
       addonlist = await DataFind(`SELECT * FROM tbl_addons WHERE status = 0`);
     }
 
+    const readySchedule = await getEffectiveReadySchedule(order_date[0].store_id);
+
     res.render("pos_edit", {
       accessdata,
       order_date,
+      readySchedule,
       service_list: service_list || [],
       cartservice: cartservice || [],
       addonlist: addonlist || [],
@@ -569,7 +642,7 @@ router.get("/servicelist/:id", auth, async (req, res) => {
     var service_list = await DataFind(
       " SELECT * FROM tbl_services WHERE status=0 AND store_ID=" +
         safeStoreId +
-        "",
+        " ORDER BY sequence_no ASC, id ASC",
     );
     res.status(200).json({ service_list });
   } catch (error) {
@@ -1104,7 +1177,7 @@ router.get("/getservicetype/:id", auth, async (req, res) => {
       return res.status(200).json({ data: [], serviceid: "", accessdata });
     }
     const ServiceType = await DataFind(
-      "SELECT id, services_type_id, services_type_price, name, image FROM tbl_services WHERE id = " +
+      "SELECT id, services_type_id, services_type_price, services_type_sequence, services_type_items, services_type_ready_time, name, image FROM tbl_services WHERE id = " +
         serviceId,
     );
     if (!ServiceType || ServiceType.length === 0) {
@@ -1121,6 +1194,18 @@ router.get("/getservicetype/:id", auth, async (req, res) => {
       .split(",")
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
+    const sequences = (s.services_type_sequence || "")
+      .toString()
+      .split(",")
+      .map((sq) => sq.trim());
+    const itemsList = (s.services_type_items || "")
+      .toString()
+      .split(",")
+      .map((it) => it.trim());
+    const readyTimes = (s.services_type_ready_time || "")
+      .toString()
+      .split(",")
+      .map((rt) => rt.trim());
     const service =
       s.id + "," + (s.name || "") + "," + (s.image || "default.png");
 
@@ -1135,10 +1220,15 @@ router.get("/getservicetype/:id", auth, async (req, res) => {
         typlist.push({
           id: typeId,
           servicetype: stResult[0].services_type,
-          price: prices[i] !== undefined ? prices[i] : "0.00",
+          price: prices[i] !== undefined && prices[i] !== "" ? prices[i] : "0.00",
+          sequence: parseInt(sequences[i]) || (i + 1),
+          items: parseInt(itemsList[i]) || 1,
+          ready_time: parseInt(readyTimes[i]) || 1440,
         });
       }
     }
+
+    typlist.sort((a, b) => a.sequence - b.sequence);
 
     return res
       .status(200)
@@ -1223,11 +1313,12 @@ router.post("/color", auth, async (req, res) => {
 router.post("/date", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
-    var { date, delivery_date } = req.body;
+    var { date, delivery_date, delivery_time } = req.body;
 
     let updateFields = `order_date='${date}'`;
     if (delivery_date) {
-      updateFields += `, delivery_date='${delivery_date}'`;
+      let fullDelivery = formatMySQLDateTime(delivery_date, delivery_time || "16:00:00");
+      updateFields += `, delivery_date='${fullDelivery}'`;
     } else {
       const cartCheck = await DataFind(
         `SELECT delivery_date FROM tbl_cart WHERE created_by='${loginas},${id}'`,
@@ -1237,10 +1328,10 @@ router.post("/date", auth, async (req, res) => {
           .toISOString()
           .slice(0, 10);
         if (currentDel < date) {
-          updateFields += `, delivery_date='${date}'`;
+          updateFields += `, delivery_date='${date} 16:00:00'`;
         }
       } else {
-        updateFields += `, delivery_date='${date}'`;
+        updateFields += `, delivery_date='${date} 16:00:00'`;
       }
     }
 
@@ -1268,11 +1359,13 @@ router.post("/date", auth, async (req, res) => {
 router.post("/delivery_date", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
-    var { delivery_date } = req.body;
+    var { delivery_date, delivery_time } = req.body;
+
+    let fullDelivery = formatMySQLDateTime(delivery_date, delivery_time || "16:00:00");
 
     let cart = await DataUpdate(
       `tbl_cart`,
-      `delivery_date='${delivery_date}'`,
+      `delivery_date='${fullDelivery}'`,
       `created_by='${loginas},${id}'`,
       req.hostname,
       req.protocol,
@@ -1283,7 +1376,7 @@ router.post("/delivery_date", auth, async (req, res) => {
       return res.redirect("/valid_license");
     }
 
-    res.status(200).json({ status: 200, delivery_date });
+    res.status(200).json({ status: 200, delivery_date: fullDelivery });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: error.message });
@@ -1294,11 +1387,12 @@ router.post("/delivery_date", auth, async (req, res) => {
 router.post("/edit_date", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
-    const { date, delivery_date, order_id } = req.body;
+    const { date, delivery_date, delivery_time, order_id } = req.body;
 
     let updateFields = `order_date='${date}'`;
     if (delivery_date) {
-      updateFields += `, delivery_date='${delivery_date}'`;
+      let fullDelivery = formatMySQLDateTime(delivery_date, delivery_time || "16:00:00");
+      updateFields += `, delivery_date='${fullDelivery}'`;
     } else {
       const orderCheck = await DataFind(
         `SELECT delivery_date FROM tbl_order WHERE id='${order_id}'`,
@@ -1308,7 +1402,7 @@ router.post("/edit_date", auth, async (req, res) => {
           .toISOString()
           .slice(0, 10);
         if (currentDel < date) {
-          updateFields += `, delivery_date='${date}'`;
+          updateFields += `, delivery_date='${date} 16:00:00'`;
         }
       }
     }
@@ -1337,11 +1431,13 @@ router.post("/edit_date", auth, async (req, res) => {
 router.post("/edit_delivery_date", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
-    const { delivery_date, order_id } = req.body;
+    const { delivery_date, delivery_time, order_id } = req.body;
+
+    let fullDelivery = formatMySQLDateTime(delivery_date, delivery_time || "16:00:00");
 
     let orderUpdate = await DataUpdate(
       `tbl_order`,
-      `delivery_date='${delivery_date}'`,
+      `delivery_date='${fullDelivery}'`,
       `id='${order_id}'`,
       req.hostname,
       req.protocol,
@@ -1352,7 +1448,7 @@ router.post("/edit_delivery_date", auth, async (req, res) => {
       return res.redirect("/valid_license");
     }
 
-    res.status(200).json({ status: 200, delivery_date });
+    res.status(200).json({ status: 200, delivery_date: fullDelivery });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: error.message });
@@ -2814,8 +2910,7 @@ router.post("/edit_order", auth, async (req, res) => {
 
     let delDate = deliverydate || order.delivery_date;
     if (delDate) {
-      let d = new Date(delDate);
-      delDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      delDate = formatMySQLDateTime(delDate, req.body.deliverytime || "16:00:00");
     }
 
     const orderNotes = note !== undefined ? note : order.note;
@@ -2961,7 +3056,8 @@ router.post("/edit_order_direct", auth, async (req, res) => {
 
     let deliveryUpdate = "";
     if (delivery_date) {
-      deliveryUpdate = `delivery_date = '${delivery_date}',`;
+      let fullDelivery = formatMySQLDateTime(delivery_date, req.body.delivery_time || "16:00:00");
+      deliveryUpdate = `delivery_date = '${fullDelivery}',`;
     }
 
     await DataUpdate(
@@ -2993,7 +3089,7 @@ router.post("/order", auth, async (req, res) => {
     const accessdata = await access(req.user);
     var orderid = await idfororder();
 
-    var { deliverydate, extradiscount, paid_amount, note, reference_number } =
+    var { deliverydate, deliverytime, extradiscount, paid_amount, note, reference_number } =
       req.body;
 
     paid_amount ? (paid_amount = paid_amount) : (paid_amount = 0);
@@ -3023,11 +3119,11 @@ router.post("/order", auth, async (req, res) => {
       (order_date.getMonth() + 1 < 10 ? "0" : "") + (order_date.getMonth() + 1);
     let order_year = order_date.getFullYear();
     let order_fullDate = `${order_year}-${order_month}-${order_day}`;
-    let finalDeliveryDate =
-      deliverydate ||
-      (cart[0].delivery_date
-        ? new Date(cart[0].delivery_date).toISOString().slice(0, 10)
-        : order_fullDate);
+    let finalDeliveryDate = deliverydate
+      ? formatMySQLDateTime(deliverydate, deliverytime || "16:00:00")
+      : (cart[0].delivery_date
+        ? formatMySQLDateTime(cart[0].delivery_date)
+        : `${order_fullDate} 16:00:00`);
 
     const order = await DataInsert(
       `tbl_order`,
@@ -3435,7 +3531,7 @@ router.post("/posprint", auth, async (req, res) => {
     const accessdata = await access(req.user);
     var orderid = await idfororder();
 
-    var { deliverydate, extradiscount, paid_amount, note, reference_number } =
+    var { deliverydate, deliverytime, extradiscount, paid_amount, note, reference_number } =
       req.body;
 
     paid_amount ? (paid_amount = paid_amount) : (paid_amount = 0);
@@ -3470,11 +3566,11 @@ router.post("/posprint", auth, async (req, res) => {
       (order_date.getMonth() + 1 < 10 ? "0" : "") + (order_date.getMonth() + 1);
     let order_year = order_date.getFullYear();
     let order_fullDate = `${order_year}-${order_month}-${order_day}`;
-    let finalDeliveryDate =
-      deliverydate ||
-      (cart[0].delivery_date
-        ? new Date(cart[0].delivery_date).toISOString().slice(0, 10)
-        : order_fullDate);
+    let finalDeliveryDate = deliverydate
+      ? formatMySQLDateTime(deliverydate, deliverytime || "16:00:00")
+      : (cart[0].delivery_date
+        ? formatMySQLDateTime(cart[0].delivery_date)
+        : `${order_fullDate} 16:00:00`);
 
     const order = await DataInsert(
       `tbl_order`,
@@ -3894,9 +3990,16 @@ router.post("/posprint", auth, async (req, res) => {
     }
 
     let oate = new Date(orderdata[0].order_date).toLocaleDateString("en-CA");
-    let ddate = new Date(orderdata[0].delivery_date).toLocaleDateString(
-      "en-CA",
-    );
+    let delDateObj = new Date(orderdata[0].delivery_date);
+    let ddate = delDateObj.toLocaleDateString("en-CA");
+    if (!isNaN(delDateObj.getTime())) {
+      let hours = delDateObj.getHours();
+      let minutes = String(delDateObj.getMinutes()).padStart(2, "0");
+      let ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      ddate += ` ${hours}:${minutes} ${ampm}`;
+    }
 
     res.render("posprint", {
       cartservice,

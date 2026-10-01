@@ -1371,18 +1371,38 @@ table .form-check.form-switch,
   border-radius: 12px !important;
 }
 
+[data-theme-version="dark"] .pos-service-card,
 [data-theme-version="dark"] .pos-service-tile {
-  background: rgba(24, 34, 56, 0.78) !important;
+  background: rgba(24, 34, 56, 0.95) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
 }
 
+[data-theme-version="dark"] .pos-service-card:hover,
 [data-theme-version="dark"] .pos-service-tile:hover {
-  background: rgba(30, 41, 69, 0.95) !important;
+  background: rgba(30, 41, 69, 0.98) !important;
   border-color: #38bdf8 !important;
   box-shadow: 0 6px 20px rgba(56, 189, 248, 0.2) !important;
+}
+
+[data-theme-version="dark"] .pos-service-card .card-body {
+  background: rgba(24, 34, 56, 0.95) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme-version="dark"] .pos-service-card:hover .card-body {
+  background: rgba(30, 41, 69, 0.98) !important;
+}
+
+[data-theme-version="dark"] .pos-service-card .ratio,
+[data-theme-version="dark"] .pos-service-card .bg-light {
+  background-color: #ffffff !important;
+}
+
+[data-theme-version="dark"] .pos-service-name {
+  color: #f8fafc !important;
 }
 
 [data-theme-version="dark"] .pos-cart-totals-card {
@@ -3630,4 +3650,68 @@ table.dataTable td.text-center {
   background: rgba(56, 189, 248, 0.2) !important;
   color: #38bdf8 !important;
   border-color: rgba(56, 189, 248, 0.4) !important;
+}
+
+/* ==========================================================================
+   UNIVERSAL DROPDOWN LAYERING & STACKING CONTEXT SAFEGUARDS
+   Prevents dropdown popups from rendering behind inputs, labels, cards, or tables
+   ========================================================================== */
+
+/* Elevate store select group above subsequent form fields */
+.store-select-group {
+  position: relative !important;
+  z-index: 1050 !important;
+}
+
+/* Ensure active/open selectpicker and dropdowns float above all sibling elements */
+.bootstrap-select.show,
+.bootstrap-select.open {
+  position: relative !important;
+  z-index: 1060 !important;
+}
+
+.bootstrap-select .dropdown-menu {
+  z-index: 1065 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* When attached to body via data-container="body" */
+.bootstrap-select.bs-container {
+  z-index: 99999 !important;
+}
+
+.bootstrap-select.bs-container .dropdown-menu {
+  z-index: 99999 !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Dark mode support for body-attached and in-place selectpicker dropdowns */
+[data-theme-version="dark"] .bootstrap-select.bs-container .dropdown-menu,
+[data-theme-version="dark"] .bootstrap-select .dropdown-menu {
+  background-color: #1e293b !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6) !important;
+}
+
+[data-theme-version="dark"] .bootstrap-select.bs-container .dropdown-menu .dropdown-item,
+[data-theme-version="dark"] .bootstrap-select .dropdown-menu .dropdown-item {
+  color: #cbd5e1 !important;
+}
+
+[data-theme-version="dark"] .bootstrap-select.bs-container .dropdown-menu .dropdown-item:hover,
+[data-theme-version="dark"] .bootstrap-select.bs-container .dropdown-menu .dropdown-item:focus,
+[data-theme-version="dark"] .bootstrap-select.bs-container .dropdown-menu .dropdown-item.active,
+[data-theme-version="dark"] .bootstrap-select .dropdown-menu .dropdown-item:hover,
+[data-theme-version="dark"] .bootstrap-select .dropdown-menu .dropdown-item:focus,
+[data-theme-version="dark"] .bootstrap-select .dropdown-menu .dropdown-item.active {
+  background-color: rgba(56, 189, 248, 0.15) !important;
+  color: #38bdf8 !important;
+}
+
+[data-theme-version="dark"] .bootstrap-select.bs-container .bs-searchbox input,
+[data-theme-version="dark"] .bootstrap-select .bs-searchbox input {
+  background-color: #0f172a !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #fff !important;
 }

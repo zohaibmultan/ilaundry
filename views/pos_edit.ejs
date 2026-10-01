@@ -113,7 +113,7 @@
                                         <input type="text" id="order_id" value="<%= order_date[0].id %>" readonly>
                                     </div>
 
-                                    <div class="col-12 col-sm-4">
+                                    <div class="col-6 col-sm-3 col-lg-3">
                                         <div class="pos-date-group">
                                             <label class="pos-field-label">Order #</label>
                                             <input type="text" id="pos_order_id" class="form-control pos-input-sm w-100"
@@ -121,7 +121,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-6 col-sm-4">
+                                    <div class="col-6 col-sm-4 col-lg-4">
                                         <div class="pos-date-group">
                                             <label class="pos-field-label"><%= language.Order_Date || 'Order Date' %></label>
                                             <% let new_date=new Date(order_date[0].order_date) %>
@@ -137,22 +137,41 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-6 col-sm-4">
+                                    <div class="col-12 col-sm-5 col-lg-5">
                                         <div class="pos-date-group">
-                                            <label class="pos-field-label"><%= language.Delivery_Date || 'Delivery Date' %></label>
-                                            <% let del_raw = order_date[0].delivery_date || order_date[0].order_date %>
-                                            <% let del_date = new Date(del_raw) %>
-                                            <% let del_year = del_date.getFullYear() %>
-                                            <% let del_day = (del_date.getDate() < 10 ? '0' : '' ) + del_date.getDate() %>
-                                            <% let del_month = ((del_date.getMonth()+1) < 10 ? '0' : '' ) + (del_date.getMonth()+1) %>
-                                            <% let del_fullDate = `${del_year}-${del_month}-${del_day}` %>
-                                            <input type="date"
-                                                class="form-control pos-input-sm w-100"
-                                                id="edit_POS_delivery_date"
-                                                name="edit_pos_delivery_date"
-                                                value="<%= del_fullDate %>"
-                                                min="<%= fullDate %>"
-                                                title="<%= language.Delivery_Date || 'Delivery Date' %>">
+                                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                                <label class="pos-field-label mb-0"><%= language.Delivery_Date || 'Ready Date & Time' %></label>
+                                                <button type="button" class="btn btn-outline-primary py-0 px-2 border-0" id="btn_auto_edit_ready_schedule" title="Reset to automated ready schedule" style="font-size: 11px;">
+                                                    <i class="fas fa-magic me-1"></i>Auto
+                                                </button>
+                                            </div>
+                                            <% 
+                                                let del_raw = order_date[0].delivery_date || order_date[0].order_date;
+                                                let del_date = new Date(del_raw);
+                                                let del_year = del_date.getFullYear();
+                                                let del_day = (del_date.getDate() < 10 ? '0' : '' ) + del_date.getDate();
+                                                let del_month = ((del_date.getMonth()+1) < 10 ? '0' : '' ) + (del_date.getMonth()+1);
+                                                let del_fullDate = `${del_year}-${del_month}-${del_day}`;
+                                                let del_hours = (del_date.getHours() < 10 ? '0' : '') + del_date.getHours();
+                                                let del_mins = (del_date.getMinutes() < 10 ? '0' : '') + del_date.getMinutes();
+                                                let del_time = (del_hours !== '00' || del_mins !== '00') ? `${del_hours}:${del_mins}` : '16:00';
+                                            %>
+                                            <div class="input-group input-group-sm">
+                                                <input type="date"
+                                                    class="form-control pos-input-sm"
+                                                    id="edit_POS_delivery_date"
+                                                    name="edit_pos_delivery_date"
+                                                    value="<%= del_fullDate %>"
+                                                    min="<%= fullDate %>"
+                                                    title="<%= language.Delivery_Date || 'Ready Date' %>">
+                                                <input type="time"
+                                                    class="form-control pos-input-sm"
+                                                    id="edit_POS_delivery_time"
+                                                    name="edit_pos_delivery_time"
+                                                    value="<%= del_time %>"
+                                                    style="max-width: 115px;"
+                                                    title="Ready Time">
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -415,7 +434,7 @@
 
             <!-- Modal payment -->
             <div class="modal fade" id="POS_payment_model">
-                <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down modal-lg" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">
@@ -426,28 +445,32 @@
 
                         <form id="pyment_POS_cart" method="post" class="need-validation">
                             <input type="hidden" id="pos_order_id" name="order_id" value="<%= order_date[0].id %>">
-                            <div class="modal-body" id="payment_sum">
-                                <div class="row g-2 align-items-center">
-
-                                    <div class="col-12">
-                                        <div class="row g-3 align-items-start">
-                                            <div class="col-6 mb-2">
+                            <div class="modal-body p-3 p-md-4" id="payment_sum">
+                                <div class="row g-3">
+                                    <!-- Left Column: Inputs -->
+                                    <div class="col-12 col-lg-7">
+                                        <div class="row g-3 align-items-start mb-3">
+                                             <div class="col-12 col-sm-6">
                                                 <div class="pos-modal-field-header">
-                                                    <label class="form-label" for="deliverydate">
-                                                        <%= language.Delivery_Date %>
+                                                    <label class="form-label mb-0" for="deliverydate">
+                                                        <%= language.Delivery_Date || 'Ready Date & Time' %>
                                                     </label>
                                                 </div>
-                                                <input type="date" class="form-control" name="deliverydate"
-                                                    id="deliverydate">
+                                                <div class="input-group input-group-sm">
+                                                    <input type="date" class="form-control" name="deliverydate"
+                                                        id="deliverydate">
+                                                    <input type="time" class="form-control" name="deliverytime"
+                                                        id="deliverytime" value="16:00" style="max-width: 105px;">
+                                                </div>
 
                                                 <input type="date" class="form-control" name="deliverydate_hidden"
                                                     id="deliverydate_hidden" hidden>
                                                 <input type="hidden" id="POS_gross_order" value="" name="gross">
                                                 <input type="hidden" id="POS_subtotal_order" value="" name="sub">
                                             </div>
-                                            <div class="col-6 mb-2">
+                                            <div class="col-12 col-sm-6">
                                                 <div class="pos-modal-field-header">
-                                                    <label class="form-label" for="edit_POS_extra_discount_order">
+                                                    <label class="form-label mb-0" for="edit_POS_extra_discount_order">
                                                         <%= language.Extra_Discount %>
                                                     </label>
                                                     <div class="pos-discount-type-group" role="group" aria-label="Discount Type">
@@ -467,70 +490,16 @@
                                                 <input type="hidden" id="edit_POS_extra_discount_order_hidden" value="0">
                                             </div>
                                         </div>
-                                        <small><span id="POS_worning" class="text-center text-danger "></span></small>
-                                        <hr>
 
-                                        <div class="row">
-                                            <div class="col text-sm ">
-                                                <%= language.Sub_Total %> :
-                                            </div>
-                                            <div class="col-auto text-sm payment_val paysymbol" id="payment_subtotal">$
-                                                0.00</div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col text-sm">
-                                                <%= language.Addon %> :
-                                            </div>
-                                            <div class="col-auto text-sm payment_val paysymbol" id="payment_addons">$
-                                                0.00</div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col text-sm">
-                                                <%= language.Extra_Discount %> <span id="edit_payment_extradiscount_percent_info" class="text-primary font-weight-bold"></span> :
-                                            </div>
-                                            <div class="col-auto text-sm payment_val paysymbol extsymbol"
-                                                id="payment_extradiscount">$ 0.00</div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col text-sm">
-                                                <%= language.Coupon_Discount %> :
-                                            </div>
-                                            <div class="col-auto text-sm payment_val paysymbol"
-                                                id="payment_coupondiscount">$ 0.00</div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col text-sm" id="payment_text_perdent">
-                                                <%= language.TAX %> (15%):
-                                            </div>
-                                            <div class="col-auto text-sm payment_val paysymbol"
-                                                id="payment_text_amount"> 0.00</div>
-                                        </div>
-
-                                        <hr>
-
-                                        <div class="row">
-                                            <div class="col text-sm">
-                                                <%= language.Gross_Total %> :
-                                            </div>
-                                            <div class="col-auto text-sm paysymbol extsymbol" id="payment_grosstotal">
-                                                21.00</div>
-                                        </div>
-
-                                        <hr>
-
-                                        <div class="row align-items-center">
-                                            <div class="col-md-6 mb-1">
+                                        <div class="row g-3 align-items-center mb-3">
+                                            <div class="col-12 col-sm-6">
                                                 <label class="form-label">
                                                     <%= language.Paid_Amount %>
                                                 </label>
                                                 <input type="number" class="form-control" placeholder="Enter Amount"
                                                     name="paid_amount" id="edit_paid_amount" min="0" required>
                                             </div>
-                                            <div class="col-md-6 mb-1">
+                                            <div class="col-12 col-sm-6">
                                                 <label class="form-label">
                                                     <%= language.Payment_Type %>
                                                 </label>
@@ -544,10 +513,10 @@
                                                     <option value="bank_transfer">Bank Transfer</option>
                                                 </select>
                                             </div>
-
                                         </div>
-                                        <div class="row align-items-center mt-2">
-                                            <div class="col-md-12 mb-1">
+
+                                        <div class="row g-3 align-items-center mb-3">
+                                            <div class="col-12">
                                                 <label class="form-label" for="edit_POS_reference_number">
                                                     <%= language.Reference_Number || 'Reference / Transaction No.' %> <span class="text-muted font-weight-normal text-xs">(<%= language.Optional || 'Optional' %>)</span>
                                                 </label>
@@ -555,25 +524,68 @@
                                                     name="reference_number" id="edit_POS_reference_number">
                                             </div>
                                         </div>
-                                        <span id="POS_worning_paid" class="text-center text-danger "></span>
-                                        <hr>
 
-                                        <div class="row">
-                                            <div class="col text-sm">
-                                                <%= language.Balance %> :
+                                        <div class="row g-3 align-items-center mb-2">
+                                            <div class="col-12">
+                                                <label class="form-label">
+                                                    <%= language.Notes %> / <%= language.Remarks %>
+                                                </label>
+                                                <input type="text" class="form-control" placeholder="Enter Notes"
+                                                    name="note">
                                             </div>
-                                            <div class="col-auto text-sm paysymbol extsymbol pamtsymbol"
-                                                id="POS_total_balance"> 0.00</div>
                                         </div>
 
-                                        <hr>
+                                        <small><span id="POS_worning" class="text-center text-danger d-block"></span></small>
+                                        <span id="POS_worning_paid" class="text-center text-danger d-block"></span>
+                                    </div>
 
-                                        <div class="col-12">
-                                            <label class="form-label">
-                                                <%= language.Notes %> / <%= language.Remarks %>
-                                            </label>
-                                            <input type="text" class="form-control" placeholder="Enter Notes"
-                                                name="note">
+                                    <!-- Right Column: Order Bill Breakdown Card -->
+                                    <div class="col-12 col-lg-5">
+                                        <div class="card border rounded-3 p-3 bg-light h-100 shadow-none">
+                                            <h6 class="fw-bold mb-3 border-bottom pb-2 text-primary">
+                                                <i class="fa fa-receipt me-2"></i>Order Summary
+                                            </h6>
+
+                                            <div class="d-flex justify-content-between py-1">
+                                                <span class="text-sm text-muted"><%= language.Sub_Total %>:</span>
+                                                <span class="text-sm fw-semibold payment_val paysymbol" id="payment_subtotal">$ 0.00</span>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between py-1">
+                                                <span class="text-sm text-muted"><%= language.Addon %>:</span>
+                                                <span class="text-sm fw-semibold payment_val paysymbol" id="payment_addons">$ 0.00</span>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between py-1">
+                                                <span class="text-sm text-muted">
+                                                    <%= language.Extra_Discount %> <span id="edit_payment_extradiscount_percent_info" class="text-primary font-weight-bold"></span>:
+                                                </span>
+                                                <span class="text-sm fw-semibold payment_val paysymbol extsymbol text-danger" id="payment_extradiscount">$ 0.00</span>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between py-1">
+                                                <span class="text-sm text-muted"><%= language.Coupon_Discount %>:</span>
+                                                <span class="text-sm fw-semibold payment_val paysymbol text-success" id="payment_coupondiscount">$ 0.00</span>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between py-1">
+                                                <span class="text-sm text-muted" id="payment_text_perdent"><%= language.TAX %> (15%):</span>
+                                                <span class="text-sm fw-semibold payment_val paysymbol" id="payment_text_amount">0.00</span>
+                                            </div>
+
+                                            <hr class="my-2">
+
+                                            <div class="d-flex justify-content-between py-1 align-items-center">
+                                                <span class="fw-bold text-dark"><%= language.Gross_Total %>:</span>
+                                                <span class="fw-bold text-primary fs-5 paysymbol extsymbol" id="payment_grosstotal">21.00</span>
+                                            </div>
+
+                                            <hr class="my-2">
+
+                                            <div class="d-flex justify-content-between py-1 align-items-center">
+                                                <span class="fw-bold text-danger"><%= language.Balance %>:</span>
+                                                <span class="fw-bold text-danger fs-5 paysymbol extsymbol pamtsymbol" id="POS_total_balance">0.00</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -651,6 +663,8 @@
                             allowClear: false
                         });
                     });
+
+                    window.POS_READY_SCHEDULE = <%- JSON.stringify((typeof readySchedule !== 'undefined' && readySchedule) ? readySchedule : (typeof locals !== 'undefined' && locals.readySchedule ? locals.readySchedule : {})) %>;
 
                     document.addEventListener('DOMContentLoaded', () => {
                         const cartList = document.getElementById('POS_service_added_list');

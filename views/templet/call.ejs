@@ -630,14 +630,16 @@
          url: baseUrl + "/services/typelist/" + id,
          dataType: 'json',
          success: function (res) {
+            var nextSeq = $('#tblPage tr').length + 1;
             $("#tblPage").append('<tr>' +
-               '<td> <div class="form-group"><select class="default-select form-control wide service_type_select" required name="service_type" id="service_type' + service_type_id + '">' +
+               '<td><input type="number" name="service_type_seq" class="form-control text-center" value="' + nextSeq + '" min="1" required></td>' +
+               '<td><div class="form-group"><select class="default-select form-control wide service_type_select" required name="service_type" id="service_type' + service_type_id + '">' +
                '<option value="">Select Service Type</option>' +
-               '</select> </div></td>' +
-
-               '<td> <div class="form-group"> <input type="number" name="service_price" class="total form-control" id="service_price' + service_price_id + '" value="100" min="0"></div> </td>' +
-
-               '<td><a id="remove" style="cursor: pointer;"><i class="fa fa-times"></i></a></td>' +
+               '</select></div></td>' +
+               '<td><div class="form-group"><input type="number" step="0.01" name="service_price" class="total form-control" id="service_price' + service_price_id + '" value="100" min="0" required></div></td>' +
+               '<td><input type="number" name="service_type_items" class="form-control text-center" value="1" min="1" required></td>' +
+               '<td><input type="number" name="service_type_ready_time" class="form-control text-center" value="1440" min="0" required></td>' +
+               '<td class="text-center"><a id="remove" style="cursor: pointer;"><i class="fa fa-times text-danger"></i></a></td>' +
                '</tr>');
 
             const $select = $('#service_type' + service_type_id);
@@ -985,7 +987,9 @@
          }
       })
 
-
+      if (!window.isPosDeliveryScheduleManual && typeof updatePosReadyScheduleUI === 'function') {
+         updatePosReadyScheduleUI('#POS_delivery_date', '#POS_delivery_time', '#btn_auto_ready_schedule', $('#POS_order_date').val(), false);
+      }
    })
 
    $('body').on("change", "#single-select", async function () {
@@ -1055,12 +1059,31 @@
                   ? (symbol + ' ' + value.price)
                   : (value.price + ' ' + symbol);
 
+               var itemsCount = parseInt(value.items) || 1;
+               var itemsText = itemsCount + (itemsCount === 1 ? ' item' : ' items');
+
+               var mins = parseInt(value.ready_time) || 0;
+               var readyTimeText = '';
+               if (mins >= 1440) {
+                  var days = Math.round((mins / 1440) * 10) / 10;
+                  readyTimeText = days + (days === 1 ? ' day' : ' days');
+               } else if (mins >= 60) {
+                  var hours = Math.round((mins / 60) * 10) / 10;
+                  readyTimeText = hours + (hours === 1 ? ' hr' : ' hrs');
+               } else {
+                  readyTimeText = mins + ' min';
+               }
+
                var itemHtml =
                   '<div class="pos-service-type-row mb-2 p-2 border rounded d-flex align-items-center justify-content-between" style="cursor: pointer; background: #fafafa; transition: background 0.15s ease;">' +
                   '<div class="form-check mb-0 d-flex align-items-center flex-grow-1" style="cursor: pointer;">' +
                   '<input class="form-check-input me-3" type="radio" name="servicetype" id="st_radio_' + value.id + '" value="' + value.id + ',' + value.price + ',' + value.servicetype + '" ' + isFirst + ' required style="cursor: pointer; min-width: 18px; min-height: 18px;">' +
-                  '<label class="form-check-label flex-grow-1 d-flex justify-content-between align-items-center mb-0 cursor-pointer" for="st_radio_' + value.id + '" style="cursor: pointer; font-size: 14px; font-weight: 500;">' +
-                  '<span class="text-dark">' + value.servicetype + '</span>' +
+                  '<label class="form-check-label flex-grow-1 d-flex justify-content-between align-items-center mb-0 cursor-pointer flex-wrap gap-2" for="st_radio_' + value.id + '" style="cursor: pointer; font-size: 14px; font-weight: 500;">' +
+                  '<div class="d-flex align-items-center flex-wrap gap-2">' +
+                  '<span class="text-dark fw-bold">' + value.servicetype + '</span>' +
+                  '<span class="badge bg-light text-secondary border"><i class="fas fa-layer-group me-1"></i>' + itemsText + '</span>' +
+                  '<span class="badge bg-light text-secondary border"><i class="fas fa-clock me-1"></i>' + readyTimeText + '</span>' +
+                  '</div>' +
                   '<span class="badge bg-primary text-white font-weight-bold px-2 py-1" style="font-size: 13px;">' + formattedPrice + '</span>' +
                   '</label>' +
                   '</div>' +
@@ -1263,45 +1286,171 @@
       })
    })
 
+   // ==========================================
+   // POS Ready Schedule Automated Engine
+   // ==========================================
+   window.isPosDeliveryScheduleManual = false;
+
+   function calculateClientReadySchedule(intakeStr, schedule) {
+      const sched = schedule || window.POS_READY_SCHEDULE || {
+         leadDays: 2,
+         cutoffTime: "13:00",
+         readyTime: "16:00",
+         workingDays: [1, 2, 3, 4, 5, 6]
+      };
+
+      let intakeDate = new Date();
+      if (intakeStr) {
+         const parts = intakeStr.split('-');
+         if (parts.length === 3) {
+            const now = new Date();
+            intakeDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10), now.getHours(), now.getMinutes(), now.getSeconds());
+         }
+      }
+
+      const cutoffParts = (sched.cutoffTime || "13:00").split(':');
+      const cHour = parseInt(cutoffParts[0], 10) || 13;
+      const cMin = parseInt(cutoffParts[1], 10) || 0;
+      const intakeMinutes = intakeDate.getHours() * 60 + intakeDate.getMinutes();
+      const cutoffMinutes = cHour * 60 + cMin;
+      const isAfterCutoff = intakeMinutes >= cutoffMinutes;
+
+      let requiredDays = isAfterCutoff ? (parseInt(sched.leadDays) + 1) : parseInt(sched.leadDays);
+      if (isNaN(requiredDays) || requiredDays < 0) requiredDays = 2;
+
+      let workingDays = [1, 2, 3, 4, 5, 6];
+      if (Array.isArray(sched.workingDays) && sched.workingDays.length > 0) {
+         workingDays = sched.workingDays.map(Number);
+      } else if (typeof sched.workingDaysRaw === 'string') {
+         workingDays = sched.workingDaysRaw.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+      }
+
+      let cur = new Date(intakeDate.getFullYear(), intakeDate.getMonth(), intakeDate.getDate(), 12, 0, 0);
+      while (!workingDays.includes(cur.getDay())) {
+         cur.setDate(cur.getDate() + 1);
+      }
+      while (requiredDays > 0) {
+         cur.setDate(cur.getDate() + 1);
+         if (workingDays.includes(cur.getDay())) {
+            requiredDays--;
+         }
+      }
+
+      const yyyy = cur.getFullYear();
+      const mm = String(cur.getMonth() + 1).padStart(2, '0');
+      const dd = String(cur.getDate()).padStart(2, '0');
+      const readyDate = `${yyyy}-${mm}-${dd}`;
+      const readyTime = (sched.readyTime && sched.readyTime.length >= 4) ? sched.readyTime : "16:00";
+
+      return { readyDate, readyTime, isAfterCutoff };
+   }
+
+   function updatePosReadyScheduleUI(targetDateInput, targetTimeInput, autoBtn, orderDateVal, isManualReset) {
+      if (window.isPosDeliveryScheduleManual && !isManualReset) {
+         return;
+      }
+
+      let storeId = $('#pos_store_id').val() || '';
+      let baseUrl = window.location.origin;
+
+      // 1. Instantaneous local calculation for 0ms visual feedback
+      let localCalc = calculateClientReadySchedule(orderDateVal, window.POS_READY_SCHEDULE);
+      $(targetDateInput).val(localCalc.readyDate);
+      $(targetTimeInput).val(localCalc.readyTime);
+      $('input[name=deliverydate]').val(localCalc.readyDate);
+      $('input[name=deliverytime]').val(localCalc.readyTime);
+      $('#deliverydate_hidden').val(localCalc.readyDate);
+
+      // 2. Fetch authoritative calculation from backend
+      $.ajax({
+         type: 'GET',
+         url: baseUrl + "/admin/calculate_ready_schedule",
+         data: { store_id: storeId, order_date: orderDateVal },
+         dataType: 'json',
+         success: function (res) {
+            if (res && res.success && res.result) {
+               if (res.schedule) window.POS_READY_SCHEDULE = res.schedule;
+               $(targetDateInput).val(res.result.readyDate);
+               $(targetTimeInput).val(res.result.readyTime);
+               $('input[name=deliverydate]').val(res.result.readyDate);
+               $('input[name=deliverytime]').val(res.result.readyTime);
+               $('#deliverydate_hidden').val(res.result.readyDate);
+            }
+         }
+      });
+   }
+
    $(document).on("change", "#POS_order_date", function () {
       let date = $(this).val();
       $('#POS_delivery_date').attr('min', date);
-      let currentDel = $('#POS_delivery_date').val();
-      if (!currentDel || currentDel < date) {
-         $('#POS_delivery_date').val(date);
-         currentDel = date;
+
+      if (!window.isPosDeliveryScheduleManual) {
+         updatePosReadyScheduleUI('#POS_delivery_date', '#POS_delivery_time', '#btn_auto_ready_schedule', date, false);
+      } else {
+         let currentDel = $('#POS_delivery_date').val();
+         if (!currentDel || currentDel < date) {
+            $('#POS_delivery_date').val(date);
+            currentDel = date;
+         }
+         $('input[name=deliverydate]').val(currentDel).attr('min', date);
+         $('#deliverydate_hidden').val(currentDel);
       }
-      $('input[name=deliverydate]').val(currentDel).attr('min', date);
-      $('#deliverydate_hidden').val(currentDel);
 
       var baseUrl = window.location.origin;
+      var delivery_date = $('#POS_delivery_date').val();
+      var delivery_time = $('#POS_delivery_time').val() || '16:00';
       $.ajax({
          type: 'post',
          url: baseUrl + "/admin/date",
-         data: { date, delivery_date: currentDel },
+         data: { date, delivery_date, delivery_time },
          dataType: 'json',
          success: function (res) {
          }
       });
    });
 
-   $(document).on("change", "#POS_delivery_date", function () {
-      let delivery_date = $(this).val();
+   $(document).on("change", "#POS_delivery_date, #POS_delivery_time", function () {
+      window.isPosDeliveryScheduleManual = true;
+      $('#btn_auto_ready_schedule').removeClass('btn-outline-primary').addClass('btn-warning text-dark').attr('title', 'Manual schedule locked - Click to reset to auto');
+
+      let delivery_date = $('#POS_delivery_date').val();
+      let delivery_time = $('#POS_delivery_time').val() || '16:00';
       let order_date = $('#POS_order_date').val();
       if (order_date && delivery_date < order_date) {
          delivery_date = order_date;
-         $(this).val(delivery_date);
+         $('#POS_delivery_date').val(delivery_date);
       }
       $('input[name=deliverydate]').val(delivery_date);
+      $('input[name=deliverytime]').val(delivery_time);
       $('#deliverydate_hidden').val(delivery_date);
 
       var baseUrl = window.location.origin;
       $.ajax({
          type: 'post',
          url: baseUrl + "/admin/delivery_date",
-         data: { delivery_date },
+         data: { delivery_date, delivery_time },
          dataType: 'json',
          success: function (res) {
+         }
+      });
+   });
+
+   $(document).on("click", "#btn_auto_ready_schedule", function (e) {
+      e.preventDefault();
+      window.isPosDeliveryScheduleManual = false;
+      $(this).removeClass('btn-warning text-dark').addClass('btn-outline-primary').attr('title', 'Reset to automated ready schedule');
+      let orderDate = $('#POS_order_date').val() || new Date().toISOString().slice(0, 10);
+      updatePosReadyScheduleUI('#POS_delivery_date', '#POS_delivery_time', this, orderDate, true);
+      let delivery_date = $('#POS_delivery_date').val();
+      let delivery_time = $('#POS_delivery_time').val() || '16:00';
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/delivery_date",
+         data: { delivery_date, delivery_time },
+         dataType: 'json',
+         success: function (res) {
+            toastr.info('Ready schedule recalculated automatically');
          }
       });
    });
@@ -1310,43 +1459,76 @@
       var order_id = $('#order_id').val();
       let date = $(this).val();
       $('#edit_POS_delivery_date').attr('min', date);
-      let currentDel = $('#edit_POS_delivery_date').val();
-      if (!currentDel || currentDel < date) {
-         $('#edit_POS_delivery_date').val(date);
-         currentDel = date;
+
+      if (!window.isPosDeliveryScheduleManual) {
+         updatePosReadyScheduleUI('#edit_POS_delivery_date', '#edit_POS_delivery_time', '#btn_auto_edit_ready_schedule', date, false);
+      } else {
+         let currentDel = $('#edit_POS_delivery_date').val();
+         if (!currentDel || currentDel < date) {
+            $('#edit_POS_delivery_date').val(date);
+            currentDel = date;
+         }
+         $('input[name=deliverydate]').val(currentDel).attr('min', date);
+         $('#deliverydate_hidden').val(currentDel);
       }
-      $('input[name=deliverydate]').val(currentDel).attr('min', date);
-      $('#deliverydate_hidden').val(currentDel);
 
       var baseUrl = window.location.origin;
+      var delivery_date = $('#edit_POS_delivery_date').val();
+      var delivery_time = $('#edit_POS_delivery_time').val() || '16:00';
       $.ajax({
          type: 'post',
          url: baseUrl + "/admin/edit_date",
-         data: { date, delivery_date: currentDel, order_id },
+         data: { date, delivery_date, delivery_time, order_id },
          dataType: 'json',
          success: function (res) {
          }
       });
    });
 
-   $(document).on("change", "#edit_POS_delivery_date", function () {
+   $(document).on("change", "#edit_POS_delivery_date, #edit_POS_delivery_time", function () {
+      window.isPosDeliveryScheduleManual = true;
+      $('#btn_auto_edit_ready_schedule').removeClass('btn-outline-primary').addClass('btn-warning text-dark').attr('title', 'Manual schedule locked - Click to reset to auto');
+
       var order_id = $('#order_id').val();
-      let delivery_date = $(this).val();
+      let delivery_date = $('#edit_POS_delivery_date').val();
+      let delivery_time = $('#edit_POS_delivery_time').val() || '16:00';
       let order_date = $('#edit_POS_order_date').val();
       if (order_date && delivery_date < order_date) {
          delivery_date = order_date;
-         $(this).val(delivery_date);
+         $('#edit_POS_delivery_date').val(delivery_date);
       }
       $('input[name=deliverydate]').val(delivery_date);
+      $('input[name=deliverytime]').val(delivery_time);
       $('#deliverydate_hidden').val(delivery_date);
 
       var baseUrl = window.location.origin;
       $.ajax({
          type: 'post',
          url: baseUrl + "/admin/edit_delivery_date",
-         data: { delivery_date, order_id },
+         data: { delivery_date, delivery_time, order_id },
          dataType: 'json',
          success: function (res) {
+         }
+      });
+   });
+
+   $(document).on("click", "#btn_auto_edit_ready_schedule", function (e) {
+      e.preventDefault();
+      window.isPosDeliveryScheduleManual = false;
+      $(this).removeClass('btn-warning text-dark').addClass('btn-outline-primary').attr('title', 'Reset to automated ready schedule');
+      var order_id = $('#order_id').val();
+      let orderDate = $('#edit_POS_order_date').val() || new Date().toISOString().slice(0, 10);
+      updatePosReadyScheduleUI('#edit_POS_delivery_date', '#edit_POS_delivery_time', this, orderDate, true);
+      let delivery_date = $('#edit_POS_delivery_date').val();
+      let delivery_time = $('#edit_POS_delivery_time').val() || '16:00';
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/edit_delivery_date",
+         data: { delivery_date, delivery_time, order_id },
+         dataType: 'json',
+         success: function (res) {
+            toastr.info('Ready schedule recalculated automatically');
          }
       });
    });
@@ -1358,6 +1540,16 @@
       }
       if ($('#edit_POS_delivery_date').length) {
          $('#edit_POS_delivery_date').val(val).trigger('change');
+      }
+   });
+
+   $(document).on("change", "input[name=deliverytime]", function () {
+      let val = $(this).val();
+      if ($('#POS_delivery_time').length) {
+         $('#POS_delivery_time').val(val).trigger('change');
+      }
+      if ($('#edit_POS_delivery_time').length) {
+         $('#edit_POS_delivery_time').val(val).trigger('change');
       }
    });
 
@@ -1917,10 +2109,12 @@
                $("#POS_payment_type_list").prop('required', false);
                $('.default-select').selectpicker('refresh');
                let orderDateMin = $('#POS_order_date').val() || new Date(res.cart.order_date).toLocaleDateString('en-CA');
-                let chosenDel = $('#POS_delivery_date').val() || new Date(res.cart.delivery_date).toLocaleDateString('en-CA');
-                $('input[name=deliverydate]').val(chosenDel);
-                $('input[name=deliverydate]').attr('min', orderDateMin);
-                $('#deliverydate_hidden').val(chosenDel);
+               let chosenDel = $('#POS_delivery_date').val() || new Date(res.cart.delivery_date).toLocaleDateString('en-CA');
+               let chosenDelTime = $('#POS_delivery_time').val() || '16:00';
+               $('input[name=deliverydate]').val(chosenDel);
+               $('input[name=deliverydate]').attr('min', orderDateMin);
+               $('input[name=deliverytime]').val(chosenDelTime);
+               $('#deliverydate_hidden').val(chosenDel);
                  $('#pos_disc_type_fixed').prop('checked', true);
                  $('#pos_disc_btn_fixed').addClass('active');
                  $('#pos_disc_btn_percent').removeClass('active');
@@ -1981,8 +2175,10 @@
                $('.default-select').selectpicker('refresh');
                let editOrderDateMin = $('#edit_POS_order_date').val() || new Date(res.order_date.order_date).toLocaleDateString('en-CA');
                let editChosenDel = $('#edit_POS_delivery_date').val() || new Date(res.order_date.delivery_date).toLocaleDateString('en-CA');
+               let editChosenDelTime = $('#edit_POS_delivery_time').val() || '16:00';
                $('input[name=deliverydate]').val(editChosenDel);
                $('input[name=deliverydate]').attr('min', editOrderDateMin);
+               $('input[name=deliverytime]').val(editChosenDelTime);
                $('#deliverydate_hidden').val(editChosenDel);
                  $('#edit_pos_disc_type_fixed').prop('checked', true);
                  $('#edit_pos_disc_btn_fixed').addClass('active');

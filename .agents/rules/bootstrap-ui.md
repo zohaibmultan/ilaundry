@@ -31,3 +31,7 @@ Ensures consistent visual design, clean templates, maintainability, and responsi
 
 4. **Thermal Printer Exemption**:
    - Media queries and page declarations strictly required for physical thermal printer hardware (`@page { size: 80mm auto; margin: 0; }` or `@media print`) on thermal receipt and wash tag views are exempt from this restriction.
+
+5. **Modal Dialog Sizing & Responsive Multi-Column Standard**:
+   - **Dialog Sizing**: Always use standard Bootstrap sizing classes (`.modal-sm`, `.modal-lg`, `.modal-xl`, `.modal-fullscreen-sm-down`). Never hardcode `max-width: ... !important;` on `.modal-dialog` that prevents standard Bootstrap size modifiers from expanding.
+   - **Spacious 2-Column POS Layout**: When rendering multi-field POS modals (e.g. Make Payment), use a 2-column layout on large screens (`col-12 col-lg-8` for input fields, `col-12 col-lg-4` for real-time bill summary cards) to eliminate unnecessary vertical scrolling during order entry.

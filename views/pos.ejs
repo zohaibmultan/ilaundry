@@ -150,7 +150,7 @@
                                                                 </div>
                                                             </div>
                                                             <div class="card-body p-2 d-flex align-items-center justify-content-center">
-                                                                <h6 class="card-title m-0 fw-bold text-dark fs-7 pos-service-name" title="<%= data.name %>">
+                                                                <h6 class="card-title m-0 fw-bold fs-7 pos-service-name" title="<%= data.name %>">
                                                                     <%= data.name %>
                                                                 </h6>
                                                             </div>
@@ -224,7 +224,7 @@
                                                             <span class="badge bg-light text-primary border ms-2"><i class="fa fa-store me-1"></i><%= assignedStoreName %></span>
                                                         <% } %>
                                                     </div>
-                                                    <a href="javascript:void(0)" style="color: blue" data-bs-toggle="modal"
+                                                    <a href="javascript:void(0)" style="font-size: 12px;" class="btn btn-outline-primary py-0 px-2 border-0" data-bs-toggle="modal"
                                                         data-bs-target="#addcustomer">
                                                         <i class="fa fa-plus"></i> <%= language.Add || 'Add' %>
                                                     </a>
@@ -265,17 +265,17 @@
                                     <% } %>
                                 </div>
                                 <div class="row g-2 mb-3">
-                                    <div class="col-12 col-sm-4">
+                                    <div class="col-6 col-sm-3 col-lg-3">
                                         <div class="pos-date-group">
-                                            <label class="pos-field-label"><%= language.Order_No || 'Order #' %></label>
+                                            <label class="pos-field-label" style="height: 23px;"><%= language.Order_No || 'Order #' %></label>
                                             <input type="text" id="pos_order_id" class="form-control pos-input-sm w-100"
                                                 value="<%= cart.order_id %>" readonly title="Order ID">
                                         </div>
                                     </div>
 
-                                    <div class="col-6 col-sm-4">
+                                    <div class="col-6 col-sm-3 col-lg-3">
                                         <div class="pos-date-group">
-                                            <label class="pos-field-label">
+                                            <label class="pos-field-label" style="height: 23px;">
                                                 <%= language.Order_Date || 'Order Date' %>
                                             </label>
                                             <% let new_date=new Date(cart.order_date) %>
@@ -293,28 +293,43 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-6 col-sm-4">
+                                    <div class="col-12 col-sm-5 col-lg-6">
                                         <div class="pos-date-group">
-                                            <label class="pos-field-label">
-                                                <%= language.Delivery_Date || 'Delivery Date' %>
-                                            </label>
-                                            <% let del_raw=cart.delivery_date || cart.order_date %>
-                                                <% let del_date=new Date(del_raw) %>
-                                                    <% let del_year=del_date.getFullYear() %>
-                                                        <% let del_day=(del_date.getDate() < 10 ? '0' : '' ) +
-                                                            del_date.getDate() %>
-                                                            <% let del_month=((del_date.getMonth()+1) < 10 ? '0' : '' )
-                                                                + (del_date.getMonth()+1) %>
-                                                                <% let
-                                                                    del_fullDate=`${del_year}-${del_month}-${del_day}`
-                                                                    %>
-                                                                    <input type="date"
-                                                                        class="form-control pos-input-sm w-100"
-                                                                        id="POS_delivery_date" name="pos_delivery_date"
-                                                                        value="<%= del_fullDate %>"
-                                                                        min="<%= fullDate %>"
-                                                                        title="<%= language.Delivery_Date || 'Delivery Date' %>"
-                                                                        <%=login==='customer' ? 'readonly' : '' %>>
+                                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                                <label class="pos-field-label mb-0">
+                                                    <%= language.Delivery_Date || 'Ready Date & Time' %>
+                                                </label>
+                                                <button type="button" class="btn btn-outline-primary py-0 px-2 border-0" id="btn_auto_ready_schedule" title="Reset to automated ready schedule" style="font-size: 12px;">
+                                                    <i class="fas fa-magic me-1"></i>Auto
+                                                </button>
+                                            </div>
+                                            <% 
+                                                let del_raw = cart.delivery_date || cart.order_date;
+                                                let del_date = new Date(del_raw);
+                                                let del_year = del_date.getFullYear();
+                                                let del_day = (del_date.getDate() < 10 ? '0' : '') + del_date.getDate();
+                                                let del_month = ((del_date.getMonth()+1) < 10 ? '0' : '') + (del_date.getMonth()+1);
+                                                let del_fullDate = `${del_year}-${del_month}-${del_day}`;
+                                                let del_hours = (del_date.getHours() < 10 ? '0' : '') + del_date.getHours();
+                                                let del_mins = (del_date.getMinutes() < 10 ? '0' : '') + del_date.getMinutes();
+                                                let del_time = (del_hours !== '00' || del_mins !== '00') ? `${del_hours}:${del_mins}` : '16:00';
+                                            %>
+                                            <div class="input-group input-group-sm">
+                                                <input type="date"
+                                                    class="form-control pos-input-sm"
+                                                    id="POS_delivery_date" name="pos_delivery_date"
+                                                    value="<%= del_fullDate %>"
+                                                    min="<%= fullDate %>"
+                                                    title="<%= language.Delivery_Date || 'Ready Date' %>"
+                                                    <%=login==='customer' ? 'readonly' : '' %>>
+                                                <input type="time"
+                                                    class="form-control pos-input-sm"
+                                                    id="POS_delivery_time" name="pos_delivery_time"
+                                                    value="<%= del_time %>"
+                                                    style="max-width: 50%;"
+                                                    title="Ready Time"
+                                                    <%=login==='customer' ? 'readonly' : '' %>>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -474,9 +489,9 @@
             <!--********** Content body end **********-->
 
             <!-- Modal payment -->
-            <div class="modal fade" id="POS_payment_model">
-                <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
-                    <div class="modal-content">
+            <div class="modal fade" id="POS_payment_model" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down modal-lg" role="document">
+                    <form id="posprintform" action="/admin/posprint" method="post" class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">
                                 <%= language.Make_Payment %>
@@ -484,171 +499,100 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
 
-                        <form id="posprintform" action="/admin/posprint" method="post">
-                            <div class="modal-body" id="payment_sum">
-                                <div class="row g-2 align-items-center">
-
-                                    <div class="col-12">
-                                        <div class="row g-3 align-items-start">
-                                            <div class="col-6 mb-2">
-                                                <div class="pos-modal-field-header">
-                                                    <label class="form-label" for="deliverydate">
-                                                        <%= language.Delivery_Date %>
-                                                    </label>
-                                                </div>
-                                                <input type="date" class="form-control" name="deliverydate"
+                        <div class="modal-body p-3 p-md-4" id="payment_sum">
+                            <div class="row g-3">
+                                <!-- Left Column: Payment & Order Inputs -->
+                                <div class="col-12 col-lg-8">
+                                    <div class="row g-3 align-items-start mb-3">
+                                         <div class="col-12 col-sm-6">
+                                            <div class="pos-modal-field-header">
+                                                <label class="form-label mb-0" for="deliverydate">
+                                                    <%= language.Delivery_Date || 'Ready Date & Time' %>
+                                                </label>
+                                            </div>
+                                            <div class="input-group input-group-sm">
+                                                <input type="date" class="form-control me-3" name="deliverydate"
                                                     id="deliverydate">
-
-                                                <input type="date" class="form-control" name="deliverydate_hidden"
-                                                    id="deliverydate_hidden" hidden>
-                                                <input type="hidden" id="POS_gross_order" value="" name="gross">
-                                                <input type="hidden" id="POS_subtotal_order" value="" name="sub">
+                                                <input type="time" class="form-control" name="deliverytime"
+                                                    id="deliverytime" value="16:00" style="max-width: 45%">
                                             </div>
-                                            <div class="col-6 mb-2 <%= login === 'customer'? 'd-none': '' %>">
-                                                <div class="pos-modal-field-header">
-                                                    <label class="form-label" for="POS_extra_discount_order">
-                                                        <%= language.Extra_Discount %>
-                                                    </label>
-                                                    <div class="pos-discount-type-group" role="group"
-                                                        aria-label="Discount Type">
-                                                        <input type="radio" class="btn-check" name="discount_type"
-                                                            id="pos_disc_type_fixed" value="fixed" checked
-                                                            autocomplete="off">
-                                                        <label class="pos-disc-btn active" for="pos_disc_type_fixed"
-                                                            id="pos_disc_btn_fixed" title="Fixed Amount">Fix (<%=
-                                                                accessdata?.symbol || '$' %>)</label>
 
-                                                        <input type="radio" class="btn-check" name="discount_type"
-                                                            id="pos_disc_type_percent" value="percent"
-                                                            autocomplete="off">
-                                                        <label class="pos-disc-btn" for="pos_disc_type_percent"
-                                                            id="pos_disc_btn_percent" title="Percentage">%
-                                                            Percent</label>
-                                                    </div>
-                                                </div>
-                                                <div class="input-group pos-discount-input-group">
-                                                    <span class="input-group-text pos-discount-prefix"
-                                                        id="pos_discount_prefix">
-                                                        <%= accessdata?.symbol || '$' %>
-                                                    </span>
-                                                    <input type="number" id="POS_extra_discount_order"
-                                                        class="form-control" placeholder="0.00" min="0" step="any"
+                                            <input type="date" class="form-control" name="deliverydate_hidden"
+                                                id="deliverydate_hidden" hidden>
+                                            <input type="hidden" id="POS_gross_order" value="" name="gross">
+                                            <input type="hidden" id="POS_subtotal_order" value="" name="sub">
+                                        </div>
+                                        <div class="col-12 col-sm-6 <%= login === 'customer'? 'd-none': '' %>">
+                                            <div class="pos-modal-field-header">
+                                                <label class="form-label mb-0" for="POS_extra_discount_order">
+                                                    <%= language.Extra_Discount %>
+                                                </label>
+                                                <div class="pos-discount-type-group" role="group"
+                                                    aria-label="Discount Type">
+                                                    <input type="radio" class="btn-check" name="discount_type"
+                                                        id="pos_disc_type_fixed" value="fixed" checked
                                                         autocomplete="off">
+                                                    <label class="pos-disc-btn active" for="pos_disc_type_fixed" style="padding-top: 3px !important;"
+                                                        id="pos_disc_btn_fixed" title="Fixed Amount">Fix (<%=
+                                                            accessdata?.symbol || '$' %>)</label>
+
+                                                    <input type="radio" class="btn-check" name="discount_type"
+                                                        id="pos_disc_type_percent" value="percent"
+                                                        autocomplete="off">
+                                                    <label class="pos-disc-btn" for="pos_disc_type_percent" style="padding-top: 3px !important;"
+                                                        id="pos_disc_btn_percent" title="Percentage">%
+                                                        Percent</label>
                                                 </div>
-                                                <input type="hidden" name="extradiscount" id="POS_extradiscount_hidden"
-                                                    value="0">
                                             </div>
+                                            <div class="input-group pos-discount-input-group">
+                                                <span class="input-group-text pos-discount-prefix"
+                                                    id="pos_discount_prefix">
+                                                    <%= accessdata?.symbol || '$' %>
+                                                </span>
+                                                <input type="number" id="POS_extra_discount_order"
+                                                    class="form-control" placeholder="0.00" min="0" step="any"
+                                                    autocomplete="off">
+                                            </div>
+                                            <input type="hidden" name="extradiscount" id="POS_extradiscount_hidden"
+                                                value="0">
                                         </div>
+                                    </div>
 
-                                        <div class="row text-center">
-                                            <div id="show_pos_barcode">
-
-                                            </div>
+                                    <div class="row g-3 align-items-center mb-3">
+                                        <div class="col-12 col-sm-6">
+                                            <label class="form-label">
+                                                <%= language.Paid_Amount %>
+                                            </label>
+                                            <input type="number" class="form-control" placeholder="Enter Amount"
+                                                name="paid_amount" id="paid_amount" min="0" step="0.01">
                                         </div>
-
-                                        <small><span id="POS_worning" class="text-center text-danger "></span></small>
-                                        <hr>
-
-                                        <div class="row">
-                                            <div class="col text-sm ">
-                                                <%= language.Sub_Total %> :
-                                            </div>
-                                            <div class="col-auto text-sm payment_val paysymbol" id="payment_subtotal">$
-                                                0.00</div>
+                                        <div class="col-12 col-sm-6">
+                                            <label class="form-label">
+                                                <%= language.Payment_Type %>
+                                            </label>
+                                            <select class="form-control wide" name="payment_type"
+                                                id="POS_payment_type_list">
+                                                <option value="0" disabled selected>Choose Payment Type</option>
+                                                <option value="cash">Cash</option>
+                                                <option value="upi">UPI</option>
+                                                <option value="card">Card</option>
+                                                <option value="cheque">Cheque</option>
+                                                <option value="bank_transfer">Bank Transfer</option>
+                                            </select>
                                         </div>
+                                    </div>
 
-                                        <div class="row">
-                                            <div class="col text-sm">
-                                                <%= language.Addon %> :
-                                            </div>
-                                            <div class="col-auto text-sm payment_val paysymbol" id="payment_addons">$
-                                                0.00</div>
+                                    <div class="row g-3 align-items-center mb-3">
+                                        <div class="col-12">
+                                            <label class="form-label" for="POS_reference_number">
+                                                <%= language.Reference_Number || 'Reference / Transaction No.' %> <span class="text-muted font-weight-normal text-xs">(<%= language.Optional || 'Optional' %>)</span>
+                                            </label>
+                                            <input type="text" class="form-control" placeholder="Enter Reference / Transaction No. (Optional)"
+                                                name="reference_number" id="POS_reference_number">
                                         </div>
+                                    </div>
 
-                                        <div class="row">
-                                            <div class="col text-sm">
-                                                <%= language.Extra_Discount %> <span
-                                                        id="payment_extradiscount_percent_info"
-                                                        class="text-primary font-weight-bold"></span> :
-                                            </div>
-                                            <div class="col-auto text-sm payment_val paysymbol extsymbol"
-                                                id="payment_extradiscount">$ 0.00</div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col text-sm">
-                                                <%= language.Coupon_Discount %>:
-                                            </div>
-                                            <div class="col-auto text-sm payment_val paysymbol"
-                                                id="payment_coupondiscount">$ 0.00</div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col text-sm">
-                                                <%= language.TAX %> <span id="payment_text_perdent"></span>:
-                                            </div>
-                                            <div class="col-auto text-sm payment_val paysymbol"
-                                                id="payment_text_amount"> 0.00</div>
-                                        </div>
-
-                                        <hr>
-
-                                        <div class="row">
-                                            <div class="col text-sm">
-                                                <%= language.Gross_Total %> :
-                                            </div>
-                                            <div class="col-auto text-sm paysymbol extsymbol" id="payment_grosstotal">
-                                                21.00</div>
-                                        </div>
-
-                                        <hr>
-
-                                        <div class="row align-items-center">
-                                            <div class="col-md-6 mb-1">
-                                                <label class="form-label">
-                                                    <%= language.Paid_Amount %>
-                                                </label>
-                                                <input type="number" class="form-control" placeholder="Enter Amount"
-                                                    name="paid_amount" id="paid_amount" min="0" step="0.01">
-                                            </div>
-                                            <div class="col-md-6 mb-1">
-                                                <label class="form-label">
-                                                    <%= language.Payment_Type %>
-                                                </label>
-                                                <select class="form-control wide" name="payment_type"
-                                                    id="POS_payment_type_list">
-                                                    <option value="0" disabled selected>Choose Payment Type</option>
-                                                    <option value="cash">Cash</option>
-                                                    <option value="upi">UPI</option>
-                                                    <option value="card">Card</option>
-                                                    <option value="cheque">Cheque</option>
-                                                    <option value="bank_transfer">Bank Transfer</option>
-                                                </select>
-
-                                            </div>
-                                        </div>
-                                        <div class="row align-items-center mt-2">
-                                            <div class="col-md-12 mb-1">
-                                                <label class="form-label" for="POS_reference_number">
-                                                    <%= language.Reference_Number || 'Reference / Transaction No.' %> <span class="text-muted font-weight-normal text-xs">(<%= language.Optional || 'Optional' %>)</span>
-                                                </label>
-                                                <input type="text" class="form-control" placeholder="Enter Reference / Transaction No. (Optional)"
-                                                    name="reference_number" id="POS_reference_number">
-                                            </div>
-                                        </div>
-                                        <span id="POS_worning_paid" class="text-center text-danger "></span>
-                                        <hr>
-
-                                        <div class="row">
-                                            <div class="col text-sm">
-                                                <%= language.Balance %> :
-                                            </div>
-                                            <div class="col-auto text-sm paysymbol extsymbol pamtsymbol"
-                                                id="POS_total_balance"> 0.00</div>
-                                        </div>
-
-                                        <hr>
-
+                                    <div class="row g-3 align-items-center mb-2">
                                         <div class="col-12">
                                             <label class="form-label">
                                                 <%= language.Notes %> / <%= language.Remarks %>
@@ -657,8 +601,65 @@
                                                 name="note">
                                         </div>
                                     </div>
+
+                                    <div class="row text-center my-2">
+                                        <div id="show_pos_barcode"></div>
+                                    </div>
+                                    <small><span id="POS_worning" class="text-center text-danger d-block"></span></small>
+                                    <span id="POS_worning_paid" class="text-center text-danger d-block"></span>
+                                </div>
+
+                                <!-- Right Column: Order Bill Breakdown Card -->
+                                <div class="col-12 col-lg-4">
+                                    <div class="card border rounded-3 p-3 bg-light h-100 shadow-none">
+                                        <h6 class="fw-bold mb-3 border-bottom pb-2 text-primary">
+                                            <i class="fa fa-receipt me-2"></i>Order Summary
+                                        </h6>
+
+                                        <div class="d-flex justify-content-between py-1">
+                                            <span class="text-sm text-muted"><%= language.Sub_Total %>:</span>
+                                            <span class="text-sm fw-semibold payment_val paysymbol" id="payment_subtotal">$ 0.00</span>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between py-1">
+                                            <span class="text-sm text-muted"><%= language.Addon %>:</span>
+                                            <span class="text-sm fw-semibold payment_val paysymbol" id="payment_addons">$ 0.00</span>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between py-1">
+                                            <span class="text-sm text-muted">
+                                                <%= language.Extra_Discount %> <span id="payment_extradiscount_percent_info" class="text-primary font-weight-bold"></span>:
+                                            </span>
+                                            <span class="text-sm fw-semibold payment_val paysymbol extsymbol text-danger" id="payment_extradiscount">$ 0.00</span>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between py-1">
+                                            <span class="text-sm text-muted"><%= language.Coupon_Discount %>:</span>
+                                            <span class="text-sm fw-semibold payment_val paysymbol text-success" id="payment_coupondiscount">$ 0.00</span>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between py-1">
+                                            <span class="text-sm text-muted"><%= language.TAX %> <span id="payment_text_perdent"></span>:</span>
+                                            <span class="text-sm fw-semibold payment_val paysymbol" id="payment_text_amount">0.00</span>
+                                        </div>
+
+                                        <hr class="my-2">
+
+                                        <div class="d-flex justify-content-between py-1 align-items-center">
+                                            <span class="fw-bold text-dark"><%= language.Gross_Total %>:</span>
+                                            <span class="fw-bold text-primary fs-5 paysymbol extsymbol" id="payment_grosstotal">21.00</span>
+                                        </div>
+
+                                        <hr class="my-2">
+
+                                        <div class="d-flex justify-content-between py-1 align-items-center">
+                                            <span class="fw-bold text-danger"><%= language.Balance %>:</span>
+                                            <span class="fw-bold text-danger fs-5 paysymbol extsymbol pamtsymbol" id="POS_total_balance">0.00</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                        </div>
 
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -669,8 +670,6 @@
                                 </button>
                             </div>
                         </form>
-
-                    </div>
                 </div>
             </div>
 
@@ -782,7 +781,7 @@
 
             <!-- Modal service type -->
             <div class="modal fade" id="service_type_model">
-                <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-md modal-fullscreen-sm-down" role="document">
+                <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-lg modal-fullscreen-sm-down" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">
@@ -816,7 +815,7 @@
 
             <!-- Modal addons -->
             <div class="modal fade" id="addons">
-                <div class="modal-dialog modal-dialog-scrollable" role="document">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">
@@ -1312,6 +1311,9 @@
                                 badge.textContent = count;
                             }
                         }
+                        
+
+                        window.POS_READY_SCHEDULE = <%- JSON.stringify((typeof readySchedule !== 'undefined' && readySchedule) ? readySchedule : (typeof locals !== 'undefined' && locals.readySchedule ? locals.readySchedule : {})) %>;
 
                         document.addEventListener('DOMContentLoaded', () => {
                             pingPosPrintingServer(false);

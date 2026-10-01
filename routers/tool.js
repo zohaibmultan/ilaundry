@@ -770,9 +770,25 @@ router.post(
         //      city='${city}',district='${district}',zipcode='${zip_code}',store_email='${store_email}',store_tax_number='${tax_number}',address='${address}'
         //     WHERE id=${dataid}`);
 
+        const hasOverride = req.body.override_ready_schedule == "1" || req.body.override_ready_schedule === "on" || req.body.override_ready_schedule === 1;
+        let leadDaysSQL = "NULL";
+        let cutoffSQL = "NULL";
+        let readyTimeSQL = "NULL";
+        let wDaysSQL = "NULL";
+
+        if (hasOverride) {
+          let leadDays = parseInt(req.body.ready_lead_days);
+          leadDaysSQL = (!isNaN(leadDays) && leadDays >= 0) ? leadDays : 2;
+          cutoffSQL = `'${(req.body.ready_cutoff_time || "13:00").trim().replace(/'/g, "\\'")}'`;
+          readyTimeSQL = `'${(req.body.ready_time || "16:00").trim().replace(/'/g, "\\'")}'`;
+          let wDays = req.body.ready_working_days;
+          let workingDaysStr = Array.isArray(wDays) ? wDays.join(",") : (wDays ? String(wDays).trim() : "1,2,3,4,5,6");
+          wDaysSQL = `'${workingDaysStr.replace(/'/g, "\\'")}'`;
+        }
+
         const storeUpdate = await DataUpdate(
           "tbl_store",
-          `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${district}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}'`,
+          `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${district}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}`,
           `id=${dataid}`,
           req.hostname,
           req.protocol,
@@ -1283,9 +1299,25 @@ router.post(
         //    city='${city}',district='${district}',zipcode='${zip_code}',store_email='${store_email}',store_tax_number='${tax_number}',
         //    address='${address}', status=${status}, roll_ID=${roll},logo='${imgFiled}' WHERE id=${dataid}`);
 
+        const hasOverride = req.body.override_ready_schedule == "1" || req.body.override_ready_schedule === "on" || req.body.override_ready_schedule === 1;
+        let leadDaysSQL = "NULL";
+        let cutoffSQL = "NULL";
+        let readyTimeSQL = "NULL";
+        let wDaysSQL = "NULL";
+
+        if (hasOverride) {
+          let leadDays = parseInt(req.body.ready_lead_days);
+          leadDaysSQL = (!isNaN(leadDays) && leadDays >= 0) ? leadDays : 2;
+          cutoffSQL = `'${(req.body.ready_cutoff_time || "13:00").trim().replace(/'/g, "\\'")}'`;
+          readyTimeSQL = `'${(req.body.ready_time || "16:00").trim().replace(/'/g, "\\'")}'`;
+          let wDays = req.body.ready_working_days;
+          let workingDaysStr = Array.isArray(wDays) ? wDays.join(",") : (wDays ? String(wDays).trim() : "1,2,3,4,5,6");
+          wDaysSQL = `'${workingDaysStr.replace(/'/g, "\\'")}'`;
+        }
+
         const storeUpdate = await DataUpdate(
           "tbl_store",
-          `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${district}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', status=${status}, roll_ID=${roll}, logo='${imgFiled}'`,
+          `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${district}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', status=${status}, roll_ID=${roll}, logo='${imgFiled}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}`,
           `id=${dataid}`,
           req.hostname,
           req.protocol,
@@ -2394,6 +2426,13 @@ router.post(
         // customer_autoapprove=${customer_approved},store_autoapprove=${store_approved},timezone='${timezone}',footer='${footer}',storeroll=${storeroll},app_name='${appname}',
         // onesignal_app_id='${onesignal_app_id}', onesignal_api_key='${onesignal_api_key}',twilio_sid='${twilio_sid}',twilio_auth_token='${twilio_auth_token}',twilio_phone_no='${twilio_phone_no}'`);
 
+        let leadDays = req.body.ready_lead_days !== undefined ? parseInt(req.body.ready_lead_days) : 2;
+        if (isNaN(leadDays) || leadDays < 0) leadDays = 2;
+        let cutoffTime = (req.body.ready_cutoff_time || "13:00").trim();
+        let rTime = (req.body.ready_time || "16:00").trim();
+        let wDays = req.body.ready_working_days;
+        let workingDaysStr = Array.isArray(wDays) ? wDays.join(",") : (wDays ? String(wDays).trim() : "1,2,3,4,5,6");
+
         const settingsUpdate = await DataUpdate(
           "tbl_master_shop",
           `type=${multy},
@@ -2422,7 +2461,11 @@ router.post(
    silent_print_enabled=${silentPrint},
    printer_auto_cut=${autoCut},
    printer_open_cash_drawer=${cashDrawer},
-   printer_copies=${copiesCount}`,
+   printer_copies=${copiesCount},
+   ready_lead_days=${leadDays},
+   ready_cutoff_time='${cutoffTime}',
+   ready_time='${rTime}',
+   ready_working_days='${workingDaysStr}'`,
           `1=1`,
           req.hostname,
           req.protocol,

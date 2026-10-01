@@ -80,6 +80,7 @@
                                         <thead>
                                             <tr>
                                                 <th style="width: 50px;">#</th>
+                                                <th style="width: 70px;" class="text-center">Seq</th>
                                                 <th><%= language.Service_Name %></th>
                                                 <th class="text-center"><%= language.Service_Type %></th>
                                                 <th class="<%= ismulty ? '' : 'd-none' %>"><%= language.Store_Name %></th>
@@ -165,6 +166,13 @@
                         }
                     },
                     {
+                        data: 'sequence_no',
+                        className: 'text-center',
+                        render: function(data) {
+                            return `<span class="badge bg-light text-primary border fw-bold">${data !== undefined ? data : 0}</span>`;
+                        }
+                    },
+                    {
                         data: 'name',
                         render: function(data, type, row) {
                             const imgHtml = row.image 
@@ -242,7 +250,7 @@
                 window.serviceTable = window.initServerDataTable('#server_service_table', {
                     ajaxUrl: '/services/list/data',
                     columns: columns,
-                    order: [[0, 'desc']],
+                    order: [[1, 'asc']],
                     searchInput: '#dtServiceSearch',
                     pageLengthSelect: '#dtServicePageLength',
                     filterElements: {

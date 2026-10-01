@@ -232,7 +232,7 @@ router.post("/services", async (req, res) => {
     const { store_id } = req.body;
 
     const services = await DataFind(
-      "SELECT * FROM tbl_services WHERE store_id = " + store_id + ""
+      "SELECT * FROM tbl_services WHERE store_id = " + store_id + " ORDER BY sequence_no ASC, id ASC"
     );
 
     res.status(200).json({
