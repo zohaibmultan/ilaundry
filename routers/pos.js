@@ -814,6 +814,11 @@ router.post("/addservicelist", auth, async (req, res) => {
     const serviceid = req.body.serviceid.split(",")[0];
     const rawServiceName = req.body.serviceid.split(",")[1] || "";
     const serviceimage = req.body.serviceid.split(",")[2] || "";
+    let servicePieces = parseInt(req.body.serviceid.split(",")[3]);
+    if (!servicePieces || isNaN(servicePieces) || servicePieces < 1) {
+      const svc = await DataFind(`SELECT no_of_items FROM tbl_services WHERE id = ${parseInt(serviceid) || 0}`);
+      servicePieces = (svc && svc.length > 0 && svc[0].no_of_items) ? parseInt(svc[0].no_of_items) : 1;
+    }
 
     const servicetypeid = req.body.servicetype.split(",")[0];
     const servicetypeprice = req.body.servicetype.split(",")[1];
@@ -824,8 +829,8 @@ router.post("/addservicelist", auth, async (req, res) => {
 
     const servicelist = await DataInsert(
       "tbl_cart_servicelist",
-      "service_id, service_type_id, service_type_price, service_quntity, service_color, service_name, service_type_name, service_img",
-      `${serviceid}, ${servicetypeid}, ${servicetypeprice}, 1, '#000000', '${safeServiceName}', '${safeServiceTypeName}', '${serviceimage}'`,
+      "service_id, service_type_id, service_type_price, service_quntity, service_color, service_name, service_type_name, service_img, no_of_items",
+      `${serviceid}, ${servicetypeid}, ${servicetypeprice}, 1, '#000000', '${safeServiceName}', '${safeServiceTypeName}', '${serviceimage}', ${servicePieces}`,
       req.hostname,
       req.protocol,
     );
@@ -891,6 +896,11 @@ router.post("/editservicelist", auth, async (req, res) => {
     const serviceid = req.body.serviceid.split(",")[0];
     const rawServiceName = req.body.serviceid.split(",")[1] || "";
     const serviceimage = req.body.serviceid.split(",")[2] || "";
+    let servicePieces = parseInt(req.body.serviceid.split(",")[3]);
+    if (!servicePieces || isNaN(servicePieces) || servicePieces < 1) {
+      const svc = await DataFind(`SELECT no_of_items FROM tbl_services WHERE id = ${parseInt(serviceid) || 0}`);
+      servicePieces = (svc && svc.length > 0 && svc[0].no_of_items) ? parseInt(svc[0].no_of_items) : 1;
+    }
 
     const servicetypeid = req.body.servicetype.split(",")[0];
     const servicetypeprice = req.body.servicetype.split(",")[1];
@@ -905,8 +915,8 @@ router.post("/editservicelist", auth, async (req, res) => {
 
     const servicelist = await DataInsert(
       `tbl_cart_servicelist`,
-      `service_id,service_type_id,service_type_price, service_quntity,service_color,service_name,service_type_name,service_img`,
-      `${serviceid},${servicetypeid},${servicetypeprice}, 1,'#000000','${safeServiceName}','${safeServiceTypeName}','${serviceimage}'`,
+      `service_id,service_type_id,service_type_price,service_quntity,service_color,service_name,service_type_name,service_img,no_of_items`,
+      `${serviceid},${servicetypeid},${servicetypeprice},1,'#000000','${safeServiceName}','${safeServiceTypeName}','${serviceimage}',${servicePieces}`,
       req.hostname,
       req.protocol,
     );
@@ -1177,7 +1187,7 @@ router.get("/getservicetype/:id", auth, async (req, res) => {
       return res.status(200).json({ data: [], serviceid: "", accessdata });
     }
     const ServiceType = await DataFind(
-      "SELECT id, services_type_id, services_type_price, services_type_sequence, services_type_items, services_type_ready_time, name, image FROM tbl_services WHERE id = " +
+      "SELECT id, services_type_id, services_type_price, services_type_sequence, services_type_items, services_type_ready_time, name, image, no_of_items FROM tbl_services WHERE id = " +
         serviceId,
     );
     if (!ServiceType || ServiceType.length === 0) {
@@ -1207,7 +1217,7 @@ router.get("/getservicetype/:id", auth, async (req, res) => {
       .split(",")
       .map((rt) => rt.trim());
     const service =
-      s.id + "," + (s.name || "") + "," + (s.image || "default.png");
+      s.id + "," + (s.name || "") + "," + (s.image || "default.png") + "," + (s.no_of_items || 1);
 
     const typlist = [];
     for (let i = 0; i < types.length; i++) {

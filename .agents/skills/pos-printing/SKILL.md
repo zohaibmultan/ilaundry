@@ -30,30 +30,57 @@ This skill provides step-by-step guidance for maintaining and extending thermal 
      JsBarcode("#svg_id", "ORDER-ID", { format: "CODE128", width: 1.4, height: 34, displayValue: true });
      ```
 
-## Dual-Mode Execution Pattern
+## Combined Thermal Print & Auto-Cutter Pattern
+
+When printing both invoice receipt and cloth tags in a single click from the same thermal printer, follow this sequential execution pattern:
 
 ```javascript
-async function printInvoice() {
-  try {
-    if (silentEnabled && isServerOnline) {
-      const res = await posClient.printHTML(fullHtml, {
-        printerId: invoicePrinter || null,
-        widthMm: invoiceWidthMm || 80,
-        options: { copies: 1, cut: true, openCashDrawer: false }
+/**
+ * Combined Print: Prints Invoice and all Cloth Tags sequentially on the SAME printer
+ * with physical paper cut triggered after invoice and after EACH tag.
+ */
+async function printAllCombined() {
+  if (silentEnabled && isServerOnline) {
+    const targetPrinter = invoicePrinter || null;
+    const targetWidth = invoiceWidthMm || 80;
+
+    // 1. Send Invoice with Cut & Cash Drawer Kick
+    await posClient.printHTML(invoiceHtml, {
+      printerId: targetPrinter,
+      widthMm: targetWidth,
+      options: { copies: copies, cut: true, openCashDrawer: openDrawer }
+    });
+
+    // 2. Send each Cloth Tag sequentially with Cut
+    const tags = container.querySelectorAll(".cloth-tag");
+    for (let i = 0; i < tags.length; i++) {
+      await posClient.printHTML(tags[i].outerHTML, {
+        printerId: targetPrinter,
+        widthMm: targetWidth,
+        options: { copies: 1, cut: true }
       });
-      if (res && res.success) {
-        showNotification("Invoice printed successfully", "success");
-        return;
-      }
     }
-    // Native fallback
-    document.body.classList.remove("printing-tags");
-    window.print();
-  } catch (err) {
-    document.body.classList.remove("printing-tags");
-    window.print();
+    return;
   }
+
+  // Native Chrome Print Fallback
+  switchPrintMode("all");
+  window.print();
 }
+```
+
+## Multi-Piece Garment Tag Multiplier
+
+When generating garment cloth wash tags, multiply the intake quantity by the item's physical piece count (`no_of_items`):
+
+```javascript
+let totalPieces = 0;
+cartServices.forEach(item => {
+  const qty = parseInt(item.service_quntity, 10) || 1;
+  const pieces = parseInt(item.no_of_items, 10) || 1;
+  totalPieces += (qty * pieces);
+});
+// Generates qty * pieces tags, numbered Piece 1/totalPieces ... Piece N/totalPieces
 ```
 
 ## Helper Scripts
@@ -62,3 +89,4 @@ async function printInvoice() {
 
 ## References
 - See detailed protocol reference in [pos-print-api.md](./references/pos-print-api.md).
+

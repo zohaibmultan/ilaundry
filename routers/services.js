@@ -208,15 +208,17 @@ router.get("/list/data", auth, async (req, res) => {
         0: "tbl_services.id",
         1: "tbl_services.sequence_no",
         2: "tbl_services.name",
-        3: "tbl_services.id",
-        4: isMaster ? "tbl_store.name" : "tbl_services.status",
-        5: "tbl_services.status",
+        3: "tbl_services.no_of_items",
+        4: "tbl_services.id",
+        5: isMaster ? "tbl_store.name" : "tbl_services.status",
+        6: "tbl_services.status",
       },
       postProcess: async (rows) => {
         return rows.map((s) => ({
           id: s.id,
           sequence_no: s.sequence_no !== undefined ? s.sequence_no : 0,
           name: s.name || "",
+          no_of_items: parseInt(s.no_of_items) > 0 ? parseInt(s.no_of_items) : 1,
           image: s.image || "",
           serviceType: s.serviceType || "",
           store: s.store || "",
@@ -335,6 +337,7 @@ router.post("/addservice", auth, upload.single("image"), async (req, res) => {
       var {
         name,
         sequence_no,
+        no_of_items,
         service_type_seq,
         service_type,
         service_price,
@@ -389,11 +392,12 @@ router.post("/addservice", auth, upload.single("image"), async (req, res) => {
       );
       active = active ? "0" : "1";
       const cleanSeqNo = parseInt(sequence_no) || 0;
+      const cleanNoOfItems = parseInt(no_of_items) > 0 ? parseInt(no_of_items) : 1;
 
       const newservtype = await DataInsert(
         `tbl_services`,
-        `name,image,sequence_no,services_type_sequence,services_type_id,services_type_price,services_type_items,services_type_ready_time,store_ID,status`,
-        `'${name}', '${img}', '${cleanSeqNo}', '${normalized.services_type_sequence}', '${normalized.services_type_id}', '${normalized.services_type_price}', '${normalized.services_type_items}', '${normalized.services_type_ready_time}', '${storeid}', '${active}'`,
+        `name,image,sequence_no,no_of_items,services_type_sequence,services_type_id,services_type_price,services_type_items,services_type_ready_time,store_ID,status`,
+        `'${name}', '${img}', '${cleanSeqNo}', '${cleanNoOfItems}', '${normalized.services_type_sequence}', '${normalized.services_type_id}', '${normalized.services_type_price}', '${normalized.services_type_items}', '${normalized.services_type_ready_time}', '${storeid}', '${active}'`,
         req.hostname,
         req.protocol,
       );
@@ -404,13 +408,15 @@ router.post("/addservice", auth, upload.single("image"), async (req, res) => {
       }
 
       req.flash("success", "New Service Added Successfully!");
-      res.redirect("/services/list");
+      return res.redirect("/services/list");
     } else {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
   } catch (error) {
-    console.log(error);
+    console.error("Error in /addservice:", error);
+    req.flash("error", "An unexpected error occurred while adding service");
+    return res.redirect("/services/list");
   }
 });
 
@@ -701,6 +707,7 @@ router.post(
         var {
           name_update,
           sequence_no_update,
+          no_of_items_update,
           service_type_seq,
           service_type,
           service_price,
@@ -718,10 +725,11 @@ router.post(
         );
         active_update = active_update ? 0 : 1;
         const cleanSeqNo = parseInt(sequence_no_update) || 0;
+        const cleanNoOfItems = parseInt(no_of_items_update) > 0 ? parseInt(no_of_items_update) : 1;
 
         const newservtype = await DataUpdate(
           "tbl_services",
-          `name = '${name_update}', sequence_no = '${cleanSeqNo}', services_type_sequence = '${normalized.services_type_sequence}', services_type_id = '${normalized.services_type_id}', services_type_price = '${normalized.services_type_price}', services_type_items = '${normalized.services_type_items}', services_type_ready_time = '${normalized.services_type_ready_time}', status = '${active_update}'`,
+          `name = '${name_update}', sequence_no = '${cleanSeqNo}', no_of_items = '${cleanNoOfItems}', services_type_sequence = '${normalized.services_type_sequence}', services_type_id = '${normalized.services_type_id}', services_type_price = '${normalized.services_type_price}', services_type_items = '${normalized.services_type_items}', services_type_ready_time = '${normalized.services_type_ready_time}', status = '${active_update}'`,
           `id = ${req.params.id}`,
           req.hostname,
           req.protocol,
@@ -733,13 +741,15 @@ router.post(
         }
 
         req.flash("success", "Services Updated");
-        res.redirect("/services/list");
+        return res.redirect("/services/list");
       } else {
         req.flash("error", "Your Are Not Authorized For this");
         return res.redirect(req.get("Referrer") || "/");
       }
     } catch (error) {
-      console.log(error);
+      console.error("Error in /updateService/:id:", error);
+      req.flash("error", "An error occurred while updating the service");
+      return res.redirect("/services/list");
     }
   },
 );
@@ -1605,142 +1615,166 @@ router.post(
         return res.redirect("/services/list");
       }
 
-      var filename = path.join(
+      if (process.env.DISABLE_DB_WRITE === "true") {
+        req.flash("error", "Demo mode write disabled");
+        return res.redirect("/services/csv_file");
+      }
+
+      if (!req.file) {
+        req.flash("error", "Please select a CSV file to upload");
+        return res.redirect("/services/csv_file");
+      }
+
+      const filename = path.join(
         __dirname,
         "../public/uploads/" + req.file.filename,
       );
-      console.log(req.file.filename);
 
-      fs.createReadStream(filename)
-        .pipe(parse({ headers: true }))
-        .on("error", (error) => {
-          console.error(error);
-          req.flash("error", "Issue with uploaded file1");
-          return res.render("add_csv", {
-            accessdata,
-            language: req.language_data,
-            language_name: req.language_name,
-            error: req.flash("error"),
-          });
-        })
-        .on("data", async (row) => {
-          console.log(accessdata);
-
-          if (accessdata.topbardata.store_ID == "") {
-            if (row.store_ID == undefined) {
-              req.flash("error", "Issue with uploaded file2");
-              return res.render("add_csv", {
-                accessdata,
-                language: req.language_data,
-                language_name: req.language_name,
-                error: req.flash("error"),
-              });
-            } else if (
-              row.name != "" &&
-              row.image != "" &&
-              row.services_type_id != "" &&
-              row.services_type_price != "" &&
-              row.store_ID != ""
-            ) {
-              console.log(row);
-              const data_split = row.services_type_id.split(",");
-              console.log("data_split", data_split);
-
-              const results = await DataFind(
-                `SELECT COUNT(*) AS count FROM tbl_services_type WHERE id IN (${data_split})`,
-              );
-              const count = results[0].count;
-
-              if (data_split.length == count) {
-                // await DataFind(`INSERT INTO tbl_services (name, image, services_type_id, services_type_price, store_ID) VALUE
-                //         ('${row.name}', '${row.image}', '${row.services_type_id}', '${row.services_type_price}', '${row.store_ID}')`);
-
-                const data = await DataInsert(
-                  `tbl_services`,
-                  `name, image, services_type_id, services_type_price, store_ID`,
-                  `'${row.name}', '${row.image}', '${row.services_type_id}', '${row.services_type_price}', '${row.store_ID}'`,
-                  req.hostname,
-                  req.protocol,
-                );
-
-                if (data == -1) {
-                  req.flash(
-                    "error",
-                    "Action failed, please check input and try again",
-                  );
-                  return res.redirect("back");
-                }
-              }
-
-              req.flash("success", "Successfully Uploaded");
-              return res.render("add_csv", {
-                accessdata,
-                language: req.language_data,
-                language_name: req.language_name,
-                success: req.flash("success"),
-              });
-            }
-          } else {
-            if (row.store_ID) {
-              console.log(row);
-
-              req.flash("error", "Issue with uploaded fil3");
-              return res.render("add_csv", {
-                accessdata,
-                language: req.language_data,
-                language_name: req.language_name,
-                error: req.flash("error"),
-              });
-            }
-            if (
-              row.name != "" &&
-              row.image != "" &&
-              row.services_type_id != "" &&
-              row.services_type_price != ""
-            ) {
-              console.log(row);
-              const data_split = row.services_type_id.split(",");
-              console.log("data_split", data_split);
-
-              const results = await DataFind(
-                `SELECT COUNT(*) AS count FROM tbl_services_type WHERE id IN (${data_split})`,
-              );
-              const count = results[0].count;
-
-              if (data_split.length == count) {
-                // await DataFind(`INSERT INTO tbl_services (name, image, services_type_id, services_type_price, store_ID) VALUE
-                //         ('${row.name}', '${row.image}', '${row.services_type_id}', '${row.services_type_price}', '${accessdata.topbardata.store_ID}')`);
-
-                const data = await DataInsert(
-                  `tbl_services`,
-                  `name, image, services_type_id, services_type_price, store_ID`,
-                  `'${row.name}', '${row.image}', '${row.services_type_id}', '${row.services_type_price}', '${accessdata.topbardata.store_ID}'`,
-                  req.hostname,
-                  req.protocol,
-                );
-
-                if (data == -1) {
-                  req.flash(
-                    "error",
-                    "Action failed, please check input and try again",
-                  );
-                  return res.redirect("back");
-                }
-              }
-
-              req.flash("success", "Successfully Uploaded");
-              return res.render("add_csv", {
-                accessdata,
-                language: req.language_data,
-                language_name: req.language_name,
-                success: req.flash("success"),
-              });
-            }
-          }
+      // Read and parse all CSV rows reliably
+      const rows = [];
+      try {
+        await new Promise((resolve, reject) => {
+          fs.createReadStream(filename)
+            .pipe(parse({ headers: true, trim: true }))
+            .on("data", (row) => rows.push(row))
+            .on("end", () => resolve())
+            .on("error", (err) => reject(err));
         });
+      } catch (parseError) {
+        console.error("CSV parse error:", parseError);
+        if (fs.existsSync(filename)) fs.unlinkSync(filename);
+        req.flash("error", "Failed to parse CSV file: " + (parseError.message || "Invalid format"));
+        return res.redirect("/services/csv_file");
+      }
+
+      // Clean up uploaded file from disk
+      if (fs.existsSync(filename)) {
+        fs.unlinkSync(filename);
+      }
+
+      if (rows.length === 0) {
+        req.flash("error", "The uploaded CSV file contains no data rows.");
+        return res.redirect("/services/csv_file");
+      }
+
+      const isMaster = accessdata?.logas === "master" || !accessdata?.topbardata?.store_ID;
+      let successCount = 0;
+      let skippedCount = 0;
+      const errors = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const rowNum = i + 2;
+
+        const name = (row.name || "").trim();
+        const image = (row.image || "").trim();
+        const services_type_id = (row.services_type_id || "").trim();
+        const services_type_price = (row.services_type_price || "").trim();
+
+        // Resolve store ID
+        let store_ID = "";
+        if (isMaster) {
+          store_ID = (row.store_ID || "").trim() || (row.store_id || "").trim();
+          if (!store_ID) {
+            errors.push(`Row ${rowNum} (${name || 'Item'}): store_ID is required for Master Admin`);
+            skippedCount++;
+            continue;
+          }
+        } else {
+          store_ID = String(accessdata.topbardata.store_ID);
+        }
+
+        if (!name) {
+          errors.push(`Row ${rowNum}: Service name is required`);
+          skippedCount++;
+          continue;
+        }
+
+        if (!services_type_id) {
+          errors.push(`Row ${rowNum} (${name}): services_type_id is required`);
+          skippedCount++;
+          continue;
+        }
+
+        if (!services_type_price) {
+          errors.push(`Row ${rowNum} (${name}): services_type_price is required`);
+          skippedCount++;
+          continue;
+        }
+
+        // Split variant IDs and prices
+        const typeIds = services_type_id.split(",").map((s) => s.trim()).filter(Boolean);
+        const prices = services_type_price.split(",").map((s) => s.trim()).filter(Boolean);
+
+        if (typeIds.length === 0) {
+          errors.push(`Row ${rowNum} (${name}): No valid service type IDs`);
+          skippedCount++;
+          continue;
+        }
+
+        // Verify that all service type IDs exist in tbl_services_type
+        const idListEscaped = typeIds.map((tid) => `'${tid.replace(/'/g, "\\'")}'`).join(",");
+        const typeCheck = await DataFind(
+          `SELECT id FROM tbl_services_type WHERE id IN (${idListEscaped})`
+        );
+        const foundIds = typeCheck ? typeCheck.map((t) => String(t.id)) : [];
+        const missingIds = typeIds.filter((tid) => !foundIds.includes(String(tid)));
+
+        if (missingIds.length > 0) {
+          errors.push(`Row ${rowNum} (${name}): Service type ID(s) [${missingIds.join(", ")}] not found`);
+          skippedCount++;
+          continue;
+        }
+
+        // Generate default tier sequence, items quantity, and ready times
+        const count = typeIds.length;
+        const services_type_sequence = Array.from({ length: count }, (_, idx) => idx + 1).join(",");
+        const services_type_items = Array.from({ length: count }, () => 1).join(",");
+        const services_type_ready_time = Array.from({ length: count }, () => 0).join(",");
+        const sequence_no = parseInt(row.sequence_no) || 0;
+        const no_of_items = parseInt(row.no_of_items) > 0 ? parseInt(row.no_of_items) : 1;
+        const status = "0"; // Active
+
+        const cleanName = name.replace(/'/g, "\\'");
+        const cleanImage = image.replace(/'/g, "\\'");
+        const cleanTypeIds = typeIds.join(",");
+        const cleanPrices = prices.join(",");
+        const cleanStoreId = store_ID.replace(/'/g, "\\'");
+
+        const insertRes = await DataInsert(
+          "tbl_services",
+          "name, image, services_type_id, services_type_price, store_ID, status, sequence_no, no_of_items, services_type_sequence, services_type_items, services_type_ready_time",
+          `'${cleanName}', '${cleanImage}', '${cleanTypeIds}', '${cleanPrices}', '${cleanStoreId}', '${status}', ${sequence_no}, ${no_of_items}, '${services_type_sequence}', '${services_type_items}', '${services_type_ready_time}'`,
+          req.hostname,
+          req.protocol
+        );
+
+        if (insertRes === -1) {
+          errors.push(`Row ${rowNum} (${name}): Insert failed`);
+          skippedCount++;
+        } else {
+          successCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        req.flash(
+          "success",
+          `Successfully imported ${successCount} service(s).` +
+            (skippedCount > 0 ? ` (${skippedCount} skipped: ${errors.slice(0, 3).join("; ")})` : "")
+        );
+        return res.redirect("/services/list");
+      } else {
+        req.flash(
+          "error",
+          `Failed to import services: ${errors.length > 0 ? errors.slice(0, 3).join("; ") : "Invalid CSV data"}`
+        );
+        return res.redirect("/services/csv_file");
+      }
     } catch (error) {
-      console.log(44444, error);
-      return res.redirect("/services/list");
+      console.error("Bulk CSV upload error:", error);
+      req.flash("error", "Server error processing CSV file: " + error.message);
+      return res.redirect("/services/csv_file");
     }
   },
 );

@@ -23,13 +23,18 @@ This document establishes the universal rules and constraints for the **iCleaner
    * ✅ `const store = "<%= (shop && shop.name) ? shop.name : '' %>";`
 3. Always provide sensible fallback values (`|| {}`, `|| []`, `|| ''`) in templates to prevent `null` reference errors.
 
-### B. Printing System & Fallback Rule
+### B. Printing System & Combined Thermal Print Invariant
 1. Always support **Dual-Mode Printing**:
    * **Silent Mode**: If the local printing server on port 4321 is reachable and silent printing is enabled, send print payloads directly via `POSPrintClient`.
    * **Native Mode**: If the printing server is offline or silent printing fails, **immediately fall back to Chrome's native print window (`window.print()`)**. Never block the user with dead clicks or silent failures.
-2. For cloth garment tags:
-   * Pre-render DOM elements and Barcodes using `JsBarcode`.
-   * Toggle the `.printing-tags` body class for print styling, and restore standard view using `window.addEventListener("afterprint")` plus a timeout fallback.
+2. **Combined Single-Click Print & Hardware Cutter Separation**:
+   * The default POS print option must be **"All (Invoice + Tags)"**, displaying the customer invoice receipt on top, red dashed cutter guides (`✂ AUTO CUTTER CUTS HERE ✂`), and garment cloth tags below.
+   * **Hardware Cutter Execution**: In silent mode, send the receipt as Job 1 with `cut: true`, followed sequentially by each individual cloth tag as separate print jobs with `cut: true` to the **same** thermal printer. This guarantees the physical blade cuts after the invoice and cuts after each individual garment tag.
+   * **Native Print Separation**: Style `.receipt-container` and each `.cloth-tag` with `page-break-after: always; break-after: page;` to trigger auto-cutters on native printer spoolers.
+3. **Segmented Mode Switcher**:
+   * Provide a segmented pill selector in the sticky toolbar: `All (Invoice + Tags)` [Default], `Invoice Only`, and `Cloth Tags Only`. Switching pills dynamically toggles the screen preview and updates the primary single-click print button.
+4. **Cloth Garment Tags Pre-rendering**:
+   * Pre-render DOM elements and Barcodes using `JsBarcode` on page load so tags and cut guides are immediately visible and ready in memory.
 
 ### C. Server-Side DataTables Pattern
 1. All table modules must use server-side processing:
@@ -163,5 +168,18 @@ This document establishes the universal rules and constraints for the **iCleaner
    * POS header renders side-by-side date (`#POS_delivery_date`) and time (`#POS_delivery_time`) inputs with a "Reset to Auto" (`#btn_auto_ready_schedule`) button.
    * Manual edits by the cashier flag the state as manual and highlight the button in amber; clicking "Auto" recalculates automatically.
    * Delivery dates are persisted in MySQL `timestamp` fields (`tbl_cart.delivery_date`, `tbl_order.delivery_date`) formatted as `YYYY-MM-DD HH:MM:00` to preserve both date and time across printing receipts and wash tags.
+
+### N. Multi-Piece Service & Garment Wash Tag Invariant
+1. **Service-Level Piece Count Storage**:
+   * Store-level services maintain an independent physical piece count in `tbl_services.no_of_items` (`INT NOT NULL DEFAULT 1`).
+   * When an item is added to an active cart or order, persist this piece count into `tbl_cart_servicelist.no_of_items`.
+2. **Minimalist Badge Display Rule**:
+   * To prevent visual clutter, only display piece count badges/indicators (`<span class="badge">N Pcs</span>`) when `no_of_items > 1` (e.g. `2 Pcs`, `3 Pcs`).
+   * For standard single-piece items (`no_of_items === 1` or `null`), omit the badge in catalog cards, cart rows, order summaries, and receipts.
+3. **Garment Wash Tag Multiplier Invariant**:
+   * Every physical garment piece must receive its own individual cloth wash tag for tracking through cleaning and assembly.
+   * Total tags generated per line item equals: `service_quntity * (no_of_items || 1)`.
+   * Each tag must be individually indexed with the total piece count (e.g. `Piece 1/4`, `Piece 2/4`, `Piece 3/4`, `Piece 4/4`).
+
 
 

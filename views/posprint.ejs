@@ -140,6 +140,17 @@
       cursor: not-allowed;
     }
 
+    .btn-primary-print {
+      background: #0284c7;
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
+    }
+
+    .btn-primary-print:hover:not(:disabled) {
+      background: #0369a1;
+      transform: translateY(-1px);
+    }
+
     .btn-invoice {
       background: #10b981;
       color: #ffffff;
@@ -152,13 +163,13 @@
     }
 
     .btn-tag {
-      background: #0284c7;
+      background: #6366f1;
       color: #ffffff;
-      box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
+      box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);
     }
 
     .btn-tag:hover:not(:disabled) {
-      background: #0369a1;
+      background: #4f46e5;
       transform: translateY(-1px);
     }
 
@@ -172,6 +183,42 @@
       background: #f1f5f9;
       color: #1e293b;
       border-color: #94a3b8;
+    }
+
+    /* Print Mode Selector Segmented Pills */
+    .print-mode-selector {
+      display: inline-flex;
+      align-items: center;
+      background: #e2e8f0;
+      padding: 3px;
+      border-radius: 20px;
+      gap: 3px;
+    }
+
+    .mode-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      line-height: 1.2;
+    }
+
+    .mode-pill:hover {
+      color: #0f172a;
+    }
+
+    .mode-pill.active {
+      background: #ffffff;
+      color: #0284c7;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     }
 
     .print-alert-banner {
@@ -218,17 +265,58 @@
       border: 1px solid #fde68a;
     }
 
+    /* Receipt Canvas (Thermal Roll Size) */
     .receipt-container {
       width: 76mm;
       margin: 0 auto;
       background: #fff;
       padding: 4mm 3mm;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 4px;
+    }
+
+    /* Cutter Guide Dividers (Screen Preview Only) */
+    .preview-cut-guide {
+      width: 76mm;
+      margin: 14px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #dc2626;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .preview-cut-guide::before,
+    .preview-cut-guide::after {
+      content: "";
+      flex: 1;
+      border-top: 2px dashed #ef4444;
+    }
+
+    .preview-tag-cut-guide {
+      width: 76mm;
+      margin: 10px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #b91c1c;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .preview-tag-cut-guide::before,
+    .preview-tag-cut-guide::after {
+      content: "";
+      flex: 1;
+      border-top: 1.5px dashed #f87171;
     }
 
     /* Cloth Garment Tag Container & Card Styles */
     .cloth-tag-container {
-      display: none;
       width: 76mm;
       margin: 0 auto;
     }
@@ -242,6 +330,7 @@
       page-break-inside: avoid;
       break-inside: avoid;
       color: #000;
+      border-radius: 4px;
     }
 
     .cloth-tag .tag-store-name {
@@ -296,33 +385,59 @@
       display: block;
     }
 
+    /* Screen Preview Display Control */
+    body.view-mode-all .receipt-container {
+      display: block;
+    }
+    body.view-mode-all .preview-cut-guide {
+      display: flex;
+    }
+    body.view-mode-all .cloth-tag-container {
+      display: block;
+    }
+
+    body.view-mode-invoice .receipt-container {
+      display: block;
+    }
+    body.view-mode-invoice .preview-cut-guide {
+      display: none !important;
+    }
+    body.view-mode-invoice .cloth-tag-container {
+      display: none !important;
+    }
+
+    body.view-mode-tags .receipt-container {
+      display: none !important;
+    }
+    body.view-mode-tags .preview-cut-guide {
+      display: none !important;
+    }
+    body.view-mode-tags .cloth-tag-container {
+      display: block;
+    }
+
     @media print {
       body {
-        background: transparent;
-        padding: 0;
+        background: transparent !important;
+        padding: 0 !important;
       }
 
       .no-print {
         display: none !important;
       }
 
-      body:not(.printing-tags) .receipt-container {
+      /* Mode ALL: Print Invoice, Cut, then print each Tag and Cut */
+      body.view-mode-all .receipt-container {
         width: 100% !important;
         margin: 0 !important;
         padding: 2mm 1mm !important;
         box-shadow: none !important;
         display: block !important;
+        page-break-after: always !important;
+        break-after: page !important;
       }
 
-      body:not(.printing-tags) .cloth-tag-container {
-        display: none !important;
-      }
-
-      body.printing-tags .receipt-container {
-        display: none !important;
-      }
-
-      body.printing-tags .cloth-tag-container {
+      body.view-mode-all .cloth-tag-container {
         display: block !important;
         width: 100% !important;
         margin: 0 !important;
@@ -330,10 +445,54 @@
         box-shadow: none !important;
       }
 
-      body.printing-tags .cloth-tag {
-        margin-bottom: 2mm !important;
+      body.view-mode-all .cloth-tag {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 0 2mm 0 !important;
+        padding: 2.5mm 1.5mm !important;
+        box-shadow: none !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
+        page-break-after: always !important;
+        break-after: page !important;
+      }
+
+      /* Mode INVOICE: Print only invoice */
+      body.view-mode-invoice .receipt-container {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 2mm 1mm !important;
+        box-shadow: none !important;
+        display: block !important;
+      }
+
+      body.view-mode-invoice .cloth-tag-container {
+        display: none !important;
+      }
+
+      /* Mode TAGS: Print only cloth tags */
+      body.view-mode-tags .receipt-container {
+        display: none !important;
+      }
+
+      body.view-mode-tags .cloth-tag-container {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+      }
+
+      body.view-mode-tags .cloth-tag {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 0 2mm 0 !important;
+        padding: 2.5mm 1.5mm !important;
+        box-shadow: none !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        page-break-after: always !important;
+        break-after: page !important;
       }
     }
 
@@ -504,26 +663,51 @@
       </span>
     </div>
 
+    <!-- Segmented Print Mode Selector -->
+    <div class="print-mode-selector no-print" role="tablist">
+      <button type="button" class="mode-pill active" id="mode_btn_all" onclick="switchPrintMode('all')"
+        title="Print Invoice and Cloth Tags together on the same printer">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+        All (Invoice + Tags)
+      </button>
+
+      <button type="button" class="mode-pill" id="mode_btn_invoice" onclick="switchPrintMode('invoice')"
+        title="Print Customer Invoice Receipt only">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        Invoice Only
+      </button>
+
+      <button type="button" class="mode-pill" id="mode_btn_tags" onclick="switchPrintMode('tags')"
+        title="Print Garment Cloth Tags only">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+          <line x1="7" y1="7" x2="7.01" y2="7"></line>
+        </svg>
+        Cloth Tags Only
+      </button>
+    </div>
+
     <div class="toolbar-right">
-      <button type="button" class="toolbar-btn btn-invoice" id="btn_print_invoice" onclick="printInvoice()"
-        title="Print Customer Invoice Receipt">
+      <button type="button" class="toolbar-btn btn-primary-print" id="btn_primary_print" onclick="executeCurrentPrint()"
+        title="Print with selected option">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round">
           <polyline points="6 9 6 2 18 2 18 9"></polyline>
           <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
           <rect x="6" y="14" width="12" height="8"></rect>
         </svg>
-        Print Invoice
-      </button>
-
-      <button type="button" class="toolbar-btn btn-tag" id="btn_print_tag" onclick="printClothTags()"
-        title="Print Garment Cloth Tags / Barcodes">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
-          <line x1="7" y1="7" x2="7.01" y2="7"></line>
-        </svg>
-        Print Cloth Tag
+        <span id="btn_print_text">Print All (Invoice + Tags)</span>
       </button>
 
       <button type="button" class="toolbar-btn btn-cancel" id="btn_cancel" onclick="cancelAndBack()"
@@ -620,7 +804,7 @@
             <tr>
               <td class="text-start">
                 <span class="item-name">
-                  <%= item.service_name %>
+                  <%= item.service_name %><% if (item.no_of_items && parseInt(item.no_of_items) > 1) { %> (<%= item.no_of_items %> Pcs)<% } %>
                 </span>
                 <% if (item.service_type_name) { %>
                   <span class="item-subtext">[<%= item.service_type_name %>]</span>
@@ -821,6 +1005,13 @@
         </div>
   </div>
 
+  <!-- Cutter divider guide in preview between invoice and tags -->
+  <div class="preview-cut-guide no-print" id="previewCutGuide">
+    <span>✂</span>
+    <span>AUTO CUTTER CUTS HERE</span>
+    <span>✂</span>
+  </div>
+
   <!-- Cloth Tag Container (Populated by JsBarcode, used for tag print) -->
   <div class="cloth-tag-container" id="clothTagContainer"></div>
 
@@ -893,13 +1084,50 @@
       }
     }
 
+    let currentPrintMode = "all"; // "all" | "invoice" | "tags"
+
+    function switchPrintMode(mode) {
+      currentPrintMode = mode;
+      document.body.classList.remove("view-mode-all", "view-mode-invoice", "view-mode-tags", "printing-tags");
+      document.body.classList.add(`view-mode-${mode}`);
+
+      // Update toggle buttons active state
+      document.querySelectorAll(".mode-pill").forEach(p => p.classList.remove("active"));
+      const activeBtn = document.getElementById(`mode_btn_${mode}`);
+      if (activeBtn) activeBtn.classList.add("active");
+
+      // Update primary print button label
+      const btnText = document.getElementById("btn_print_text");
+      if (btnText) {
+        if (mode === "all") {
+          btnText.textContent = "Print All (Invoice + Tags)";
+        } else if (mode === "invoice") {
+          btnText.textContent = "Print Invoice Only";
+        } else if (mode === "tags") {
+          btnText.textContent = "Print Cloth Tags Only";
+        }
+      }
+    }
+
+    function executeCurrentPrint() {
+      if (currentPrintMode === "all") {
+        printAllCombined();
+      } else if (currentPrintMode === "invoice") {
+        printInvoice();
+      } else if (currentPrintMode === "tags") {
+        printClothTags();
+      }
+    }
+
     function renderClothTagsDOM() {
       const container = document.getElementById("clothTagContainer");
       if (!container) return;
 
       let totalPieces = 0;
       cartServices.forEach(item => {
-        totalPieces += (parseInt(item.service_quntity, 10) || 1);
+        const qty = parseInt(item.service_quntity, 10) || 1;
+        const pieces = parseInt(item.no_of_items, 10) || 1;
+        totalPieces += (qty * pieces);
       });
 
       if (totalPieces === 0) {
@@ -913,34 +1141,47 @@
 
       cartServices.forEach(item => {
         const qty = parseInt(item.service_quntity, 10) || 1;
+        const pieces = parseInt(item.no_of_items, 10) || 1;
         for (let i = 1; i <= qty; i++) {
-          pieceIndex++;
-          const svgId = `tag_barcode_svg_${pieceIndex}`;
-          const itemTitle = item.service_name + (item.service_type_name ? ` [${item.service_type_name}]` : "");
-          const custName = customerData.name || "Customer";
-          const custPhone = customerData.number ? ` &bull; ${customerData.number}` : "";
+          for (let p = 1; p <= pieces; p++) {
+            pieceIndex++;
+            const svgId = `tag_barcode_svg_${pieceIndex}`;
+            const piecePart = pieces > 1 ? ` (Part ${p}/${pieces})` : "";
+            const itemTitle = item.service_name + (item.service_type_name ? ` [${item.service_type_name}]` : "") + piecePart;
+            const custName = customerData.name || "Customer";
+            const custPhone = customerData.number ? ` &bull; ${customerData.number}` : "";
 
-          html += `
-            <div class="cloth-tag">
-              <div class="tag-store-name">${storeName}</div>
-              <div class="tag-order-row">
-                <span>ORD: <b>${orderData.order_id || ''}</b></span>
-                <span>Piece <b>${pieceIndex}/${totalPieces}</b></span>
-              </div>
-              <div class="tag-item-name">${itemTitle}</div>
-              <div class="tag-cust-row">${custName}${custPhone}</div>
-              <div class="tag-date-row">Delivery: <b>${deliveryDate}</b></div>
-              <div class="tag-barcode-wrap">
-                <svg id="${svgId}" class="tag-barcode-svg"></svg>
-              </div>
-            </div>
-          `;
+            // Visual cut divider between cloth tags in screen preview
+            if (pieceIndex > 1) {
+              html += `
+                <div class="preview-tag-cut-guide no-print">
+                  <span>✂ Auto Cutter Cuts Between Tag #${pieceIndex - 1} & Tag #${pieceIndex} ✂</span>
+                </div>
+              `;
+            }
 
-          barcodeCalls.push({
-            id: `#${svgId}`,
-            value: String(orderData.order_id || "0000"),
-            label: `${orderData.order_id || ''}-${pieceIndex}/${totalPieces}`
-          });
+            html += `
+              <div class="cloth-tag" id="cloth_tag_${pieceIndex}" data-tag-index="${pieceIndex}">
+                <div class="tag-store-name">${storeName}</div>
+                <div class="tag-order-row">
+                  <span>ORD: <b>${orderData.order_id || ''}</b></span>
+                  <span>Piece <b>${pieceIndex}/${totalPieces}</b></span>
+                </div>
+                <div class="tag-item-name">${itemTitle}</div>
+                <div class="tag-cust-row">${custName}${custPhone}</div>
+                <div class="tag-date-row">Delivery: <b>${deliveryDate}</b></div>
+                <div class="tag-barcode-wrap">
+                  <svg id="${svgId}" class="tag-barcode-svg"></svg>
+                </div>
+              </div>
+            `;
+
+            barcodeCalls.push({
+              id: `#${svgId}`,
+              value: String(orderData.order_id || "0000"),
+              label: `${orderData.order_id || ''}-${pieceIndex}/${totalPieces}`
+            });
+          }
         }
       });
 
@@ -966,13 +1207,91 @@
       }
     }
 
+    /**
+     * Combined Print: Prints Invoice and all Cloth Tags sequentially on the SAME printer
+     * with physical paper cut triggered after invoice and after EACH tag.
+     */
+    async function printAllCombined() {
+      const btn = document.getElementById("btn_primary_print");
+      if (btn) btn.disabled = true;
+
+      try {
+        const container = document.getElementById("clothTagContainer");
+        if (!container || !container.children.length) {
+          renderClothTagsDOM();
+        }
+
+        if (silentEnabled) {
+          let online = isServerOnline;
+          if (!online) {
+            try {
+              online = await posClient.isAvailable();
+              isServerOnline = online;
+            } catch (_) {
+              online = false;
+            }
+          }
+
+          if (online) {
+            const receiptEl = document.querySelector(".receipt-container");
+            const styleEl = document.querySelector("style");
+            const baseCss = styleEl ? styleEl.innerHTML : "";
+            const targetPrinter = invoicePrinter || null;
+            const targetWidth = invoiceWidthMm || 80;
+
+            showNotification("Printing Invoice & Garment Tags to thermal printer...", "info");
+
+            // 1. Send Invoice with Cut & Drawer Kick
+            if (receiptEl) {
+              const invoiceHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${baseCss}.receipt-container{width:100% !important;margin:0 !important;padding:2mm 1mm !important;box-shadow:none !important;border-radius:0 !important;}</style></head><body>${receiptEl.outerHTML}</body></html>`;
+              await posClient.printHTML(invoiceHtml, {
+                printerId: targetPrinter,
+                widthMm: targetWidth,
+                options: {
+                  copies: copies,
+                  cut: true, // Cut after invoice!
+                  openCashDrawer: openDrawer
+                }
+              });
+            }
+
+            // 2. Send each Cloth Tag sequentially with Cut
+            const tags = container.querySelectorAll(".cloth-tag");
+            for (let i = 0; i < tags.length; i++) {
+              const tagHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${baseCss}.cloth-tag{width:100% !important;margin:0 !important;padding:2.5mm 1.5mm !important;box-shadow:none !important;border:1px dashed #000 !important;border-radius:0 !important;}</style></head><body>${tags[i].outerHTML}</body></html>`;
+              await posClient.printHTML(tagHtml, {
+                printerId: targetPrinter,
+                widthMm: targetWidth,
+                options: {
+                  copies: 1,
+                  cut: true // Cut after each individual tag!
+                }
+              });
+            }
+
+            showNotification(`<b>All Printed:</b> Invoice & ${tags.length} garment tag(s) printed with cutter separations on <b>${invoicePrinter || 'Thermal Printer'}</b>.`, "success");
+            return;
+          }
+        }
+
+        // Native browser print fallback for combined option
+        switchPrintMode("all");
+        window.print();
+      } catch (err) {
+        console.warn("Combined print error, falling back to native print:", err);
+        switchPrintMode("all");
+        window.print();
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
     async function printInvoice() {
-      const btn = document.getElementById("btn_print_invoice");
+      const btn = document.getElementById("btn_primary_print");
       if (btn) btn.disabled = true;
 
       try {
         if (silentEnabled) {
-          // Re-check server availability if not known online
           let online = isServerOnline;
           if (!online) {
             try {
@@ -987,7 +1306,7 @@
             const receiptEl = document.querySelector(".receipt-container");
             const styleEl = document.querySelector("style");
             if (receiptEl) {
-              const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${styleEl ? styleEl.innerHTML : ''}</style></head><body>${receiptEl.outerHTML}</body></html>`;
+              const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${styleEl ? styleEl.innerHTML : ''}.receipt-container{width:100% !important;margin:0 !important;padding:2mm 1mm !important;box-shadow:none !important;border-radius:0 !important;}</style></head><body>${receiptEl.outerHTML}</body></html>`;
               const res = await posClient.printHTML(fullHtml, {
                 printerId: invoicePrinter || null,
                 widthMm: invoiceWidthMm || 80,
@@ -1007,12 +1326,19 @@
           }
         }
 
-        // Native browser print fallback (shows native Chrome print dialog)
-        document.body.classList.remove("printing-tags");
+        // Native browser print fallback
+        const prevMode = currentPrintMode;
+        switchPrintMode("invoice");
+        const restore = () => {
+          switchPrintMode(prevMode);
+          window.removeEventListener("afterprint", restore);
+        };
+        window.addEventListener("afterprint", restore);
+        setTimeout(restore, 2500);
         window.print();
       } catch (err) {
         console.warn("Invoice print error, falling back to native print:", err);
-        document.body.classList.remove("printing-tags");
+        switchPrintMode("invoice");
         window.print();
       } finally {
         if (btn) btn.disabled = false;
@@ -1020,7 +1346,7 @@
     }
 
     async function printClothTags() {
-      const btn = document.getElementById("btn_print_tag");
+      const btn = document.getElementById("btn_primary_print");
       if (btn) btn.disabled = true;
 
       try {
@@ -1042,44 +1368,43 @@
 
           if (online) {
             const styleEl = document.querySelector("style");
-            const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${styleEl ? styleEl.innerHTML : ''}.cloth-tag-container { display: block !important; width: 100% !important; margin: 0 !important; }</style></head><body><div class="cloth-tag-container" style="display:block !important;">${container.innerHTML}</div></body></html>`;
+            const baseCss = styleEl ? styleEl.innerHTML : "";
+            const targetPrinter = tagPrinter || invoicePrinter || null;
+            const targetWidth = tagWidthMm || 75;
 
-            const res = await posClient.printHTML(fullHtml, {
-              printerId: tagPrinter || null,
-              widthMm: tagWidthMm || 75,
-              options: {
-                copies: 1,
-                cut: autoCut
-              }
-            });
+            showNotification("Printing garment cloth tags...", "info");
 
-            if (res && res.success) {
-              showNotification(`<b>Cloth Tags Sent:</b> Garment wash tags dispatched to <b>${tagPrinter || 'Tag Printer'}</b> (Job #${res.jobId || 'OK'})`, "info");
-              return;
+            const tags = container.querySelectorAll(".cloth-tag");
+            for (let i = 0; i < tags.length; i++) {
+              const tagHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${baseCss}.cloth-tag{width:100% !important;margin:0 !important;padding:2.5mm 1.5mm !important;box-shadow:none !important;border:1px dashed #000 !important;border-radius:0 !important;}</style></head><body>${tags[i].outerHTML}</body></html>`;
+              await posClient.printHTML(tagHtml, {
+                printerId: targetPrinter,
+                widthMm: targetWidth,
+                options: {
+                  copies: 1,
+                  cut: autoCut
+                }
+              });
             }
-            console.warn("Silent cloth tag print failed, falling back to native:", res);
+
+            showNotification(`<b>Cloth Tags Sent:</b> ${tags.length} garment wash tag(s) dispatched to <b>${targetPrinter || 'Tag Printer'}</b>.`, "info");
+            return;
           }
         }
 
-        // Native print fallback for cloth tags (shows native Chrome print dialog with cloth tags)
-        document.body.classList.add("printing-tags");
-        const cleanupTags = () => {
-          document.body.classList.remove("printing-tags");
-          window.removeEventListener("afterprint", cleanupTags);
+        // Native print fallback for cloth tags
+        const prevMode = currentPrintMode;
+        switchPrintMode("tags");
+        const restore = () => {
+          switchPrintMode(prevMode);
+          window.removeEventListener("afterprint", restore);
         };
-        window.addEventListener("afterprint", cleanupTags);
-        // Fallback cleanup if afterprint doesn't trigger
-        setTimeout(cleanupTags, 2000);
+        window.addEventListener("afterprint", restore);
+        setTimeout(restore, 2500);
         window.print();
       } catch (err) {
         console.warn("Cloth tag print error, falling back to native print:", err);
-        document.body.classList.add("printing-tags");
-        const cleanupTags = () => {
-          document.body.classList.remove("printing-tags");
-          window.removeEventListener("afterprint", cleanupTags);
-        };
-        window.addEventListener("afterprint", cleanupTags);
-        setTimeout(cleanupTags, 2000);
+        switchPrintMode("tags");
         window.print();
       } finally {
         if (btn) btn.disabled = false;
@@ -1097,13 +1422,16 @@
     }
 
     window.onload = function () {
-      // 1. Pre-render cloth tags so barcodes are ready in memory
+      // 1. Initialize Default Print Mode: All (Invoice + Tags)
+      switchPrintMode("all");
+
+      // 2. Pre-render cloth tags so barcodes and cut guides are visible in preview
       renderClothTagsDOM();
 
-      // 2. Check printing server connectivity (does NOT trigger print window)
+      // 3. Check printing server connectivity (does NOT trigger print window)
       updateServerStatus(false);
 
-      // 3. Keep status monitored in background
+      // 4. Keep status monitored in background
       setInterval(() => updateServerStatus(true), 25000);
     };
   </script>

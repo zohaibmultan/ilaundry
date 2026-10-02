@@ -68,7 +68,12 @@
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#service_type_model"
                                                 data-id="<%= data.id %>">
-                                                <div class="card h-100 shadow-sm border rounded-3 text-center overflow-hidden pos-service-card">
+                                                <div class="card h-100 shadow-sm border rounded-3 text-center overflow-hidden pos-service-card position-relative">
+                                                    <% if (data.no_of_items && parseInt(data.no_of_items) > 1) { %>
+                                                        <span class="position-absolute top-0 end-0 badge bg-primary text-white m-1 rounded-pill shadow-sm" style="z-index: 2; font-size: 0.7rem;">
+                                                            <%= data.no_of_items %> Pcs
+                                                        </span>
+                                                    <% } %>
                                                     <div class="ratio ratio-1x1 bg-light position-relative">
                                                         <img src="../../uploads/<%= data.image %>"
                                                             class="card-img-top w-100 h-100"
@@ -192,7 +197,12 @@
                                                 <tr>
                                                     <td>
                                                         <div class="pos-cart-service-info">
-                                                            <span class="pos-cart-item-title" title="<%= x.service_name %>"><%= x.service_name %></span>
+                                                            <span class="pos-cart-item-title" title="<%= x.service_name %>">
+                                                                <%= x.service_name %>
+                                                                <% if (x.no_of_items && parseInt(x.no_of_items) > 1) { %>
+                                                                    <span class="badge bg-secondary text-white ms-1" style="font-size:0.75rem;"><%= x.no_of_items %> Pcs</span>
+                                                                <% } %>
+                                                            </span>
                                                             <span class="pos-cart-item-badge">[<%= x.service_type_name %>]</span>
                                                         </div>
                                                     </td>

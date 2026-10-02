@@ -78,7 +78,8 @@ console.log(rolldetail);
         tbl_customer.approved,
         tbl_customer.main_roll_id,
         tbl_customer.delet_flage,
-        IFNULL(tbl_store.name, '') AS store
+        IFNULL(tbl_store.name, '') AS store,
+        IFNULL(tbl_store.logo, '') AS store_logo
         FROM tbl_customer 
         LEFT JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id
         WHERE tbl_customer.id = "${id}"
@@ -97,7 +98,7 @@ console.log(rolldetail);
       var isstore = false;
     } else {
       var topbardata = await mySqlQury(
-        `SELECT tbl_admin.id,tbl_admin.name,tbl_admin.number,tbl_admin.email,tbl_admin.username,tbl_admin.password,tbl_admin.store_ID,tbl_admin.roll_id,tbl_admin.approved,tbl_admin.delet_flage,tbl_admin.img,tbl_admin.is_staff, IFNULL(tbl_store.name, '') AS store_name FROM tbl_admin LEFT JOIN tbl_store ON tbl_admin.store_ID = tbl_store.id WHERE tbl_admin.id = "${id}"`
+        `SELECT tbl_admin.id,tbl_admin.name,tbl_admin.number,tbl_admin.email,tbl_admin.username,tbl_admin.password,tbl_admin.store_ID,tbl_admin.roll_id,tbl_admin.approved,tbl_admin.delet_flage,tbl_admin.img,tbl_admin.is_staff, IFNULL(tbl_store.name, '') AS store_name, IFNULL(tbl_store.logo, '') AS store_logo FROM tbl_admin LEFT JOIN tbl_store ON tbl_admin.store_ID = tbl_store.id WHERE tbl_admin.id = "${id}"`
       );
 
       console.log("else topbardata", topbardata);

@@ -935,9 +935,13 @@
                $('#pos_service').html('<div class="p-2 center"><div class=""><div class="card-body p-2 "> <h3 class="text-center text-danger">Not listed any services yet</h3> </div></div></div>')
             } else {
                $.each(res.service_list, function (index, value) {
+                  var pcsBadge = (value.no_of_items && parseInt(value.no_of_items) > 1)
+                     ? '<span class="position-absolute top-0 end-0 badge bg-primary text-white m-1 rounded-pill shadow-sm" style="z-index: 2; font-size: 0.7rem;">' + value.no_of_items + ' Pcs</span>'
+                     : '';
                   $('#pos_service').append(
                      '<a href="#" class="pos-service-item services text-decoration-none" data-name="' + (value.name || '').toLowerCase() + '" data-bs-toggle="modal" data-bs-target="#service_type_model" data-id="' + value.id + '">' +
-                     '<div class="card h-100 shadow-sm border rounded-3 text-center overflow-hidden pos-service-card">' +
+                     '<div class="card h-100 shadow-sm border rounded-3 text-center overflow-hidden pos-service-card position-relative">' +
+                     pcsBadge +
                      '<div class="ratio ratio-1x1 bg-light position-relative">' +
                      '<img src="../../uploads/' + value.image + '" class="card-img-top w-100 h-100" style="object-fit: cover;" onerror="this.style.display=\'none\'; this.nextElementSibling.classList.remove(\'d-none\'); this.nextElementSibling.classList.add(\'d-flex\');" alt="' + value.name + '">' +
                      '<div class="pos-service-fallback-icon position-absolute top-0 start-0 w-100 h-100 align-items-center justify-content-center text-primary fs-3 d-none"><i class="fa fa-tshirt"></i></div>' +
@@ -1116,11 +1120,14 @@
       var qtyId = isEdit ? 'edit_POSservice_type_quntity' : 'POSservice_type_quntity';
       var delId = isEdit ? 'edit_remove_service_list' : 'remove_service_list';
       var orderAttr = isEdit ? (' data-order_id="' + orderId + '"') : '';
+      var pcsBadge = (value.no_of_items && parseInt(value.no_of_items) > 1)
+         ? (' <span class="badge bg-secondary text-white ms-1" style="font-size:0.75rem;">' + value.no_of_items + ' Pcs</span>')
+         : '';
 
       return '<tr>' +
          '<td>' +
          '<div class="pos-cart-service-info">' +
-         '<span class="pos-cart-item-title" title="' + (value.service_name || '') + '">' + (value.service_name || '') + '</span>' +
+         '<span class="pos-cart-item-title" title="' + (value.service_name || '') + '">' + (value.service_name || '') + pcsBadge + '</span>' +
          '<span class="pos-cart-item-badge">[' + (value.service_type_name || '') + ']</span>' +
          '</div>' +
          '</td>' +
@@ -3974,11 +3981,12 @@
                            '<h5 class="mb-0">Order id: ' + res.order_date[0].order_id + '</h5>' +
                            '<svg class="barcode" style="width: 200px !important;" id="barcode' + index + '"></svg>' +
                            '</div>')
+                        var pcsText = (data.no_of_items && parseInt(data.no_of_items) > 1) ? ' (' + data.no_of_items + ' Pcs)' : '';
                         JsBarcode(a, res.order_date[0].order_id, {
                            width: 1.7,
                            height: 100,
                            fontSize: 14,
-                           text: data.service_name + '[' + data.service_type_name + ']'
+                           text: data.service_name + pcsText + '[' + data.service_type_name + ']'
                         });
                      }
                   })

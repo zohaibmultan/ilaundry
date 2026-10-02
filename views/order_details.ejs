@@ -183,10 +183,13 @@
                                                                     alt="image">
                                                             </div>
                                                             <div class="d-flex flex-column justify-content-center">
-                                                                <span>
+                                                                <span class="fw-bold">
                                                                     <%= data.service_name %>
+                                                                    <% if (data.no_of_items && parseInt(data.no_of_items) > 1) { %>
+                                                                        <span class="badge bg-secondary text-white ms-1" style="font-size:0.75rem;"><%= data.no_of_items %> Pcs</span>
+                                                                    <% } %>
                                                                 </span>
-                                                                <span>[<%= data.service_type_name %>]</span>
+                                                                <span class="text-muted small">[<%= data.service_type_name %>]</span>
                                                             </div>
                                                         </div>
                                                     </td>

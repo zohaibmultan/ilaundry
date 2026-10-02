@@ -82,6 +82,7 @@
                                                 <th style="width: 50px;">#</th>
                                                 <th style="width: 70px;" class="text-center">Seq</th>
                                                 <th><%= language.Service_Name %></th>
+                                                <th class="text-center" style="width: 90px;">Items</th>
                                                 <th class="text-center"><%= language.Service_Type %></th>
                                                 <th class="<%= ismulty ? '' : 'd-none' %>"><%= language.Store_Name %></th>
                                                 <th style="width: 110px;"><%= language.Status %></th>
@@ -184,6 +185,17 @@
                                     <span class="fw-bold text-dark">${escapeHtml(data)}</span>
                                 </div>
                             `;
+                        }
+                    },
+                    {
+                        data: 'no_of_items',
+                        className: 'text-center',
+                        render: function(data) {
+                            const count = parseInt(data) || 1;
+                            if (count > 1) {
+                                return `<span class="badge bg-primary text-white border fw-bold">${count} Pcs</span>`;
+                            }
+                            return `<span class="text-muted small">1 Pc</span>`;
                         }
                     },
                     {
