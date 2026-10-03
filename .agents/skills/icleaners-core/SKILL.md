@@ -243,4 +243,19 @@ To modify or extend production MySQL tables without downtime or data loss:
    mysqldump --default-character-set=utf8mb4 --result-file=backup_pre_migration.sql -u root -p <dbname>
    ```
 
+## 16. Service Catalog Sequencing & Asset Management Standards
+
+1. **Per-Store Incremental Sequencing**:
+   - `tbl_services` maintains display order via `sequence_no` (and synchronized `sequance_no`).
+   - Sequence numbers must always be scoped **per store** (`store_ID`), restarting from `1` for each store's catalog, ordered chronologically by `id ASC`.
+   - Never assign continuous global sequence numbers across different stores.
+
+2. **Vector Graphic Asset Conventions**:
+   - Service icons must follow the clean 2D minimalist vector graphic illustration standard:
+     - 1:1 square aspect ratio.
+     - Clean bold black outline illustration.
+     - Solid neutral or soft pastel fabric tones on a pure white background.
+   - All service images must be duplicated in both `public/uploads/` and `public/uploads/services/` to support direct image loading across all views.
+
+
 

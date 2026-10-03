@@ -76,6 +76,10 @@ This document establishes the universal rules and constraints for the **iCleaner
    * **Components**: `.btn`, `.btn-primary`, `.btn-outline-secondary`, `.btn-sm`, `.card`, `.card-body`, `.badge`, `.alert`, `.modal`.
 4. **Thermal Printer Exemption**:
    * Physical printer media queries and page dimensions (`@page { size: 80mm auto; margin: 0; }`) for 80mm / 58mm thermal receipts and 75mm / 50mm garment wash tags are exempt from this restriction.
+5. **Dark Theme Completeness & Ban on Hardcoded `bg-light`**:
+   * Never use unadapted Bootstrap `bg-light` on interactive elements, badges, or checkbox wrappers inside views that support dark theme.
+   * Use `.ready-day-pill`, `.settings-toggle-row`, or dedicated dark-adapted classes (`bg-light-subtle`, `border-subtle`).
+   * Custom banner headers (e.g. `.settings-banner`), cards, and badges must provide explicit `[data-theme-version="dark"]` rules with high-contrast text (`#f8fafc` titles, `#94a3b8` subtitles) and translucent colored glass borders.
 
 ### G. Express Route Response Guarantee (Critical)
 1. **Never leave any route branch without an explicit HTTP response**:
@@ -180,6 +184,17 @@ This document establishes the universal rules and constraints for the **iCleaner
    * Every physical garment piece must receive its own individual cloth wash tag for tracking through cleaning and assembly.
    * Total tags generated per line item equals: `service_quntity * (no_of_items || 1)`.
    * Each tag must be individually indexed with the total piece count (e.g. `Piece 1/4`, `Piece 2/4`, `Piece 3/4`, `Piece 4/4`).
+
+### O. Settings Glass Architecture & Sticky Footer Clearance Invariant
+1. **Sticky Save Footer Scroll Clearance**:
+   * Any form or view implementing `.settings-sticky-footer` (`position: sticky; bottom: 16px; z-index: 99`) must provide at least `padding-bottom: 90px;` (or `pb-5 mb-5`) on the enclosing `.container-fluid`.
+   * Never allow the bottommost section card to sit flush against the bottom edge of the document without clearance, as the floating sticky footer will obscure input fields and buttons during user scrolling.
+2. **Full-Width Section Card Height**:
+   * Full-width cards (`.col-12 > .settings-section-card`) must always evaluate with `height: auto !important;` (overriding the `height: calc(100% - 24px)` rule used for equal-height multi-column cards).
+3. **Strict HTML Tag Balancing in Multi-Card Forms**:
+   * Multi-section settings views (`master_settings.ejs`, `store_settings_bymaster.ejs`, etc.) contain deep nested Bootstrap grids. Every opening column (`<div class="col-12">`) and card must be rigorously balanced.
+   * Unclosed column wrappers cause subsequent section cards to nest inside preceding columns and pull the sticky footer inside the flex row, breaking grid flow.
+
 
 
 

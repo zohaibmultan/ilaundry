@@ -2044,11 +2044,44 @@ table.dataTable td.text-center {
   height: calc(100% - 24px);
 }
 
+.col-12 > .settings-section-card {
+  height: auto !important;
+}
+
 [data-theme-version="dark"] .settings-section-card {
   background: rgba(18, 26, 44, 0.8) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   box-shadow: 0 14px 40px -8px rgba(0, 0, 0, 0.5) !important;
 }
+
+.ready-day-pill {
+  min-width: 125px;
+  background: rgba(248, 250, 252, 0.75) !important;
+  border: 1px solid rgba(226, 232, 240, 0.85) !important;
+  border-radius: 10px !important;
+  padding: 8px 12px !important;
+  transition: all 0.2s ease !important;
+}
+
+.ready-day-pill:hover {
+  border-color: #0081ee !important;
+  background: rgba(0, 129, 238, 0.05) !important;
+}
+
+[data-theme-version="dark"] .ready-day-pill {
+  background: rgba(15, 23, 42, 0.55) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme-version="dark"] .ready-day-pill:hover {
+  border-color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.1) !important;
+}
+
+[data-theme-version="dark"] .ready-day-pill label {
+  color: #f8fafc !important;
+}
+
 
 .settings-card-header {
   display: flex !important;
@@ -2192,11 +2225,86 @@ table.dataTable td.text-center {
   padding: 20px 24px !important;
   margin-bottom: 24px !important;
   backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   flex-wrap: wrap !important;
   gap: 12px !important;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05) !important;
+}
+
+[data-theme-version="dark"] .settings-banner {
+  background: linear-gradient(135deg, rgba(18, 26, 44, 0.92) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 14px 40px -8px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme-version="dark"] .settings-banner .settings-card-title {
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] .settings-banner .settings-card-subtitle {
+  color: #94a3b8 !important;
+}
+
+.settings-banner .badge {
+  padding: 6px 12px !important;
+  font-weight: 600 !important;
+  font-size: 11.5px !important;
+  border-radius: 8px !important;
+  letter-spacing: 0.3px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.settings-banner .badge.bg-primary-subtle {
+  background: rgba(0, 129, 238, 0.1) !important;
+  color: #0081ee !important;
+  border: 1px solid rgba(0, 129, 238, 0.25) !important;
+}
+
+.settings-banner .badge.bg-secondary-subtle {
+  background: rgba(100, 116, 139, 0.1) !important;
+  color: #475569 !important;
+  border: 1px solid rgba(100, 116, 139, 0.25) !important;
+}
+
+.settings-banner .badge.bg-info-subtle {
+  background: rgba(14, 165, 233, 0.1) !important;
+  color: #0284c7 !important;
+  border: 1px solid rgba(14, 165, 233, 0.25) !important;
+}
+
+.settings-banner .badge.bg-success-subtle {
+  background: rgba(16, 185, 129, 0.1) !important;
+  color: #059669 !important;
+  border: 1px solid rgba(16, 185, 129, 0.25) !important;
+}
+
+[data-theme-version="dark"] .settings-banner .badge.bg-primary-subtle {
+  background: rgba(0, 129, 238, 0.18) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+}
+
+[data-theme-version="dark"] .settings-banner .badge.bg-secondary-subtle {
+  background: rgba(148, 163, 184, 0.18) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(203, 213, 225, 0.25) !important;
+}
+
+[data-theme-version="dark"] .settings-banner .badge.bg-info-subtle {
+  background: rgba(14, 165, 233, 0.18) !important;
+  color: #7dd3fc !important;
+  border: 1px solid rgba(125, 211, 252, 0.35) !important;
+}
+
+[data-theme-version="dark"] .settings-banner .badge.bg-success-subtle {
+  background: rgba(16, 185, 129, 0.18) !important;
+  color: #6ee7b7 !important;
+  border: 1px solid rgba(110, 231, 183, 0.35) !important;
 }
 
 .settings-toggle-row {

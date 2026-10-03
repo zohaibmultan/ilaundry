@@ -11,7 +11,7 @@
 
     <!--********** Content body start **********-->
     <div class="content-body">
-        <div class="container-fluid" style="min-height: 100vh;">
+        <div class="container-fluid" style="min-height: 100vh; padding-bottom: 90px;">
             
             <!-- Page Banner Header -->
             <div class="settings-banner">
@@ -547,10 +547,12 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
                     <!-- ==========================================
                          6. READY SCHEDULE SETUP CARD
                          ========================================== -->
-                    <div class="col-12">
+                    <div class="col-12 mb-4">
                         <div class="settings-section-card">
                             <div class="settings-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div class="d-flex align-items-center">
@@ -621,9 +623,9 @@
                                         { val: '0', label: 'Sunday' }
                                       ];
                                     %>
-                                    <div class="d-flex flex-wrap gap-3">
+                                    <div class="d-flex flex-wrap gap-2">
                                         <% daysList.forEach(function(d){ %>
-                                            <div class="form-check form-check-inline p-2 border rounded-3 bg-light d-flex align-items-center gap-2 m-0" style="min-width: 130px;">
+                                            <div class="form-check form-check-inline ready-day-pill border d-flex align-items-center gap-2 m-0">
                                                 <input class="form-check-input ms-1" type="checkbox" name="ready_working_days" id="wday_<%= d.val %>" value="<%= d.val %>" <%= activeWorkingDays.includes(d.val) ? 'checked' : '' %>>
                                                 <label class="form-check-label fw-bold mb-0 cursor-pointer" for="wday_<%= d.val %>"><%= d.label %></label>
                                             </div>
