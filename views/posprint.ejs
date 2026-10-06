@@ -64,7 +64,7 @@
       gap: 8px;
       padding: 5px 14px;
       border-radius: 20px;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 600;
       border: 1px solid #e2e8f0;
       background: #f8fafc;
@@ -201,7 +201,7 @@
       gap: 6px;
       padding: 6px 14px;
       border-radius: 16px;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 600;
       border: none;
       background: transparent;
@@ -334,7 +334,7 @@
     }
 
     .cloth-tag .tag-store-name {
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -345,7 +345,7 @@
     .cloth-tag .tag-order-row {
       display: flex;
       justify-content: space-between;
-      font-size: 10px;
+      font-size: 13px;
       font-weight: 700;
       border-top: 1px solid #000;
       border-bottom: 1px solid #000;
@@ -354,7 +354,7 @@
     }
 
     .cloth-tag .tag-item-name {
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 800;
       text-transform: uppercase;
       margin-bottom: 2px;
@@ -362,13 +362,13 @@
     }
 
     .cloth-tag .tag-cust-row {
-      font-size: 9.5px;
+      font-size: 13px;
       color: #222;
       margin-bottom: 2px;
     }
 
     .cloth-tag .tag-date-row {
-      font-size: 9.5px;
+      font-size: 13px;
       font-weight: 700;
       margin-bottom: 3px;
     }
@@ -538,7 +538,7 @@
     .store-logo {
       max-height: 32px;
       max-width: 70%;
-      margin: 0 auto 2px;
+      margin: 0 auto 5px;
       display: block;
       object-fit: contain;
     }
@@ -552,7 +552,8 @@
     }
 
     .store-info {
-      font-size: 10px;
+      font-size: 13px;
+      font-weight: 600;
       line-height: 1.2;
       color: #222;
       margin-top: 2px;
@@ -561,7 +562,7 @@
     /* Invoice Title Banner (Crisp Outline, Zero Solid Black) */
     .invoice-badge {
       text-align: center;
-      font-size: 11.5px;
+            font-size: 13px;
       font-weight: 800;
       letter-spacing: 1px;
       text-transform: uppercase;
@@ -574,7 +575,8 @@
     /* Metadata Grid */
     .meta-table {
       width: 100%;
-      font-size: 10.5px;
+      font-size: 13px;
+      font-weight: 600;
       margin-bottom: 2px;
     }
 
@@ -587,12 +589,13 @@
     .items-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 11px;
+            font-size: 13px;
+      font-weight: 600;
       margin-top: 2px;
     }
 
     .items-table th {
-      font-size: 10px;
+            font-size: 13px;
       font-weight: 700;
       text-transform: uppercase;
       padding: 2px 0;
@@ -606,13 +609,15 @@
     }
 
     .item-name {
-      font-weight: 700;
-      font-size: 11px;
+      font-weight: 800;
+      font-size: 13px;
+      font-weight: 600;
       line-height: 1.15;
     }
 
     .item-subtext {
-      font-size: 9.5px;
+            font-size: 13px;
+      font-weight: 600;
       color: #333;
       display: block;
     }
@@ -620,7 +625,8 @@
     /* Financial Summary */
     .summary-table {
       width: 100%;
-      font-size: 10.5px;
+      font-size: 13px;
+      font-weight: 700;
       margin-top: 2px;
     }
 
@@ -637,9 +643,24 @@
     /* Footer */
     .receipt-footer {
       text-align: center;
-      font-size: 9.5px;
+      font-size: 13px;
+      font-weight: 600;
       margin-top: 4px;
       line-height: 1.2;
+    }
+
+    /* Invoice Receipt Barcode */
+    .receipt-barcode-wrap {
+      margin: 6px auto 4px auto;
+      text-align: center;
+      padding: 0 4px;
+    }
+
+    .receipt-barcode-svg {
+      max-width: 90% !important;
+      height: 38px !important;
+      margin: 0 auto;
+      display: block;
     }
   </style>
 </head>
@@ -728,9 +749,19 @@
   <div class="receipt-container">
     <!-- Store Header -->
     <div class="store-header">
-      <% if (accessdata && accessdata.masterstore && accessdata.masterstore.app_favicon) { %>
-        <img src="/uploads/<%= accessdata.masterstore.app_favicon %>" class="store-logo" alt="" />
-        <% } %>
+      <% 
+        let invoiceLogo = '';
+        if (shope && shope.logo && shope.logo.trim() !== '') {
+          invoiceLogo = shope.logo.trim();
+        } else if (accessdata && accessdata.masterstore && accessdata.masterstore.app_logo) {
+          invoiceLogo = accessdata.masterstore.app_logo;
+        } else if (accessdata && accessdata.masterstore && accessdata.masterstore.app_favicon) {
+          invoiceLogo = accessdata.masterstore.app_favicon;
+        }
+      %>
+      <% if (invoiceLogo) { %>
+        <img src="/uploads/<%= invoiceLogo %>" class="store-logo" alt="Store Logo" />
+      <% } %>
           <div class="store-name">
             <%= (shope && shope.name) ? shope.name : (accessdata && accessdata.masterstore ?
               accessdata.masterstore.app_name : '' ) %>
@@ -743,7 +774,7 @@
                       <% } %>
                         <% if (shope && shope.mobile_number) { %>
                           Tel: <%= shope.mobile_number %>
-                            <% if (shope.store_email) { %> | <%= shope.store_email %>
+                            <% if (shope.store_email) { %> <br />Email: <%= shope.store_email %>
                                 <% } %>
                                   <% } %>
           </div>
@@ -758,16 +789,16 @@
         <td class="text-start"><b>Order #:</b>
           <%= order.order_id %>
         </td>
-        <td class="text-end"><b>Date:</b>
-          <%= oate %>
+        <td class="text-end"><b>Status:</b>
+          <%= (order.order_status_name || 'Confirmed' ) %>
         </td>
       </tr>
       <tr>
-        <td class="text-start"><b>Ready:</b>
-          <%= ddate %>
+        <td class="text-start"><b>Date:</b>
+          <%= oate %>
         </td>
-        <td class="text-end"><b>Status:</b>
-          <%= (order.order_status_name || 'Confirmed' ) %>
+        <td class="text-end"><b>Ready:</b>
+          <%= ddate %>
         </td>
       </tr>
       <% let custObj=(Array.isArray(customer) && customer.length> 0) ? customer[0] : (customer || {});
@@ -792,10 +823,10 @@
     <table class="items-table">
       <thead>
         <tr>
-          <th class="text-start" style="width: 48%;">Item</th>
-          <th class="text-end" style="width: 18%;">Rate</th>
-          <th class="text-center" style="width: 12%;">Qty</th>
-          <th class="text-end" style="width: 22%;">Total</th>
+          <th class="text-start" style="width: 45%;">Item</th>
+          <th class="text-end" style="width: 20%;">Rate</th>
+          <th class="text-end" style="width: 15%;">Qty</th>
+          <th class="text-end" style="width: 20%;">Total</th>
         </tr>
       </thead>
       <tbody>
@@ -815,11 +846,11 @@
                   <%= parseFloat(item.service_type_price).toFixed(2) %>
                     <%= accessdata.symbol %>
                       <% } else { %>
-                        <%= accessdata.symbol %>
+                        
                           <%= parseFloat(item.service_type_price).toFixed(2) %>
                             <% } %>
               </td>
-              <td class="text-center">
+              <td class="text-end">
                 <%= item.service_quntity %>
               </td>
               <td class="text-end fw-bold">
@@ -828,7 +859,7 @@
                     <%= lineTotal %>
                       <%= accessdata.symbol %>
                         <% } else { %>
-                          <%= accessdata.symbol %>
+                          
                             <%= lineTotal %>
                               <% } %>
               </td>
@@ -862,7 +893,27 @@
     <hr class="border-dashed" />
 
     <!-- Financial Summary (Skip 0-value rows to save paper) -->
+    <%
+      let totalOrderQty = 0;
+      let totalGarmentPcs = 0;
+      if (cartservice && cartservice.length > 0) {
+        cartservice.forEach(function(item) {
+          const q = parseInt(item.service_quntity, 10) || 0;
+          const p = parseInt(item.no_of_items, 10) || 1;
+          totalOrderQty += q;
+          totalGarmentPcs += (q * p);
+        });
+      }
+    %>
     <table class="summary-table">
+      <% if (totalOrderQty > 0) { %>
+      <tr>
+        <td class="text-start">Total Qty:</td>
+        <td class="text-end fw-bold">
+          Items: <%= totalOrderQty %><% if (totalGarmentPcs > totalOrderQty) { %> , Pieces: <%= totalGarmentPcs %>  <% } %>
+        </td>
+      </tr>
+      <% } %>
       <tr>
         <td class="text-start">Sub Total:</td>
         <td class="text-end fw-bold">
@@ -997,12 +1048,23 @@
       </div>
       <% } %>
 
-        <div class="receipt-footer">
-          <div>*** Thank You For Your Business! ***</div>
-          <div>Powered By <b>
-              <%= (master && master.app_name) ? master.app_name : '' %>
-            </b></div>
-        </div>
+    <% 
+      const isInvoiceBarcodeActive = (shope && shope.invoice_barcode_enabled !== undefined && shope.invoice_barcode_enabled !== null) 
+        ? (shope.invoice_barcode_enabled != 0) 
+        : ((master && master.invoice_barcode_enabled !== undefined && master.invoice_barcode_enabled !== null) ? (master.invoice_barcode_enabled != 0) : true);
+    %>
+    <% if (isInvoiceBarcodeActive) { %>
+      <div class="receipt-barcode-wrap" id="invoiceBarcodeWrap">
+        <svg id="invoice_barcode_svg" class="receipt-barcode-svg"></svg>
+      </div>
+    <% } %>
+
+    <div class="receipt-footer">
+      <div>*** Thank You For Your Business! ***</div>
+      <div>Powered By <b>
+          <%= (master && master.app_name) ? master.app_name : '' %>
+        </b></div>
+    </div>
   </div>
 
   <!-- Cutter divider guide in preview between invoice and tags -->
@@ -1019,17 +1081,19 @@
   <script type="text/javascript">
     "use strict";
 
-    const serverUrl = "<%= (master && master.printing_server_url) ? master.printing_server_url : 'http://127.0.0.1:4321' %>";
-    const silentEnabled = <%= (master && master.silent_print_enabled === 0) ? 'false' : 'true' %>;
-    const invoicePrinter = "<%= (master && master.invoice_printer_name) ? master.invoice_printer_name : '' %>";
-    const invoiceFormat = <%= (master && master.invoice_printer_format !== undefined) ? master.invoice_printer_format : 1 %>;
+    const serverUrl = "<%= (shope && shope.printing_server_url) ? shope.printing_server_url : ((master && master.printing_server_url) ? master.printing_server_url : 'http://127.0.0.1:4321') %>";
+    const silentEnabled = <%= ((shope && shope.silent_print_enabled !== undefined && shope.silent_print_enabled !== null) ? (shope.silent_print_enabled != 0) : ((master && master.silent_print_enabled === 0) ? false : true)) ? 'true' : 'false' %>;
+    const invoicePrinter = "<%= (shope && shope.invoice_printer_name) ? shope.invoice_printer_name : ((master && master.invoice_printer_name) ? master.invoice_printer_name : '') %>";
+    const invoiceFormat = <%= (shope && shope.invoice_printer_format !== undefined && shope.invoice_printer_format !== null) ? shope.invoice_printer_format : ((master && master.invoice_printer_format !== undefined) ? master.invoice_printer_format : 1) %>;
     const invoiceWidthMm = invoiceFormat === 2 ? 58 : (invoiceFormat === 0 ? null : 80);
-    const tagPrinter = "<%= (master && master.tag_printer_name) ? master.tag_printer_name : '' %>";
-    const tagFormat = <%= (master && master.tag_printer_format !== undefined) ? master.tag_printer_format : 1 %>;
+    const tagPrinter = "<%= (shope && shope.tag_printer_name) ? shope.tag_printer_name : ((master && master.tag_printer_name) ? master.tag_printer_name : '') %>";
+    const tagFormat = <%= (shope && shope.tag_printer_format !== undefined && shope.tag_printer_format !== null) ? shope.tag_printer_format : ((master && master.tag_printer_format !== undefined) ? master.tag_printer_format : 1) %>;
     const tagWidthMm = tagFormat === 0 ? 50 : (tagFormat === 1 ? 75 : 80);
-    const autoCut = <%= (master && master.printer_auto_cut === 0) ? 'false' : 'true' %>;
-    const openDrawer = <%= (master && master.printer_open_cash_drawer == 1) ? 'true' : 'false' %>;
-    const copies = <%= (master && master.printer_copies) ? master.printer_copies : 1 %>;
+    const autoCut = <%= ((shope && shope.printer_auto_cut !== undefined && shope.printer_auto_cut !== null) ? (shope.printer_auto_cut != 0) : ((master && master.printer_auto_cut === 0) ? false : true)) ? 'true' : 'false' %>;
+    const openDrawer = <%= ((shope && shope.printer_open_cash_drawer !== undefined && shope.printer_open_cash_drawer !== null) ? (shope.printer_open_cash_drawer == 1) : ((master && master.printer_open_cash_drawer == 1) ? true : false)) ? 'true' : 'false' %>;
+    const copies = <%= (shope && shope.printer_copies) ? shope.printer_copies : ((master && master.printer_copies) ? master.printer_copies : 1) %>;
+    const invoiceBarcodeEnabled = <%= ((shope && shope.invoice_barcode_enabled !== undefined && shope.invoice_barcode_enabled !== null) ? (shope.invoice_barcode_enabled != 0) : ((master && master.invoice_barcode_enabled !== undefined && master.invoice_barcode_enabled !== null) ? (master.invoice_barcode_enabled != 0) : true)) ? 'true' : 'false' %>;
+    const tagBarcodeEnabled = <%= ((shope && shope.tag_barcode_enabled !== undefined && shope.tag_barcode_enabled !== null) ? (shope.tag_barcode_enabled != 0) : ((master && master.tag_barcode_enabled !== undefined && master.tag_barcode_enabled !== null) ? (master.tag_barcode_enabled != 0) : true)) ? 'true' : 'false' %>;
 
     const cartServices = <%- JSON.stringify(cartservice || []) %>;
     const orderData = <%- JSON.stringify(order || {}) %>;
@@ -1160,6 +1224,12 @@
               `;
             }
 
+            const barcodeSvgMarkup = tagBarcodeEnabled ? `
+              <div class="tag-barcode-wrap">
+                <svg id="${svgId}" class="tag-barcode-svg"></svg>
+              </div>
+            ` : '';
+
             html += `
               <div class="cloth-tag" id="cloth_tag_${pieceIndex}" data-tag-index="${pieceIndex}">
                 <div class="tag-store-name">${storeName}</div>
@@ -1170,17 +1240,17 @@
                 <div class="tag-item-name">${itemTitle}</div>
                 <div class="tag-cust-row">${custName}${custPhone}</div>
                 <div class="tag-date-row">Delivery: <b>${deliveryDate}</b></div>
-                <div class="tag-barcode-wrap">
-                  <svg id="${svgId}" class="tag-barcode-svg"></svg>
-                </div>
+                ${barcodeSvgMarkup}
               </div>
             `;
 
-            barcodeCalls.push({
-              id: `#${svgId}`,
-              value: String(orderData.order_id || "0000"),
-              label: `${orderData.order_id || ''}-${pieceIndex}/${totalPieces}`
-            });
+            if (tagBarcodeEnabled) {
+              barcodeCalls.push({
+                id: `#${svgId}`,
+                value: String(orderData.order_id || "0000"),
+                label: `${orderData.order_id || ''}-${pieceIndex}/${totalPieces}`
+              });
+            }
           }
         }
       });
@@ -1188,7 +1258,7 @@
       container.innerHTML = html;
 
       // Render barcodes with JsBarcode
-      if (typeof JsBarcode === "function") {
+      if (tagBarcodeEnabled && typeof JsBarcode === "function") {
         barcodeCalls.forEach(bc => {
           try {
             JsBarcode(bc.id, bc.value, {
@@ -1204,6 +1274,28 @@
             console.warn("JsBarcode rendering error for " + bc.id, e);
           }
         });
+      }
+    }
+
+    function renderInvoiceBarcodeDOM() {
+      if (!invoiceBarcodeEnabled) return;
+      const svgEl = document.getElementById("invoice_barcode_svg");
+      if (!svgEl) return;
+
+      if (typeof JsBarcode === "function") {
+        try {
+          JsBarcode("#invoice_barcode_svg", String(orderData.order_id || "0000"), {
+            format: "CODE128",
+            width: 1.5,
+            height: 36,
+            displayValue: true,
+            fontSize: 11,
+            text: String(orderData.order_id || ""),
+            margin: 2
+          });
+        } catch (e) {
+          console.warn("JsBarcode invoice barcode rendering error:", e);
+        }
       }
     }
 
@@ -1422,16 +1514,22 @@
     }
 
     window.onload = function () {
-      // 1. Initialize Default Print Mode: All (Invoice + Tags)
-      switchPrintMode("all");
+      // 1. Initialize Print Mode from URL query parameter (defaults to "all")
+      const urlParams = new URLSearchParams(window.location.search);
+      const requestedMode = (urlParams.get("mode") || "").toLowerCase().trim();
+      const initialMode = (requestedMode === "invoice" || requestedMode === "tags") ? requestedMode : "all";
+      switchPrintMode(initialMode);
 
-      // 2. Pre-render cloth tags so barcodes and cut guides are visible in preview
+      // 2. Pre-render invoice barcode if enabled
+      renderInvoiceBarcodeDOM();
+
+      // 3. Pre-render cloth tags so barcodes and cut guides are visible in preview
       renderClothTagsDOM();
 
-      // 3. Check printing server connectivity (does NOT trigger print window)
+      // 4. Check printing server connectivity (does NOT trigger print window)
       updateServerStatus(false);
 
-      // 4. Keep status monitored in background
+      // 5. Keep status monitored in background
       setInterval(() => updateServerStatus(true), 25000);
     };
   </script>

@@ -786,9 +786,15 @@ router.post(
           wDaysSQL = `'${workingDaysStr.replace(/'/g, "\\'")}'`;
         }
 
+        const onesignalAppId = (req.body.onesignal_app_id || "").trim().replace(/'/g, "\\'");
+        const onesignalApiKey = (req.body.onesignal_api_key || "").trim().replace(/'/g, "\\'");
+        const twilioSid = (req.body.twilio_sid || "").trim().replace(/'/g, "\\'");
+        const twilioAuthToken = (req.body.twilio_auth_token || "").trim().replace(/'/g, "\\'");
+        const twilioPhoneNo = (req.body.twilio_phone_no || "").trim().replace(/'/g, "\\'");
+
         const storeUpdate = await DataUpdate(
           "tbl_store",
-          `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${district}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}`,
+          `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${district}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}, onesignal_app_id='${onesignalAppId}', onesignal_api_key='${onesignalApiKey}', twilio_sid='${twilioSid}', twilio_auth_token='${twilioAuthToken}', twilio_phone_no='${twilioPhoneNo}'`,
           `id=${dataid}`,
           req.hostname,
           req.protocol,
@@ -1315,9 +1321,15 @@ router.post(
           wDaysSQL = `'${workingDaysStr.replace(/'/g, "\\'")}'`;
         }
 
+        const onesignalAppId = (req.body.onesignal_app_id || "").trim().replace(/'/g, "\\'");
+        const onesignalApiKey = (req.body.onesignal_api_key || "").trim().replace(/'/g, "\\'");
+        const twilioSid = (req.body.twilio_sid || "").trim().replace(/'/g, "\\'");
+        const twilioAuthToken = (req.body.twilio_auth_token || "").trim().replace(/'/g, "\\'");
+        const twilioPhoneNo = (req.body.twilio_phone_no || "").trim().replace(/'/g, "\\'");
+
         const storeUpdate = await DataUpdate(
           "tbl_store",
-          `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${district}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', status=${status}, roll_ID=${roll}, logo='${imgFiled}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}`,
+          `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${district}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', status=${status}, roll_ID=${roll}, logo='${imgFiled}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}, onesignal_app_id='${onesignalAppId}', onesignal_api_key='${onesignalApiKey}', twilio_sid='${twilioSid}', twilio_auth_token='${twilioAuthToken}', twilio_phone_no='${twilioPhoneNo}'`,
           `id=${dataid}`,
           req.hostname,
           req.protocol,
@@ -2426,12 +2438,16 @@ router.post(
         // customer_autoapprove=${customer_approved},store_autoapprove=${store_approved},timezone='${timezone}',footer='${footer}',storeroll=${storeroll},app_name='${appname}',
         // onesignal_app_id='${onesignal_app_id}', onesignal_api_key='${onesignal_api_key}',twilio_sid='${twilio_sid}',twilio_auth_token='${twilio_auth_token}',twilio_phone_no='${twilio_phone_no}'`);
 
-        let leadDays = req.body.ready_lead_days !== undefined ? parseInt(req.body.ready_lead_days) : 2;
-        if (isNaN(leadDays) || leadDays < 0) leadDays = 2;
-        let cutoffTime = (req.body.ready_cutoff_time || "13:00").trim();
-        let rTime = (req.body.ready_time || "16:00").trim();
-        let wDays = req.body.ready_working_days;
-        let workingDaysStr = Array.isArray(wDays) ? wDays.join(",") : (wDays ? String(wDays).trim() : "1,2,3,4,5,6");
+        let existingMaster = await DataFind(`SELECT * FROM tbl_master_shop LIMIT 1`);
+        let curLeadDays = (existingMaster.length > 0 && existingMaster[0].ready_lead_days !== undefined) ? existingMaster[0].ready_lead_days : 2;
+        let curCutoff = (existingMaster.length > 0 && existingMaster[0].ready_cutoff_time) ? existingMaster[0].ready_cutoff_time : '13:00';
+        let curReadyTime = (existingMaster.length > 0 && existingMaster[0].ready_time) ? existingMaster[0].ready_time : '16:00';
+        let curWorkingDays = (existingMaster.length > 0 && existingMaster[0].ready_working_days) ? existingMaster[0].ready_working_days : '1,2,3,4,5,6';
+        let curOneSignalId = (existingMaster.length > 0 && existingMaster[0].onesignal_app_id) ? existingMaster[0].onesignal_app_id : '';
+        let curOneSignalKey = (existingMaster.length > 0 && existingMaster[0].onesignal_api_key) ? existingMaster[0].onesignal_api_key : '';
+        let curTwilioSid = (existingMaster.length > 0 && existingMaster[0].twilio_sid) ? existingMaster[0].twilio_sid : '';
+        let curTwilioToken = (existingMaster.length > 0 && existingMaster[0].twilio_auth_token) ? existingMaster[0].twilio_auth_token : '';
+        let curTwilioPhone = (existingMaster.length > 0 && existingMaster[0].twilio_phone_no) ? existingMaster[0].twilio_phone_no : '';
 
         const settingsUpdate = await DataUpdate(
           "tbl_master_shop",
@@ -2447,25 +2463,15 @@ router.post(
    footer='${footer}',
    storeroll=${storeroll},
    app_name='${appname}',
-   onesignal_app_id='${onesignal_app_id}',
-   onesignal_api_key='${onesignal_api_key}',
-   twilio_sid='${twilio_sid}',
-   twilio_auth_token='${twilio_auth_token}',
-   twilio_phone_no='${twilio_phone_no}',
-   printer=${invFormat},
-   invoice_printer_format=${invFormat},
-   invoice_printer_name='${invName}',
-   tag_printer_format=${tagFormat},
-   tag_printer_name='${tagName}',
-   printing_server_url='${printServerUrl}',
-   silent_print_enabled=${silentPrint},
-   printer_auto_cut=${autoCut},
-   printer_open_cash_drawer=${cashDrawer},
-   printer_copies=${copiesCount},
-   ready_lead_days=${leadDays},
-   ready_cutoff_time='${cutoffTime}',
-   ready_time='${rTime}',
-   ready_working_days='${workingDaysStr}'`,
+   onesignal_app_id='${curOneSignalId}',
+   onesignal_api_key='${curOneSignalKey}',
+   twilio_sid='${curTwilioSid}',
+   twilio_auth_token='${curTwilioToken}',
+   twilio_phone_no='${curTwilioPhone}',
+   ready_lead_days=${curLeadDays},
+   ready_cutoff_time='${curCutoff}',
+   ready_time='${curReadyTime}',
+   ready_working_days='${curWorkingDays}'`,
           `1=1`,
           req.hostname,
           req.protocol,
@@ -2757,6 +2763,196 @@ router.post(
   },
 );
 
+// <<<<<<<<<<<<<<<<<<< Store POS Printer Settings >>>>>>>>>>>>>>>>>>
+router.get("/printersetting", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    if (loginas == 0) {
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT 
+        sr.*, 
+        r.roll_status, 
+        r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === "master";
+
+    let targetStoreId = req.query.store_id || store;
+    if (!targetStoreId || targetStoreId === " " || targetStoreId === "" || targetStoreId == 0) {
+      const adminData = await DataFind(
+        `SELECT store_ID FROM tbl_admin WHERE id = ${id}`
+      );
+      if (adminData.length > 0 && adminData[0].store_ID) {
+        targetStoreId = adminData[0].store_ID;
+      }
+    }
+
+    // If master and still no targetStoreId, fetch first active store
+    const stores = await DataFind("SELECT id, name, city FROM tbl_store WHERE delete_flage=0 AND status=1 ORDER BY id ASC");
+    if ((!targetStoreId || targetStoreId == 0) && stores.length > 0) {
+      targetStoreId = stores[0].id;
+    }
+
+    // Fetch master store defaults as fallback
+    const masterData = await DataFind("SELECT * FROM tbl_master_shop WHERE id=1");
+    const ms = masterData[0] || {};
+
+    let storeData = null;
+    if (targetStoreId) {
+      const sRows = await DataFind(`SELECT * FROM tbl_store WHERE id = ${targetStoreId} LIMIT 1`);
+      if (sRows.length > 0) storeData = sRows[0];
+    }
+
+    // Consolidate effective printer settings with fallback to mastershop
+    const printerSettings = {
+      invoice_printer_format: (storeData && storeData.invoice_printer_format !== null && storeData.invoice_printer_format !== undefined) 
+        ? storeData.invoice_printer_format : (ms.invoice_printer_format !== undefined ? ms.invoice_printer_format : 1),
+      invoice_printer_name: (storeData && storeData.invoice_printer_name !== null && storeData.invoice_printer_name !== undefined && storeData.invoice_printer_name !== '') 
+        ? storeData.invoice_printer_name : (ms.invoice_printer_name || ''),
+      tag_printer_format: (storeData && storeData.tag_printer_format !== null && storeData.tag_printer_format !== undefined) 
+        ? storeData.tag_printer_format : (ms.tag_printer_format !== undefined ? ms.tag_printer_format : 1),
+      tag_printer_name: (storeData && storeData.tag_printer_name !== null && storeData.tag_printer_name !== undefined && storeData.tag_printer_name !== '') 
+        ? storeData.tag_printer_name : (ms.tag_printer_name || ''),
+      printing_server_url: (storeData && storeData.printing_server_url) 
+        ? storeData.printing_server_url : (ms.printing_server_url || 'http://127.0.0.1:4321'),
+      silent_print_enabled: (storeData && storeData.silent_print_enabled !== null && storeData.silent_print_enabled !== undefined) 
+        ? storeData.silent_print_enabled : (ms.silent_print_enabled !== undefined ? ms.silent_print_enabled : 1),
+      printer_auto_cut: (storeData && storeData.printer_auto_cut !== null && storeData.printer_auto_cut !== undefined) 
+        ? storeData.printer_auto_cut : (ms.printer_auto_cut !== undefined ? ms.printer_auto_cut : 1),
+      printer_open_cash_drawer: (storeData && storeData.printer_open_cash_drawer !== null && storeData.printer_open_cash_drawer !== undefined) 
+        ? storeData.printer_open_cash_drawer : (ms.printer_open_cash_drawer !== undefined ? ms.printer_open_cash_drawer : 0),
+      printer_copies: (storeData && storeData.printer_copies) 
+        ? storeData.printer_copies : (ms.printer_copies || 1),
+      invoice_barcode_enabled: (storeData && storeData.invoice_barcode_enabled !== null && storeData.invoice_barcode_enabled !== undefined)
+        ? storeData.invoice_barcode_enabled : (ms.invoice_barcode_enabled !== undefined ? ms.invoice_barcode_enabled : 1),
+      tag_barcode_enabled: (storeData && storeData.tag_barcode_enabled !== null && storeData.tag_barcode_enabled !== undefined)
+        ? storeData.tag_barcode_enabled : (ms.tag_barcode_enabled !== undefined ? ms.tag_barcode_enabled : 1)
+    };
+
+    const hasEditPermission = rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("edit");
+    const canEdit = isMaster || hasEditPermission;
+
+    res.render("printer_setting", {
+      targetStoreId,
+      storeData,
+      stores,
+      isMaster,
+      canEdit,
+      printerSettings,
+      accessdata,
+      language: req.language_data,
+      language_name: req.language_name
+    });
+  } catch (error) {
+    console.error("Error loading printer settings:", error);
+    req.flash("error", "Error loading printer settings");
+    return res.redirect(req.get("Referrer") || "/");
+  }
+});
+
+router.post("/printersetting/:id", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const { id, roll, store, loginas } = req.user;
+    if (loginas == 0) {
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT 
+        sr.*, 
+        r.roll_status, 
+        r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === "master";
+    const hasEditPermission = rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("edit");
+
+    let userStore = store;
+    if (!userStore || userStore === " " || userStore === "") {
+      const adminData = await DataFind(`SELECT store_ID FROM tbl_admin WHERE id = ${id}`);
+      if (adminData.length > 0) userStore = adminData[0].store_ID;
+    }
+
+    const targetStoreId = req.params.id;
+    const isAuthorized = isMaster || (userStore == targetStoreId && hasEditPermission);
+
+    if (!isAuthorized) {
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const {
+      invoice_printer_format,
+      invoice_printer_name,
+      tag_printer_format,
+      tag_printer_name,
+      printing_server_url,
+      silent_print_enabled,
+      printer_auto_cut,
+      printer_open_cash_drawer,
+      printer_copies,
+      invoice_barcode_enabled,
+      tag_barcode_enabled
+    } = req.body;
+
+    const invFormat = parseInt(invoice_printer_format) || 1;
+    const invName = (invoice_printer_name || "").trim().replace(/'/g, "\\'");
+    const tagFormat = parseInt(tag_printer_format) || 1;
+    const tagName = (tag_printer_name || "").trim().replace(/'/g, "\\'");
+    const printServerUrl = (printing_server_url || "http://127.0.0.1:4321").trim().replace(/'/g, "\\'");
+    const silentPrint = (silent_print_enabled === "1" || silent_print_enabled === 1 || silent_print_enabled === "on") ? 1 : 0;
+    const autoCut = (printer_auto_cut === "1" || printer_auto_cut === 1 || printer_auto_cut === "on") ? 1 : 0;
+    const cashDrawer = (printer_open_cash_drawer === "1" || printer_open_cash_drawer === 1 || printer_open_cash_drawer === "on") ? 1 : 0;
+    const copiesCount = parseInt(printer_copies) || 1;
+    const invBarcode = (invoice_barcode_enabled === "1" || invoice_barcode_enabled === 1 || invoice_barcode_enabled === "on") ? 1 : 0;
+    const tagBarcode = (tag_barcode_enabled === "1" || tag_barcode_enabled === 1 || tag_barcode_enabled === "on") ? 1 : 0;
+
+    const updateQuery = `
+      invoice_printer_format=${invFormat},
+      invoice_printer_name='${invName}',
+      tag_printer_format=${tagFormat},
+      tag_printer_name='${tagName}',
+      printing_server_url='${printServerUrl}',
+      silent_print_enabled=${silentPrint},
+      printer_auto_cut=${autoCut},
+      printer_open_cash_drawer=${cashDrawer},
+      printer_copies=${copiesCount},
+      invoice_barcode_enabled=${invBarcode},
+      tag_barcode_enabled=${tagBarcode}
+    `;
+
+    const result = await DataUpdate("tbl_store", updateQuery, `id=${targetStoreId}`, req.hostname, req.protocol);
+    if (result === -1) {
+      req.flash("error", "Failed to update printer settings");
+      return res.redirect("back");
+    }
+
+    req.flash("success", "Store Printer Settings Saved Successfully!");
+    return res.redirect("back");
+  } catch (error) {
+    console.error("Error saving printer settings:", error);
+    req.flash("error", "Error saving printer settings");
+    return res.redirect("back");
+  }
+});
+
 // <<<<<<<<<<<<<<<<<<< Test Print Endpoints >>>>>>>>>>>>>>>>>>
 router.get("/test-print-invoice", auth, async (req, res) => {
   try {
@@ -2764,12 +2960,19 @@ router.get("/test-print-invoice", auth, async (req, res) => {
       "SELECT * FROM tbl_master_shop WHERE id=1",
     );
     const ms = masterstore[0] || {};
+
+    let storeObj = null;
+    if (req.query.store_id) {
+      const sRows = await DataFind(`SELECT * FROM tbl_store WHERE id = ${req.query.store_id} LIMIT 1`);
+      if (sRows.length > 0) storeObj = sRows[0];
+    }
+
     const format =
       req.query.format !== undefined
         ? parseInt(req.query.format)
-        : ms.invoice_printer_format || 1;
+        : (storeObj && storeObj.invoice_printer_format !== null) ? storeObj.invoice_printer_format : (ms.invoice_printer_format || 1);
     const printerName =
-      req.query.printer || ms.invoice_printer_name || "Default Printer";
+      req.query.printer || (storeObj && storeObj.invoice_printer_name) || ms.invoice_printer_name || "Default Printer";
     const symbol = ms.currency_symbol || "$";
 
     const formatName =
@@ -2900,13 +3103,18 @@ router.get("/test-print-tag", auth, async (req, res) => {
     const masterstore = await DataFind(
       "SELECT * FROM tbl_master_shop WHERE id=1",
     );
-    const ms = masterstore[0] || {};
+    let storeObj = null;
+    if (req.query.store_id) {
+      const sRows = await DataFind(`SELECT * FROM tbl_store WHERE id = ${req.query.store_id} LIMIT 1`);
+      if (sRows.length > 0) storeObj = sRows[0];
+    }
+
     const format =
       req.query.format !== undefined
         ? parseInt(req.query.format)
-        : ms.tag_printer_format || 0;
+        : (storeObj && storeObj.tag_printer_format !== null) ? storeObj.tag_printer_format : (ms.tag_printer_format !== undefined ? ms.tag_printer_format : 1);
     const printerName =
-      req.query.printer || ms.tag_printer_name || "Default Tag Printer";
+      req.query.printer || (storeObj && storeObj.tag_printer_name) || ms.tag_printer_name || "Default Tag Printer";
 
     const formatName =
       format === 0

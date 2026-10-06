@@ -215,42 +215,33 @@
 
             <!-- User Profile Dropdown -->
             <li class="nav-item dropdown header-profile">
-              <a class="nav-link p-0" href="#" role="button" data-bs-toggle="dropdown">
-                <% if (accessdata?.logas==='custmor' ) { %>
-                  <img class="img-fluid rounded-circle" style="width: 40px; height: 40px; object-fit: cover; border: 2px solid rgba(0, 129, 238, 0.2);" src="../../images/profile-default.png"
-                    onerror="this.onerror=null;this.src='../../images/default.png';" alt="image">
-                  <% } else if (accessdata?.isstore===true) { %>
-                    <img class="img-fluid rounded-circle" style="width: 40px; height: 40px; object-fit: cover; border: 2px solid rgba(0, 129, 238, 0.2);" src="../../uploads/<%= accessdata?.topbardata?.img  %>"
-                      onerror="this.onerror=null;this.src='../../images/default.png';" alt="image">
-                  <% } else { %>
-                    <img class="img-fluid rounded-circle" style="width: 40px; height: 40px; object-fit: cover; border: 2px solid rgba(0, 129, 238, 0.2);" src="../../uploads/<%= accessdata?.topbardata?.img %>"
-                      onerror="this.onerror=null;this.src='../../images/default.png';" alt="image">
-                  <% } %>
+              <% 
+                let userDisplayName = accessdata?.topbardata?.name || 'Administrator';
+                let userRoleName = accessdata?.roll?.roll || '';
+                let defaultAvatar = accessdata?.logas === 'custmor' ? '/images/profile-default.png' : '/images/default.png';
+                let userAvatarImg = (accessdata?.topbardata?.img && accessdata.topbardata.img.trim() !== '' && accessdata.topbardata.img !== 'default.png')
+                  ? ('/uploads/' + accessdata.topbardata.img)
+                  : defaultAvatar;
+
+                if (accessdata?.logas === 'custmor') {
+                  userRoleName = userRoleName || 'Customer';
+                } else if (accessdata?.topbardata?.is_staff != 0) {
+                  userRoleName = userRoleName || 'Staff';
+                } else if (accessdata?.isstore === true || accessdata?.logas === 'store') {
+                  userRoleName = userRoleName || 'Store Manager';
+                } else {
+                  userRoleName = userRoleName || 'Master Admin';
+                }
+              %>
+              <a class="nav-link p-0" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <img class="img-fluid rounded-circle" style="width: 40px; height: 40px; object-fit: cover; border: 2px solid rgba(0, 129, 238, 0.25);" src="<%= userAvatarImg %>"
+                  onerror="this.onerror=null;this.src='<%= defaultAvatar %>';" alt="avatar">
               </a>
               <div class="dropdown-menu dropdown-menu-end profile-glass-menu shadow-lg">
-                <% 
-                  let userDisplayName = accessdata?.topbardata?.name || 'Administrator';
-                  let userRoleName = accessdata?.roll?.roll || '';
-                  let userAvatarImg = '/images/default.png';
-
-                  if (accessdata?.logas === 'custmor') {
-                    userRoleName = userRoleName || 'Customer';
-                    userAvatarImg = '/images/profile-default.png';
-                  } else if (accessdata?.topbardata?.is_staff != 0) {
-                    userRoleName = userRoleName || 'Staff';
-                    userAvatarImg = accessdata?.topbardata?.img ? ('/uploads/' + accessdata.topbardata.img) : '/images/default.png';
-                  } else if (accessdata?.isstore === true || accessdata?.logas === 'store') {
-                    userRoleName = userRoleName || 'Store Manager';
-                    userAvatarImg = accessdata?.topbardata?.img ? ('/uploads/' + accessdata.topbardata.img) : '/images/default.png';
-                  } else {
-                    userRoleName = userRoleName || 'Master Admin';
-                    userAvatarImg = accessdata?.topbardata?.img ? ('/uploads/' + accessdata.topbardata.img) : '/images/default.png';
-                  }
-                %>
                   <!-- Profile Header -->
                   <div class="profile-card-header">
                     <div class="profile-header-avatar">
-                      <img src="<%= userAvatarImg %>" onerror="this.onerror=null;this.src='/images/default.png';"
+                      <img src="<%= userAvatarImg %>" onerror="this.onerror=null;this.src='<%= defaultAvatar %>';"
                         alt="avatar">
                     </div>
                     <div class="profile-header-meta">
@@ -734,6 +725,9 @@
                                                                       <li><a href="/tool/storesetting">
                                                                           <%= language.Store_Settings %>
                                                                         </a></li>
+                                                                      <li><a href="/tool/printersetting">
+                                                                          <%= language.Printer_Settings || 'Printer Settings' %>
+                                                                        </a></li>
                                                                       <% } %>
                                                                         <% if(accessdata.logas=='master' &&
                                                                           accessdata.mutibranch==true &&
@@ -800,6 +794,34 @@
                                                         </a>
                                                       </li>
       </ul>
+    </div>
+
+    <!-- Master Shop Sticky Footer Branding -->
+    <div class="sidebar-sticky-branding">
+      <div class="sidebar-branding-card d-flex align-items-center gap-2 p-2">
+        <% 
+          const masterLogoImg = accessdata?.masterstore?.app_logo || '';
+          const masterStoreName = accessdata?.masterstore?.app_name || 'iCleaners';
+        %>
+        <div class="sidebar-branding-logo-box d-flex align-items-center justify-content-center">
+          <% if (masterLogoImg) { %>
+            <img src="/uploads/<%= masterLogoImg %>" 
+                 alt="<%= masterStoreName %>" 
+                 class="sidebar-master-logo"
+                 onerror="this.onerror=null;this.src='/images/default.png';">
+          <% } else { %>
+            <i class="fa fa-shield-alt text-primary fs-5"></i>
+          <% } %>
+        </div>
+        <div class="sidebar-branding-text text-truncate">
+          <div class="sidebar-brand-name fw-bold text-truncate fs-13">
+            <%= masterStoreName %>
+          </div>
+          <div class="sidebar-brand-developed fs-11 text-truncate">
+            <%= language.Developed_by || 'Developed by' %> <span class="fw-semibold text-primary"><%= masterStoreName %></span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

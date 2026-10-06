@@ -73,6 +73,7 @@ console.log(rolldetail);
         tbl_customer.taxnumber,
         tbl_customer.username,
         tbl_customer.password,
+        IFNULL(tbl_customer.img, '') AS img,
         tbl_customer.store_ID,
         tbl_customer.reffstore,
         tbl_customer.approved,

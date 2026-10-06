@@ -471,6 +471,12 @@ router.get("/pos", auth, async (req, res) => {
     const splite_id = orderid.split(/[A-Za-z]/).join("");
 
     const readySchedule = await getEffectiveReadySchedule(targetStoreId);
+    let storePrinterConfig = null;
+    if (targetStoreId) {
+      const spRows = await DataFind(`SELECT printing_server_url, invoice_printer_name, invoice_printer_format, tag_printer_name, tag_printer_format, silent_print_enabled, printer_auto_cut, printer_open_cash_drawer, printer_copies FROM tbl_store WHERE id = '${targetStoreId}' LIMIT 1`);
+      if (spRows.length > 0) storePrinterConfig = spRows[0];
+    }
+
     if (!cart[0].delivery_date || String(cart[0].delivery_date).slice(0, 10) === String(cart[0].order_date).slice(0, 10)) {
       const autoReady = calculateReadyDateTime(cart[0].order_date || new Date(), readySchedule);
       cart[0].delivery_date = autoReady.combinedTimestamp;
@@ -484,6 +490,7 @@ router.get("/pos", auth, async (req, res) => {
     }
 
     res.render("pos", {
+      storePrinterConfig,
       login,
       storeList,
       service_list,
@@ -3455,18 +3462,19 @@ router.post("/order", auth, async (req, res) => {
     if (coust[0].name != "Walk in customer") {
       // ========= sms ============ //
 
-      let tsid = accessdata.masterstore.twilio_sid;
-      let ttoken = accessdata.masterstore.twilio_auth_token;
+      let tsid = (shope && shope.length > 0 && shope[0].twilio_sid) ? shope[0].twilio_sid : accessdata.masterstore.twilio_sid;
+      let ttoken = (shope && shope.length > 0 && shope[0].twilio_auth_token) ? shope[0].twilio_auth_token : accessdata.masterstore.twilio_auth_token;
+      let tphone = (shope && shope.length > 0 && shope[0].twilio_phone_no) ? shope[0].twilio_phone_no : accessdata.masterstore.twilio_phone_no;
 
       if (tsid && ttoken) {
-        let ACCOUNT_SID = accessdata.masterstore.twilio_sid;
-        let AUTH_TOKEN = accessdata.masterstore.twilio_auth_token;
+        let ACCOUNT_SID = tsid;
+        let AUTH_TOKEN = ttoken;
         const client_sms = require("twilio")(ACCOUNT_SID, AUTH_TOKEN);
 
         client_sms.messages
           .create({
             body: `We have successfully processed your order and it is now en route to the destination. Thank you for using our services, we appreciate your business!`,
-            from: accessdata.masterstore.twilio_phone_no,
+            from: tphone,
             to: customer_data[0].number,
           })
           .then((message) => console.log(message.sid))
@@ -3535,7 +3543,7 @@ router.post("/order", auth, async (req, res) => {
   }
 });
 
-router.post("/posprint", auth, async (req, res) => {
+router.post("/save_order", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
@@ -3544,16 +3552,17 @@ router.post("/posprint", auth, async (req, res) => {
     var { deliverydate, deliverytime, extradiscount, paid_amount, note, reference_number } =
       req.body;
 
-    paid_amount ? (paid_amount = paid_amount) : (paid_amount = 0);
-    extradiscount ? (extradiscount = extradiscount) : (extradiscount = 0);
+    paid_amount = paid_amount ? parseFloat(paid_amount) || 0 : 0;
+    extradiscount = extradiscount ? parseFloat(extradiscount) || 0 : 0;
     var payment_type = req.body.payment_type;
-    payment_type ? payment_type : (payment_type = 0);
+    payment_type = payment_type ? payment_type : 0;
+
     const cart = await DataFind(
       " SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
     );
-    console.log("cart", cart);
-    console.log("loginas", loginas);
-    console.log("id", id);
+    if (!cart || cart.length === 0 || !cart[0].service_list_id || cart[0].service_list_id === "0") {
+      return res.status(400).json({ success: false, message: "Cart is empty or not found." });
+    }
 
     const gross = parseFloat(cart[0].gross_total) - parseFloat(extradiscount);
     const balance =
@@ -3563,10 +3572,9 @@ router.post("/posprint", auth, async (req, res) => {
     const comiss = await DataFind(
       "SELECT shop_commission From tbl_store WHERE id=" + cart[0].store_id + "",
     );
-    console.log("comiss", comiss);
 
     const comi_amount =
-      (parseFloat(gross) * parseFloat(comiss[0].shop_commission)) /
+      (parseFloat(gross) * parseFloat((comiss && comiss.length > 0 && comiss[0].shop_commission) || 0)) /
       parseFloat(100);
 
     let order_date = new Date(cart[0].order_date);
@@ -3603,13 +3611,8 @@ router.post("/posprint", auth, async (req, res) => {
     );
 
     if (order == -1) {
-      req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database error creating order." });
     }
-
-    // await DataFind(
-    //   `INSERT INTO tbl_notification (invoice, date, sender, received, notification) VALUE ('${orderid}', '${order_fullDate}', '${accessdata.topbardata.id}', '${cart[0].customer_id}', 'There is a new order registered, please check it orderid ${orderid}.')`
-    // );
 
     const custnotifiction = await DataInsert(
       `tbl_notification`,
@@ -3619,15 +3622,6 @@ router.post("/posprint", auth, async (req, res) => {
       req.protocol,
     );
 
-    if (custnotifiction == -1) {
-      req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
-    }
-
-    // await DataFind(
-    //   `INSERT INTO tbl_notification (invoice, date, sender, received, notification) VALUE ('${orderid}', '${order_fullDate}', '${accessdata.topbardata.id}', '${cart[0].store_id}', 'There is a new order registered, please check it orderid ${orderid}.')`
-    // );
-
     const storenotifiction = await DataInsert(
       `tbl_notification`,
       `invoice, date, sender, received, notification`,
@@ -3635,18 +3629,6 @@ router.post("/posprint", auth, async (req, res) => {
       req.hostname,
       req.protocol,
     );
-    if (storenotifiction == -1) {
-      req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
-    }
-
-    // await DataFind(
-    //   `INSERT INTO tbl_notification (invoice, date, sender, received, notification) VALUE ('${orderid}', '${order_fullDate}', '${accessdata.topbardata.id}', '1', 'There is a new order registered, please check it.')`
-    // );
-
-    // const paymentdata =
-    //   await DataFind(`INSERT INTO tbl_order_payment (payment_amount,payment_date,payment_account,order_id) VALUE (${paid_amount},'${order_fullDate}',
-    //     '${payment_type}','${order.insertId}')`);
 
     const paymentdata = await DataInsert(
       `tbl_order_payment`,
@@ -3656,26 +3638,15 @@ router.post("/posprint", auth, async (req, res) => {
       req.hostname,
       req.protocol,
     );
-    if (paymentdata == -1) {
-      req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
-    }
 
-    // const updateorder = await DataFind(
-    //   `UPDATE tbl_order SET payment_data='${paymentdata.insertId}' WHERE id='${order.insertId}'`
-    // );
-
-    const updateOrder = await DataUpdate(
-      "tbl_order",
-      `payment_data = '${paymentdata.insertId}'`,
-      `id = '${order.insertId}'`,
-      req.hostname,
-      req.protocol,
-    );
-
-    if (updateOrder === -1) {
-      req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+    if (paymentdata != -1) {
+      await DataUpdate(
+        "tbl_order",
+        `payment_data = '${paymentdata.insertId}'`,
+        `id = '${order.insertId}'`,
+        req.hostname,
+        req.protocol,
+      );
     }
 
     const customer_data = await DataFind(
@@ -3696,7 +3667,7 @@ router.post("/posprint", auth, async (req, res) => {
         const balance =
           parseFloat(account[0].balance || 0) + parseFloat(paid_amount);
 
-        const updateAccount = await DataUpdate(
+        await DataUpdate(
           "tbl_account",
           `balance = ${balance}`,
           `id = ${payment_type}`,
@@ -3704,38 +3675,23 @@ router.post("/posprint", auth, async (req, res) => {
           req.protocol,
         );
 
-        if (updateAccount === -1) {
-          req.flash("errors", process.env.dataerror);
-          return res.redirect("/valid_license");
-        }
-
-        var abc = await DataInsert(
+        await DataInsert(
           `tbl_transections`,
           `account_id,store_ID,transec_detail,transec_type,debit_amount,credit_amount,balance_amount,date, customer_id`,
           `'${payment_type}','${account[0].store_ID}','POS Income ${orderid}','INCOME',0,${paid_amount},${balance},'${order_fullDate}', '${cart[0].customer_id}'`,
           req.hostname,
           req.protocol,
         );
-
-        if (abc == -1) {
-          req.flash("errors", process.env.dataerror);
-          return res.redirect("/valid_license");
-        }
       }
     }
 
     // clear cart
-
-    var orderid = await idfororder();
+    var neworderid = await idfororder();
     var tax = await DataFind(
       "SELECT tax_percent FROM tbl_store WHERE id=" + cart[0].store_id + "",
     );
 
-    // await DataFind(`UPDATE tbl_cart SET order_date=CURRENT_TIMESTAMP,service_list_id=0,addon_id=0,addon_price=0,delivery_date=CURRENT_TIMESTAMP,extra_discount=0,
-    //     coupon_id=0,coupon_discount=0,tax_amount=0,sub_total=0,gross_total=0,paid_amount=0,payment_type=0, order_id='${orderid}',customer_id='0',
-    //     balance=0,notes='', tax=${tax[0].tax_percent} WHERE created_by='${loginas},${id}'`);
-
-    const updateCart = await DataUpdate(
+    await DataUpdate(
       "tbl_cart",
       `order_date = CURRENT_TIMESTAMP,
    service_list_id = 0,
@@ -3750,7 +3706,7 @@ router.post("/posprint", auth, async (req, res) => {
    gross_total = 0,
    paid_amount = 0,
    payment_type = 0,
-   order_id = '${orderid}',
+   order_id = '${neworderid}',
    customer_id = '0',
    balance = 0,
    notes = '',
@@ -3760,193 +3716,104 @@ router.post("/posprint", auth, async (req, res) => {
       req.protocol,
     );
 
-    if (updateCart === -1) {
-      req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
-    }
-
-    // data for invoice
-    var cartservice = await DataFind(
-      "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        cart[0].service_list_id +
-        "')",
-    );
     var shope = await DataFind(
       "SELECT * FROM tbl_store WHERE id=" + cart[0].store_id + "",
     );
-    console.log("shope", shope);
-    console.log("order", order);
-
-    var orderdata =
-      await DataFind(`SELECT ord.*, COALESCE(tbl_orderstatus.status, "") as orderStatus  
-                                        FROM tbl_order as ord
-                                        LEFT JOIN tbl_orderstatus on ord.order_status = tbl_orderstatus.id
-                                        WHERE ord.id= "${order.insertId}"`);
-
-    if (!orderdata || orderdata.length === 0) {
-      orderdata = await DataFind(
-        `SELECT * FROM tbl_order WHERE id= "${order.insertId}"`,
-      );
-    }
-
-    console.log(orderdata);
-
-    const addon =
-      orderdata && orderdata.length > 0 && orderdata[0].addon_data
-        ? orderdata[0].addon_data.split(",")
-        : ["0"];
-    if (addon[0] != 0) {
-      var addonslist = await Promise.all(
-        addon.map(async (data, i) => {
-          var addondata = await DataFind(
-            "SELECT * FROM tbl_addons WHERE id=" + data + "",
-          );
-
-          return {
-            id: addondata[0].id,
-            name: addondata[0].addon,
-            price: addondata[0].price,
-          };
-        }),
-      );
-    } else {
-      var addonslist = [];
-    }
-
-    if (
-      !payment_type ||
-      payment_type == 0 ||
-      payment_type == "0" ||
-      parseFloat(paid_amount) <= 0
-    ) {
-      var paymenttype = "No Amount Paid";
-    } else {
-      const payment = await DataFind(
-        "SELECT ac_name From tbl_account WHERE id='" + payment_type + "'",
-      );
-      var paymenttype =
-        payment && payment.length > 0 ? payment[0].ac_name : "Payment Received";
-    }
 
     var coust = await DataFind(
-      "SELECT * From tbl_customer WHERE id=" + orderdata[0].customer_id + "",
+      "SELECT * From tbl_customer WHERE id=" + cart[0].customer_id + "",
     );
-    console.log("coust", coust);
 
-    const data = await DataFind(
+    const emailData = await DataFind(
       "SELECT * FROM tbl_email WHERE store_id=" + cart[0].store_id + "",
     );
-    console.log("data", data);
-    console.log("coust[0].email", coust[0].email);
-    console.log("shope[0].email", shope[0]);
-    console.log("orderid", orderid);
-    console.log("order_fullDate", order_fullDate);
-    console.log("order_fullDate", order_fullDate);
-    console.log("gross", gross);
-    console.log(shope[0].mobile_number, shope[0].store_email, shope[0].city);
 
     if (
-      data.length > 0 &&
+      emailData.length > 0 &&
       coust.length > 0 &&
       coust[0].email !== null &&
       coust[0].email !== ""
     ) {
       if (
-        data[0].host &&
-        data[0].port &&
-        data[0].username &&
-        data[0].password &&
-        data[0].frommail
+        emailData[0].host &&
+        emailData[0].port &&
+        emailData[0].username &&
+        emailData[0].password &&
+        emailData[0].frommail
       ) {
-        const transporter = nodemailer.createTransport({
-          host: data[0].host,
-          port: Number(data[0].port),
-          auth: {
-            user: data[0].username,
-            pass: data[0].password,
-          },
-        });
+        try {
+          const transporter = nodemailer.createTransport({
+            host: emailData[0].host,
+            port: Number(emailData[0].port),
+            auth: {
+              user: emailData[0].username,
+              pass: emailData[0].password,
+            },
+          });
 
-        let mailDetails = {
-          from: data[0].frommail,
-          to: coust[0].email,
-          subject: "Email From " + shope[0].name,
-          html: `
-    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
-    <h2 style="color: #4CAF50;">Thank you for your order, ${
-      coust[0].name || "Customer"
-    }!</h2>
-    <p>Your order has been received. Below are your order details:</p>
-    <table style="width: 100%; border-collapse: collapse;">
-      <tr>
-        <td><strong>Order Number: </strong> ${orderid}</td>
-      </tr>
-      <tr>
-        <td><strong>Order Date: </strong> ${order_fullDate}</td>
-      </tr>
-      <tr>
-        <td><strong>Total Amount: </strong> <span class="symbol">${
-          accessdata.masterstore.currency_symbol
-        }${gross}</span></td>
-      </tr>
-    </table>
-    <br>
+          let mailDetails = {
+            from: emailData[0].frommail,
+            to: coust[0].email,
+            subject: "Email From " + (shope && shope.length > 0 ? shope[0].name : "Store"),
+            html: `
+      <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+      <h2 style="color: #4CAF50;">Thank you for your order, ${
+        coust[0].name || "Customer"
+      }!</h2>
+      <p>Your order has been received. Below are your order details:</p>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td><strong>Order Number: </strong> ${orderid}</td>
+        </tr>
+        <tr>
+          <td><strong>Order Date: </strong> ${order_fullDate}</td>
+        </tr>
+        <tr>
+          <td><strong>Total Amount: </strong> <span class="symbol">${
+            accessdata.masterstore.currency_symbol
+          }${gross}</span></td>
+        </tr>
+      </table>
+      <br>
+      <p>We appreciate your business and hope you enjoy your purchase!</p>
+      <hr>
+      <p style="font-size: 12px; color: #999;">
+        ${shope && shope.length > 0 ? shope[0].name : ''} <br>
+        📞 ${shope && shope.length > 0 ? shope[0].mobile_number : ''} <br>
+        ✉️ ${shope && shope.length > 0 ? shope[0].store_email : ''} <br>
+        📍 ${shope && shope.length > 0 ? shope[0].city : ''}
+      </p>
+    </div>
+  `,
+          };
 
-    <p>We appreciate your business and hope you enjoy your purchase!</p>
-    
-    <hr>
-    <p style="font-size: 12px; color: #999;">
-      ${shope[0].name} <br>
-      📞 ${shope[0].mobile_number} <br>
-      ✉️ ${shope[0].store_email} <br>
-      📍 ${shope[0].city}
-    </p>
-  </div>
-`,
-        };
-        console.log(mailDetails);
-
-        transporter.sendMail(mailDetails, function (err, data) {
-          if (err) {
-            console.log(err);
-            console.log("Error Occurs");
-            req.flash("error", "Message not occurred!");
-          } else {
-            console.log(data);
-
-            console.log("Email sent successfully");
-            req.flash("success", "Email Send Successful");
-          }
-        });
+          transporter.sendMail(mailDetails, function (err, data) {
+            if (err) {
+              console.log("Email error:", err);
+            }
+          });
+        } catch (e) {
+          console.log("Transporter error:", e);
+        }
       }
     }
 
     if (coust.length > 0 && coust[0].number != null) {
-      // ========= sms ============ //
-
-      let tsid = accessdata.masterstore.twilio_sid;
-      let ttoken = accessdata.masterstore.twilio_auth_token;
+      let tsid = (shope && shope.length > 0 && shope[0].twilio_sid) ? shope[0].twilio_sid : accessdata.masterstore.twilio_sid;
+      let ttoken = (shope && shope.length > 0 && shope[0].twilio_auth_token) ? shope[0].twilio_auth_token : accessdata.masterstore.twilio_auth_token;
+      let tphone = (shope && shope.length > 0 && shope[0].twilio_phone_no) ? shope[0].twilio_phone_no : accessdata.masterstore.twilio_phone_no;
 
       if (tsid && ttoken) {
-        let ACCOUNT_SID = accessdata.masterstore.twilio_sid;
-        let AUTH_TOKEN = accessdata.masterstore.twilio_auth_token;
-
-        console.log("AUTH_TOKEN", AUTH_TOKEN);
-
         try {
-          const client_sms = require("twilio")(ACCOUNT_SID, AUTH_TOKEN);
-
+          const client_sms = require("twilio")(tsid, ttoken);
           if (client_sms) {
             client_sms.messages
               .create({
                 body: `We have successfully processed your order and it is now en route to the destination. Thank you for using our services, we appreciate your business!`,
-                from: accessdata.masterstore.twilio_phone_no,
+                from: tphone,
                 to: customer_data[0].number,
               })
-              .then((message) => console.log(message.sid))
-              .catch((e) => {
-                req.flash("error", "Message not occurred!");
-              });
+              .catch((e) => console.log("SMS error:", e));
           }
         } catch (error) {
           console.log(error);
@@ -3954,11 +3821,11 @@ router.post("/posprint", auth, async (req, res) => {
       }
     }
 
-    // ----------- Notification ------------ //
-
-    if (accessdata.masterstore.onesignal_app_id) {
+    // Notification
+    let onesignalAppId = (shope && shope.length > 0 && shope[0].onesignal_app_id) ? shope[0].onesignal_app_id : accessdata.masterstore.onesignal_app_id;
+    if (onesignalAppId) {
       let message = {
-        app_id: accessdata.masterstore.onesignal_app_id,
+        app_id: onesignalAppId,
         contents: { en: "There is a new order registered, please check it." },
         headings: { en: "laundry" },
         included_segments: ["Subscribed Users"],
@@ -3976,7 +3843,7 @@ router.post("/posprint", auth, async (req, res) => {
       sendNotification(message);
 
       let customer_message = {
-        app_id: accessdata.masterstore.onesignal_app_id,
+        app_id: onesignalAppId,
         contents: { en: "There is a new order registered, please check it." },
         headings: { en: "laundry" },
         included_segments: ["Subscribed Users"],
@@ -3999,6 +3866,107 @@ router.post("/posprint", auth, async (req, res) => {
       sendNotification(customer_message);
     }
 
+    return res.status(200).json({
+      success: true,
+      message: "Order placed successfully!",
+      order_id: orderid,
+      id: order.insertId
+    });
+  } catch (error) {
+    console.error("Error saving order:", error);
+    return res.status(500).json({ success: false, message: "An unexpected error occurred while placing the order." });
+  }
+});
+
+// GET /posprint - renders invoice & wash tags by order ID
+const renderPosPrint = async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+
+    var orderid =
+      req.query.id || req.query.orderid || req.params.id || (req.body && (req.body.id || req.body.orderid));
+
+    if (!orderid) {
+      req.flash("errors", "Order ID is required");
+      return res.redirect("/admin/pos");
+    }
+
+    var orderdata = await DataFind(`
+      SELECT ord.*, COALESCE(tbl_orderstatus.status, "") as order_status_name  
+      FROM tbl_order as ord
+      LEFT JOIN tbl_orderstatus on ord.order_status = tbl_orderstatus.id
+      WHERE ord.id = '${orderid}' OR ord.order_id = '${orderid}'
+      LIMIT 1
+    `);
+
+    if (!orderdata || orderdata.length === 0) {
+      req.flash("errors", "Order not found");
+      return res.redirect("/admin/pos");
+    }
+
+    const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
+    if (isStaff && staffStoreId && orderdata[0].store_id != staffStoreId) {
+      req.flash("errors", "You are not authorized to view orders from other stores");
+      return res.redirect("/admin/pos");
+    }
+
+    var shope = await DataFind(
+      "SELECT * FROM tbl_store WHERE id=" + orderdata[0].store_id + "",
+    );
+
+    let cartservice = [];
+    if (orderdata[0].service_list) {
+      cartservice = await DataFind(
+        "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
+          orderdata[0].service_list +
+          "')",
+      );
+    }
+
+    let addonslist = [];
+    if (orderdata[0].addon_data) {
+      const addon = orderdata[0].addon_data.toString().split(",");
+      if (addon[0] && addon[0] != "0") {
+        addonslist = await Promise.all(
+          addon.filter(Boolean).map(async (data) => {
+            var addondata = await DataFind(
+              "SELECT * FROM tbl_addons WHERE id=" + data + "",
+            );
+            return addondata && addondata.length > 0
+              ? {
+                  id: addondata[0].id,
+                  name: addondata[0].addon,
+                  price: addondata[0].price,
+                }
+              : null;
+          }),
+        );
+        addonslist = addonslist.filter(Boolean);
+      }
+    }
+
+    var paymenttype = "No Amount Paid";
+    if (orderdata[0].payment_data && orderdata[0].payment_data != "0") {
+      const pRows = await DataFind(
+        "SELECT * FROM tbl_order_payment WHERE id='" + orderdata[0].payment_data + "'",
+      );
+      if (pRows && pRows.length > 0 && pRows[0].payment_account) {
+        const accRows = await DataFind(
+          "SELECT ac_name FROM tbl_account WHERE id='" + pRows[0].payment_account + "'",
+        );
+        if (accRows && accRows.length > 0) {
+          paymenttype = accRows[0].ac_name;
+        } else if (pRows[0].payment_account != "0") {
+          paymenttype = pRows[0].payment_account;
+        }
+      }
+    }
+
+    var coust = await DataFind(
+      "SELECT * From tbl_customer WHERE id=" + orderdata[0].customer_id + "",
+    );
+
     let oate = new Date(orderdata[0].order_date).toLocaleDateString("en-CA");
     let delDateObj = new Date(orderdata[0].delivery_date);
     let ddate = delDateObj.toLocaleDateString("en-CA");
@@ -4013,20 +3981,25 @@ router.post("/posprint", auth, async (req, res) => {
 
     res.render("posprint", {
       cartservice,
-      shope: shope[0],
+      shope: shope && shope.length > 0 ? shope[0] : {},
       order: orderdata[0],
       addonslist,
       paymenttype,
-      customer: coust[0],
+      customer: coust && coust.length > 0 ? coust[0] : { name: "Walk in customer" },
       master: accessdata.masterstore,
       oate,
       ddate,
       accessdata,
     });
   } catch (error) {
-    console.log(error);
+    console.error("Error in renderPosPrint:", error);
+    res.redirect("/admin/pos");
   }
-});
+};
+
+router.get("/posprint", auth, renderPosPrint);
+router.get("/posprint/:id", auth, renderPosPrint);
+router.post("/posprint", auth, renderPosPrint);
 
 router.get("/notification", auth, async (req, res) => {
   try {

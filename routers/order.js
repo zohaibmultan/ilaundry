@@ -817,9 +817,10 @@ router.get("/changestatus/:id", auth, async (req, res) => {
 
       if (customer_data[0].name != "Walk in customer") {
         // ========= sms ============ //
-
-        let ACCOUNT_SID = accessdata.masterstore.twilio_sid;
-        let AUTH_TOKEN = accessdata.masterstore.twilio_auth_token;
+        const storeCommData = await DataFind(`SELECT twilio_sid, twilio_auth_token, twilio_phone_no FROM tbl_store WHERE id = ${storedata[0].store_id} LIMIT 1`);
+        let ACCOUNT_SID = (storeCommData.length > 0 && storeCommData[0].twilio_sid) ? storeCommData[0].twilio_sid : accessdata.masterstore.twilio_sid;
+        let AUTH_TOKEN = (storeCommData.length > 0 && storeCommData[0].twilio_auth_token) ? storeCommData[0].twilio_auth_token : accessdata.masterstore.twilio_auth_token;
+        let FROM_PHONE = (storeCommData.length > 0 && storeCommData[0].twilio_phone_no) ? storeCommData[0].twilio_phone_no : accessdata.masterstore.twilio_phone_no;
 
         if (ACCOUNT_SID && AUTH_TOKEN) {
           try {
@@ -828,7 +829,7 @@ router.get("/changestatus/:id", auth, async (req, res) => {
             client_sms.messages
               .create({
                 body: `We have successfully change your order status.`,
-                from: accessdata.masterstore.twilio_phone_no,
+                from: FROM_PHONE,
                 to: customer_data[0].number,
               })
               .then((message) => console.log(message.sid))

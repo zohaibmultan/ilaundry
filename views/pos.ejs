@@ -1198,11 +1198,11 @@
                 </script>
                 <script>
                     $('#posprintform').on('submit', function (e) {
+                        e.preventDefault();
                         const paidAmount = parseFloat($('#paid_amount').val()) || 0;
                         const paymentType = $('#POS_payment_type_list').val();
 
                         if (paidAmount > 0 && (!paymentType || paymentType === '0')) {
-                            e.preventDefault();
                             if (typeof toastr !== 'undefined') {
                                 toastr.warning('Please select a payment type for the paid amount.');
                             } else {
@@ -1217,16 +1217,52 @@
                         }
 
                         // Prevent multiple submissions
-                        $('#printcheck').prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-2"></i><%= language.Saving || "Saving..." %>');
-                        return true;
+                        const $submitBtn = $('#printcheck');
+                        $submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-2"></i><%= language.Saving || "Saving..." %>');
+
+                        const formData = $(this).serialize();
+
+                        $.ajax({
+                            url: '/admin/save_order',
+                            type: 'POST',
+                            data: formData,
+                            dataType: 'json',
+                            success: function (res) {
+                                if (res && res.success) {
+                                    window.location.href = '/admin/posprint?id=' + encodeURIComponent(res.id || res.order_id);
+                                } else {
+                                    $submitBtn.prop('disabled', false).html('<i class="fa fa-print me-2"></i><%= language.Save %> & <%= language.Print %>');
+                                    const errMsg = (res && res.message) ? res.message : 'Error placing order. Please try again.';
+                                    if (typeof toastr !== 'undefined') {
+                                        toastr.error(errMsg);
+                                    } else {
+                                        alert(errMsg);
+                                    }
+                                }
+                            },
+                            error: function (xhr) {
+                                $submitBtn.prop('disabled', false).html('<i class="fa fa-print me-2"></i><%= language.Save %> & <%= language.Print %>');
+                                let errMsg = 'Server error placing order. Please try again.';
+                                try {
+                                    const parsed = JSON.parse(xhr.responseText);
+                                    if (parsed && parsed.message) errMsg = parsed.message;
+                                } catch (e) {}
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.error(errMsg);
+                                } else {
+                                    alert(errMsg);
+                                }
+                            }
+                        });
+                        return false;
                     });
                 </script>
                 <script src="/js/pos-print-client.js"></script>
                 <script>
                     (function () {
-                        const serverUrl = "<%= accessdata?.masterstore?.printing_server_url || 'http://127.0.0.1:4321' %>";
-                        const silentEnabled = <%= (accessdata?.masterstore?.silent_print_enabled !== 0) ? 'true' : 'false' %>;
-                        const targetPrinter = "<%= accessdata?.masterstore?.invoice_printer_name || '' %>";
+                        const serverUrl = "<%= (typeof storePrinterConfig !== 'undefined' && storePrinterConfig && storePrinterConfig.printing_server_url) ? storePrinterConfig.printing_server_url : (accessdata?.masterstore?.printing_server_url || 'http://127.0.0.1:4321') %>";
+                        const silentEnabled = <%= ((typeof storePrinterConfig !== 'undefined' && storePrinterConfig && storePrinterConfig.silent_print_enabled !== null && storePrinterConfig.silent_print_enabled !== undefined) ? (storePrinterConfig.silent_print_enabled != 0) : (accessdata?.masterstore?.silent_print_enabled !== 0)) ? 'true' : 'false' %>;
+                        const targetPrinter = "<%= (typeof storePrinterConfig !== 'undefined' && storePrinterConfig && storePrinterConfig.invoice_printer_name) ? storePrinterConfig.invoice_printer_name : (accessdata?.masterstore?.invoice_printer_name || '') %>";
                         const posClient = new POSPrintClient({ baseUrl: serverUrl, timeout: 4000 });
 
                         async function pingPosPrintingServer(isManual) {

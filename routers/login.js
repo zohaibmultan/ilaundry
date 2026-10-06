@@ -1272,7 +1272,7 @@ router.get("/profile", auth, async (req, res) => {
   }
 });
 
-router.post("/updatecustompro", auth, async (req, res) => {
+router.post("/updatecustompro", auth, upload.single("image"), async (req, res) => {
   try {
     if (process.env.DISABLE_DB_WRITE === "true") {
       req.flash("error", "For demo purpose we disabled crud operations!!");
@@ -1307,19 +1307,21 @@ router.post("/updatecustompro", auth, async (req, res) => {
     let OldData = await DataFind(`SELECT * FROM tbl_customer WHERE id=${id}`);
     let haspass = "";
 
-    if (password.length > 0) {
+    if (password && password.length > 0) {
       const salt = bcrypt.genSaltSync(10);
       haspass = bcrypt.hashSync(password, salt);
     } else {
-      haspass = OldData[0].password;
+      haspass = (OldData && OldData[0]) ? OldData[0].password : "";
     }
 
-    // await DataFind(`UPDATE tbl_customer SET name='${name}',number='${number}',email='${email}',username='${username}',password='${haspass}'
-    //     WHERE id=${id}`);
+    let imgClause = "";
+    if (req.file && req.file.filename) {
+      imgClause = `,img='${req.file.filename}'`;
+    }
 
     const data = await DataUpdate(
       `tbl_customer`,
-      `name='${name}',number='${number}',email='${email}',username='${username}',password='${haspass}'`,
+      `name='${name}',number='${number}',email='${email}',username='${username}',password='${haspass}'${imgClause}`,
       `id=${id}`,
       req.hostname,
       req.protocol,
@@ -1330,9 +1332,12 @@ router.post("/updatecustompro", auth, async (req, res) => {
       return res.redirect("back");
     }
 
+    req.flash("success", "Profile Details Updated Successfully!");
     res.redirect("back");
   } catch (error) {
     console.log(error);
+    req.flash("error", "An error occurred while updating profile");
+    res.redirect("back");
   }
 });
 
@@ -1384,16 +1389,21 @@ router.post("/updatestaff", auth, upload.single("image"), async (req, res) => {
     let OldData = await DataFind(`SELECT * FROM tbl_admin WHERE id='${id}'`);
     let hashpass = "";
 
-    if (password.length > 0) {
+    if (password && password.length > 0) {
       const salt = bcrypt.genSaltSync(10);
       hashpass = bcrypt.hashSync(password, salt);
     } else {
-      hashpass = OldData[0].password;
+      hashpass = (OldData && OldData[0]) ? OldData[0].password : "";
+    }
+
+    let imgClause = "";
+    if (req.file && req.file.filename) {
+      imgClause = `,img='${req.file.filename}'`;
     }
 
     const data = await DataUpdate(
       `tbl_admin`,
-      `name='${name}',number='${number}',email='${email}',username='${username}', password='${hashpass}'`,
+      `name='${name}',number='${number}',email='${email}',username='${username}',password='${hashpass}'${imgClause}`,
       `id=${id}`,
       req.hostname,
       req.protocol,
@@ -1404,10 +1414,12 @@ router.post("/updatestaff", auth, upload.single("image"), async (req, res) => {
       return res.redirect("back");
     }
 
-    req.flash("success", "Profile Detail Update!!!!");
+    req.flash("success", "Profile Details Updated Successfully!");
     return res.redirect(req.get("Referrer") || "/");
   } catch (error) {
     console.log(error);
+    req.flash("error", "An error occurred while updating profile");
+    return res.redirect(req.get("Referrer") || "/");
   }
 });
 

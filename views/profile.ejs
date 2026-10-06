@@ -4,250 +4,239 @@
 <head>
     <!-- meta and links start -->
     <%- include('templet/meta')-%>
-
 </head>
 
 <body>
     <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
-        <!--********** Content body start **********-->
 
-        <div class="content-body">
-            <div class="container-fluid" style="min-height: 100vh;">
-                <div class="row justify-content-center">
-                    <div class="col-xl-10">
-                        <div class="card border-0 shadow-sm rounded-3">
-                            <div class="card-body p-4">
-                                <div class="settings-form">
-                                    <center class="mb-5">
-                                        <span>
-                                            <% if(accessdata.logas=='custmor' ){ %>
-                                                <img id="file-preview" class="img-fluid rounded-circle  shadow border"
-                                                    src="/images/profile-default.png"
-                                                    onerror="this.onerror=null;this.src='../../images/default.png';"
-                                                    width="100px" height="100px" alt="image">
-                                                <% } else if(accessdata.isstore==true){ %>
-                                                    <img id="file-preview"
-                                                        class="img-fluid rounded-circle shadow border"
-                                                        src="uploads/<%= accessdata?.topbardata?.img %>"
-                                                        onerror="this.onerror=null;this.src='../../images/default.png';"
-                                                        width="100px" height="100px" alt="image">
-                                                    <% } else { %>
-                                                        <img id="file-preview"
-                                                            class="img-fluid rounded-circle shadow border    "
-                                                            src="uploads/<%= accessdata?.topbardata?.img %>"
-                                                            onerror="this.onerror=null;this.src='../../images/default.png';"
-                                                            width="100px" height="100px" alt="image">
-                                                        <% } %>
-                                        </span>
-                                    </center>
-                                    <hr>
-                                    <% if(accessdata.logas=='custmor' ){ %>
-                                        <form action="/updatecustompro" method="post">
+    <!--********** Content body start **********-->
+    <div class="content-body">
+        <div class="container-fluid" style="min-height: 100vh; padding-bottom: 60px;">
 
-                                            <div class="row">
-                                                <div class="mb-3 col-md-6">
-                                                    <label class="form-label">
-                                                        <%= language.Name %>
-                                                    </label>
-                                                    <input type="text" placeholder="First Name" class="form-control"
-                                                        name="name" value="<%=accessdata?.topbardata?.name %>" required>
-                                                </div>
-                                                <div class="mb-3 col-md-6">
-                                                    <label class="form-label">
-                                                        <%= language.Contact_Number %>
-                                                    </label>
-                                                    <input type="number" placeholder="Contact Number"
-                                                        class="form-control" name="number"
-                                                        value="<%= accessdata?.topbardata?.number %>" required>
-                                                </div>
-                                            </div>
+            <%
+              let userDisplayName = accessdata?.topbardata?.name || 'Administrator';
+              let userRoleName = accessdata?.roll?.roll || '';
+              let defaultAvatar = accessdata?.logas === 'custmor' ? '/images/profile-default.png' : '/images/default.png';
+              let userAvatarImg = (accessdata?.topbardata?.img && accessdata.topbardata.img.trim() !== '' && accessdata.topbardata.img !== 'default.png')
+                ? ('/uploads/' + accessdata.topbardata.img)
+                : defaultAvatar;
 
-                                            <div class="row">
-                                                <div class="mb-3 col-md-12">
-                                                    <label class="form-label">
-                                                        <%= language.Email %>
-                                                    </label>
-                                                    <input type="email" placeholder="Email" class="form-control"
-                                                        name="email" value="<%=accessdata?.topbardata?.email %>"
-                                                        required>
-                                                </div>
-                                            </div>
+              if (accessdata?.logas === 'custmor') {
+                userRoleName = userRoleName || 'Customer';
+              } else if (accessdata?.topbardata?.is_staff != 0) {
+                userRoleName = userRoleName || 'Staff';
+              } else if (accessdata?.isstore === true || accessdata?.logas === 'store') {
+                userRoleName = userRoleName || 'Store Manager';
+              } else {
+                userRoleName = userRoleName || 'Master Admin';
+              }
+            %>
 
-                                            <div class="row">
-                                                <div class="mb-3 col-md-6">
-                                                    <label class="form-label">
-                                                        <%= language.Username %>
-                                                    </label>
-                                                    <input type="text" placeholder="User Name" class="form-control"
-                                                        name="username" value="<%=accessdata?.topbardata?.username %>"
-                                                        required>
-                                                </div>
-
-                                                <div class="mb-3 col-md-6">
-                                                    <label class="form-label">
-                                                        <%= language.Password %>
-                                                    </label>
-                                                    <input type="text" placeholder="Password" class="form-control"
-                                                        name="password" value=""
-                                                         >
-                                                </div>
-
-                                            </div>
-
-                                            <button class="btn btn-primary" type="submit">
-                                                <i class="fa fa-save me-2"></i><%= language.Submit %>
-                                            </button>
-                                        </form>
-                                        <% } else if(accessdata.isstore==true){ %>
-
-                                            <form action="/updatestaff" method="post" enctype="multipart/form-data">
-
-                                                <div class="row">
-                                                    <div class="mb-3 col-md-6">
-                                                        <label class="form-label">
-                                                            <%= language.Name %>
-                                                        </label>
-                                                        <input type="text" placeholder="First Name" class="form-control"
-                                                            name="name" value="<%=accessdata?.topbardata?.name %>"
-                                                            required>
-                                                    </div>
-                                                    <div class="mb-3 col-md-6">
-                                                        <label class="form-label">
-                                                            <%= language.Contact_Number %>
-                                                        </label>
-                                                        <input type="number" placeholder="Contact Number"
-                                                            class="form-control" name="number"
-                                                            value="<%=accessdata?.topbardata?.number %>" required>
-                                                    </div>
-                                                </div>
-
-                                                <div class="row">
-                                                    <div class="mb-3 col-md-12">
-                                                        <label class="form-label">
-                                                            <%= language.Email %>
-                                                        </label>
-                                                        <input type="email" placeholder="Email" class="form-control"
-                                                            name="email"
-                                                            value="<%=accessdata?.topbardata?.email %>" required>
-                                                    </div>
-
-                                                </div>
-
-                                                <div class="row">
-                                                    <div class="mb-3 col-md-6">
-                                                        <label class="form-label">
-                                                            <%= language.Username %>
-                                                        </label>
-                                                        <input type="text" placeholder="User Name" class="form-control"
-                                                            name="username"
-                                                            value="<%=accessdata?.topbardata?.username %>" required>
-                                                    </div>
-
-                                                    <div class="mb-3 col-md-6">
-                                                        <label class="form-label">
-                                                            <%= language.Password %>
-                                                        </label>
-                                                        <input type="text" placeholder="Password" class="form-control"
-                                                            name="password"
-                                                            value=""   >
-                                                    </div>
-
-                                                </div>
-
-                                                <hr class="mt-5">
-                                                <button class="btn btn-primary" type="submit">
-                                                    <i class="fa fa-save me-2"></i><%= language.Submit %>
-                                                </button>
-                                            </form>
-
-                                            <% } else { %>
-                                                <form action="/updatestaff" method="post" enctype="multipart/form-data">
-
-                                                    <div class="row">
-                                                        <div class="mb-3 col-md-6">
-                                                            <label class="form-label">
-                                                                <%= language.Name %>
-                                                            </label>
-                                                            <input type="text" placeholder="First Name"
-                                                                class="form-control" name="name"
-                                                                value="<%=accessdata.topbardata.name %>" required>
-                                                        </div>
-                                                        <div class="mb-3 col-md-6">
-                                                            <label class="form-label">
-                                                                <%= language.Contact_Number %>
-                                                            </label>
-                                                            <input type="number" placeholder="Contact Number"
-                                                                class="form-control" name="number"
-                                                                value="<%=accessdata?.topbardata?.number %>" required>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="row">
-                                                        <div class="mb-3 col-md-6">
-                                                            <label class="form-label">
-                                                                <%= language.Email %>
-                                                            </label>
-                                                            <input type="email" placeholder="Email" class="form-control"
-                                                                name="email" value="<%=accessdata?.topbardata?.email %>"
-                                                                required>
-                                                        </div>
-                                                        <div class="mb-3 col-md-6">
-                                                            <label class="form-label">
-                                                                <%= language.Choose_a_photo %>
-                                                            </label>
-                                                            <input type="file" placeholder="photo" class="form-control"
-                                                                name="image" onchange="showPreview(event)">
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="row">
-                                                        <div class="mb-3 col-md-6">
-                                                            <label class="form-label">
-                                                                <%= language.Username %>
-                                                            </label>
-                                                            <input type="text" placeholder="User Name"
-                                                                class="form-control" name="username"
-                                                                value="<%=accessdata?.topbardata?.username %>" required>
-                                                        </div>
-
-                                                        <div class="mb-3 col-md-6">
-                                                            <label class="form-label">
-                                                                <%= language.Password %>
-                                                            </label>
-                                                            <input type="text" placeholder="Password"
-                                                                class="form-control" name="password"
-                                                                value="">
-                                                        </div>
-
-                                                    </div>
-
-                                                    <button class="btn btn-primary" type="submit">
-                                                        <i class="fa fa-save me-2"></i><%= language.Submit %>
-                                                    </button>
-                                                </form>
-                                                <% } %>
-                                </div>
+            <!-- Page Header Card -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div>
+                                <h3 class="mb-1 fw-bold text-dark d-flex align-items-center">
+                                    <i class="fa fa-user-circle text-primary me-2"></i><%= language.Profile || 'My Profile' %>
+                                </h3>
+                                <p class="text-muted mb-0 fs-13">
+                                    <%= language.Profile_Subtitle || 'Manage your account credentials, contact information, and profile photo' %>
+                                </p>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <a href="/index" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold">
+                                    <i class="fa fa-arrow-left me-1"></i> <%= language.Back_to_Dashboard || 'Back to Dashboard' %>
+                                </a>
                             </div>
                         </div>
-
                     </div>
                 </div>
-
             </div>
+
+            <!-- Profile Settings Form Card -->
+            <div class="row justify-content-center">
+                <div class="col-xl-9 col-lg-10">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-body p-4 p-md-5">
+
+                            <!-- Avatar Header & Live Preview -->
+                            <div class="text-center mb-4 pb-3 border-bottom">
+                                <div class="position-relative d-inline-block mb-3">
+                                    <img id="file-preview"
+                                        class="rounded-circle shadow-sm border border-3 border-primary"
+                                        src="<%= userAvatarImg %>"
+                                        onerror="this.onerror=null;this.src='<%= defaultAvatar %>';"
+                                        style="width: 120px; height: 120px; object-fit: cover;"
+                                        alt="Profile Avatar">
+                                    <label for="profile_image_input"
+                                        class="btn btn-primary btn-sm rounded-circle position-absolute bottom-0 end-0 p-2 shadow-sm"
+                                        style="cursor: pointer; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;"
+                                        title="<%= language.Choose_a_photo || 'Upload Photo' %>">
+                                        <i class="fa fa-camera text-white fs-14"></i>
+                                    </label>
+                                </div>
+                                <h4 class="fw-bold mb-1 text-dark"><%= userDisplayName %></h4>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill fw-semibold fs-12">
+                                    <%= userRoleName %>
+                                </span>
+                                <% if (accessdata?.topbardata?.store_name || accessdata?.topbardata?.store) { %>
+                                    <div class="text-muted small mt-1">
+                                        <i class="fa fa-store me-1 text-muted"></i>
+                                        <%= accessdata?.topbardata?.store_name || accessdata?.topbardata?.store %>
+                                    </div>
+                                <% } %>
+                            </div>
+
+                            <% const formAction = (accessdata?.logas === 'custmor') ? '/updatecustompro' : '/updatestaff'; %>
+
+                            <form action="<%= formAction %>" method="POST" enctype="multipart/form-data">
+                                <div class="row g-3">
+                                    <!-- Full Name -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Name || 'Full Name' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-user"></i></span>
+                                            <input type="text" class="form-control" name="name"
+                                                value="<%= accessdata?.topbardata?.name || '' %>"
+                                                placeholder="Enter full name" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Contact Number -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Contact_Number || 'Contact Number' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-phone"></i></span>
+                                            <input type="text" class="form-control" name="number"
+                                                value="<%= accessdata?.topbardata?.number || '' %>"
+                                                placeholder="Enter contact number" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Email Address -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Email || 'Email Address' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-envelope"></i></span>
+                                            <input type="email" class="form-control" name="email"
+                                                value="<%= accessdata?.topbardata?.email || '' %>"
+                                                placeholder="Enter email address" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Profile Photo Upload -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Choose_a_photo || 'Profile Photo' %>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-image"></i></span>
+                                            <input type="file" class="form-control" id="profile_image_input" name="image"
+                                                accept="image/png, image/jpeg, image/jpg" onchange="showPreview(event)">
+                                        </div>
+                                        <small class="text-muted fs-12 d-block mt-1">PNG, JPG, or JPEG (Max 2MB). Leave empty to retain current avatar.</small>
+                                    </div>
+
+                                    <!-- Username -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Username || 'Username' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-at"></i></span>
+                                            <input type="text" class="form-control" name="username"
+                                                value="<%= accessdata?.topbardata?.username || '' %>"
+                                                placeholder="Enter username" required autocomplete="off">
+                                        </div>
+                                    </div>
+
+                                    <!-- Password (Leave blank to keep unchanged) -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Password || 'New Password' %>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-lock"></i></span>
+                                            <input type="password" class="form-control" id="profile_password" name="password"
+                                                placeholder="Leave blank to keep current password" autocomplete="new-password">
+                                            <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility('profile_password', this)" title="Toggle visibility">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted fs-12 d-block mt-1">Only fill this field if you want to change your password.</small>
+                                    </div>
+                                </div>
+
+                                <hr class="my-4">
+
+                                <div class="d-flex justify-content-end align-items-center gap-2">
+                                    <a href="/index" class="btn btn-light px-4">
+                                        <%= language.Cancel || 'Cancel' %>
+                                    </a>
+                                    <button class="btn btn-primary px-4 fw-semibold shadow-sm" type="submit">
+                                        <i class="fa fa-save me-2"></i><%= language.Save_Data || 'Save Profile' %>
+                                    </button>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
-        <!--**********************************
-            Footer start
-        ***********************************-->
-        <%- include('templet/footer')-%>
+    </div>
+    <!--********** Content body end **********-->
 
-            <!--**********************************
-            Footer end
-        ***********************************-->
+    <!--**********************************
+        Footer start
+    ***********************************-->
+    <%- include('templet/footer')-%>
+    <!--**********************************
+        Footer end
+    ***********************************-->
 
-            </div>
+    </div>
+    <!--********** Main wrapper end **********-->
 
-            <!--********** Main wrapper end **********-->
-            <%- include('templet/script')-%>
+    <%- include('templet/script')-%>
+
+    <script>
+        // Real-time avatar image preview
+        function showPreview(event) {
+            if (event.target.files && event.target.files.length > 0) {
+                const file = event.target.files[0];
+                const preview = document.getElementById("file-preview");
+                if (preview) {
+                    preview.src = URL.createObjectURL(file);
+                }
+            }
+        }
+
+        // Password visibility toggle helper
+        function togglePasswordVisibility(fieldId, btn) {
+            const input = document.getElementById(fieldId);
+            const icon = btn.querySelector('i');
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
 </body>
 
 </html>

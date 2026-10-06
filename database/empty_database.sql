@@ -149,6 +149,7 @@ CREATE TABLE IF NOT EXISTS `tbl_cart_servicelist` (
   `service_name` varchar(255) NOT NULL,
   `service_type_name` varchar(255) NOT NULL,
   `service_img` varchar(255) NOT NULL DEFAULT ' ',
+  `no_of_items` int NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb3;
@@ -200,6 +201,7 @@ CREATE TABLE IF NOT EXISTS `tbl_customer` (
   `taxnumber` varchar(45) DEFAULT NULL,
   `username` varchar(45) DEFAULT NULL,
   `password` longtext,
+  `img` varchar(255) DEFAULT '',
   `store_ID` varchar(45) NOT NULL DEFAULT ' ',
   `main_roll_id` varchar(45) DEFAULT NULL,
   `reffstore` varchar(45) NOT NULL DEFAULT '',
@@ -438,6 +440,7 @@ CREATE TABLE IF NOT EXISTS `tbl_services` (
   `services_type_price` varchar(500) NOT NULL,
   `store_ID` varchar(45) NOT NULL DEFAULT '1',
   `status` varchar(45) NOT NULL DEFAULT '0',
+  `no_of_items` int NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb3;
@@ -509,6 +512,19 @@ CREATE TABLE IF NOT EXISTS `tbl_store` (
   `createdat` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `roll_ID` varchar(45) DEFAULT '0',
   `admin_id` varchar(45) DEFAULT '0',
+  `ready_lead_days` int DEFAULT '2',
+  `ready_cutoff_time` varchar(10) DEFAULT '13:00',
+  `ready_time` varchar(10) DEFAULT '16:00',
+  `ready_working_days` varchar(50) DEFAULT '1,2,3,4,5,6',
+  `printing_server_url` varchar(255) DEFAULT 'http://127.0.0.1:4321',
+  `silent_print_enabled` int DEFAULT '1',
+  `invoice_printer_format` int DEFAULT '1',
+  `invoice_printer_name` varchar(255) DEFAULT '',
+  `tag_printer_format` int DEFAULT '1',
+  `tag_printer_name` varchar(255) DEFAULT '',
+  `printer_auto_cut` int DEFAULT '1',
+  `printer_open_cash_drawer` int DEFAULT '0',
+  `printer_copies` int DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb3;

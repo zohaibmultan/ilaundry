@@ -31,9 +31,6 @@
                     <span class="badge bg-info-subtle text-info">
                         <i class="fas fa-dollar-sign me-1"></i> Currency: <%= masterstore.currency_symbol || '$' %>
                     </span>
-                    <span class="badge bg-success-subtle text-success">
-                        <i class="fas fa-print me-1"></i> Dual-Printers Configured
-                    </span>
                 </div>
             </div>
 
@@ -42,598 +39,239 @@
                 
                 <div class="row">
 
-                    <!-- ==========================================
-                         1. POS HARDWARE & DUAL PRINTERS CARD
-                         ========================================== -->
-                    <!-- ==========================================
-                         1. POS HARDWARE & DUAL PRINTERS CARD
-                         ========================================== -->
-                    <div class="col-12 col-xl-6">
-                        <div class="settings-section-card">
-                            <div class="settings-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                <div class="d-flex align-items-center">
-                                    <div class="settings-icon-badge badge-hardware-glass">
-                                        <i class="fas fa-print"></i>
+                    <div class="col-lg-6 col-md-12">
+                        <div class="row">                        
+                            <!-- ==========================================
+                                1. BRAND & VISUAL IDENTITY CARD
+                                ========================================== -->
+                            <div class="col-12">
+                                <div class="settings-section-card">
+                                    <div class="settings-card-header">
+                                        <div class="d-flex align-items-center">
+                                            <div class="settings-icon-badge badge-primary-glass">
+                                                <i class="fas fa-building"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="settings-card-title">Brand & Visual Identity</h5>
+                                                <p class="settings-card-subtitle">Application branding, store logo, browser favicon, and footer</p>
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-info-subtle text-info">BRANDING</span>
                                     </div>
-                                    <div>
-                                        <h5 class="settings-card-title">POS Hardware & Dual Printers</h5>
-                                        <p class="settings-card-subtitle">Dedicated printers for receipts and garment tracking tags</p>
-                                    </div>
-                                </div>
-                                <div class="d-flex align-items-center gap-2">
-                                    <div id="settings_server_status_badge" class="badge bg-secondary text-white d-inline-flex align-items-center gap-1" style="font-size: 11px; padding: 5px 9px;">
-                                        <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="width: 8px; height: 8px;"></span>
-                                        <span>Checking Server...</span>
-                                    </div>
-                                    <span class="badge bg-primary-subtle text-primary">HARDWARE</span>
-                                </div>
-                            </div>
 
-                            <!-- Printing Server Configuration & Live Ping -->
-                            <div class="p-3 mb-3 rounded-3" style="background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(14, 165, 233, 0.2);">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <i class="fas fa-server text-primary"></i>
-                                        <strong style="font-size: 13px;">POS Silent Printing Server</strong>
-                                    </div>
-                                    <div class="form-check form-switch mb-0">
-                                        <input class="form-check-input" type="checkbox" role="switch" id="silent_print_enabled" name="silent_print_enabled" value="1" <%= (masterstore.silent_print_enabled == 1 || masterstore.silent_print_enabled === undefined) ? 'checked' : '' %>>
-                                        <label class="form-check-label fw-bold" for="silent_print_enabled" style="font-size: 12px; cursor: pointer;">Enable Silent Printing</label>
-                                    </div>
-                                </div>
-                                <div class="row g-2 align-items-end">
-                                    <div class="col-sm-8">
-                                        <label class="form-label mb-1" style="font-size: 11px;" for="printing_server_url">Server Connection URL / Port</label>
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text"><i class="fas fa-network-wired"></i></span>
-                                            <input type="text" class="form-control" name="printing_server_url" id="printing_server_url"
-                                                value="<%= masterstore.printing_server_url || 'http://127.0.0.1:4321' %>"
-                                                placeholder="http://127.0.0.1:4321">
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label class="form-label"><%= language.App_Name || 'App Name' %></label>
+                                            <input type="text" class="form-control" name="appname"
+                                                value="<%= masterstore.app_name %>" placeholder="Enter Application Name">
+                                        </div>
+
+                                        <div class="col-sm-6">
+                                            <div class="preview-upload-box">
+                                                <label class="form-label d-block text-start mb-2"><%= language.Logo || 'Store Logo' %></label>
+                                                <div class="preview mb-2 d-flex align-items-center justify-content-center" style="height: 80px;">
+                                                    <img id="file-preview" src="../uploads/<%= masterstore.app_logo %>" 
+                                                        style="max-height: 75px; max-width: 100%; object-fit: contain;" alt="Logo">
+                                                </div>
+                                                <input class="d-none" type="file" id="logo" name="logo" accept="image/*" onchange="showPreview(event);">
+                                                <label class="btn btn-outline-primary btn-xs w-100 mb-0" for="logo">
+                                                    <i class="fas fa-upload me-1"></i> Upload Logo
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-sm-6">
+                                            <div class="preview-upload-box">
+                                                <label class="form-label d-block text-start mb-2"><%= language.Favicon || 'Browser Favicon' %></label>
+                                                <div class="preview mb-2 d-flex align-items-center justify-content-center" style="height: 80px;">
+                                                    <img id="file-favicon" src="../uploads/<%= masterstore.app_favicon %>" 
+                                                        style="max-height: 50px; max-width: 50px; object-fit: contain;" alt="Favicon">
+                                                </div>
+                                                <input class="d-none" type="file" id="favicon" name="favicon" accept="image/*" onchange="showfavicon(event);">
+                                                <label class="btn btn-outline-primary btn-xs w-100 mb-0" for="favicon">
+                                                    <i class="fas fa-upload me-1"></i> Upload Favicon
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="form-label">Footer Copyright Text</label>
+                                            <input type="text" class="form-control" name="footer"
+                                                value="<%= masterstore.footer %>" placeholder="e.g. Copyright 2026 © iCleaners">
                                         </div>
                                     </div>
-                                    <div class="col-sm-4">
-                                        <button type="button" class="btn btn-outline-primary btn-sm w-100" id="btn_refresh_printers" onclick="checkServerAndLoadPrinters(true)">
-                                            <i class="fas fa-sync-alt me-1"></i> Ping & Refresh
-                                        </button>
-                                    </div>
-                                </div>
-                                <div id="server_details_tip" class="mt-2" style="font-size: 11px;">
-                                    <span class="text-muted"><i class="fas fa-info-circle me-1"></i> Auto-discovers local Windows printers via Port 4321 background service.</span>
                                 </div>
                             </div>
 
-                            <!-- 1st Printer: Invoice Printing -->
-                            <div class="printer-config-box mb-3">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <div class="d-flex align-items-center">
-                                        <span class="badge bg-primary text-white me-2">PRINTER 1</span>
-                                        <strong style="font-size: 13px;">Invoice & Receipt Printing</strong>
+                            <!-- ==========================================
+                                4. CURRENCY & LOCALIZATION CARD
+                                ========================================== -->
+                            <div class="col-12">
+                                <div class="settings-section-card">
+                                    <div class="settings-card-header">
+                                        <div class="d-flex align-items-center">
+                                            <div class="settings-icon-badge badge-currency-glass">
+                                                <i class="fas fa-coins"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="settings-card-title">Currency & Localization</h5>
+                                                <p class="settings-card-subtitle">Monetary formatting, decimal markers, and operational timezone</p>
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-warning-subtle text-warning">LOCALIZATION</span>
                                     </div>
-                                    <div class="btn-group btn-group-sm">
-                                        <button type="button" class="btn btn-outline-primary btn-xs me-2" onclick="testPrintInvoiceSilent()" title="Send test receipt directly to printer">
-                                            <i class="fas fa-bolt me-1"></i> Silent Test
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-xs" onclick="testPrintInvoice()" title="Preview print window">
-                                            <i class="fas fa-external-link-alt"></i>
-                                        </button>
-                                    </div>
-                                </div>
 
-                                <div class="row g-2">
-                                    <div class="col-sm-6">
-                                        <label class="form-label" for="invoice_printer_format">Paper & Output Format</label>
-                                        <select class="form-control form-select" name="invoice_printer_format" id="invoice_printer_format">
-                                            <option value="1" <%= (masterstore.invoice_printer_format == 1 || (masterstore.invoice_printer_format === undefined && masterstore.printer == 1)) ? 'selected' : '' %>>
-                                                80mm Thermal Receipt (Standard POS)
-                                            </option>
-                                            <option value="2" <%= masterstore.invoice_printer_format == 2 ? 'selected' : '' %>>
-                                                58mm Thermal Receipt (Compact POS)
-                                            </option>
-                                            <option value="0" <%= (masterstore.invoice_printer_format === 0 || (masterstore.invoice_printer_format === undefined && masterstore.printer === 0)) ? 'selected' : '' %>>
-                                                A4 Standard Sheet (Full Page)
-                                            </option>
-                                        </select>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <label class="form-label" for="invoice_printer_name">Target Printer Device</label>
-                                        <div class="input-group input-group-sm">
-                                            <select class="form-control form-select" id="invoice_printer_select" onchange="onPrinterSelectChange('invoice_printer_select', 'invoice_printer_name')">
-                                                <option value="">Detecting local printers...</option>
+                                    <div class="row g-3">
+                                        <div class="col-sm-6">
+                                            <label class="form-label"><%= language.Currency || 'Currency Symbol' %></label>
+                                            <input type="text" class="form-control" name="currency"
+                                                value="<%= masterstore.currency_symbol %>" placeholder="e.g. $, €, £, Rs">
+                                        </div>
+
+                                        <div class="col-sm-6 d-flex flex-column justify-content-end">
+                                            <div class="settings-toggle-row mb-1">
+                                                <div class="form-check form-switch d-flex align-items-center justify-content-between mb-0">
+                                                    <label class="form-check-label mb-0" for="Symbol_Placement" style="font-size: 11.5px;">
+                                                        Symbol on Right (e.g. 100$)
+                                                    </label>
+                                                    <input class="form-check-input" type="checkbox" id="Symbol_Placement" name="Symbol_Placement" value="1"
+                                                        <%= masterstore.currency_placement == 1 ? 'checked' : '' %>>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-sm-6">
+                                            <label class="form-label"><%= language.Thousands_Separator || 'Thousands Separator' %></label>
+                                            <select class="form-control form-select" name="thousands_separator">
+                                                <option value="1" <%= masterstore.thousands_separator == 1 ? 'selected' : '' %>>, (Comma - 1,000.00)</option>
+                                                <option value="2" <%= masterstore.thousands_separator == 2 ? 'selected' : '' %>>. (Full Stop - 1.000,00)</option>
+                                                <option value="3" <%= masterstore.thousands_separator == 3 ? 'selected' : '' %>>` (Apostrophe - 1`000.00)</option>
+                                                <option value="4" <%= masterstore.thousands_separator == 4 ? 'selected' : '' %>>None (1000.00)</option>
+                                                <option value="5" <%= masterstore.thousands_separator == 5 ? 'selected' : '' %>>Space (1 000.00)</option>
                                             </select>
                                         </div>
-                                        <input type="text" class="form-control form-control-sm mt-1" name="invoice_printer_name" id="invoice_printer_name"
-                                            value="<%= masterstore.invoice_printer_name || '' %>"
-                                            placeholder="e.g. EPSON TM-T88VI or POS-80"
-                                            title="Configured Windows printer name">
-                                    </div>
-                                </div>
-                            </div>
 
-                            <!-- 2nd Printer: Barcode & Cloth Tag Printing -->
-                            <div class="printer-config-box mb-3">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <div class="d-flex align-items-center">
-                                        <span class="badge bg-info text-white me-2">PRINTER 2</span>
-                                        <strong style="font-size: 13px;">Barcode & Cloth Garment Tag</strong>
-                                    </div>
-                                    <div class="btn-group btn-group-sm">
-                                        <button type="button" class="btn btn-outline-info btn-xs me-2" onclick="testPrintTagSilent()" title="Send test tag directly to printer">
-                                            <i class="fas fa-bolt me-1"></i> Silent Test
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-xs" onclick="testPrintTag()" title="Preview tag window">
-                                            <i class="fas fa-external-link-alt"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="row g-2">
-                                    <div class="col-sm-6">
-                                        <label class="form-label" for="tag_printer_format">Tag & Label Media Format</label>
-                                        <select class="form-control form-select" name="tag_printer_format" id="tag_printer_format">
-                                            <option value="0" <%= (masterstore.tag_printer_format === 0 || masterstore.tag_printer_format === undefined) ? 'selected' : '' %>>
-                                                2" × 1" (50mm × 25mm) Barcode Label
-                                            </option>
-                                            <option value="1" <%= masterstore.tag_printer_format == 1 ? 'selected' : '' %>>
-                                                3" × 2" (75mm × 50mm) Laundry Cloth Tag
-                                            </option>
-                                            <option value="2" <%= masterstore.tag_printer_format == 2 ? 'selected' : '' %>>
-                                                80mm Continuous Tag Roll
-                                            </option>
-                                            <option value="3" <%= masterstore.tag_printer_format == 3 ? 'selected' : '' %>>
-                                                A4 Sheet Multi-Stickers (24 tags/page)
-                                            </option>
-                                        </select>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <label class="form-label" for="tag_printer_name">Target Tag Device</label>
-                                        <div class="input-group input-group-sm">
-                                            <select class="form-control form-select" id="tag_printer_select" onchange="onPrinterSelectChange('tag_printer_select', 'tag_printer_name')">
-                                                <option value="">Detecting local printers...</option>
+                                        <div class="col-sm-6">
+                                            <label class="form-label"><%= language.Timezone || 'Store Timezone' %></label>
+                                            <select class="form-control form-select" name="timezone" id="timezone" data-id="<%= masterstore.timezone %>">
+                                                <option value selected disabled>Choose Timezone</option>
                                             </select>
                                         </div>
-                                        <input type="text" class="form-control form-control-sm mt-1" name="tag_printer_name" id="tag_printer_name"
-                                            value="<%= masterstore.tag_printer_name || '' %>"
-                                            placeholder="e.g. Xprinter-XP420B or Zebra-ZD220"
-                                            title="Configured Windows printer name">
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Hardware Peripherals (Auto Cut, Cash Drawer, Copies) -->
-                            <div class="printer-config-box mb-3" style="background: rgba(0,0,0,0.02);">
-                                <strong class="d-block mb-2" style="font-size: 12px; color: #64748b;">
-                                    <i class="fas fa-cogs me-1"></i> Hardware Peripherals & Automation
-                                </strong>
-                                <div class="row g-2 align-items-center">
-                                    <div class="col-sm-4">
-                                        <div class="form-check form-switch mb-0">
-                                            <input class="form-check-input" type="checkbox" role="switch" id="printer_auto_cut" name="printer_auto_cut" value="1" <%= (masterstore.printer_auto_cut == 1 || masterstore.printer_auto_cut === undefined) ? 'checked' : '' %>>
-                                            <label class="form-check-label" for="printer_auto_cut" style="font-size: 12px; cursor: pointer;">Auto-Cut Paper</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-5">
-                                        <div class="form-check form-switch mb-0">
-                                            <input class="form-check-input" type="checkbox" role="switch" id="printer_open_cash_drawer" name="printer_open_cash_drawer" value="1" <%= masterstore.printer_open_cash_drawer == 1 ? 'checked' : '' %>>
-                                            <label class="form-check-label" for="printer_open_cash_drawer" style="font-size: 12px; cursor: pointer;">Kick Cash Drawer</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <div class="d-flex align-items-center gap-1">
-                                            <label class="form-label mb-0" for="printer_copies" style="font-size: 11px; white-space: nowrap;">Copies:</label>
-                                            <input type="number" class="form-control form-control-sm" name="printer_copies" id="printer_copies" min="1" max="5" value="<%= masterstore.printer_copies || 1 %>" style="width: 55px;">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div class="p-2 rounded" style="background: rgba(0, 129, 238, 0.04); border: 1px dashed rgba(0, 129, 238, 0.25);">
-                                <small class="text-muted d-block">
-                                    <i class="fas fa-info-circle text-primary me-1"></i> 
-                                    <strong>Dual-Hardware Architecture:</strong> Printer 1 is dispatched automatically during counter checkout for customer bills. Printer 2 prints durable laundry wash tags with garment barcodes and customer IDs. If the printing server is offline, the browser native print window (<code>Ctrl+P</code>) will be used automatically.
-                                </small>
-                            </div>
                         </div>
                     </div>
 
-                    <!-- ==========================================
-                         2. BRAND & VISUAL IDENTITY CARD
-                         ========================================== -->
-                    <div class="col-12 col-xl-6">
-                        <div class="settings-section-card">
-                            <div class="settings-card-header">
-                                <div class="d-flex align-items-center">
-                                    <div class="settings-icon-badge badge-primary-glass">
-                                        <i class="fas fa-building"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="settings-card-title">Brand & Visual Identity</h5>
-                                        <p class="settings-card-subtitle">Application branding, store logo, browser favicon, and footer</p>
-                                    </div>
-                                </div>
-                                <span class="badge bg-info-subtle text-info">BRANDING</span>
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <label class="form-label"><%= language.App_Name || 'App Name' %></label>
-                                    <input type="text" class="form-control" name="appname"
-                                        value="<%= masterstore.app_name %>" placeholder="Enter Application Name">
-                                </div>
-
-                                <div class="col-sm-6">
-                                    <div class="preview-upload-box">
-                                        <label class="form-label d-block text-start mb-2"><%= language.Logo || 'Store Logo' %></label>
-                                        <div class="preview mb-2 d-flex align-items-center justify-content-center" style="height: 80px;">
-                                            <img id="file-preview" src="../uploads/<%= masterstore.app_logo %>" 
-                                                style="max-height: 75px; max-width: 100%; object-fit: contain;" alt="Logo">
-                                        </div>
-                                        <input class="d-none" type="file" id="logo" name="logo" accept="image/*" onchange="showPreview(event);">
-                                        <label class="btn btn-outline-primary btn-xs w-100 mb-0" for="logo">
-                                            <i class="fas fa-upload me-1"></i> Upload Logo
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div class="col-sm-6">
-                                    <div class="preview-upload-box">
-                                        <label class="form-label d-block text-start mb-2"><%= language.Favicon || 'Browser Favicon' %></label>
-                                        <div class="preview mb-2 d-flex align-items-center justify-content-center" style="height: 80px;">
-                                            <img id="file-favicon" src="../uploads/<%= masterstore.app_favicon %>" 
-                                                style="max-height: 50px; max-width: 50px; object-fit: contain;" alt="Favicon">
-                                        </div>
-                                        <input class="d-none" type="file" id="favicon" name="favicon" accept="image/*" onchange="showfavicon(event);">
-                                        <label class="btn btn-outline-primary btn-xs w-100 mb-0" for="favicon">
-                                            <i class="fas fa-upload me-1"></i> Upload Favicon
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div class="col-12">
-                                    <label class="form-label">Footer Copyright Text</label>
-                                    <input type="text" class="form-control" name="footer"
-                                        value="<%= masterstore.footer %>" placeholder="e.g. Copyright 2026 © iCleaners">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ==========================================
-                         3. STORE ARCHITECTURE & APPROVAL RULES CARD
-                         ========================================== -->
-                    <div class="col-12 col-xl-6">
-                        <div class="settings-section-card">
-                            <div class="settings-card-header">
-                                <div class="d-flex align-items-center">
-                                    <div class="settings-icon-badge badge-ops-glass">
-                                        <i class="fas fa-sitemap"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="settings-card-title">Store Architecture & Operations</h5>
-                                        <p class="settings-card-subtitle">Multi-store topology, customer isolation, and auto-approval policies</p>
-                                    </div>
-                                </div>
-                                <span class="badge bg-success-subtle text-success">OPERATIONS</span>
-                            </div>
-
-                            <div class="row g-3">
-                                <!-- Multi-Store Switch -->
-                                <div class="col-12">
-                                    <div class="settings-toggle-row">
-                                        <div class="form-check form-switch d-flex align-items-center justify-content-between mb-0">
+                    <div class="col-lg-6 col-md-12">
+                        <div class="row">
+                            <!-- ==========================================
+                                3. STORE ARCHITECTURE & APPROVAL RULES CARD
+                                ========================================== -->
+                            <div class="col-12">
+                                <div class="settings-section-card">
+                                    <div class="settings-card-header">
+                                        <div class="d-flex align-items-center">
+                                            <div class="settings-icon-badge badge-ops-glass">
+                                                <i class="fas fa-sitemap"></i>
+                                            </div>
                                             <div>
-                                                <label class="form-check-label fw-bold mb-0" for="multy">
-                                                    <%= language.Single_Store_or_Multi_Store || 'Multi-Store Branch Architecture' %>
-                                                </label>
-                                                <div class="text-muted" style="font-size: 11px;">Enable to run independent branches with isolated inventories</div>
-                                            </div>
-                                            <input class="form-check-input" type="checkbox" id="multy" name="multy" value="1" <%= masterstore.type == 1 ? 'checked' : '' %>>
-                                        </div>
-                                    </div>
-
-                                    <!-- Source Store dropdown if single store -->
-                                    <div class="<%= masterstore.type != 1 ? '' : 'd-none' %> mt-3" id="store_source">
-                                        <label class="form-label" for="fromStore">Default Primary Store</label>
-                                        <select class="form-select" id="fromStore" name="fromStore">
-                                            <option value="">Select Primary Store</option>
-                                            <% storeList.forEach(function(store) { %>
-                                                <option value="<%= store.id %>" <%= masterstore.fromStore == store.id ? 'selected' : '' %>>
-                                                    <%= store.name %>
-                                                </option>
-                                            <% }); %>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <!-- Customer Store Selection Switch -->
-                                <div class="col-12 <%= masterstore.type == 1 ? '' : 'd-none' %>" id="custmor_selection_main">
-                                    <div class="settings-toggle-row">
-                                        <div class="form-check form-switch d-flex align-items-center justify-content-between mb-0">
-                                            <div>
-                                                <label class="form-check-label fw-bold mb-0" for="custmor_selection">
-                                                    <%= language.Disable_select_store || 'Hide Store Filter in Customer Section' %>
-                                                </label>
-                                                <div class="text-muted" style="font-size: 11px;">Restricts cashier view to only customers registered in their own store</div>
-                                            </div>
-                                            <input class="form-check-input" type="checkbox" id="custmor_selection" name="custmor_selection" value="1" <%= masterstore.customer_selection == 1 ? 'checked' : '' %>>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Customer Auto Approved -->
-                                <div class="col-sm-6">
-                                    <div class="settings-toggle-row">
-                                        <div class="form-check form-switch d-flex align-items-center justify-content-between mb-0">
-                                            <div>
-                                                <label class="form-check-label fw-bold mb-0" for="customer_approved">
-                                                    <%= language.Customer_Auto_Approved || 'Customer Auto-Approve' %>
-                                                </label>
-                                                <div class="text-muted" style="font-size: 11px;">Auto-validate new customer signups</div>
-                                            </div>
-                                            <input class="form-check-input" type="checkbox" id="customer_approved" name="customer_approved" value="1" <%= masterstore.customer_autoapprove == 1 ? 'checked' : '' %>>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Store Auto Approved -->
-                                <div class="col-sm-6">
-                                    <div class="settings-toggle-row">
-                                        <div class="form-check form-switch d-flex align-items-center justify-content-between mb-0">
-                                            <div>
-                                                <label class="form-check-label fw-bold mb-0" for="store_approved">
-                                                    <%= language.Store_Auto_Approved || 'Branch Auto-Approve' %>
-                                                </label>
-                                                <div class="text-muted" style="font-size: 11px;">Auto-validate new store requests</div>
-                                            </div>
-                                            <input class="form-check-input" type="checkbox" id="store_approved" name="store_approved" value="1" <%= masterstore.store_autoapprove == 1 ? 'checked' : '' %>>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-12 d-none">
-                                    <label class="form-label"><%= language.Default_Store_Roll || 'Default Store Role' %></label>
-                                    <select class="form-control" name="storeroll">
-                                        <option value="0" selected>Choose Role</option>
-                                        <% roll.forEach(function(data){ %>
-                                            <option value="<%= data.id %>" <%= data.rollType == 'master' ? 'selected' : '' %>><%= data.roll %></option>
-                                        <% }) %>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ==========================================
-                         4. CURRENCY & LOCALIZATION CARD
-                         ========================================== -->
-                    <div class="col-12 col-xl-6">
-                        <div class="settings-section-card">
-                            <div class="settings-card-header">
-                                <div class="d-flex align-items-center">
-                                    <div class="settings-icon-badge badge-currency-glass">
-                                        <i class="fas fa-coins"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="settings-card-title">Currency & Localization</h5>
-                                        <p class="settings-card-subtitle">Monetary formatting, decimal markers, and operational timezone</p>
-                                    </div>
-                                </div>
-                                <span class="badge bg-warning-subtle text-warning">LOCALIZATION</span>
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-sm-6">
-                                    <label class="form-label"><%= language.Currency || 'Currency Symbol' %></label>
-                                    <input type="text" class="form-control" name="currency"
-                                        value="<%= masterstore.currency_symbol %>" placeholder="e.g. $, €, £, Rs">
-                                </div>
-
-                                <div class="col-sm-6 d-flex flex-column justify-content-end">
-                                    <div class="settings-toggle-row mb-1">
-                                        <div class="form-check form-switch d-flex align-items-center justify-content-between mb-0">
-                                            <label class="form-check-label mb-0" for="Symbol_Placement" style="font-size: 11.5px;">
-                                                Symbol on Right (e.g. 100$)
-                                            </label>
-                                            <input class="form-check-input" type="checkbox" id="Symbol_Placement" name="Symbol_Placement" value="1"
-                                                <%= masterstore.currency_placement == 1 ? 'checked' : '' %>>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-sm-6">
-                                    <label class="form-label"><%= language.Thousands_Separator || 'Thousands Separator' %></label>
-                                    <select class="form-control form-select" name="thousands_separator">
-                                        <option value="1" <%= masterstore.thousands_separator == 1 ? 'selected' : '' %>>, (Comma - 1,000.00)</option>
-                                        <option value="2" <%= masterstore.thousands_separator == 2 ? 'selected' : '' %>>. (Full Stop - 1.000,00)</option>
-                                        <option value="3" <%= masterstore.thousands_separator == 3 ? 'selected' : '' %>>` (Apostrophe - 1`000.00)</option>
-                                        <option value="4" <%= masterstore.thousands_separator == 4 ? 'selected' : '' %>>None (1000.00)</option>
-                                        <option value="5" <%= masterstore.thousands_separator == 5 ? 'selected' : '' %>>Space (1 000.00)</option>
-                                    </select>
-                                </div>
-
-                                <div class="col-sm-6">
-                                    <label class="form-label"><%= language.Timezone || 'Store Timezone' %></label>
-                                    <select class="form-control form-select" name="timezone" id="timezone" data-id="<%= masterstore.timezone %>">
-                                        <option value selected disabled>Choose Timezone</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ==========================================
-                         5. NOTIFICATIONS & INTEGRATIONS CARD
-                         ========================================== -->
-                    <div class="col-12">
-                        <div class="settings-section-card">
-                            <div class="settings-card-header">
-                                <div class="d-flex align-items-center">
-                                    <div class="settings-icon-badge badge-api-glass">
-                                        <i class="fas fa-plug"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="settings-card-title">Notifications & Communication Gateways</h5>
-                                        <p class="settings-card-subtitle">OneSignal web push notifications and Twilio SMS gateway API configuration</p>
-                                    </div>
-                                </div>
-                                <span class="badge bg-secondary-subtle text-secondary">INTEGRATIONS</span>
-                            </div>
-
-                            <div class="row g-4">
-                                <!-- OneSignal Web Push -->
-                                <div class="col-12 col-md-6">
-                                    <div class="settings-service-box h-100">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <i class="fas fa-bell text-warning fs-5 me-2"></i>
-                                            <strong style="font-size: 14px;">OneSignal Web Push Service</strong>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <label class="form-label"><%= language.OneSignal_App_ID || 'OneSignal App ID' %></label>
-                                            <input type="text" class="form-control" name="onesignal_app_id"
-                                                value="<%= masterstore.onesignal_app_id && masterstore.onesignal_app_id !== '*****' ? masterstore.onesignal_app_id : '' %>"
-                                                placeholder="Enter OneSignal App ID">
-                                        </div>
-
-                                        <div>
-                                            <label class="form-label"><%= language.OneSignal_API_Key || 'OneSignal REST API Key' %></label>
-                                            <div class="input-group">
-                                                <input type="password" class="form-control" id="onesignal_key_input" name="onesignal_api_key"
-                                                    value="<%= masterstore.onesignal_api_key && masterstore.onesignal_api_key !== '*****' ? masterstore.onesignal_api_key : '' %>"
-                                                    placeholder="Enter OneSignal REST API Key">
-                                                <button class="btn btn-sm btn-outline-secondary" type="button" onclick="togglePassVisibility('onesignal_key_input', this)">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
+                                                <h5 class="settings-card-title">Store Architecture & Operations</h5>
+                                                <p class="settings-card-subtitle">Multi-store topology, customer isolation, and auto-approval policies</p>
                                             </div>
                                         </div>
+                                        <span class="badge bg-success-subtle text-success">OPERATIONS</span>
                                     </div>
-                                </div>
 
-                                <!-- Twilio SMS Gateway -->
-                                <div class="col-12 col-md-6">
-                                    <div class="settings-service-box h-100">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <i class="fas fa-comment-dots text-primary fs-5 me-2"></i>
-                                            <strong style="font-size: 14px;">Twilio SMS Gateway Service</strong>
-                                        </div>
-
-                                        <div class="row g-2">
-                                            <div class="col-12 mb-2">
-                                                <label class="form-label"><%= language.Twilio_Account_SID || 'Twilio Account SID' %></label>
-                                                <input class="form-control" type="text" name="twilio_sid"
-                                                    value="<%= masterstore.twilio_sid && masterstore.twilio_sid !== '*****' ? masterstore.twilio_sid : '' %>"
-                                                    placeholder="e.g. ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX">
-                                            </div>
-
-                                            <div class="col-sm-6 mb-2">
-                                                <label class="form-label"><%= language.Twilio_Auth_Token || 'Twilio Auth Token' %></label>
-                                                <div class="input-group">
-                                                    <input class="form-control" type="password" id="twilio_token_input" name="twilio_auth_token"
-                                                        value="<%= masterstore.twilio_auth_token && masterstore.twilio_auth_token !== '*****' ? masterstore.twilio_auth_token : '' %>"
-                                                        placeholder="Auth Token">
-                                                    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="togglePassVisibility('twilio_token_input', this)">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
+                                    <div class="row g-3">
+                                        <!-- Multi-Store Switch -->
+                                        <div class="col-12">
+                                            <div class="settings-toggle-row">
+                                                <div class="form-check form-switch d-flex align-items-center justify-content-between mb-0">
+                                                    <div>
+                                                        <label class="form-check-label fw-bold mb-0" for="multy">
+                                                            <%= language.Single_Store_or_Multi_Store || 'Multi-Store Branch Architecture' %>
+                                                        </label>
+                                                        <div class="text-muted" style="font-size: 11px;">Enable to run independent branches with isolated inventories</div>
+                                                    </div>
+                                                    <input class="form-check-input" type="checkbox" id="multy" name="multy" value="1" <%= masterstore.type == 1 ? 'checked' : '' %>>
                                                 </div>
                                             </div>
 
-                                            <div class="col-sm-6 mb-2">
-                                                <label class="form-label"><%= language.Twilio_Phone_Number || 'Twilio Phone Number' %></label>
-                                                <input class="form-control" type="text" name="twilio_phone_no"
-                                                    value="<%= masterstore.twilio_phone_no && masterstore.twilio_phone_no !== '*****' ? masterstore.twilio_phone_no : '' %>"
-                                                    placeholder="e.g. +1234567890">
+                                            <!-- Source Store dropdown if single store -->
+                                            <div class="<%= masterstore.type != 1 ? '' : 'd-none' %> mt-3" id="store_source">
+                                                <label class="form-label" for="fromStore">Default Primary Store</label>
+                                                <select class="form-select" id="fromStore" name="fromStore">
+                                                    <option value="">Select Primary Store</option>
+                                                    <% storeList.forEach(function(store) { %>
+                                                        <option value="<%= store.id %>" <%= masterstore.fromStore == store.id ? 'selected' : '' %>>
+                                                            <%= store.name %>
+                                                        </option>
+                                                    <% }); %>
+                                                </select>
                                             </div>
+                                        </div>
+
+                                        <!-- Customer Store Selection Switch -->
+                                        <div class="col-12 <%= masterstore.type == 1 ? '' : 'd-none' %>" id="custmor_selection_main">
+                                            <div class="settings-toggle-row">
+                                                <div class="form-check form-switch d-flex align-items-center justify-content-between mb-0">
+                                                    <div>
+                                                        <label class="form-check-label fw-bold mb-0" for="custmor_selection">
+                                                            <%= language.Disable_select_store || 'Hide Store Filter in Customer Section' %>
+                                                        </label>
+                                                        <div class="text-muted" style="font-size: 11px;">Restricts cashier view to only customers registered in their own store</div>
+                                                    </div>
+                                                    <input class="form-check-input" type="checkbox" id="custmor_selection" name="custmor_selection" value="1" <%= masterstore.customer_selection == 1 ? 'checked' : '' %>>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Customer Auto Approved -->
+                                        <div class="col-sm-6">
+                                            <div class="settings-toggle-row">
+                                                <div class="form-check form-switch d-flex align-items-center justify-content-between mb-0">
+                                                    <div>
+                                                        <label class="form-check-label fw-bold mb-0" for="customer_approved">
+                                                            <%= language.Customer_Auto_Approved || 'Customer Auto-Approve' %>
+                                                        </label>
+                                                        <div class="text-muted" style="font-size: 11px;">Auto-validate new customer signups</div>
+                                                    </div>
+                                                    <input class="form-check-input" type="checkbox" id="customer_approved" name="customer_approved" value="1" <%= masterstore.customer_autoapprove == 1 ? 'checked' : '' %>>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Store Auto Approved -->
+                                        <div class="col-sm-6">
+                                            <div class="settings-toggle-row">
+                                                <div class="form-check form-switch d-flex align-items-center justify-content-between mb-0">
+                                                    <div>
+                                                        <label class="form-check-label fw-bold mb-0" for="store_approved">
+                                                            <%= language.Store_Auto_Approved || 'Branch Auto-Approve' %>
+                                                        </label>
+                                                        <div class="text-muted" style="font-size: 11px;">Auto-validate new store requests</div>
+                                                    </div>
+                                                    <input class="form-check-input" type="checkbox" id="store_approved" name="store_approved" value="1" <%= masterstore.store_autoapprove == 1 ? 'checked' : '' %>>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-12 d-none">
+                                            <label class="form-label"><%= language.Default_Store_Roll || 'Default Store Role' %></label>
+                                            <select class="form-control" name="storeroll">
+                                                <option value="0" selected>Choose Role</option>
+                                                <% roll.forEach(function(data){ %>
+                                                    <option value="<%= data.id %>" <%= data.rollType == 'master' ? 'selected' : '' %>><%= data.roll %></option>
+                                                <% }) %>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- ==========================================
-                         6. READY SCHEDULE SETUP CARD
-                         ========================================== -->
-                    <div class="col-12 mb-4">
-                        <div class="settings-section-card">
-                            <div class="settings-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                <div class="d-flex align-items-center">
-                                    <div class="settings-icon-badge badge-primary-glass">
-                                        <i class="fas fa-calendar-check"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="settings-card-title">Default Ready Schedule Setup</h5>
-                                        <p class="settings-card-subtitle">Automated pickup & ready date calculation scheme (working days, cut-off time, and target ready hour)</p>
-                                    </div>
-                                </div>
-                                <span class="badge bg-primary-subtle text-primary">SCHEDULING</span>
-                            </div>
-
-                            <div class="row g-3">
-                                <!-- Default Lead Days -->
-                                <div class="col-12 col-md-4">
-                                    <label class="form-label fw-bold">
-                                        <i class="fas fa-business-time text-primary me-1"></i>
-                                        Default Lead Days <span class="text-danger">*</span>
-                                    </label>
-                                    <div class="input-group">
-                                        <input type="number" class="form-control" name="ready_lead_days" id="ready_lead_days"
-                                            value="<%= (masterstore.ready_lead_days !== undefined && masterstore.ready_lead_days !== null) ? masterstore.ready_lead_days : 2 %>"
-                                            min="0" max="30" required>
-                                        <span class="input-group-text">days</span>
-                                    </div>
-                                    <small class="text-muted d-block mt-1">Working days required to complete orders received before cut-off</small>
-                                </div>
-
-                                <!-- Cut-off Time -->
-                                <div class="col-12 col-md-4">
-                                    <label class="form-label fw-bold">
-                                        <i class="fas fa-hourglass-half text-primary me-1"></i>
-                                        Daily Cut-off Time <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="time" class="form-control" name="ready_cutoff_time" id="ready_cutoff_time"
-                                        value="<%= masterstore.ready_cutoff_time || '13:00' %>" required>
-                                    <small class="text-muted d-block mt-1">Orders coming in at or after this time require +1 extra working day</small>
-                                </div>
-
-                                <!-- Default Ready Time -->
-                                <div class="col-12 col-md-4">
-                                    <label class="form-label fw-bold">
-                                        <i class="fas fa-clock text-primary me-1"></i>
-                                        Target Ready Time <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="time" class="form-control" name="ready_time" id="ready_time"
-                                        value="<%= masterstore.ready_time || '16:00' %>" required>
-                                    <small class="text-muted d-block mt-1">Standard time of day when orders become ready for pickup</small>
-                                </div>
-
-                                <!-- Working Days Checklist -->
-                                <div class="col-12 mt-3">
-                                    <label class="form-label fw-bold mb-2">
-                                        <i class="fas fa-calendar-week text-primary me-1"></i>
-                                        Weekly Working Days (Closed days are automatically skipped)
-                                    </label>
-                                    <% 
-                                      const activeWorkingDays = (masterstore.ready_working_days || '1,2,3,4,5,6').split(',').map(s => s.trim());
-                                      const daysList = [
-                                        { val: '1', label: 'Monday' },
-                                        { val: '2', label: 'Tuesday' },
-                                        { val: '3', label: 'Wednesday' },
-                                        { val: '4', label: 'Thursday' },
-                                        { val: '5', label: 'Friday' },
-                                        { val: '6', label: 'Saturday' },
-                                        { val: '0', label: 'Sunday' }
-                                      ];
-                                    %>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        <% daysList.forEach(function(d){ %>
-                                            <div class="form-check form-check-inline ready-day-pill border d-flex align-items-center gap-2 m-0">
-                                                <input class="form-check-input ms-1" type="checkbox" name="ready_working_days" id="wday_<%= d.val %>" value="<%= d.val %>" <%= activeWorkingDays.includes(d.val) ? 'checked' : '' %>>
-                                                <label class="form-check-label fw-bold mb-0 cursor-pointer" for="wday_<%= d.val %>"><%= d.label %></label>
-                                            </div>
-                                        <% }) %>
-                                    </div>
-                                    <small class="text-muted d-block mt-2">Example: With Mon–Sat active and 2 lead days, an order on Friday 2:00 PM will skip Sunday and be ready on Tuesday 4:00 PM.</small>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -749,283 +387,6 @@
             modalElement.removeAttribute('data-confirm');
         });
 
-        // ==========================================
-        // POS SILENT PRINTING SERVER CLIENT LOGIC
-        // ==========================================
-        function getPrintingClient() {
-            const urlInput = document.getElementById('printing_server_url');
-            const baseUrl = (urlInput && urlInput.value.trim()) ? urlInput.value.trim().replace(/\/$/, '') : 'http://127.0.0.1:4321';
-            return new POSPrintClient({ baseUrl: baseUrl, timeout: 6000 });
-        }
-
-        async function checkServerAndLoadPrinters(isManual = false) {
-            const badge = document.getElementById('settings_server_status_badge');
-            const tip = document.getElementById('server_details_tip');
-            const invSelect = document.getElementById('invoice_printer_select');
-            const tagSelect = document.getElementById('tag_printer_select');
-            const invInput = document.getElementById('invoice_printer_name');
-            const tagInput = document.getElementById('tag_printer_name');
-            const refreshBtn = document.getElementById('btn_refresh_printers');
-
-            if (refreshBtn) refreshBtn.disabled = true;
-            if (badge) {
-                badge.className = 'badge bg-warning text-dark d-inline-flex align-items-center gap-1';
-                badge.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" style="width: 10px; height: 10px;"></span> <span>Pinging Server...</span>';
-            }
-
-            const client = getPrintingClient();
-            try {
-                const health = await client.request('/health');
-                const isOnline = health && health.status === 'running';
-
-                if (isOnline) {
-                    if (badge) {
-                        badge.className = 'badge bg-success text-white d-inline-flex align-items-center gap-1';
-                        badge.innerHTML = '<i class="fas fa-check-circle"></i> <span>Online (v' + (health.version || '1.0.0') + ')</span>';
-                    }
-                    if (tip) {
-                        tip.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i> Connected to Printing Server at <strong>' + client.baseUrl + '</strong> (Platform: ' + (health.platform || 'win32') + '). Spooler ready.</span>';
-                    }
-
-                    // Discover printers
-                    const printers = await client.getPrinters();
-                    populateSelectWithOptions(invSelect, printers, invInput ? invInput.value : '');
-                    populateSelectWithOptions(tagSelect, printers, tagInput ? tagInput.value : '');
-
-                    if (isManual && typeof toastr !== 'undefined') {
-                        toastr.success('Printing Server is online! Found ' + printers.length + ' printer(s).', 'Hardware Ready');
-                    }
-                } else {
-                    throw new Error('Server returned unexpected status');
-                }
-            } catch (err) {
-                if (badge) {
-                    badge.className = 'badge bg-danger text-white d-inline-flex align-items-center gap-1';
-                    badge.innerHTML = '<i class="fas fa-times-circle"></i> <span>Offline</span>';
-                }
-                if (tip) {
-                    tip.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i> Cannot connect to <strong>' + client.baseUrl + '</strong>. Native browser print (<code>window.print()</code>) will be used as fallback.</span>';
-                }
-                if (invSelect) {
-                    invSelect.innerHTML = '<option value="">Server offline (Native print fallback)</option>';
-                }
-                if (tagSelect) {
-                    tagSelect.innerHTML = '<option value="">Server offline (Native print fallback)</option>';
-                }
-                if (isManual && typeof toastr !== 'undefined') {
-                    toastr.warning('Could not reach Printing Server at ' + client.baseUrl + '. Ensure the tray app or background service is running.', 'Server Offline');
-                }
-            } finally {
-                if (refreshBtn) refreshBtn.disabled = false;
-            }
-        }
-
-        function populateSelectWithOptions(selectEl, printers, currentValue) {
-            if (!selectEl) return;
-            selectEl.innerHTML = '';
-
-            const defaultOpt = document.createElement('option');
-            defaultOpt.value = '';
-            defaultOpt.textContent = '-- Use System Default Printer --';
-            selectEl.appendChild(defaultOpt);
-
-            let matched = false;
-            printers.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.name;
-                opt.textContent = p.name + (p.isDefault ? ' (System Default)' : '');
-                if (currentValue && (p.name.toLowerCase() === currentValue.toLowerCase() || p.deviceId === currentValue)) {
-                    opt.selected = true;
-                    matched = true;
-                }
-                selectEl.appendChild(opt);
-            });
-
-            const customOpt = document.createElement('option');
-            customOpt.value = '__custom__';
-            customOpt.textContent = '✏️ Custom / Manual Device Name...';
-            if (!matched && currentValue) {
-                customOpt.selected = true;
-            }
-            selectEl.appendChild(customOpt);
-        }
-
-        function onPrinterSelectChange(selectId, inputId) {
-            const select = document.getElementById(selectId);
-            const input = document.getElementById(inputId);
-            if (!select || !input) return;
-
-            if (select.value === '__custom__') {
-                input.focus();
-            } else {
-                input.value = select.value;
-            }
-        }
-
-        // Silent Test Print: Invoice
-        async function testPrintInvoiceSilent() {
-            const client = getPrintingClient();
-            const formatEl = document.getElementById('invoice_printer_format');
-            const nameEl = document.getElementById('invoice_printer_name');
-            const autoCutEl = document.getElementById('printer_auto_cut');
-            const drawerEl = document.getElementById('printer_open_cash_drawer');
-            const copiesEl = document.getElementById('printer_copies');
-
-            const format = formatEl ? formatEl.value : "1";
-            const printerName = nameEl ? nameEl.value.trim() : "";
-            const widthMm = format === "2" ? 58 : format === "0" ? null : 80;
-            const cut = autoCutEl ? autoCutEl.checked : true;
-            const openDrawer = drawerEl ? drawerEl.checked : false;
-            const copies = copiesEl ? (parseInt(copiesEl.value) || 1) : 1;
-
-            if (typeof toastr !== 'undefined') {
-                toastr.info('Sending test invoice to printer...', 'Dispatching Job');
-            }
-
-            try {
-                const sampleHtml = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="utf-8">
-                        <style>
-                            body { font-family: monospace; font-size: 12px; margin: 0; padding: 10px; color: #000; width: ${widthMm ? widthMm + 'mm' : '100%'}; }
-                            .c { text-align: center; }
-                            .b { font-weight: bold; }
-                            .r { text-align: right; }
-                            hr { border: none; border-top: 1px dashed #000; margin: 8px 0; }
-                            table { width: 100%; border-collapse: collapse; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="c b" style="font-size: 15px;">iCleaners POS</div>
-                        <div class="c">Silent Printing Server Test</div>
-                        <div class="c">Target: ${printerName || 'Default Spooler'}</div>
-                        <hr>
-                        <table>
-                            <tr><td>Date:</td><td class="r">${new Date().toLocaleString()}</td></tr>
-                            <tr><td>Paper Mode:</td><td class="r">${widthMm ? widthMm + 'mm Roll' : 'A4 Sheet'}</td></tr>
-                            <tr><td>Auto Cut:</td><td class="r">${cut ? 'Enabled' : 'Disabled'}</td></tr>
-                            <tr><td>Drawer Kick:</td><td class="r">${openDrawer ? 'Yes' : 'No'}</td></tr>
-                        </table>
-                        <hr>
-                        <table>
-                            <tr><td>Sample Laundry Wash</td><td class="r">$15.00</td></tr>
-                            <tr><td>Dry Clean Suit x1</td><td class="r">$25.00</td></tr>
-                            <tr><td class="b">TOTAL</td><td class="r b">$40.00</td></tr>
-                        </table>
-                        <hr>
-                        <div class="c b">*** HARDWARE VERIFIED ***</div>
-                        <div class="c" style="font-size: 10px; margin-top: 4px;">Direct Spooler Service :4321</div>
-                    </body>
-                    </html>
-                `;
-
-                const res = await client.printHTML(sampleHtml, {
-                    printerId: printerName || null,
-                    widthMm: widthMm || 80,
-                    options: {
-                        copies: copies,
-                        cut: cut,
-                        openCashDrawer: openDrawer
-                    }
-                });
-
-                if (res && res.success) {
-                    if (typeof toastr !== 'undefined') {
-                        toastr.success('Test invoice dispatched silently! (Job #' + (res.jobId || 'OK') + ')', 'Print Dispatched');
-                    } else {
-                        alert('Test invoice dispatched silently! Job #' + res.jobId);
-                    }
-                } else {
-                    throw new Error(res.error || 'Printing server reported failure');
-                }
-            } catch (err) {
-                if (typeof toastr !== 'undefined') {
-                    toastr.warning('Silent print failed (' + err.message + '). Opening browser preview...', 'Spooler Notice');
-                }
-                testPrintInvoice();
-            }
-        }
-
-        // Silent Test Print: Cloth Wash Tag
-        async function testPrintTagSilent() {
-            const client = getPrintingClient();
-            const formatEl = document.getElementById('tag_printer_format');
-            const nameEl = document.getElementById('tag_printer_name');
-            const printerName = nameEl ? nameEl.value.trim() : "";
-
-            if (typeof toastr !== 'undefined') {
-                toastr.info('Sending test garment tag...', 'Dispatching Tag');
-            }
-
-            try {
-                const sampleTagHtml = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="utf-8">
-                        <style>
-                            body { font-family: -apple-system, monospace; font-size: 11px; margin: 0; padding: 6px; color: #000; width: 75mm; }
-                            .c { text-align: center; }
-                            .b { font-weight: bold; }
-                            .tag-box { border: 2px solid #000; padding: 6px; border-radius: 4px; }
-                            .order-id { font-size: 18px; font-weight: 900; letter-spacing: 1px; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="tag-box">
-                            <div class="c b">GARMENT WASH TAG</div>
-                            <div class="c order-id">#ORD-9901-T1</div>
-                            <div class="c">Customer: John Doe (VIP)</div>
-                            <div class="c b" style="font-size: 13px; margin-top: 4px;">Suit Jacket [Item 1 of 3]</div>
-                            <div class="c" style="font-size: 10px;">Wash & Iron | Fragile Buttons</div>
-                            <div class="c" style="margin-top: 4px; font-weight: bold;">[BARCODE: 9901001]</div>
-                        </div>
-                    </body>
-                    </html>
-                `;
-
-                const res = await client.printHTML(sampleTagHtml, {
-                    printerId: printerName || null,
-                    widthMm: 75,
-                    options: { copies: 1, cut: true }
-                });
-
-                if (res && res.success) {
-                    if (typeof toastr !== 'undefined') {
-                        toastr.success('Test garment tag dispatched silently! (Job #' + (res.jobId || 'OK') + ')', 'Tag Dispatched');
-                    } else {
-                        alert('Test garment tag dispatched silently! Job #' + res.jobId);
-                    }
-                } else {
-                    throw new Error(res.error || 'Printing server reported failure');
-                }
-            } catch (err) {
-                if (typeof toastr !== 'undefined') {
-                    toastr.warning('Silent tag print failed (' + err.message + '). Opening preview...', 'Tag Notice');
-                }
-                testPrintTag();
-            }
-        }
-
-        // Test Print Trigger Functions (Preview Window)
-        function testPrintInvoice() {
-            const formatEl = document.getElementById('invoice_printer_format');
-            const nameEl = document.getElementById('invoice_printer_name');
-            const format = formatEl ? formatEl.value : 1;
-            const printer = encodeURIComponent(nameEl ? nameEl.value : '');
-            window.open('/tool/test-print-invoice?format=' + format + '&printer=' + printer, '_blank', 'width=520,height=750,scrollbars=yes');
-        }
-
-        function testPrintTag() {
-            const formatEl = document.getElementById('tag_printer_format');
-            const nameEl = document.getElementById('tag_printer_name');
-            const format = formatEl ? formatEl.value : 0;
-            const printer = encodeURIComponent(nameEl ? nameEl.value : '');
-            window.open('/tool/test-print-tag?format=' + format + '&printer=' + printer, '_blank', 'width=520,height=650,scrollbars=yes');
-        }
-
         // Show/Hide password toggle for API keys
         function togglePassVisibility(inputId, btn) {
             const input = document.getElementById(inputId);
@@ -1039,11 +400,6 @@
                 if (icon) icon.className = 'fas fa-eye';
             }
         }
-
-        // Run auto-detect on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            checkServerAndLoadPrinters(false);
-        });
     </script>
 </body>
 </html>

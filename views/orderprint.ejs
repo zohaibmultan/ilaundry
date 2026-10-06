@@ -204,7 +204,22 @@
       margin-top: 4px;
       line-height: 1.2;
     }
+
+    /* Invoice Receipt Barcode */
+    .receipt-barcode-wrap {
+      margin: 6px auto 4px auto;
+      text-align: center;
+      padding: 0 4px;
+    }
+
+    .receipt-barcode-svg {
+      max-width: 90% !important;
+      height: 38px !important;
+      margin: 0 auto;
+      display: block;
+    }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 
 <body>
@@ -212,9 +227,19 @@
   <div class="receipt-container">
     <!-- Store Header -->
     <div class="store-header">
-      <% if (accessdata && accessdata.masterstore && accessdata.masterstore.app_favicon) { %>
-        <img src="/uploads/<%= accessdata.masterstore.app_favicon %>" class="store-logo" alt="" />
-        <% } %>
+      <% 
+        let invoiceLogo = '';
+        if (shope && shope.logo && shope.logo.trim() !== '') {
+          invoiceLogo = shope.logo.trim();
+        } else if (accessdata && accessdata.masterstore && accessdata.masterstore.app_logo) {
+          invoiceLogo = accessdata.masterstore.app_logo;
+        } else if (accessdata && accessdata.masterstore && accessdata.masterstore.app_favicon) {
+          invoiceLogo = accessdata.masterstore.app_favicon;
+        }
+      %>
+      <% if (invoiceLogo) { %>
+        <img src="/uploads/<%= invoiceLogo %>" class="store-logo" alt="Store Logo" />
+      <% } %>
           <div class="store-name">
             <%= (shope && shope.name) ? shope.name : (accessdata && accessdata.masterstore ?
               accessdata.masterstore.app_name : '' ) %>
@@ -288,7 +313,7 @@
             <tr>
               <td class="text-start">
                 <span class="item-name">
-                  <%= item.service_name %>
+                  <%= item.service_name %><% if (item.no_of_items && parseInt(item.no_of_items) > 1) { %> (<%= item.no_of_items %> Pcs)<% } %>
                 </span>
                 <% if (item.service_type_name) { %>
                   <span class="item-subtext">[<%= item.service_type_name %>]</span>
@@ -346,7 +371,27 @@
     <hr class="border-dashed" />
 
     <!-- Financial Summary (Skip 0-value rows to save paper) -->
+    <%
+      let totalOrderQty = 0;
+      let totalGarmentPcs = 0;
+      if (cartservice && cartservice.length > 0) {
+        cartservice.forEach(function(item) {
+          const q = parseInt(item.service_quntity, 10) || 0;
+          const p = parseInt(item.no_of_items, 10) || 1;
+          totalOrderQty += q;
+          totalGarmentPcs += (q * p);
+        });
+      }
+    %>
     <table class="summary-table">
+      <% if (totalOrderQty > 0) { %>
+      <tr>
+        <td class="text-start">Total Qty:</td>
+        <td class="text-end fw-bold">
+          <%= totalOrderQty %><% if (totalGarmentPcs > totalOrderQty) { %> (<%= totalGarmentPcs %> Pcs)<% } %>
+        </td>
+      </tr>
+      <% } %>
       <tr>
         <td class="text-start">Sub Total:</td>
         <td class="text-end fw-bold">
@@ -481,26 +526,54 @@
       </div>
       <% } %>
 
-        <div class="receipt-footer">
-          <div>*** Thank You For Your Business! ***</div>
-          <div>Powered By <b>
-              <%= (master && master.app_name) ? master.app_name : '' %>
-            </b></div>
-        </div>
+    <% 
+      const isInvoiceBarcodeActive = (shope && shope.invoice_barcode_enabled !== undefined && shope.invoice_barcode_enabled !== null) 
+        ? (shope.invoice_barcode_enabled != 0) 
+        : ((master && master.invoice_barcode_enabled !== undefined && master.invoice_barcode_enabled !== null) ? (master.invoice_barcode_enabled != 0) : true);
+    %>
+    <% if (isInvoiceBarcodeActive) { %>
+      <div class="receipt-barcode-wrap" id="invoiceBarcodeWrap">
+        <svg id="invoice_barcode_svg" class="receipt-barcode-svg"></svg>
+      </div>
+    <% } %>
+
+    <div class="receipt-footer">
+      <div>*** Thank You For Your Business! ***</div>
+      <div>Powered By <b>
+          <%= (master && master.app_name) ? master.app_name : '' %>
+        </b></div>
+    </div>
   </div>
 
   <script src="/js/pos-print-client.js"></script>
   <script type="text/javascript">
     "use strict";
     window.onload = async function () {
-      const serverUrl = "<%= (master && master.printing_server_url) ? master.printing_server_url : 'http://127.0.0.1:4321' %>";
-      const silentEnabled = <%= (master && master.silent_print_enabled === 0) ? 'false' : 'true' %>;
-      const targetPrinter = "<%= (master && master.invoice_printer_name) ? master.invoice_printer_name : '' %>";
-      const format = <%= (master && master.invoice_printer_format !== undefined) ? master.invoice_printer_format : 1 %>;
+      const isBarcodeActive = <%= isInvoiceBarcodeActive ? 'true' : 'false' %>;
+      if (isBarcodeActive && typeof JsBarcode === "function") {
+        try {
+          JsBarcode("#invoice_barcode_svg", "<%= order.order_id || '0000' %>", {
+            format: "CODE128",
+            width: 1.5,
+            height: 36,
+            displayValue: true,
+            fontSize: 11,
+            text: "<%= order.order_id || '' %>",
+            margin: 2
+          });
+        } catch (e) {
+          console.warn("JsBarcode rendering error:", e);
+        }
+      }
+
+      const serverUrl = "<%= (shope && shope.printing_server_url) ? shope.printing_server_url : ((master && master.printing_server_url) ? master.printing_server_url : 'http://127.0.0.1:4321') %>";
+      const silentEnabled = <%= ((shope && shope.silent_print_enabled !== undefined && shope.silent_print_enabled !== null) ? (shope.silent_print_enabled != 0) : ((master && master.silent_print_enabled === 0) ? false : true)) ? 'true' : 'false' %>;
+      const targetPrinter = "<%= (shope && shope.invoice_printer_name) ? shope.invoice_printer_name : ((master && master.invoice_printer_name) ? master.invoice_printer_name : '') %>";
+      const format = <%= (shope && shope.invoice_printer_format !== undefined && shope.invoice_printer_format !== null) ? shope.invoice_printer_format : ((master && master.invoice_printer_format !== undefined) ? master.invoice_printer_format : 1) %>;
       const widthMm = format === 2 ? 58 : (format === 0 ? null : 80);
-      const autoCut = <%= (master && master.printer_auto_cut === 0) ? 'false' : 'true' %>;
-      const openDrawer = <%= (master && master.printer_open_cash_drawer == 1) ? 'true' : 'false' %>;
-      const copies = <%= (master && master.printer_copies) ? master.printer_copies : 1 %>;
+      const autoCut = <%= ((shope && shope.printer_auto_cut !== undefined && shope.printer_auto_cut !== null) ? (shope.printer_auto_cut != 0) : ((master && master.printer_auto_cut === 0) ? false : true)) ? 'true' : 'false' %>;
+      const openDrawer = <%= ((shope && shope.printer_open_cash_drawer !== undefined && shope.printer_open_cash_drawer !== null) ? (shope.printer_open_cash_drawer == 1) : ((master && master.printer_open_cash_drawer == 1) ? true : false)) ? 'true' : 'false' %>;
+      const copies = <%= (shope && shope.printer_copies) ? shope.printer_copies : ((master && master.printer_copies) ? master.printer_copies : 1) %>;
 
       function fallbackNativePrint() {
         window.onafterprint = function () {

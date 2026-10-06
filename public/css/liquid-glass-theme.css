@@ -3823,3 +3823,122 @@ table.dataTable td.text-center {
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   color: #fff !important;
 }
+
+/* ==========================================================================
+   Sidebar Sticky Master Shop Branding
+   ========================================================================== */
+.deznav {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.deznav .deznav-scroll {
+  flex: 1 1 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.sidebar-sticky-branding {
+  flex-shrink: 0 !important;
+  margin-top: auto !important;
+  padding: 12px 14px !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+  z-index: 10 !important;
+  position: relative !important;
+  transition: all 0.2s ease !important;
+}
+
+.sidebar-branding-card {
+  background: rgba(248, 250, 252, 0.85) !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  border-radius: 10px !important;
+  transition: all 0.2s ease !important;
+}
+
+.sidebar-branding-card:hover {
+  background: rgba(0, 129, 238, 0.05) !important;
+  border-color: rgba(0, 129, 238, 0.3) !important;
+}
+
+.sidebar-branding-logo-box {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  padding: 3px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+.sidebar-master-logo {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+}
+
+.sidebar-brand-name {
+  color: #1e293b !important;
+  line-height: 1.2 !important;
+}
+
+.sidebar-brand-developed {
+  color: #64748b !important;
+  line-height: 1.2 !important;
+}
+
+[data-theme-version="dark"] .sidebar-sticky-branding {
+  background: rgba(18, 26, 44, 0.95) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme-version="dark"] .sidebar-branding-card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme-version="dark"] .sidebar-branding-card:hover {
+  background: rgba(56, 189, 248, 0.08) !important;
+  border-color: rgba(56, 189, 248, 0.25) !important;
+}
+
+[data-theme-version="dark"] .sidebar-branding-logo-box {
+  background: rgba(15, 23, 42, 0.9) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme-version="dark"] .sidebar-brand-name {
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] .sidebar-brand-developed {
+  color: #94a3b8 !important;
+}
+
+/* Collapsed Mini-Sidebar Adaptation */
+.menu-toggle .sidebar-sticky-branding .sidebar-branding-text,
+[data-sidebar-style="mini"] .sidebar-sticky-branding .sidebar-branding-text {
+  display: none !important;
+}
+
+.menu-toggle .sidebar-sticky-branding,
+[data-sidebar-style="mini"] .sidebar-sticky-branding {
+  padding: 8px 4px !important;
+}
+
+.menu-toggle .sidebar-branding-card,
+[data-sidebar-style="mini"] .sidebar-branding-card {
+  padding: 4px !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+.menu-toggle .sidebar-branding-logo-box,
+[data-sidebar-style="mini"] .sidebar-branding-logo-box {
+  margin: 0 auto !important;
+}

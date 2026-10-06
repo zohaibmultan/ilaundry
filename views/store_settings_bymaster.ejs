@@ -29,6 +29,9 @@
                                 </p>
                             </div>
                             <div class="d-flex align-items-center gap-2">
+                                <a href="/tool/printersetting?store_id=<%= data.id %>" class="btn btn-primary btn-sm px-3 py-2 fw-semibold">
+                                    <i class="fas fa-print me-1"></i> <%= language.Printer_Settings || 'Printer Settings' %>
+                                </a>
                                 <a href="/tool/store" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold">
                                     <i class="fa fa-arrow-left me-1"></i> <%= language.Back || 'Back to Stores' %>
                                 </a>
@@ -311,11 +314,95 @@
                                             %>
                                             <div class="d-flex flex-wrap gap-2">
                                                 <% storeDaysList.forEach(function(d){ %>
-                                                    <div class="form-check form-check-inline p-2 border rounded-3 bg-light d-flex align-items-center gap-2 m-0" style="min-width: 100px;">
+                                                    <div class="form-check form-check-inline ready-day-pill border d-flex align-items-center gap-2 m-0">
                                                         <input class="form-check-input ms-1" type="checkbox" name="ready_working_days" id="store_wday_<%= d.val %>" value="<%= d.val %>" <%= storeActiveDays.includes(d.val) ? 'checked' : '' %>>
                                                         <label class="form-check-label fw-semibold mb-0 cursor-pointer" for="store_wday_<%= d.val %>"><%= d.label %></label>
                                                     </div>
                                                 <% }) %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 5: Notifications & Communication Gateways -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                    <i class="fa fa-plug text-primary me-2"></i><%= language.Communication_Gateways || 'Notifications & Communication Gateways' %>
+                                </h5>
+                                <span class="badge bg-secondary-subtle text-secondary fw-semibold">INTEGRATIONS</span>
+                            </div>
+                            <div class="card-body p-4">
+                                <p class="text-muted small mb-3">
+                                    <i class="fa fa-info-circle text-primary me-1"></i>
+                                    Configure OneSignal web push notifications and Twilio SMS gateway credentials for this store branch.
+                                </p>
+                                <div class="row g-4">
+                                    <!-- OneSignal Web Push -->
+                                    <div class="col-12">
+                                        <div class="p-3 border rounded-3 bg-light-subtle">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <i class="fas fa-bell text-warning fs-5 me-2"></i>
+                                                <strong class="text-dark" style="font-size: 14px;">OneSignal Web Push Service</strong>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold"><%= language.OneSignal_App_ID || 'OneSignal App ID' %></label>
+                                                <input type="text" class="form-control" name="onesignal_app_id"
+                                                    value="<%= data.onesignal_app_id || '' %>"
+                                                    placeholder="Enter OneSignal App ID">
+                                            </div>
+
+                                            <div>
+                                                <label class="form-label fw-semibold"><%= language.OneSignal_API_Key || 'OneSignal REST API Key' %></label>
+                                                <div class="input-group">
+                                                    <input type="password" class="form-control" id="master_store_onesignal_key" name="onesignal_api_key"
+                                                        value="<%= data.onesignal_api_key || '' %>"
+                                                        placeholder="Enter OneSignal REST API Key">
+                                                    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="togglePassVisibility('master_store_onesignal_key', this)">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Twilio SMS Gateway -->
+                                    <div class="col-12">
+                                        <div class="p-3 border rounded-3 bg-light-subtle">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <i class="fas fa-comment-dots text-primary fs-5 me-2"></i>
+                                                <strong class="text-dark" style="font-size: 14px;">Twilio SMS Gateway Service</strong>
+                                            </div>
+
+                                            <div class="row g-2">
+                                                <div class="col-12 mb-2">
+                                                    <label class="form-label fw-semibold"><%= language.Twilio_Account_SID || 'Twilio Account SID' %></label>
+                                                    <input class="form-control" type="text" name="twilio_sid"
+                                                        value="<%= data.twilio_sid || '' %>"
+                                                        placeholder="e.g. ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX">
+                                                </div>
+
+                                                <div class="col-sm-6 mb-2">
+                                                    <label class="form-label fw-semibold"><%= language.Twilio_Auth_Token || 'Twilio Auth Token' %></label>
+                                                    <div class="input-group">
+                                                        <input class="form-control" type="password" id="master_store_twilio_token" name="twilio_auth_token"
+                                                            value="<%= data.twilio_auth_token || '' %>"
+                                                            placeholder="Auth Token">
+                                                        <button class="btn btn-sm btn-outline-secondary" type="button" onclick="togglePassVisibility('master_store_twilio_token', this)">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-sm-6 mb-2">
+                                                    <label class="form-label fw-semibold"><%= language.Twilio_Phone_Number || 'Twilio Phone Number' %></label>
+                                                    <input class="form-control" type="text" name="twilio_phone_no"
+                                                        value="<%= data.twilio_phone_no || '' %>"
+                                                        placeholder="e.g. +1234567890">
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

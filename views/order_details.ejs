@@ -410,18 +410,14 @@
                                                             </div>
                                                         <% } %>
                                                         <div class="col-12">
-                                                            <button type="button" class="btn btn-info mb-2 w-100"
-                                                                data-bs-toggle="modal" data-bs-target="#invoice">
+                                                            <a href="/admin/posprint?id=<%= order.id %>&mode=invoice" target="_blank" class="btn btn-info mb-2 w-100">
                                                                 <i class="fa fa-print me-2"></i> <%= language.Print_Invoice %>
-                                                            </button>
+                                                            </a>
                                                         </div>
                                                         <div class="col-12">
-                                                            <button type="button" class="btn btn-info mb-2 w-100"
-                                                                id="print_barcode" data-bs-toggle="modal"
-                                                                data-bs-target="#exampleModalLong"
-                                                                data-id="<%= order.id %>">
+                                                            <a href="/admin/posprint?id=<%= order.id %>&mode=tags" target="_blank" class="btn btn-info mb-2 w-100">
                                                                 <i class="fa fa-tags me-2"></i> <%= language.Print_Cloth_Tag || language.Print_Barcode || 'Print Cloth Tag' %>
-                                                            </button>
+                                                            </a>
                                                         </div>
                                                         <% if (canDeleteOrder) { %>
                                                             <div class="col-12">
@@ -653,6 +649,9 @@
                                                     <td>
                                                         <h5 class="mb-0">
                                                             <%= data.service_name %>
+                                                            <% if (data.no_of_items && parseInt(data.no_of_items) > 1) { %>
+                                                                <span class="badge bg-secondary text-white ms-1" style="font-size:0.75rem;"><%= data.no_of_items %> Pcs</span>
+                                                            <% } %>
                                                         </h5>
                                                         <span class="mb-0 fs-6">[<%= data.service_type_name %>] </span>
                                                         <br>
