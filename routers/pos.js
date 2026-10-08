@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const fs = require("fs");
+const path = require("path");
 const auth = require("../middelwer/auth");
 const { upload } = require("../middelwer/multer");
 const access = require("../middelwer/access");
@@ -102,8 +104,11 @@ async function getOrCreateWalkInCustomer(storeId, req) {
   return walk && walk.length > 0 ? walk[0] : null;
 }
 
-async function getStoreScopedCustomers(storeId) {
+async function getStoreScopedCustomers(storeId, includeWalkIn = true) {
   if (!storeId || storeId == "0" || storeId == "") return [];
+  const walkInFilter = includeWalkIn
+    ? ""
+    : " AND (tbl_customer.username IS NOT NULL AND tbl_customer.username != '' AND (tbl_customer.name NOT LIKE '%Walk%in%' OR tbl_customer.name IS NULL)) ";
   return await DataFind(`
     SELECT 
       tbl_customer.id, 
@@ -120,6 +125,7 @@ async function getStoreScopedCustomers(storeId) {
       tbl_customer.approved = 1 
       AND tbl_customer.delet_flage = 0 
       AND tbl_customer.store_ID = '${storeId}'
+      ${walkInFilter}
     ORDER BY (CASE WHEN tbl_customer.username IS NULL OR tbl_customer.username = '' OR tbl_customer.name LIKE '%Walk%in%' THEN 0 ELSE 1 END), tbl_customer.name ASC
   `);
 }
@@ -428,24 +434,54 @@ router.get("/pos", auth, async (req, res) => {
         "SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
       );
 
-      // For store users & staff: auto-assign the Walk-in customer of targetStoreId
-      if (!isMaster && targetStoreId && targetStoreId != 0) {
-        const walkinCustomer = await getOrCreateWalkInCustomer(
-          targetStoreId,
-          req,
+      // Check if store has default walk-in customer enabled
+      let isDefaultCustomerEnabled = true;
+      if (targetStoreId && targetStoreId != 0) {
+        const storeCheck = await DataFind(
+          `SELECT default_customer_enabled FROM tbl_store WHERE id = '${targetStoreId}'`
         );
-        if (walkinCustomer) {
-          await DataUpdate(
-            `tbl_cart`,
-            `customer_id='${walkinCustomer.id}'`,
-            `created_by='${loginas},${id}'`,
-            req.hostname,
-            req.protocol,
+        if (storeCheck.length > 0 && (storeCheck[0].default_customer_enabled == 0 || storeCheck[0].default_customer_enabled === '0')) {
+          isDefaultCustomerEnabled = false;
+        }
+      }
+
+      // For store users & staff: auto-assign the Walk-in customer of targetStoreId ONLY if enabled
+      if (!isMaster && targetStoreId && targetStoreId != 0) {
+        if (isDefaultCustomerEnabled) {
+          const walkinCustomer = await getOrCreateWalkInCustomer(
+            targetStoreId,
+            req,
           );
-          cart[0].customer_id = walkinCustomer.id;
+          if (walkinCustomer) {
+            await DataUpdate(
+              `tbl_cart`,
+              `customer_id='${walkinCustomer.id}'`,
+              `created_by='${loginas},${id}'`,
+              req.hostname,
+              req.protocol,
+            );
+            cart[0].customer_id = walkinCustomer.id;
+          }
+        } else {
+          // Setting disabled: do NOT auto-assign walk-in customer. If current cart customer is a walk-in, clear it to 0.
+          if (cart[0].customer_id && cart[0].customer_id != 0) {
+            const currentCus = await DataFind(
+              `SELECT id, username, name FROM tbl_customer WHERE id = '${cart[0].customer_id}'`
+            );
+            if (currentCus.length > 0 && (currentCus[0].username == null || currentCus[0].username === '' || (currentCus[0].name && currentCus[0].name.toLowerCase().includes('walk in')))) {
+              await DataUpdate(
+                `tbl_cart`,
+                `customer_id='0'`,
+                `created_by='${loginas},${id}'`,
+                req.hostname,
+                req.protocol,
+              );
+              cart[0].customer_id = 0;
+            }
+          }
         }
 
-        customerList = await getStoreScopedCustomers(targetStoreId);
+        customerList = await getStoreScopedCustomers(targetStoreId, isDefaultCustomerEnabled);
         service_list = await DataFind(
           "SELECT * FROM tbl_services WHERE status=0 AND store_ID=" +
             targetStoreId +
@@ -511,6 +547,7 @@ router.get("/pos", auth, async (req, res) => {
       assignedStoreName:
         typeof assignedStoreName !== "undefined" ? assignedStoreName : "",
       isMaster: typeof isMaster !== "undefined" ? isMaster : false,
+      isDefaultCustomerEnabled: typeof isDefaultCustomerEnabled !== "undefined" ? isDefaultCustomerEnabled : true,
       language: req.language_data,
       language_name: req.language_name,
       splite_id,
@@ -775,10 +812,20 @@ router.get("/customerlist/:id", auth, async (req, res) => {
     }
     const safeStoreId = parseInt(storeid) || 0;
 
-    const customerList = await getStoreScopedCustomers(safeStoreId);
+    let isDefaultCustomerEnabled = true;
+    if (safeStoreId && safeStoreId != 0) {
+      const storeCheck = await DataFind(
+        `SELECT default_customer_enabled FROM tbl_store WHERE id = '${safeStoreId}'`
+      );
+      if (storeCheck.length > 0 && (storeCheck[0].default_customer_enabled == 0 || storeCheck[0].default_customer_enabled === '0')) {
+        isDefaultCustomerEnabled = false;
+      }
+    }
+
+    const customerList = await getStoreScopedCustomers(safeStoreId, isDefaultCustomerEnabled);
     let defaultCustomerId = 0;
 
-    if (!isMaster) {
+    if (!isMaster && isDefaultCustomerEnabled) {
       const walkinCustomer = await getOrCreateWalkInCustomer(safeStoreId, req);
       defaultCustomerId = walkinCustomer
         ? walkinCustomer.id
@@ -796,7 +843,7 @@ router.get("/customerlist/:id", auth, async (req, res) => {
         );
       }
     } else {
-      // For Admin: DO NOT auto-select customer. Customer remains unselected (0) until Admin explicitly selects one.
+      // Disabled OR Master Admin: DO NOT auto-select customer. Customer remains unselected (0).
       await DataUpdate(
         `tbl_cart`,
         `customer_id='0', store_id='${safeStoreId}'`,
@@ -806,7 +853,7 @@ router.get("/customerlist/:id", auth, async (req, res) => {
       );
     }
 
-    res.status(200).json({ customerList, defaultCustomerId, isStaff });
+    res.status(200).json({ customerList, defaultCustomerId, isStaff, defaultCustomerEnabled: isDefaultCustomerEnabled });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -3979,6 +4026,30 @@ const renderPosPrint = async (req, res) => {
       ddate += ` ${hours}:${minutes} ${ampm}`;
     }
 
+    let logoFileName = "";
+    if (shope && shope.length > 0 && shope[0].logo && shope[0].logo.trim() !== "") {
+      logoFileName = shope[0].logo.trim();
+    } else if (accessdata && accessdata.masterstore && accessdata.masterstore.app_logo) {
+      logoFileName = accessdata.masterstore.app_logo;
+    } else if (accessdata && accessdata.masterstore && accessdata.masterstore.app_favicon) {
+      logoFileName = accessdata.masterstore.app_favicon;
+    }
+
+    let invoice_logo_base64 = "";
+    if (logoFileName) {
+      try {
+        const logoPath = path.join(__dirname, "../public/uploads", logoFileName);
+        if (fs.existsSync(logoPath)) {
+          const ext = path.extname(logoFileName).toLowerCase().replace(".", "");
+          const mimeType = ext === "jpg" || ext === "jpeg" ? "image/jpeg" : (ext === "svg" ? "image/svg+xml" : (ext === "webp" ? "image/webp" : "image/png"));
+          const fileBuf = fs.readFileSync(logoPath);
+          invoice_logo_base64 = `data:${mimeType};base64,${fileBuf.toString("base64")}`;
+        }
+      } catch (logoErr) {
+        console.warn("Could not encode invoice logo to base64:", logoErr.message);
+      }
+    }
+
     res.render("posprint", {
       cartservice,
       shope: shope && shope.length > 0 ? shope[0] : {},
@@ -3990,6 +4061,7 @@ const renderPosPrint = async (req, res) => {
       oate,
       ddate,
       accessdata,
+      invoice_logo_base64,
     });
   } catch (error) {
     console.error("Error in renderPosPrint:", error);

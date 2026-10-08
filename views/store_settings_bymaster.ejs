@@ -32,7 +32,7 @@
                                 <a href="/tool/printersetting?store_id=<%= data.id %>" class="btn btn-primary btn-sm px-3 py-2 fw-semibold">
                                     <i class="fas fa-print me-1"></i> <%= language.Printer_Settings || 'Printer Settings' %>
                                 </a>
-                                <a href="/tool/store" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold">
+                                <a href="/tool/storelist" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold">
                                     <i class="fa fa-arrow-left me-1"></i> <%= language.Back || 'Back to Stores' %>
                                 </a>
                             </div>
@@ -110,7 +110,108 @@
                             </div>
                         </div>
 
-                        <!-- Section 2: Physical Location & Address -->
+                        <!-- Section 2: Contact Person Details -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4">
+                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                    <i class="fa fa-user-tie text-primary me-2"></i><%= language.Contact_Person_Details || 'Contact Person Details' %>
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <p class="text-muted fs-13 mb-3">
+                                    Primary representative or branch manager point of contact for administrative, operational, and billing communications.
+                                </p>
+                                <div class="row g-3">
+                                    <!-- First Name -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.First_Name || 'Contact First Name' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-user"></i></span>
+                                            <input type="text" class="form-control" name="contact_first_name" value="<%= data.contact_first_name || '' %>" placeholder="e.g. John" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Last Name -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Last_Name || 'Contact Last Name' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-user"></i></span>
+                                            <input type="text" class="form-control" name="contact_last_name" value="<%= data.contact_last_name || '' %>" placeholder="e.g. Doe" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Phone Number -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Phone_Number || 'Contact Phone Number' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-phone"></i></span>
+                                            <input type="tel" class="form-control" name="contact_phone" value="<%= data.contact_phone || '' %>" placeholder="e.g. +1 555-0199" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Email -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Email || 'Contact Email' %>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-envelope"></i></span>
+                                            <input type="email" class="form-control" name="contact_email" value="<%= data.contact_email || '' %>" placeholder="e.g. john.doe@example.com">
+                                        </div>
+                                        <small class="text-muted fs-12">Optional direct email address for the store contact person.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Default Customer & POS Auto-Selection -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                    <i class="fa fa-user-tag text-primary me-2"></i><%= language.Default_Customer_Settings || 'Default Customer & POS Auto-Selection' %>
+                                </h5>
+                                <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="default_customer_enabled" name="default_customer_enabled" value="1" <%= (typeof data.default_customer_enabled === 'undefined' || data.default_customer_enabled == 1) ? 'checked' : '' %>>
+                                    <label class="form-check-label fw-semibold fs-13 mb-0 text-dark" for="default_customer_enabled">
+                                        <span id="default_customer_status_text"><%= (typeof data.default_customer_enabled === 'undefined' || data.default_customer_enabled == 1) ? (language.Enabled || 'Enabled') : (language.Disabled || 'Disabled') %></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                                <p class="text-muted fs-13 mb-3">
+                                    <%= language.Default_Customer_Desc || 'When enabled, the POS terminal automatically pre-selects the default walk-in customer for this store for swift checkout. When disabled, the walk-in customer is hidden from the POS customer list and cashiers must select a registered customer manually.' %>
+                                </p>
+
+                                <!-- Walk-in Customer Input Container -->
+                                <div id="walkin_customer_container" class="<%= (typeof data.default_customer_enabled !== 'undefined' && data.default_customer_enabled == 0) ? 'd-none' : '' %>">
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label class="form-label fw-semibold">
+                                                <%= language.Walk_In_Customer || 'Default Walk-In Customer Label' %> <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light text-muted"><i class="fa fa-walking"></i></span>
+                                                <input type="text" class="form-control" id="walkincustome_input" name="walkincustome" value="<%= data.customer_name || 'Walk in customer' %>" placeholder="Enter Walk in Customer name" <%= (typeof data.default_customer_enabled === 'undefined' || data.default_customer_enabled == 1) ? 'required' : 'disabled' %>>
+                                            </div>
+                                            <small class="text-muted fs-12">Name/label for the store's default counter customer account.</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="walkin_disabled_hint" class="alert alert-light border py-2 px-3 m-0 rounded-3 <%= (typeof data.default_customer_enabled === 'undefined' || data.default_customer_enabled == 1) ? 'd-none' : '' %>">
+                                    <i class="fa fa-info-circle text-primary me-2"></i>
+                                    <span class="fs-13 text-muted"><%= language.Walk_In_Disabled_Notice || 'Default walk-in customer is currently disabled for this store. Cashiers will be required to search and select a registered customer for each POS order.' %></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Physical Location & Address -->
                         <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
                             <div class="card-header border-bottom py-3 px-4">
                                 <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
@@ -142,7 +243,7 @@
                                     </div>
 
                                     <!-- Country -->
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label class="form-label fw-semibold">
                                             <%= language.Country || 'Country' %> <span class="text-danger">*</span>
                                         </label>
@@ -153,7 +254,7 @@
                                     </div>
 
                                     <!-- State / Province -->
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label class="form-label fw-semibold">
                                             <%= language.State || 'State / Province' %> <span class="text-danger">*</span>
                                         </label>
@@ -164,7 +265,7 @@
                                     </div>
 
                                     <!-- City -->
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label class="form-label fw-semibold">
                                             <%= language.City || 'City' %> <span class="text-danger">*</span>
                                         </label>
@@ -174,19 +275,8 @@
                                         </div>
                                     </div>
 
-                                    <!-- District / Area -->
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">
-                                            <%= language.District || 'District / Neighborhood' %> <span class="text-danger">*</span>
-                                        </label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-compass"></i></span>
-                                            <input type="text" class="form-control" name="district" value="<%= data.district %>" placeholder="Enter District Name" required>
-                                        </div>
-                                    </div>
-
                                     <!-- Zip Code -->
-                                    <div class="col-md-6">
+                                    <div class="col-md-3">
                                         <label class="form-label fw-semibold">
                                             <%= language.Zip_Code || 'Postal / Zip Code' %> <span class="text-danger">*</span>
                                         </label>
@@ -616,6 +706,32 @@
                 } else {
                     container.classList.add('opacity-50', 'pe-none');
                 }
+            }
+        });
+
+        // Default Customer toggle handler
+        document.getElementById('default_customer_enabled')?.addEventListener('change', function() {
+            const isChecked = this.checked;
+            const statusText = document.getElementById('default_customer_status_text');
+            const container = document.getElementById('walkin_customer_container');
+            const input = document.getElementById('walkincustome_input');
+            const hint = document.getElementById('walkin_disabled_hint');
+
+            if (statusText) statusText.textContent = isChecked ? '<%= language.Enabled || "Enabled" %>' : '<%= language.Disabled || "Disabled" %>';
+            if (isChecked) {
+                if (container) container.classList.remove('d-none');
+                if (input) {
+                    input.disabled = false;
+                    input.required = true;
+                }
+                if (hint) hint.classList.add('d-none');
+            } else {
+                if (container) container.classList.add('d-none');
+                if (input) {
+                    input.disabled = true;
+                    input.required = false;
+                }
+                if (hint) hint.classList.remove('d-none');
             }
         });
     </script>

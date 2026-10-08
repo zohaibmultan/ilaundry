@@ -74,6 +74,7 @@
         <!-- Floating Top-Right Controls: Theme & Language -->
         <div class="auth-top-controls d-flex align-items-center gap-2">
             <!-- Language Switcher Dropdown -->
+            <% if (typeof multi_language_enabled === 'undefined' || multi_language_enabled) { %>
             <div class="dropdown">
                 <button type="button" class="auth-theme-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="<%= language.Select_Language || 'Select Language' %>">
                     <i class="fas fa-globe text-primary"></i>
@@ -138,6 +139,7 @@
                     </div>
                 </div>
             </div>
+            <% } %>
 
             <!-- Theme Switcher -->
             <button type="button" class="auth-theme-btn" id="auth_theme_toggle" title="Switch Theme">
@@ -164,6 +166,66 @@
                 <p class="auth-hero-lead">
                     Multi-store control, high-speed POS, garment tracking, and financial analytics—engineered into one centralized executive command center.
                 </p>
+
+                <% if (typeof show_demo_accounts !== 'undefined' && show_demo_accounts && typeof demo_users !== 'undefined' && demo_users.length > 0) { %>
+                <!-- Dynamic Quick Demo Accounts Panel -->
+                <div class="auth-demo-section mt-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom border-light-subtle">
+                        <span class="fs-12 fw-bold text-uppercase text-primary">
+                            <i class="fas fa-bolt text-warning me-1"></i> Quick Demo Logins
+                        </span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-11 px-2 py-1">
+                            Password: <code class="fw-bold text-primary">123456</code>
+                        </span>
+                    </div>
+
+                    <div class="auth-hero-pills">
+                        <% demo_users.forEach(function(user) { 
+                            let roleTitle = 'Staff';
+                            let roleBadgeClass = 'badge bg-secondary-subtle text-secondary border border-secondary-subtle';
+                            let iconClass = 'fas fa-user-tie';
+
+                            if (String(user.id) === '1' || user.role_name === 'Master' || (!user.store_ID && String(user.is_staff) !== '1')) {
+                                roleTitle = 'Super Admin';
+                                roleBadgeClass = 'badge bg-warning-subtle text-warning border border-warning-subtle';
+                                iconClass = 'fas fa-crown text-warning';
+                            } else if (user.store_name) {
+                                roleTitle = user.store_name;
+                                roleBadgeClass = 'badge bg-info-subtle text-info border border-info-subtle';
+                                iconClass = 'fas fa-store text-info';
+                            } else if (String(user.is_staff) === '1') {
+                                roleTitle = user.role_name || 'Staff';
+                                roleBadgeClass = 'badge bg-success-subtle text-success border border-success-subtle';
+                                iconClass = 'fas fa-user-shield text-success';
+                            }
+                        %>
+                            <button type="button" 
+                                    class="auth-hero-pill demo-account-pill border-0 w-100" 
+                                    data-username="<%= user.username %>" 
+                                    data-role="<%= roleTitle %>"
+                                    title="Click to fill credentials for <%= user.name || user.username %>">
+                                <div class="auth-pill-icon">
+                                    <i class="<%= iconClass %>"></i>
+                                </div>
+                                <div class="auth-pill-text flex-grow-1 overflow-hidden">
+                                    <div class="d-flex align-items-center justify-content-between gap-1">
+                                        <span class="text-truncate fw-bold text-dark"><%= user.name || user.username %></span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between gap-1 mt-1">
+                                        <small class="text-muted fs-11">@<%= user.username %></small>
+                                        <span class="<%= roleBadgeClass %> fs-10 px-1 py-0 text-truncate" style="max-width: 110px;"><%= roleTitle %></span>
+                                    </div>
+                                </div>
+                            </button>
+                        <% }); %>
+                    </div>
+
+                    <p class="fs-11 text-muted mt-2 mb-0">
+                        <i class="fas fa-hand-pointer text-primary opacity-75 me-1"></i>
+                        Click any account above to auto-populate credentials.
+                    </p>
+                </div>
+                <% } %>
             </div>
 
             <div class="auth-hero-footer">
@@ -237,36 +299,12 @@
                     </button>
                 </form>
 
-                <% if (typeof show_demo_accounts === 'undefined' || show_demo_accounts) { %>
-                <!-- Quick Demo Credentials Pill Bar -->
-                <div class="auth-demo-bar">
-                    <div class="fs-11 fw-bold text-muted text-uppercase tracking-wider">
-                        <i class="fas fa-bolt text-warning me-1"></i> <%= language.One_Click_Demo_Logins || 'One-Click Demo Logins' %>
-                    </div>
-                    <div class="auth-demo-pills">
-                        <button type="button" class="auth-demo-pill" id="demo_master_admin"
-                            title="Super Admin: admin / 123456">
-                            <i class="fas fa-crown text-warning me-1"></i> Admin
-                        </button>
-                        <button type="button" class="auth-demo-pill" id="demo_store_manager"
-                            title="Store Manager: manager / 123456">
-                            <i class="fas fa-user-tie text-info me-1"></i> Manager
-                        </button>
-                        <button type="button" class="auth-demo-pill" id="demo_order_delete"
-                            title="Order Delete: orderdelete / 123456">
-                            <i class="fas fa-shield-alt text-danger me-1"></i> Order Delete
-                        </button>
-                        <button type="button" class="auth-demo-pill" id="demo_cashier"
-                            title="Cashier: cashier / 123456">
-                            <i class="fas fa-cash-register text-success me-1"></i> Cashier
-                        </button>
-                        <button type="button" class="auth-demo-pill" id="demo_customer"
-                            title="Customer: customer / 123456">
-                            <i class="fas fa-user text-primary me-1"></i> Customer
-                        </button>
-                    </div>
-                    <div class="auth-demo-hint">
-                        <i class="fas fa-key fs-10 text-muted opacity-75"></i> Default Password: <code class="auth-demo-code">123456</code>
+                <% if (typeof show_demo_accounts !== 'undefined' && show_demo_accounts) { %>
+                <!-- Demo Helper Bar -->
+                <div class="auth-demo-bar text-center">
+                    <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-3 bg-light-subtle border border-light-subtle text-muted fs-12 w-100 justify-content-center">
+                        <i class="fas fa-arrow-left text-primary"></i>
+                        <span>Click any demo account on the <strong>left panel</strong> to auto-fill (Password: <code>123456</code>)</span>
                     </div>
                 </div>
                 <% } %>
@@ -383,36 +421,25 @@
                 applyAuthTheme(newTheme);
             });
 
-            <% if (typeof show_demo_accounts === 'undefined' || show_demo_accounts) { %>
-            // Quick Demo Credential buttons
-            $('#demo_master_admin').on('click', function () {
-                $('input[name=username]').val('admin');
-                $('#login_password').val('123456');
-                toastr.info('Loaded credentials for <b>Admin</b> (admin)', { timeOut: 2500, escapeHtml: false });
-            });
+            <% if (typeof show_demo_accounts !== 'undefined' && show_demo_accounts) { %>
+            // One-click demo account selector from left hero canvas
+            $(document).on('click', '.demo-account-pill', function (e) {
+                e.preventDefault();
+                var username = $(this).attr('data-username');
+                var role = $(this).attr('data-role') || 'Account';
 
-            $('#demo_store_manager').on('click', function () {
-                $('input[name=username]').val('manager');
+                $('input[name=username]').val(username).focus();
                 $('#login_password').val('123456');
-                toastr.info('Loaded credentials for <b>Manager</b> (manager)', { timeOut: 2500, escapeHtml: false });
-            });
 
-            $('#demo_order_delete').on('click', function () {
-                $('input[name=username]').val('orderdelete');
-                $('#login_password').val('123456');
-                toastr.info('Loaded credentials for <b>Order Delete</b> (orderdelete)', { timeOut: 2500, escapeHtml: false });
-            });
-
-            $('#demo_cashier').on('click', function () {
-                $('input[name=username]').val('cashier');
-                $('#login_password').val('123456');
-                toastr.info('Loaded credentials for <b>Cashier</b> (cashier)', { timeOut: 2500, escapeHtml: false });
-            });
-
-            $('#demo_customer').on('click', function () {
-                $('input[name=username]').val('customer');
-                $('#login_password').val('123456');
-                toastr.info('Loaded credentials for <b>Customer</b> (customer)', { timeOut: 2500, escapeHtml: false });
+                if (typeof toastr !== 'undefined') {
+                    toastr.info('Loaded credentials for <b>' + username + '</b> (' + role + ')', {
+                        timeOut: 2500,
+                        closeButton: true,
+                        progressBar: true,
+                        positionClass: 'toast-bottom-right',
+                        escapeHtml: false
+                    });
+                }
             });
             <% } %>
             // Language selector click handler

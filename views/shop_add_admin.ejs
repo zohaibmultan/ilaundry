@@ -116,7 +116,67 @@
                             </div>
                         </div>
 
-                        <!-- Section 2: Physical Location & Address -->
+                        <!-- Section 2: Contact Person Details -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4">
+                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                    <i class="fa fa-user-tie text-primary me-2"></i><%= language.Contact_Person_Details || 'Contact Person Details' %>
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <p class="text-muted fs-13 mb-3">
+                                    Primary representative or branch manager point of contact for administrative and emergency communications.
+                                </p>
+                                <div class="row g-3">
+                                    <!-- First Name -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.First_Name || 'Contact First Name' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-user"></i></span>
+                                            <input type="text" class="form-control" name="contact_first_name" placeholder="e.g. John" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Last Name -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Last_Name || 'Contact Last Name' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-user"></i></span>
+                                            <input type="text" class="form-control" name="contact_last_name" placeholder="e.g. Doe" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Phone Number -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Phone_Number || 'Contact Phone Number' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-phone"></i></span>
+                                            <input type="tel" class="form-control" name="contact_phone" placeholder="e.g. +1 555-0199" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Email -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Email || 'Contact Email' %>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-envelope"></i></span>
+                                            <input type="email" class="form-control" name="contact_email" placeholder="e.g. john.doe@example.com">
+                                        </div>
+                                        <small class="text-muted fs-12">Optional direct email address for the store contact person.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Physical Location & Address -->
                         <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
                             <div class="card-header border-bottom py-3 px-4">
                                 <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
@@ -147,19 +207,30 @@
                                         </div>
                                     </div>
 
-                                    <!-- Country -->
-                                    <div class="col-md-4">
+                                    <!-- Street Address -->
+                                    <div class="col-12">
                                         <label class="form-label fw-semibold">
-                                            <%= language.Country || 'Country' %> <span class="text-danger">*</span>
+                                            <%= language.Address || 'Complete Physical Address' %> <span class="text-danger">*</span>
                                         </label>
                                         <div class="input-group">
-                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-globe"></i></span>
-                                            <input type="text" class="form-control" name="country" placeholder="e.g. United States" required>
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-map-pin"></i></span>
+                                            <input type="text" class="form-control" name="address" placeholder="e.g. 450 Rodeo Luxury Suites, Suite 101" required>
                                         </div>
                                     </div>
-
+                                    
+                                    <!-- City -->
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.City || 'City' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-city"></i></span>
+                                            <input type="text" class="form-control" name="city" placeholder="e.g. Los Angeles" required>
+                                        </div>
+                                    </div>
+                                    
                                     <!-- State / Province -->
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label class="form-label fw-semibold">
                                             <%= language.State || 'State / Province' %> <span class="text-danger">*</span>
                                         </label>
@@ -169,30 +240,8 @@
                                         </div>
                                     </div>
 
-                                    <!-- City -->
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-semibold">
-                                            <%= language.City || 'City' %> <span class="text-danger">*</span>
-                                        </label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-city"></i></span>
-                                            <input type="text" class="form-control" name="city" placeholder="e.g. Los Angeles" required>
-                                        </div>
-                                    </div>
-
-                                    <!-- District / Area -->
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">
-                                            <%= language.District || 'District / Neighborhood' %> <span class="text-danger">*</span>
-                                        </label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-compass"></i></span>
-                                            <input type="text" class="form-control" name="district" placeholder="e.g. Beverly Hills" required>
-                                        </div>
-                                    </div>
-
                                     <!-- Zip Code -->
-                                    <div class="col-md-6">
+                                    <div class="col-md-3">
                                         <label class="form-label fw-semibold">
                                             <%= language.Zip_Code || 'Postal / Zip Code' %> <span class="text-danger">*</span>
                                         </label>
@@ -202,14 +251,14 @@
                                         </div>
                                     </div>
 
-                                    <!-- Street Address -->
-                                    <div class="col-12">
+                                    <!-- Country -->
+                                    <div class="col-md-3">
                                         <label class="form-label fw-semibold">
-                                            <%= language.Address || 'Complete Physical Address' %> <span class="text-danger">*</span>
+                                            <%= language.Country || 'Country' %> <span class="text-danger">*</span>
                                         </label>
                                         <div class="input-group">
-                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-map-pin"></i></span>
-                                            <input type="text" class="form-control" name="address" placeholder="e.g. 450 Rodeo Luxury Suites, Suite 101" required>
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-globe"></i></span>
+                                            <input type="text" class="form-control" name="country" placeholder="e.g. United States" required>
                                         </div>
                                     </div>
                                 </div>

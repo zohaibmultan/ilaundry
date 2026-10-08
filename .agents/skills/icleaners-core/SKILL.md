@@ -256,6 +256,18 @@ To modify or extend production MySQL tables without downtime or data loss:
      - Clean bold black outline illustration.
      - Solid neutral or soft pastel fabric tones on a pure white background.
    - All service images must be duplicated in both `public/uploads/` and `public/uploads/services/` to support direct image loading across all views.
+## 17. Store Contact Person Architecture & Address Conventions
 
+* **Dedicated Contact Person Structure**:
+  - Stores (`tbl_store`) record a designated point of contact: `contact_first_name`, `contact_last_name`, `contact_phone`, `contact_email`.
+  - In store list tables, display the contact person formatted as **`Last Name, First Name`** with a phone badge or link.
+* **Streamlined Address Standards**:
+  - Store and firm address forms omit legacy "district" fields, consolidating on standard address lines, city, state, zip code, and country.
 
+## 18. Store Default Walk-in Customer Automation
 
+* **Store Setting Toggle**:
+  - Controlled by boolean store setting `enable_walkin_customer` (`tbl_store.enable_walkin_customer`).
+* **Automated Selection on POS**:
+  - When enabled, POS automatically selects the store's designated walk-in customer upon opening an empty cart.
+  - When disabled, POS leaves customer selection unassigned, prompting cashiers to select or register a customer manually before checkout.

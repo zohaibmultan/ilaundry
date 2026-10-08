@@ -78,6 +78,7 @@
                                         <thead>
                                             <tr>
                                                 <th style="width: 50px;">#</th>
+                                                <th style="width: 100px;"><%= language.Sequence_No || 'Sequence No' %></th>
                                                 <th><%= language.Service_Type %></th>
                                                 <th style="width: 130px;"><%= language.Service_Type_ID %></th>
                                                 <th class="<%= ismulty ? '' : 'd-none' %>"><%= language.Store_Name %></th>
@@ -114,12 +115,20 @@
                             class="need-validation">
 
                             <div class="row g-1 align-items-center">
-                                <div class="form-group">
+                                <div class="form-group mb-2">
                                     <label><strong>
                                             <%= language.Service_Type_Name %>
                                         </strong><span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control " name="service_name"
+                                    <input type="text" class="form-control" name="service_name"
                                         id="servicetype_name_update" placeholder="Enter Service Type Name" required>
+                                </div>
+
+                                <div class="form-group mb-2">
+                                    <label><strong>
+                                            <%= language.Sequence_No || 'Sequence No' %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" name="sequence_no"
+                                        id="servicetype_sequence_update" placeholder="Enter Sequence Number" min="1" step="1" required>
                                 </div>
 
                                 <div class="form-group">
@@ -170,12 +179,22 @@
                             <div class="row g-1 align-items-center">
 
                                 <!-- Service Type Name -->
-                                <div class="form-group">
+                                <div class="form-group mb-2">
                                     <label><strong>
                                             <%= language.Service_Type_Name %>
                                         </strong><span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="service_name" id="service_name"
                                         placeholder="Enter Service Type Name" required>
+                                </div>
+
+                                <!-- Sequence Number -->
+                                <div class="form-group mb-2">
+                                    <label><strong>
+                                            <%= language.Sequence_No || 'Sequence No' %>
+                                        </strong><span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" name="sequence_no" id="service_sequence_no"
+                                        value="<%= (typeof nextSequence !== 'undefined') ? nextSequence : 1 %>"
+                                        placeholder="Enter Sequence Number" min="1" step="1" required>
                                 </div>
 
                                 <!-- Store List (only if ismulty is true) -->
@@ -279,6 +298,7 @@
 
                     $(document).ready(function() {
                         const isMultistore = <%= ismulty ? 'true' : 'false' %>;
+                        const nextSeqMap = <%- JSON.stringify(typeof nextSeqMap !== 'undefined' ? nextSeqMap : {}) %>;
 
                         const columns = [
                             {
@@ -287,6 +307,12 @@
                                 searchable: false,
                                 render: function(data, type, row, meta) {
                                     return meta.settings._iDisplayStart + meta.row + 1;
+                                }
+                            },
+                            {
+                                data: 'sequence_no',
+                                render: function(data) {
+                                    return `<span class="badge bg-light text-dark px-2 py-1 fw-bold fs-7">${escapeHtml(data !== undefined && data !== null ? data : 0)}</span>`;
                                 }
                             },
                             {
@@ -331,9 +357,9 @@
                                 let html = '<div class="tbl-action-group justify-content-center">';
                                 if (row.canEdit) {
                                     html += `
-                                        <a href="#" class="btn-dt-action btn-edit" id="serviceType" data-bs-toggle="modal"
+                                        <a href="#" class="btn-dt-action btn-edit btn-edit-servicetype" id="serviceType" data-bs-toggle="modal"
                                            data-bs-target="#service_type_update" data-id="${row.id}"
-                                           data-servicetype="${escapeHtml(row.services_type)}" data-status="${row.status}"
+                                           data-servicetype="${escapeHtml(row.services_type)}" data-sequence="${row.sequence_no !== undefined ? row.sequence_no : 0}" data-status="${row.status}"
                                            title="<%= language.Edit || 'Edit' %>">
                                             <i class="fas fa-pencil-alt"></i>
                                         </a>
@@ -359,13 +385,26 @@
                         window.serviceTypeTable = window.initServerDataTable('#server_service_type_table', {
                             ajaxUrl: '/services/type/data',
                             columns: columns,
-                            order: [[0, 'desc']],
+                            order: [[1, 'asc']],
                             searchInput: '#dtServiceTypeSearch',
                             pageLengthSelect: '#dtServiceTypePageLength',
                             filterElements: {
                                 status_filter: '#dtServiceTypeStatus',
                                 store_filter: '#dtServiceTypeStore'
                             }
+                        });
+
+                        // Populate Edit Modal
+                        $(document).on('click', '.btn-edit-servicetype, #serviceType', function () {
+                            const id = $(this).attr('data-id');
+                            const serviceType = $(this).attr('data-servicetype') || '';
+                            const sequenceNo = $(this).attr('data-sequence') || '0';
+                            const status = $(this).attr('data-status');
+
+                            $('#updateservicetype_form').attr('action', '/services/updateservicestype/' + id);
+                            $('#servicetype_name_update').val(serviceType);
+                            $('#servicetype_sequence_update').val(sequenceNo);
+                            $('#active_update').prop('checked', String(status) === '0');
                         });
 
                         // Populate Delete Modal
@@ -376,6 +415,14 @@
 
                             $('#deleteServiceTypeModalTitle').text(name || ('#' + cleanId));
                             $('#deleteServiceTypeConfirmBtn').attr('href', '/services/deletservicestype/' + cleanId);
+                        });
+
+                        // Auto update sequence number when store dropdown changes in Add modal
+                        $('#coupon_storlist').on('change', function () {
+                            const selectedStoreId = $(this).val();
+                            if (selectedStoreId && nextSeqMap[selectedStoreId] !== undefined) {
+                                $('#service_sequence_no').val(nextSeqMap[selectedStoreId]);
+                            }
                         });
                     });
 

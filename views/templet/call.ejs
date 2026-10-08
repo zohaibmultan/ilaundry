@@ -1115,7 +1115,10 @@
    });
 
    function renderCartRowHTML(value, isEdit, orderId, loginas) {
-      var rateReadonly = (loginas === 0) ? 'readonly' : '';
+      var isRateDisabled = (loginas === 0);
+      var rateReadonly = isRateDisabled ? 'readonly' : '';
+      var rateDisabledAttr = isRateDisabled ? 'disabled' : '';
+      var rateStepperClass = isRateDisabled ? 'pos-stepper is-readonly' : 'pos-stepper';
       var priceId = isEdit ? 'edit_POSservice_type_price' : 'POSservice_type_price';
       var qtyId = isEdit ? 'edit_POSservice_type_quntity' : 'POSservice_type_quntity';
       var delId = isEdit ? 'edit_remove_service_list' : 'remove_service_list';
@@ -1135,10 +1138,18 @@
          '<input type="color" class="pos-color-circle" value="' + (value.service_color || '#000000') + '" id="POS_service_color" data-id="' + value.id + '">' +
          '</td>' +
          '<td class="text-center">' +
-         '<input type="number" class="form-control pos-table-input pos-table-input-price" value="' + value.service_type_price + '" name="service_type_price" id="' + priceId + '" data-id="' + value.id + '"' + orderAttr + ' ' + rateReadonly + '>' +
+         '<div class="' + rateStepperClass + ' pos-stepper-rate">' +
+         '<button type="button" class="pos-stepper-btn pos-stepper-btn-minus" ' + rateDisabledAttr + ' tabindex="-1"></button>' +
+         '<input type="number" class="pos-stepper-input pos-table-input-price" value="' + value.service_type_price + '" name="service_type_price" id="' + priceId + '" data-id="' + value.id + '"' + orderAttr + ' min="0" step="0.25" ' + rateReadonly + '>' +
+         '<button type="button" class="pos-stepper-btn pos-stepper-btn-plus" ' + rateDisabledAttr + ' tabindex="-1"></button>' +
+         '</div>' +
          '</td>' +
          '<td class="text-center">' +
-         '<input type="number" class="form-control pos-table-input pos-table-input-qty" id="' + qtyId + '" value="' + value.service_quntity + '" min="1" data-id="' + value.id + '"' + orderAttr + '>' +
+         '<div class="pos-stepper pos-stepper-qty">' +
+         '<button type="button" class="pos-stepper-btn pos-stepper-btn-minus" tabindex="-1"></button>' +
+         '<input type="number" class="pos-stepper-input pos-table-input-qty" id="' + qtyId + '" value="' + value.service_quntity + '" min="1" step="1" data-id="' + value.id + '"' + orderAttr + '>' +
+         '<button type="button" class="pos-stepper-btn pos-stepper-btn-plus" tabindex="-1"></button>' +
+         '</div>' +
          '</td>' +
          '<td class="text-center">' +
          '<a class="pos-btn-del" id="' + delId + '" data-id="' + value.id + '"' + orderAttr + ' title="Delete">' +
@@ -1585,6 +1596,53 @@
    }
 
 
+
+   $(document).on("click", ".pos-stepper-btn", function (e) {
+      e.preventDefault();
+      var $btn = $(this);
+      var $stepper = $btn.closest(".pos-stepper");
+      if ($stepper.hasClass("is-readonly") || $btn.is(":disabled")) {
+         return;
+      }
+      var $input = $stepper.find("input[type=number]");
+      if (!$input.length || $input.prop("readonly") || $input.prop("disabled")) {
+         return;
+      }
+
+      var el = $input[0];
+      var isPlus = $btn.hasClass("pos-stepper-btn-plus");
+      var min = el.hasAttribute("min") ? parseFloat(el.getAttribute("min")) : -Infinity;
+      var max = el.hasAttribute("max") ? parseFloat(el.getAttribute("max")) : Infinity;
+      var currentVal = parseFloat(el.value);
+      if (isNaN(currentVal)) {
+         currentVal = (min !== -Infinity && !isNaN(min)) ? min : 0;
+      }
+
+      var stepAttr = el.getAttribute("step");
+      var step = (stepAttr && stepAttr !== "any" && !isNaN(parseFloat(stepAttr))) ? parseFloat(stepAttr) : 1;
+      var newVal;
+      if (isPlus) {
+         newVal = Math.round((currentVal + step) * 1000) / 1000;
+         if (max !== Infinity && newVal > max) newVal = max;
+      } else {
+         newVal = Math.round((currentVal - step) * 1000) / 1000;
+         if (min !== -Infinity && newVal < min) newVal = min;
+      }
+
+      if (newVal === currentVal) {
+         return;
+      }
+
+      if (step < 1) {
+         el.value = newVal.toFixed(2);
+      } else if (Number.isInteger(newVal)) {
+         el.value = newVal;
+      } else {
+         el.value = parseFloat(newVal.toFixed(2));
+      }
+
+      $input.trigger("change");
+   });
 
    $(document).on("change", "#POSservice_type_price", function () {
       var baseUrl = window.location.origin;

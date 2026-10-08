@@ -22,10 +22,11 @@ const auth = async (req, res, next)=>{
         console.log("decode" , decode);
         req.user = decode
 
-        const { createLanguageProxy } = require('./language');
+        const { createLanguageProxy, getMultiLanguageEnabled } = require('./language');
+        const isMultiLang = await getMultiLanguageEnabled();
         const lang = req.cookies.lang;
         let activeLang = 'en';
-        if (lang) {
+        if (isMultiLang && lang) {
             try {
                 const decode_lang = await jwt.verify(lang, process.env.TOKEN);
                 if (decode_lang && decode_lang.lang) {
@@ -43,10 +44,12 @@ const auth = async (req, res, next)=>{
         req.language_data = langProxy;
         req.language_name = activeLang;
         req.isRTL = (activeLang === 'ae');
+        req.multi_language_enabled = isMultiLang;
 
         res.locals.language = langProxy;
         res.locals.language_name = activeLang;
         res.locals.isRTL = (activeLang === 'ae');
+        res.locals.multi_language_enabled = isMultiLang;
         res.locals.langJson = JSON.stringify(language[activeLang] || language.en || {});
         res.locals.t = (key, fallback) => langProxy[key] || fallback || (key ? String(key).replace(/_/g, ' ') : '');
         next();

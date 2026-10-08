@@ -14,6 +14,7 @@ var {
 } = require("../middelwer/databaseQurey");
 
 const { paginateDataTable } = require("../middelwer/dataTableHelper");
+const { invalidateMultiLanguageCache } = require("../middelwer/language");
 
 // <<<<<<<<<<roll >>>>>>>>>>>>>>>>>
 
@@ -619,7 +620,7 @@ router.get("/storesetting", auth, async (req, res) => {
         tbl_store.*, 
         tbl_customer.name AS customer_name
         FROM tbl_store
-        LEFT JOIN tbl_customer ON tbl_customer.store_id = tbl_store.id
+        LEFT JOIN tbl_customer ON tbl_customer.store_id = tbl_store.id AND tbl_customer.approved = 1 AND tbl_customer.delet_flage = 0 AND (tbl_customer.username IS NULL OR tbl_customer.username = '' OR tbl_customer.name LIKE '%Walk%in%')
         WHERE tbl_store.id = ${targetStoreId} AND tbl_store.status = 1 LIMIT 1
       `);
 
@@ -751,6 +752,10 @@ router.post(
           zip_code,
           address,
           walkincustome,
+          contact_first_name,
+          contact_last_name,
+          contact_phone,
+          contact_email,
         } = req.body;
 
         const OldDadta = await DataFind(
@@ -792,9 +797,17 @@ router.post(
         const twilioAuthToken = (req.body.twilio_auth_token || "").trim().replace(/'/g, "\\'");
         const twilioPhoneNo = (req.body.twilio_phone_no || "").trim().replace(/'/g, "\\'");
 
+        const defaultCustomerEnabled = (req.body.default_customer_enabled == "1" || req.body.default_customer_enabled === "on" || req.body.default_customer_enabled === 1) ? 1 : 0;
+
+        const safeContactFName = (contact_first_name || "").trim().replace(/'/g, "\\'");
+        const safeContactLName = (contact_last_name || "").trim().replace(/'/g, "\\'");
+        const safeContactPhone = (contact_phone || "").trim().replace(/'/g, "\\'");
+        const safeContactEmail = (contact_email || "").trim().replace(/'/g, "\\'");
+        const safeDistrict = (district || "").trim().replace(/'/g, "\\'");
+
         const storeUpdate = await DataUpdate(
           "tbl_store",
-          `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${district}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}, onesignal_app_id='${onesignalAppId}', onesignal_api_key='${onesignalApiKey}', twilio_sid='${twilioSid}', twilio_auth_token='${twilioAuthToken}', twilio_phone_no='${twilioPhoneNo}'`,
+          `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${safeDistrict}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}, onesignal_app_id='${onesignalAppId}', onesignal_api_key='${onesignalApiKey}', twilio_sid='${twilioSid}', twilio_auth_token='${twilioAuthToken}', twilio_phone_no='${twilioPhoneNo}', default_customer_enabled=${defaultCustomerEnabled}, contact_first_name='${safeContactFName}', contact_last_name='${safeContactLName}', contact_phone='${safeContactPhone}', contact_email='${safeContactEmail}'`,
           `id=${dataid}`,
           req.hostname,
           req.protocol,
@@ -805,21 +818,27 @@ router.post(
           return res.redirect("back");
         }
 
-        if (walkincustome === "" || walkincustome.length > 0) {
-          const customerUpdate = await DataUpdate(
-            "tbl_customer",
-            `name='${walkincustome}'`,
-            `store_ID='${dataid}'`,
-            req.hostname,
-            req.protocol,
+        if (defaultCustomerEnabled === 1 && walkincustome && walkincustome.trim().length > 0) {
+          const safeWalkInName = walkincustome.trim().replace(/'/g, "\\'");
+          const existingWalkIn = await DataFind(
+            `SELECT id FROM tbl_customer WHERE store_ID = '${dataid}' AND approved = 1 AND delet_flage = 0 AND (username IS NULL OR username = '' OR name LIKE '%Walk%in%') ORDER BY id ASC LIMIT 1`
           );
-
-          if (customerUpdate === -1) {
-            req.flash(
-              "error",
-              "Action failed, please check input and try again",
+          if (existingWalkIn.length > 0) {
+            await DataUpdate(
+              "tbl_customer",
+              `name='${safeWalkInName}'`,
+              `id=${existingWalkIn[0].id}`,
+              req.hostname,
+              req.protocol,
             );
-            return res.redirect("back");
+          } else {
+            await DataInsert(
+              "tbl_customer",
+              `name, store_ID, reffstore, approved, delet_flage`,
+              `'${safeWalkInName}', '${dataid}', '${dataid}', 1, 0`,
+              req.hostname,
+              req.protocol,
+            );
           }
         }
 
@@ -917,9 +936,12 @@ router.get("/storelist/data", auth, async (req, res) => {
       searchColumns: [
         "tbl_store.name",
         "tbl_store.id",
-        "tbl_store.number",
-        "tbl_store.email",
+        "tbl_store.mobile_number",
+        "tbl_store.store_email",
         "tbl_store.address",
+        "tbl_store.contact_first_name",
+        "tbl_store.contact_last_name",
+        "tbl_store.contact_phone",
       ],
       baseWhere: ["tbl_store.delete_flage = 0"],
       filterWhere: filterConditions,
@@ -927,14 +949,19 @@ router.get("/storelist/data", auth, async (req, res) => {
       columnMap: {
         0: "tbl_store.id",
         1: "tbl_store.name",
-        2: "tbl_store.id",
-        3: "tbl_store.status",
+        2: "tbl_store.contact_last_name",
+        3: "tbl_store.id",
+        4: "tbl_store.status",
       },
       postProcess: async (rows) => {
         return rows.map((s) => ({
           id: s.id,
           name: s.name || "",
           status: parseInt(s.status) || 0,
+          contact_first_name: s.contact_first_name || "",
+          contact_last_name: s.contact_last_name || "",
+          contact_phone: s.contact_phone || "",
+          contact_email: s.contact_email || "",
         }));
       },
     });
@@ -1205,7 +1232,10 @@ router.get("/approvedshop/:id", auth, async (req, res) => {
                                       `);
     if (rolldetail[0].rollType === "master") {
       var storedata = await DataFind(
-        `SELECT * FROM tbl_store WHERE id = ${req.params.id}`,
+        `SELECT tbl_store.*, tbl_customer.name AS customer_name 
+         FROM tbl_store 
+         LEFT JOIN tbl_customer ON tbl_customer.store_ID = tbl_store.id AND tbl_customer.approved = 1 AND tbl_customer.delet_flage = 0 AND (tbl_customer.username IS NULL OR tbl_customer.username = '' OR tbl_customer.name LIKE '%Walk%in%')
+         WHERE tbl_store.id = ${req.params.id} LIMIT 1`,
       );
 
       console.log("storedata", storedata);
@@ -1276,6 +1306,11 @@ router.post(
           address,
           status,
           roll,
+          walkincustome,
+          contact_first_name,
+          contact_last_name,
+          contact_phone,
+          contact_email,
         } = req.body;
 
         console.log("req.body", req.body);
@@ -1327,9 +1362,17 @@ router.post(
         const twilioAuthToken = (req.body.twilio_auth_token || "").trim().replace(/'/g, "\\'");
         const twilioPhoneNo = (req.body.twilio_phone_no || "").trim().replace(/'/g, "\\'");
 
+        const defaultCustomerEnabled = (req.body.default_customer_enabled == "1" || req.body.default_customer_enabled === "on" || req.body.default_customer_enabled === 1) ? 1 : 0;
+
+        const safeContactFName = (contact_first_name || "").trim().replace(/'/g, "\\'");
+        const safeContactLName = (contact_last_name || "").trim().replace(/'/g, "\\'");
+        const safeContactPhone = (contact_phone || "").trim().replace(/'/g, "\\'");
+        const safeContactEmail = (contact_email || "").trim().replace(/'/g, "\\'");
+        const safeDistrict = (district || "").trim().replace(/'/g, "\\'");
+
         const storeUpdate = await DataUpdate(
           "tbl_store",
-          `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${district}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', status=${status}, roll_ID=${roll}, logo='${imgFiled}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}, onesignal_app_id='${onesignalAppId}', onesignal_api_key='${onesignalApiKey}', twilio_sid='${twilioSid}', twilio_auth_token='${twilioAuthToken}', twilio_phone_no='${twilioPhoneNo}'`,
+          `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${safeDistrict}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', status=${status}, roll_ID=${roll}, logo='${imgFiled}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}, onesignal_app_id='${onesignalAppId}', onesignal_api_key='${onesignalApiKey}', twilio_sid='${twilioSid}', twilio_auth_token='${twilioAuthToken}', twilio_phone_no='${twilioPhoneNo}', default_customer_enabled=${defaultCustomerEnabled}, contact_first_name='${safeContactFName}', contact_last_name='${safeContactLName}', contact_phone='${safeContactPhone}', contact_email='${safeContactEmail}'`,
           `id=${dataid}`,
           req.hostname,
           req.protocol,
@@ -1337,6 +1380,30 @@ router.post(
         if (storeUpdate === -1) {
           req.flash("error", "Action failed, please check input and try again");
           return res.redirect("back");
+        }
+
+        if (defaultCustomerEnabled === 1 && walkincustome && walkincustome.trim().length > 0) {
+          const safeWalkInName = walkincustome.trim().replace(/'/g, "\\'");
+          const existingWalkIn = await DataFind(
+            `SELECT id FROM tbl_customer WHERE store_ID = '${dataid}' AND approved = 1 AND delet_flage = 0 AND (username IS NULL OR username = '' OR name LIKE '%Walk%in%') ORDER BY id ASC LIMIT 1`
+          );
+          if (existingWalkIn.length > 0) {
+            await DataUpdate(
+              "tbl_customer",
+              `name='${safeWalkInName}'`,
+              `id=${existingWalkIn[0].id}`,
+              req.hostname,
+              req.protocol,
+            );
+          } else {
+            await DataInsert(
+              "tbl_customer",
+              `name, store_ID, reffstore, approved, delet_flage`,
+              `'${safeWalkInName}', '${dataid}', '${dataid}', 1, 0`,
+              req.hostname,
+              req.protocol,
+            );
+          }
         }
 
         const adminid = await DataFind(
@@ -1523,6 +1590,10 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
         roll: rollid,
         status,
         walkincustome,
+        contact_first_name,
+        contact_last_name,
+        contact_phone,
+        contact_email,
       } = req.body;
 
       const checkname = await DataFind(
@@ -1599,11 +1670,17 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
 
       // const newstore = await DataFind(qury);
 
+      const safeContactFName = (contact_first_name || "").trim().replace(/'/g, "\\'");
+      const safeContactLName = (contact_last_name || "").trim().replace(/'/g, "\\'");
+      const safeContactPhone = (contact_phone || "").trim().replace(/'/g, "\\'");
+      const safeContactEmail = (contact_email || "").trim().replace(/'/g, "\\'");
+      const safeDistrict = (district || "").trim().replace(/'/g, "\\'");
+
       const newstore = await DataInsert(
         `tbl_store`,
-        `name,logo,mobile_number,username,password,shop_commission,tax_percent,country,state,city,district,zipcode,store_email,store_tax_number,address,admin_id,status,roll_ID`,
-        `'${name}','${logo}','${number}','${username}','${hashpass}',${commission},${taxpercent},'${country} ','${state}','${city}',' ${district}','${zip_code}','${store_email}',
-        '${tax_number}','${address} ',${newid},${status},${rollid}`,
+        `name,logo,mobile_number,username,password,shop_commission,tax_percent,country,state,city,district,zipcode,store_email,store_tax_number,address,admin_id,status,roll_ID,contact_first_name,contact_last_name,contact_phone,contact_email`,
+        `'${name}','${logo}','${number}','${username}','${hashpass}',${commission},${taxpercent},'${country} ','${state}','${city}','${safeDistrict}','${zip_code}','${store_email}',
+        '${tax_number}','${address} ',${newid},${status},${rollid},'${safeContactFName}','${safeContactLName}','${safeContactPhone}','${safeContactEmail}'`,
         req.hostname,
         req.protocol,
       );
@@ -2334,6 +2411,7 @@ router.post(
           printer_auto_cut,
           printer_open_cash_drawer,
           printer_copies,
+          multi_language_enabled,
         } = req.body;
 
         console.log("req.body.fromStore", req.body.fromStore);
@@ -2384,6 +2462,12 @@ router.post(
             : 0;
         let copiesCount =
           printer_copies !== undefined ? parseInt(printer_copies) || 1 : 1;
+        let multiLangEnabled =
+          multi_language_enabled == "1" ||
+          multi_language_enabled === 1 ||
+          multi_language_enabled === "on"
+            ? 1
+            : 0;
 
         if (req.files.favicon) {
           console.log("favicon", req.files.favicon);
@@ -2471,7 +2555,8 @@ router.post(
    ready_lead_days=${curLeadDays},
    ready_cutoff_time='${curCutoff}',
    ready_time='${curReadyTime}',
-   ready_working_days='${curWorkingDays}'`,
+   ready_working_days='${curWorkingDays}',
+   multi_language_enabled=${multiLangEnabled}`,
           `1=1`,
           req.hostname,
           req.protocol,
@@ -2751,6 +2836,7 @@ router.post(
           }
         }
 
+        invalidateMultiLanguageCache();
         req.flash("success", "Master Setting Save Success Fully");
         res.redirect("back");
       } else {
@@ -2759,6 +2845,8 @@ router.post(
       }
     } catch (error) {
       console.log(error);
+      req.flash("error", "An unexpected error occurred while saving settings.");
+      return res.redirect("back");
     }
   },
 );

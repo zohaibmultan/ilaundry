@@ -259,6 +259,21 @@
                                             </div>
                                         </div>
 
+                                        <!-- Multi-Language Support Switch -->
+                                        <div class="col-12">
+                                            <div class="settings-toggle-row">
+                                                <div class="form-check form-switch d-flex align-items-center justify-content-between mb-0">
+                                                    <div>
+                                                        <label class="form-check-label fw-bold mb-0" for="multi_language_enabled">
+                                                            <%= language.Multi_Language_Support || 'Multi-Language Support' %>
+                                                        </label>
+                                                        <div class="text-muted" style="font-size: 11px;">Enable to show the language dropdown in the header. When disabled, the system strictly enforces English and hides the selector.</div>
+                                                    </div>
+                                                    <input class="form-check-input" type="checkbox" id="multi_language_enabled" name="multi_language_enabled" value="1" <%= (masterstore.multi_language_enabled !== 0 && masterstore.multi_language_enabled !== '0') ? 'checked' : '' %>>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div class="col-12 d-none">
                                             <label class="form-label"><%= language.Default_Store_Roll || 'Default Store Role' %></label>
                                             <select class="form-control" name="storeroll">

@@ -55,45 +55,84 @@ function createLanguageProxy(langCode) {
   });
 }
 
-const languageMiddleware = (req, res, next) => {
-  const cookieLang = req.cookies.lang;
-  let activeLang = 'en';
+const { DataFind } = require('./databaseQurey');
 
-  if (cookieLang) {
-    // Check if it's a JWT token
-    try {
-      const decoded = jwt.verify(cookieLang, process.env.TOKEN || 'safaefrtgdrefgstyrs');
-      if (decoded && decoded.lang && languages[decoded.lang]) {
-        activeLang = decoded.lang;
-      }
-    } catch (e) {
-      // If not JWT, check if it's a direct code like 'es', 'ae', 'en'
-      if (languages[cookieLang]) {
-        activeLang = cookieLang;
+let multiLanguageCache = {
+  enabled: true,
+  lastChecked: 0
+};
+
+async function getMultiLanguageEnabled() {
+  const now = Date.now();
+  if (now - multiLanguageCache.lastChecked < 3000) {
+    return multiLanguageCache.enabled;
+  }
+  try {
+    const rows = await DataFind("SELECT multi_language_enabled FROM tbl_master_shop WHERE id=1 LIMIT 1");
+    if (rows && rows.length > 0 && (rows[0].multi_language_enabled === 0 || rows[0].multi_language_enabled === '0' || rows[0].multi_language_enabled === false)) {
+      multiLanguageCache.enabled = false;
+    } else {
+      multiLanguageCache.enabled = true;
+    }
+  } catch (e) {
+    // Keep cached or default to true on error
+  }
+  multiLanguageCache.lastChecked = now;
+  return multiLanguageCache.enabled;
+}
+
+function invalidateMultiLanguageCache() {
+  multiLanguageCache.lastChecked = 0;
+}
+
+const languageMiddleware = async (req, res, next) => {
+  try {
+    const isMultiLang = await getMultiLanguageEnabled();
+    const cookieLang = req.cookies.lang;
+    let activeLang = 'en';
+
+    if (isMultiLang && cookieLang) {
+      // Check if it's a JWT token
+      try {
+        const decoded = jwt.verify(cookieLang, process.env.TOKEN || 'safaefrtgdrefgstyrs');
+        if (decoded && decoded.lang && languages[decoded.lang]) {
+          activeLang = decoded.lang;
+        }
+      } catch (e) {
+        // If not JWT, check if it's a direct code like 'es', 'ae', 'en'
+        if (languages[cookieLang]) {
+          activeLang = cookieLang;
+        }
       }
     }
+
+    const langProxy = createLanguageProxy(activeLang);
+
+    // Attach to req for controllers
+    req.language_data = langProxy;
+    req.language_name = activeLang;
+    req.isRTL = (activeLang === 'ae');
+    req.multi_language_enabled = isMultiLang;
+
+    // Attach globally to res.locals for ALL EJS templates
+    res.locals.language = langProxy;
+    res.locals.language_name = activeLang;
+    res.locals.isRTL = (activeLang === 'ae');
+    res.locals.multi_language_enabled = isMultiLang;
+    res.locals.langJson = JSON.stringify(languages[activeLang] || languages.en || {});
+    res.locals.t = (key, fallback) => langProxy[key] || fallback || (key ? String(key).replace(/_/g, ' ') : '');
+
+    next();
+  } catch (err) {
+    next(err);
   }
-
-  const langProxy = createLanguageProxy(activeLang);
-
-  // Attach to req for controllers
-  req.language_data = langProxy;
-  req.language_name = activeLang;
-  req.isRTL = (activeLang === 'ae');
-
-  // Attach globally to res.locals for ALL EJS templates
-  res.locals.language = langProxy;
-  res.locals.language_name = activeLang;
-  res.locals.isRTL = (activeLang === 'ae');
-  res.locals.langJson = JSON.stringify(languages[activeLang] || languages.en || {});
-  res.locals.t = (key, fallback) => langProxy[key] || fallback || (key ? String(key).replace(/_/g, ' ') : '');
-
-  next();
 };
 
 module.exports = {
   languageMiddleware,
   createLanguageProxy,
   reloadLanguages,
+  getMultiLanguageEnabled,
+  invalidateMultiLanguageCache,
   languages
 };

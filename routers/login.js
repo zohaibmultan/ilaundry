@@ -75,11 +75,31 @@ router.get("/", async (req, res) => {
       ? String(process.env.enable_store_signup).trim().toLowerCase() === "true"
       : true;
 
+    let demo_users = [];
+    if (show_demo_accounts) {
+      try {
+        demo_users = (await DataFind(
+          `SELECT a.id, a.username, a.name, a.email, a.number, a.store_ID, a.roll_id, a.is_staff,
+                  s.name AS store_name,
+                  r.roll AS role_name
+           FROM tbl_admin a
+           LEFT JOIN tbl_store s ON s.id = a.store_ID
+           LEFT JOIN tbl_roll r ON r.id = a.roll_id
+           WHERE a.delet_flage = 0 AND a.approved = 1 AND a.username IS NOT NULL AND LENGTH(a.username) > 0
+           ORDER BY a.id ASC`
+        )) || [];
+      } catch (demoErr) {
+        console.warn("Failed to fetch demo users:", demoErr.message);
+        demo_users = [];
+      }
+    }
+
     res.render("login", {
       data: masterstore && masterstore.length > 0 ? masterstore[0] : {},
       rollverify: rollverify || [],
       show_demo_accounts,
       enable_store_signup,
+      demo_users,
     });
   } catch (err) {
     console.error("Root / route error:", err);
@@ -88,6 +108,7 @@ router.get("/", async (req, res) => {
       rollverify: [],
       show_demo_accounts: true,
       enable_store_signup: true,
+      demo_users: [],
     });
   }
 });
@@ -582,6 +603,8 @@ router.get("/shopregister", async (req, res) => {
 router.post("/register", async (req, res) => {
   try {
     const {
+      first_name,
+      last_name,
       name,
       number,
       email,
@@ -592,8 +615,33 @@ router.post("/register", async (req, res) => {
       store,
     } = req.body;
 
+    let fName = (first_name || '').trim();
+    let lName = (last_name || '').trim();
+    if (!fName && !lName && name) {
+      const raw = name.trim();
+      if (raw.includes(',')) {
+        const parts = raw.split(',');
+        lName = parts[0].trim();
+        fName = parts.slice(1).join(',').trim();
+      } else {
+        const parts = raw.split(/\s+/);
+        fName = parts[0] || '';
+        lName = parts.slice(1).join(' ') || '';
+      }
+    }
+    let combinedName = (lName && fName) ? `${lName}, ${fName}` : (lName || fName || (name ? name.trim() : ''));
+
+    const safeFirstName = fName.replace(/'/g, "\\'");
+    const safeLastName = lName.replace(/'/g, "\\'");
+    const safeName = combinedName.replace(/'/g, "\\'");
+    const safeNumber = (number || '').trim().replace(/'/g, "\\'");
+    const safeEmail = (email || '').trim().replace(/'/g, "\\'");
+    const safeAddress = (address || '').trim().replace(/'/g, "\\'");
+    const safeTaxNumber = (taxnumber || '').trim().replace(/'/g, "\\'");
+    const safeUsername = (username || '').trim().replace(/'/g, "\\'");
+
     const check_number = await DataFind(
-      "SELECT * FROM tbl_customer WHERE number='" + number + "'",
+      "SELECT * FROM tbl_customer WHERE number='" + safeNumber + "'",
     );
 
     if (check_number.length > 0) {
@@ -602,7 +650,7 @@ router.post("/register", async (req, res) => {
     }
 
     const check_username = await DataFind(
-      "SELECT * FROM tbl_customer WHERE username='" + username + "'",
+      "SELECT * FROM tbl_customer WHERE username='" + safeUsername + "'",
     );
 
     if (check_username.length > 0) {
@@ -630,8 +678,8 @@ router.post("/register", async (req, res) => {
     if (store) {
       const customerInsert = await DataInsert(
         `tbl_customer`,
-        `name,number,email,address,taxnumber,username,password,main_roll_id,approved,store_ID`,
-        `'${name}','${number}','${email}','${address}','${taxnumber}','${username}','${hashpass}','${customerId[0].id}',${approved},'${store}'`,
+        `name,first_name,last_name,number,email,address,taxnumber,username,password,main_roll_id,approved,store_ID`,
+        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved},'${store}'`,
         req.hostname,
         req.protocol,
       );
@@ -646,8 +694,8 @@ router.post("/register", async (req, res) => {
     } else {
       const customerInsert = await DataInsert(
         `tbl_customer`,
-        `name,number,email,address,taxnumber,username,password,main_roll_id,approved`,
-        `'${name}','${number}','${email}','${address}','${taxnumber}','${username}','${hashpass}','${customerId[0].id}',${approved}`,
+        `name,first_name,last_name,number,email,address,taxnumber,username,password,main_roll_id,approved`,
+        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved}`,
         req.hostname,
         req.protocol,
       );
@@ -697,6 +745,10 @@ router.post("/shopregister", upload.single("logo"), async (req, res) => {
       district,
       zip_code,
       address,
+      contact_first_name,
+      contact_last_name,
+      contact_phone,
+      contact_email,
     } = req.body;
     const checkname = await DataFind(
       "SELECT * FROM tbl_store WHERE name='" + name + "'",
@@ -770,10 +822,15 @@ router.post("/shopregister", upload.single("logo"), async (req, res) => {
 
     var newid = admindata.insertId;
 
+    const safeContactFName = (contact_first_name || "").trim().replace(/'/g, "\\'");
+    const safeContactLName = (contact_last_name || "").trim().replace(/'/g, "\\'");
+    const safeContactPhone = (contact_phone || "").trim().replace(/'/g, "\\'");
+    const safeContactEmail = (contact_email || "").trim().replace(/'/g, "\\'");
+
     const storedata = await DataInsert(
       `tbl_store`,
-      `name,logo,mobile_number,username,password,shop_commission,tax_percent,country,state,city,district,zipcode,store_email,store_tax_number,address,admin_id,status,roll_id`,
-      `'${name}','${logo}','${number}','${username}','${hashpass}',0,0,'${country || " "}','${state || " "}','${city || " "}','${district || " "}','${zip_code || " "}','${store_email}','${tax_number || " "}','${address || " "}',${newid},${approvedStatus},${targetRollId}`,
+      `name,logo,mobile_number,username,password,shop_commission,tax_percent,country,state,city,district,zipcode,store_email,store_tax_number,address,admin_id,status,roll_id,contact_first_name,contact_last_name,contact_phone,contact_email`,
+      `'${name}','${logo}','${number}','${username}','${hashpass}',0,0,'${country || " "}','${state || " "}','${city || " "}','${district || " "}','${zip_code || " "}','${store_email}','${tax_number || " "}','${address || " "}',${newid},${approvedStatus},${targetRollId},'${safeContactFName}','${safeContactLName}','${safeContactPhone}','${safeContactEmail}'`,
       req.hostname,
       req.protocol,
     );
@@ -1435,12 +1492,20 @@ router.get("/logout", auth, async (req, res) => {
 
 router.get("/lang/:id", async (req, res) => {
   try {
+    const { getMultiLanguageEnabled } = require("../middelwer/language");
+    const isMultiLang = await getMultiLanguageEnabled();
+    if (!isMultiLang) {
+      res.clearCookie("lang");
+      return res.status(200).json({ token: null, lang: "en", disabled: true });
+    }
+
     const token = jwt.sign({ lang: req.params.id }, process.env.TOKEN);
     res.cookie("lang", token, { path: "/", maxAge: 365 * 24 * 60 * 60 * 1000 });
 
-    res.status(200).json({ token, lang: req.params.id });
+    return res.status(200).json({ token, lang: req.params.id });
   } catch (error) {
     console.log(error);
+    return res.status(500).json({ error: "Failed to set language" });
   }
 });
 

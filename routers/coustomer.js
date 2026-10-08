@@ -165,6 +165,8 @@ router.get("/list/data", auth, async (req, res) => {
       from: `tbl_customer LEFT JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id`,
       searchColumns: [
         'tbl_customer.name',
+        'tbl_customer.first_name',
+        'tbl_customer.last_name',
         'tbl_customer.number',
         'tbl_customer.email',
         'tbl_customer.address',
@@ -176,29 +178,39 @@ router.get("/list/data", auth, async (req, res) => {
       defaultOrder: 'tbl_customer.id DESC',
       columnMap: {
         0: 'tbl_customer.id',
-        1: 'tbl_customer.name',
+        1: 'tbl_customer.last_name',
         2: 'tbl_customer.number',
         3: 'tbl_customer.address',
         4: 'tbl_store.name',
         5: 'tbl_customer.approved'
       },
       postProcess: async (rows) => {
-        return rows.map((cust) => ({
-          id: cust.id,
-          name: cust.name || '',
-          number: cust.number || '',
-          email: cust.email || '',
-          address: cust.address || '',
-          store: cust.store || '',
-          taxnumber: cust.taxnumber || '',
-          roll_id: cust.roll_id || '',
-          approved: cust.approved === 1 ? 1 : 0,
-          delet_flage: cust.delet_flage,
-          transiction: parseInt(cust.transiction) || 0,
-          canEdit,
-          canDelete,
-          login
-        }));
+        return rows.map((cust) => {
+          const fName = cust.first_name || '';
+          const lName = cust.last_name || '';
+          const displayName = (lName && fName)
+            ? `${lName}, ${fName}`
+            : (cust.name || fName || lName || '');
+
+          return {
+            id: cust.id,
+            name: displayName,
+            first_name: fName,
+            last_name: lName,
+            number: cust.number || '',
+            email: cust.email || '',
+            address: cust.address || '',
+            store: cust.store || '',
+            taxnumber: cust.taxnumber || '',
+            roll_id: cust.roll_id || '',
+            approved: cust.approved === 1 ? 1 : 0,
+            delet_flage: cust.delet_flage,
+            transiction: parseInt(cust.transiction) || 0,
+            canEdit,
+            canDelete,
+            login
+          };
+        });
       }
     });
 
@@ -214,36 +226,62 @@ router.post("/update/:id", async (req, res) => {
   try {
     const id = req.params.id;
 
-    const { name, number, email, tax, address } = req.body;
-    // var active;
-    // req.body.active == 0 ? (active = 0) : (active = 1);
+    const { first_name, last_name, name, number, email, tax, address } = req.body;
 
     var approved;
     req.body.approved == 1 ? (approved = 1) : (approved = 0);
 
-    
-
-const data = await DataUpdate(
-        `tbl_customer`,
-        `name='${name}',
-         number='${number}',
-         email='${email}',
-         address='${address}',
-         taxnumber='${tax}',
-         approved='${approved}'`,
-        `id=${id}`,
-        req.hostname,req.protocol);
-
-
-      if (data == -1) {
-        req.flash("error", "Failed to update customer, please check input and try again");
-        return res.redirect("back");
+    let fName = (first_name || '').trim();
+    let lName = (last_name || '').trim();
+    if (!fName && !lName && name) {
+      const raw = name.trim();
+      if (raw.includes(',')) {
+        const parts = raw.split(',');
+        lName = parts[0].trim();
+        fName = parts.slice(1).join(',').trim();
+      } else {
+        const parts = raw.split(/\s+/);
+        fName = parts[0] || '';
+        lName = parts.slice(1).join(' ') || '';
       }
+    }
+
+    let combinedName = (lName && fName) ? `${lName}, ${fName}` : (lName || fName || (name ? name.trim() : ''));
+
+    const safeFirstName = fName.replace(/'/g, "\\'");
+    const safeLastName = lName.replace(/'/g, "\\'");
+    const safeName = combinedName.replace(/'/g, "\\'");
+    const safeNumber = (number || '').trim().replace(/'/g, "\\'");
+    const safeEmail = (email || '').trim().replace(/'/g, "\\'");
+    const safeAddress = (address || '').trim().replace(/'/g, "\\'");
+    const safeTax = (tax || '').trim().replace(/'/g, "\\'");
+
+    const data = await DataUpdate(
+      `tbl_customer`,
+      `name='${safeName}',
+       first_name='${safeFirstName}',
+       last_name='${safeLastName}',
+       number='${safeNumber}',
+       email='${safeEmail}',
+       address='${safeAddress}',
+       taxnumber='${safeTax}',
+       approved='${approved}'`,
+      `id=${id}`,
+      req.hostname,
+      req.protocol
+    );
+
+    if (data == -1) {
+      req.flash("error", "Failed to update customer, please check input and try again");
+      return res.redirect("back");
+    }
 
     req.flash("success", "Your Data is UPDATE Success Fully");
-    res.redirect("/coustomer/list");
+    return res.redirect("/coustomer/list");
   } catch (error) {
-    console.log(error);
+    console.log("Customer update error:", error);
+    req.flash("error", "Failed to update customer, please check input and try again");
+    return res.redirect("back");
   }
 });
 
@@ -254,7 +292,7 @@ router.post("/register", auth, async (req, res) => {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     } else {
-      const { name, number, email, taxnumber, address, username, password } =
+      const { first_name, last_name, name, number, email, taxnumber, address, username, password } =
         req.body;
       const verfiyStore = await DataFind(`SELECT * FROM tbl_admin WHERE id=${id}`);
       const isStaff = verfiyStore.length > 0 && verfiyStore[0].is_staff != 0;
@@ -297,15 +335,19 @@ router.post("/register", auth, async (req, res) => {
       }
     }
 
+      const rawNumber = (number ? String(number).trim() : '');
+      let cleanUsername = (username && String(username).trim() !== '') ? String(username).trim() : rawNumber;
+      let cleanPassword = (password && String(password).trim() !== '') ? String(password).trim() : rawNumber;
+
       const check_username = await DataFind(
-        "SELECT * FROM tbl_customer WHERE username='" + username + "'"
+        "SELECT * FROM tbl_customer WHERE username='" + cleanUsername + "'"
       );
       if (check_username.length > 0  && check_username[0].username != '') {
         req.flash("error", "This UserName Alredy Register!!!!");
         return res.redirect(req.get("Referrer") || "/");
       }else{
         let check_usernameinadmin = await DataFind(
-        "SELECT * FROM tbl_admin WHERE username='" + username + "'"
+        "SELECT * FROM tbl_admin WHERE username='" + cleanUsername + "'"
       );
 
       if (check_usernameinadmin.length > 0  && check_usernameinadmin[0].username != '') {
@@ -335,23 +377,48 @@ router.post("/register", auth, async (req, res) => {
         "SELECT * FROM tbl_roll WHERE rollType='customer'"
       );
       let hashpass = ''
-      if(password.length>0 || password != ''){
-      const salt = bcrypt.genSaltSync(10);
-       hashpass = bcrypt.hashSync(password,salt)
-      console.log("hashpass",hashpass);
+      if(cleanPassword && cleanPassword.length > 0){
+        const salt = bcrypt.genSaltSync(10);
+        hashpass = bcrypt.hashSync(cleanPassword, salt);
       }
+
+      let fName = (first_name || '').trim();
+      let lName = (last_name || '').trim();
+      if (!fName && !lName && name) {
+        const raw = name.trim();
+        if (raw.includes(',')) {
+          const parts = raw.split(',');
+          lName = parts[0].trim();
+          fName = parts.slice(1).join(',').trim();
+        } else {
+          const parts = raw.split(/\s+/);
+          fName = parts[0] || '';
+          lName = parts.slice(1).join(' ') || '';
+        }
+      }
+      let combinedName = (lName && fName) ? `${lName}, ${fName}` : (lName || fName || (name ? name.trim() : ''));
+
+      const safeFirstName = fName.replace(/'/g, "\\'");
+      const safeLastName = lName.replace(/'/g, "\\'");
+      const safeName = combinedName.replace(/'/g, "\\'");
+      const safeNumber = rawNumber.replace(/'/g, "\\'");
+      const safeEmail = (email || '').trim().replace(/'/g, "\\'");
+      const safeAddress = (address || '').trim().replace(/'/g, "\\'");
+      const safeTaxNumber = (taxnumber || '').trim().replace(/'/g, "\\'");
+      const safeUsername = cleanUsername.replace(/'/g, "\\'");
+
       const data = await DataInsert(
         `tbl_customer`,
-        `name,number,email,address,taxnumber,username,password,store_ID,reffstore,main_roll_id,approved`,
-        `'${name}','${number}','${email}','${address}','${taxnumber}','${username}','${hashpass}','${storeid}','${storeid}',${main_roll[0].id},1`,
+        `name,first_name,last_name,number,email,address,taxnumber,username,password,store_ID,reffstore,main_roll_id,approved`,
+        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeTaxNumber}','${safeUsername}','${hashpass}','${storeid}','${storeid}',${main_roll[0].id},1`,
         req.hostname,
         req.protocol
       );
 
-if (data == -1) {
-  req.flash('error', "Failed to save customer, please check input and try again");
-  return res.redirect("back");
-}
+      if (data == -1) {
+        req.flash('error', "Failed to save customer, please check input and try again");
+        return res.redirect("back");
+      }
 
       req.flash(
         "success",

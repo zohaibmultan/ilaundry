@@ -15,7 +15,7 @@
             
             <!-- Page Banner Header -->
             <div class="settings-banner mb-4">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 w-100">
                     <div class="d-flex align-items-center">
                         <div class="settings-icon-badge badge-primary-glass">
                             <i class="fas fa-print"></i>
@@ -25,15 +25,12 @@
                                 <%= language.Printer_Settings || 'Store POS Hardware & Printer Settings' %>
                             </h4>
                             <p class="settings-card-subtitle mb-0">
-                                Configure thermal receipt printer, garment tag printer, auto-cutter, cash drawer, and silent printing bridge for 
+                                Configure thermal printer for 
                                 <strong class="text-primary"><%= storeData ? storeData.name : 'Store' %></strong>
                             </p>
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-semibold">
-                            <i class="fas fa-store me-1"></i> <%= storeData ? storeData.name : 'Store POS' %>
-                        </span>
                         <a href="/index" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold">
                             <i class="fa fa-arrow-left me-1"></i> <%= language.Back_to_Dashboard || 'Back to Dashboard' %>
                         </a>
@@ -77,138 +74,9 @@
             <form action="/tool/printersetting/<%= targetStoreId %>" method="POST" id="printer_setting_form" class="need-validation" novalidate>
                 
                 <div class="row g-4">
-                    <!-- Left Column: Receipt & Tag Hardware Configuration -->
-                    <div class="col-12 col-xl-7">
-                        
-                        <!-- 1. Customer Invoice Receipt Printer Card -->
-                        <div class="settings-section-card mb-4">
-                            <div class="settings-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                <div class="d-flex align-items-center">
-                                    <div class="settings-icon-badge badge-primary-glass">
-                                        <i class="fas fa-receipt"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="settings-card-title">Customer Invoice Receipt Printer</h5>
-                                        <p class="settings-card-subtitle">Paper width format, target OS printer, and thermal copies</p>
-                                    </div>
-                                </div>
-                                <span class="badge bg-primary-subtle text-primary">INVOICE PRINTER</span>
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-12 col-md-6">
-                                    <label class="form-label fw-bold">
-                                        <i class="fas fa-scroll text-primary me-1"></i> Invoice Paper Format
-                                    </label>
-                                    <select class="form-select form-control" name="invoice_printer_format" id="invoice_printer_format" <%= !canEdit ? 'disabled' : '' %>>
-                                        <option value="1" <%= printerSettings.invoice_printer_format == 1 ? 'selected' : '' %>>80mm Thermal POS (Standard - Recommended)</option>
-                                        <option value="2" <%= printerSettings.invoice_printer_format == 2 ? 'selected' : '' %>>58mm Thermal POS (Compact Roll)</option>
-                                        <option value="0" <%= printerSettings.invoice_printer_format == 0 ? 'selected' : '' %>>A4 Full Sheet (Standard Laser/Inkjet)</option>
-                                    </select>
-                                    <small class="text-muted d-block mt-1">Select the paper width used by your store invoice printer.</small>
-                                </div>
-
-                                <div class="col-12 col-md-6">
-                                    <label class="form-label fw-bold">
-                                        <i class="fas fa-print text-primary me-1"></i> Invoice Printer Name
-                                    </label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" name="invoice_printer_name" id="invoice_printer_name" 
-                                            value="<%= printerSettings.invoice_printer_name %>" 
-                                            placeholder="e.g. POS-80 or EPSON TM-T88VI" <%= !canEdit ? 'readonly' : '' %>>
-                                        <select class="form-select d-none" id="invoice_printer_dropdown" style="max-width: 140px;">
-                                            <option value="">Select Installed</option>
-                                        </select>
-                                    </div>
-                                    <small class="text-muted d-block mt-1">Exact name as shown in Windows "Printers & Scanners" (leave blank for default).</small>
-                                </div>
-
-                                <div class="col-12 col-md-6">
-                                    <label class="form-label fw-bold">
-                                        <i class="fas fa-copy text-primary me-1"></i> Default Receipt Copies
-                                    </label>
-                                    <input type="number" class="form-control" name="printer_copies" id="printer_copies" 
-                                        min="1" max="5" value="<%= printerSettings.printer_copies || 1 %>" <%= !canEdit ? 'readonly' : '' %>>
-                                    <small class="text-muted d-block mt-1">Number of customer invoice copies printed per completed checkout.</small>
-                                </div>
-
-                                <div class="col-12 col-md-6 d-flex align-items-end">
-                                    <button type="button" class="btn btn-outline-primary btn-sm w-100 py-2" id="btnTestInvoicePrint" onclick="testPrintInvoice()">
-                                        <i class="fas fa-vial me-1"></i> Test Invoice Print
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 2. Garment Wash Tag Printer Card -->
-                        <div class="settings-section-card mb-4">
-                            <div class="settings-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                <div class="d-flex align-items-center">
-                                    <div class="settings-icon-badge badge-primary-glass">
-                                        <i class="fas fa-tags"></i>
-                                    </div>
-                                    <div>
-                                        <h5 class="settings-card-title">Garment Wash Tag Printer</h5>
-                                        <p class="settings-card-subtitle">Dedicated cloth tag printer or shared thermal printer for garment tracking</p>
-                                    </div>
-                                </div>
-                                <span class="badge bg-warning-subtle text-warning">GARMENT TAGS</span>
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-12 col-md-6">
-                                    <label class="form-label fw-bold">
-                                        <i class="fas fa-barcode text-primary me-1"></i> Garment Tag Dimensions
-                                    </label>
-                                    <select class="form-select form-control" name="tag_printer_format" id="tag_printer_format" <%= !canEdit ? 'disabled' : '' %>>
-                                        <option value="1" <%= printerSettings.tag_printer_format == 1 ? 'selected' : '' %>>75mm Wash Tag (Standard Barcode - Recommended)</option>
-                                        <option value="0" <%= printerSettings.tag_printer_format == 0 ? 'selected' : '' %>>50mm Compact Tag</option>
-                                        <option value="2" <%= printerSettings.tag_printer_format == 2 ? 'selected' : '' %>>80mm Thermal Tag</option>
-                                    </select>
-                                    <small class="text-muted d-block mt-1">Width format for Code128 barcode wash tag strip.</small>
-                                </div>
-
-                                <div class="col-12 col-md-6">
-                                    <label class="form-label fw-bold">
-                                        <i class="fas fa-tag text-primary me-1"></i> Tag Printer Name
-                                    </label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" name="tag_printer_name" id="tag_printer_name" 
-                                            value="<%= printerSettings.tag_printer_name %>" 
-                                            placeholder="Leave blank to use Invoice Printer" <%= !canEdit ? 'readonly' : '' %>>
-                                        <select class="form-select d-none" id="tag_printer_dropdown" style="max-width: 140px;">
-                                            <option value="">Select Installed</option>
-                                        </select>
-                                    </div>
-                                    <small class="text-muted d-block mt-1">Leave empty if you use the SAME thermal printer for both invoice & tags.</small>
-                                </div>
-
-                                <div class="col-12 col-md-6">
-                                    <div class="p-3 rounded-3 border">
-                                        <div class="small fw-semibold text-dark mb-1">
-                                            <i class="fas fa-cut text-danger me-1"></i> Multi-Piece Garment Tracking:
-                                        </div>
-                                        <div class="small text-muted">
-                                            Each physical garment piece automatically receives an individual cloth wash tag with piece numbering (e.g. <code>Piece 1/2</code>, <code>Piece 2/2</code>).
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-12 col-md-6 d-flex align-items-end">
-                                    <button type="button" class="btn btn-outline-warning btn-sm w-100 py-2" id="btnTestTagPrint" onclick="testPrintTag()">
-                                        <i class="fas fa-barcode me-1"></i> Test Wash Tag Print
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- Right Column: Silent Printing Bridge & Hardware Actions -->
-                    <div class="col-12 col-xl-5">
-
-                        <!-- 3. Local Printing Bridge Card -->
-                        <div class="settings-section-card mb-4">
+                    <!-- 3. Local Printing Bridge Card -->
+                    <div class="col-12">
+                        <div class="settings-section-card">
                             <div class="settings-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div class="d-flex align-items-center">
                                     <div class="settings-icon-badge badge-primary-glass">
@@ -223,7 +91,7 @@
                             </div>
 
                             <div class="row g-3">
-                                <div class="col-12">
+                                <div class="col-12 col-lg-6">
                                     <label class="form-label fw-bold">
                                         <i class="fas fa-network-wired text-primary me-1"></i> Local Server URL
                                     </label>
@@ -231,14 +99,14 @@
                                         <input type="text" class="form-control" name="printing_server_url" id="printing_server_url" 
                                             value="<%= printerSettings.printing_server_url %>" 
                                             placeholder="http://127.0.0.1:4321" <%= !canEdit ? 'readonly' : '' %>>
-                                        <button class="btn btn-outline-secondary" type="button" onclick="checkBridgeServerHealth(true)">
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" id="btnCheckBridge" onclick="checkBridgeServerHealth(true)">
                                             <i class="fas fa-sync-alt" id="bridgePingIcon"></i> Check
                                         </button>
                                     </div>
                                     <small class="text-muted d-block mt-1">Default: <code>http://127.0.0.1:4321</code> running on the POS cashier PC.</small>
                                 </div>
 
-                                <div class="col-12">
+                                <div class="col-12 col-lg-6">
                                     <div class="p-3 rounded-3 border bg-light-subtle d-flex align-items-center justify-content-between">
                                         <div>
                                             <span class="fw-bold d-block text-dark">Silent Background Printing</span>
@@ -258,8 +126,136 @@
                                 </div>
                             </div>
                         </div>
+                    </div>    
 
-                        <!-- 4. Hardware Actions & Cutter Card -->
+                    <!-- 1. Customer Invoice Receipt Printer Card -->
+                    <div class="col-12 col-xl-6">
+                        <div class="settings-section-card mb-4">
+                            <div class="settings-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div class="d-flex align-items-center">
+                                    <div class="settings-icon-badge badge-primary-glass">
+                                        <i class="fas fa-receipt"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="settings-card-title">Customer Invoice Receipt Printer</h5>
+                                        <p class="settings-card-subtitle">Paper width format, target OS printer, and thermal copies</p>
+                                    </div>
+                                </div>
+                                <span class="badge bg-primary-subtle text-primary">INVOICE PRINTER</span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-12 col-md-12">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-scroll text-primary me-1"></i> Invoice Paper Format
+                                    </label>
+                                    <select class="form-select form-control" name="invoice_printer_format" id="invoice_printer_format" <%= !canEdit ? 'disabled' : '' %>>
+                                        <option value="1" <%= printerSettings.invoice_printer_format == 1 ? 'selected' : '' %>>80mm Thermal POS (Standard - Recommended)</option>
+                                        <option value="2" <%= printerSettings.invoice_printer_format == 2 ? 'selected' : '' %>>58mm Thermal POS (Compact Roll)</option>
+                                        <option value="0" <%= printerSettings.invoice_printer_format == 0 ? 'selected' : '' %>>A4 Full Sheet (Standard Laser/Inkjet)</option>
+                                    </select>
+                                    <small class="text-muted d-block mt-1">Select the paper width used by your store invoice printer.</small>
+                                </div>
+
+                                <div class="col-12 col-md-12">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-print text-primary me-1"></i> Invoice Printer Name
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" name="invoice_printer_name" id="invoice_printer_name" 
+                                            value="<%= printerSettings.invoice_printer_name %>" 
+                                            placeholder="e.g. POS-80 or EPSON TM-T88VI" <%= !canEdit ? 'readonly' : '' %>>
+                                        <select class="form-select d-none" id="invoice_printer_dropdown" style="max-width: 200px;">
+                                            <option value="">Select Installed</option>
+                                        </select>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">Exact name as shown in Windows "Printers & Scanners" (leave blank for default).</small>
+                                </div>
+
+                                <div class="col-12 col-md-12">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-copy text-primary me-1"></i> Default Receipt Copies
+                                    </label>
+                                    <input type="number" class="form-control" name="printer_copies" id="printer_copies" 
+                                        min="1" max="5" value="<%= printerSettings.printer_copies || 1 %>" <%= !canEdit ? 'readonly' : '' %>>
+                                    <small class="text-muted d-block mt-1">Number of customer invoice copies printed per completed checkout.</small>
+                                </div>
+
+                                <div class="col-12 d-flex align-items-end mt-4">
+                                    <button type="button" class="btn btn-outline-primary w-100 py-2" id="btnTestInvoicePrint" onclick="testPrintInvoice()">
+                                        <i class="fas fa-vial me-1"></i> Test Invoice Print
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Garment Wash Tag Printer Card -->
+                    <div class="col-12 col-xl-6">
+                        <div class="settings-section-card mb-4">
+                            <div class="settings-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div class="d-flex align-items-center">
+                                    <div class="settings-icon-badge badge-primary-glass">
+                                        <i class="fas fa-tags"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="settings-card-title">Garment Wash Tag Printer</h5>
+                                        <p class="settings-card-subtitle">Dedicated cloth tag printer settings</p>
+                                    </div>
+                                </div>
+                                <span class="badge bg-warning-subtle text-warning">GARMENT TAGS</span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-barcode text-primary me-1"></i> Garment Tag Dimensions
+                                    </label>
+                                    <select class="form-select form-control" name="tag_printer_format" id="tag_printer_format" <%= !canEdit ? 'disabled' : '' %>>
+                                        <option value="1" <%= printerSettings.tag_printer_format == 1 ? 'selected' : '' %>>75mm Wash Tag (Standard Barcode - Recommended)</option>
+                                        <option value="0" <%= printerSettings.tag_printer_format == 0 ? 'selected' : '' %>>50mm Compact Tag</option>
+                                        <option value="2" <%= printerSettings.tag_printer_format == 2 ? 'selected' : '' %>>80mm Thermal Tag</option>
+                                    </select>
+                                    <small class="text-muted d-block mt-1">Width format for Code128 barcode wash tag strip.</small>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-tag text-primary me-1"></i> Tag Printer Name
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" name="tag_printer_name" id="tag_printer_name" 
+                                            value="<%= printerSettings.tag_printer_name %>" 
+                                            placeholder="Leave blank to use Invoice Printer" <%= !canEdit ? 'readonly' : '' %>>
+                                        <select class="form-select d-none" id="tag_printer_dropdown" style="max-width: 200px;">
+                                            <option value="">Select Installed</option>
+                                        </select>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">Leave empty if you use the SAME thermal printer for both invoice & tags.</small>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="p-3 rounded-3 border">
+                                        <div class="small fw-semibold text-dark mb-1">
+                                            <i class="fas fa-cut text-danger me-1"></i> Multi-Piece Garment Tracking:
+                                        </div>
+                                        <div class="small text-muted">
+                                            Each physical garment piece automatically receives an individual cloth wash tag with piece numbering (e.g. <code>Piece 1/2</code>, <code>Piece 2/2</code>).
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 d-flex align-items-end mt-3">
+                                    <button type="button" class="btn btn-outline-warning w-100 py-2" id="btnTestTagPrint" onclick="testPrintTag()">
+                                        <i class="fas fa-barcode me-1"></i> Test Wash Tag Print
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Hardware Actions & Cutter Card -->
+                    <div class="col-12 col-xl-6">
                         <div class="settings-section-card mb-4">
                             <div class="settings-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div class="d-flex align-items-center">
@@ -296,7 +292,7 @@
                                             <span class="fw-bold d-block text-dark">
                                                 <i class="fas fa-cash-register text-success me-1"></i> Open Cash Drawer on Checkout
                                             </span>
-                                            <small class="text-muted">Sends standard 24V pulse (ESC/POS 27,112,0) through the printer RJ12 port</small>
+                                            <small class="text-muted">Sends standard 24V pulse (ESC/POS 27,112,0)</small>
                                         </div>
                                         <div class="form-check form-switch ms-3 m-0">
                                             <input class="form-check-input" type="checkbox" role="switch" id="printer_open_cash_drawer" name="printer_open_cash_drawer" value="1" 
@@ -306,8 +302,10 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- 5. Barcode Printing Preferences Card -->
+                    <!-- 5. Barcode Printing Preferences Card -->
+                    <div class="col-12 col-xl-6">
                         <div class="settings-section-card mb-4">
                             <div class="settings-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div class="d-flex align-items-center">
@@ -329,7 +327,7 @@
                                             <span class="fw-bold d-block text-dark">
                                                 <i class="fas fa-file-invoice text-primary me-1"></i> Print Barcode on Invoice Receipt
                                             </span>
-                                            <small class="text-muted">Render scannable Code128 barcode at the bottom of the customer invoice receipt</small>
+                                            <small class="text-muted">Render barcode at the bottom of the invoice receipt</small>
                                         </div>
                                         <div class="form-check form-switch ms-3 m-0">
                                             <input class="form-check-input" type="checkbox" role="switch" id="invoice_barcode_enabled" name="invoice_barcode_enabled" value="1" 
@@ -344,7 +342,7 @@
                                             <span class="fw-bold d-block text-dark">
                                                 <i class="fas fa-tags text-warning me-1"></i> Print Barcode on Garment Wash Tags
                                             </span>
-                                            <small class="text-muted">Render individual piece barcode on each cloth wash tag for tracking through cleaning</small>
+                                            <small class="text-muted">Render barcode on each cloth wash tag</small>
                                         </div>
                                         <div class="form-check form-switch ms-3 m-0">
                                             <input class="form-check-input" type="checkbox" role="switch" id="tag_barcode_enabled" name="tag_barcode_enabled" value="1" 
@@ -354,7 +352,6 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 </div>
 
@@ -377,9 +374,7 @@
                         <% } %>
                     </div>
                 </div>
-
             </form>
-
         </div>
     </div>
     <!--********** Content body end **********-->
@@ -404,26 +399,39 @@
             const badge = document.getElementById('bridgeServerStatusBadge');
             const details = document.getElementById('bridgeStatusDetails');
             const icon = document.getElementById('bridgePingIcon');
+            const btn = document.getElementById('btnCheckBridge');
 
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Checking...';
+            }
             if (icon) icon.classList.add('fa-spin');
 
             try {
-                const client = new POSPrintClient({ baseUrl: url, timeout: 3000 });
+                if (typeof POSPrintClient === 'undefined') {
+                    throw new Error('POSPrintClient library not loaded');
+                }
+
+                const client = new POSPrintClient({ baseUrl: url, timeout: 3500 });
                 const res = await client.request('/health');
-                if (res && res.status === 'running') {
+                if (res && (res.status === 'running' || res.status === 'ok')) {
                     if (badge) {
                         badge.className = 'badge bg-success-subtle text-success';
                         badge.textContent = 'ONLINE';
                     }
                     if (details) {
                         details.className = 'alert alert-success py-2 px-3 mb-0 small';
-                        details.innerHTML = '<i class="fas fa-check-circle me-1"></i> Printing bridge is running online on <strong>' + url + '</strong>';
+                        details.innerHTML = '<i class="fas fa-check-circle me-1"></i> Printing bridge is running online on <strong>' + url + '</strong> (v' + (res.version || '1.0.0') + ')';
+                    }
+
+                    if (manual && typeof toastr !== 'undefined') {
+                        toastr.success('Connected to printing bridge on <b>' + url + '</b>', { timeOut: 3500, escapeHtml: false });
                     }
 
                     // Populate available printer dropdowns if available
-                    fetchPrintersList(client);
+                    fetchPrintersList(client, manual);
                 } else {
-                    throw new Error('Server not responding');
+                    throw new Error('Server returned unexpected status');
                 }
             } catch (err) {
                 if (badge) {
@@ -434,17 +442,26 @@
                     details.className = 'alert alert-warning py-2 px-3 mb-0 small';
                     details.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> Local bridge is not responding. POS will fall back to native Chrome print dialog.';
                 }
+                if (manual && typeof toastr !== 'undefined') {
+                    toastr.warning('Could not connect to printing bridge on <b>' + url + '</b>. Ensure the POS tray app is running.', { timeOut: 4500, escapeHtml: false });
+                }
             } finally {
-                if (icon) icon.classList.remove('fa-spin');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sync-alt" id="bridgePingIcon"></i> Check';
+                }
             }
         }
 
-        async function fetchPrintersList(client) {
+        async function fetchPrintersList(client, manual) {
             try {
                 const res = await client.request('/printers');
                 if (res && res.printers && Array.isArray(res.printers)) {
                     populateDropdown('invoice_printer_dropdown', 'invoice_printer_name', res.printers);
                     populateDropdown('tag_printer_dropdown', 'tag_printer_name', res.printers);
+                    if (manual && res.printers.length > 0 && typeof toastr !== 'undefined') {
+                        toastr.info('Detected ' + res.printers.length + ' printer(s) from Windows system.', { timeOut: 3000 });
+                    }
                 }
             } catch (e) {
                 console.log('Could not fetch printer list', e);

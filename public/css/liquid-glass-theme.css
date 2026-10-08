@@ -2039,7 +2039,6 @@ table.dataTable td.text-center {
   border-radius: 16px !important;
   box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05) !important;
   padding: 24px !important;
-  margin-bottom: 24px !important;
   transition: transform 0.2s ease, box-shadow 0.2s ease !important;
   height: calc(100% - 24px);
 }
@@ -2513,16 +2512,27 @@ table.dataTable td.text-center {
   border: 1px solid rgba(226, 232, 240, 0.85);
   border-radius: 12px;
   transition: all 0.2s ease;
+  cursor: pointer;
+  text-align: left;
 }
 
 [data-theme-version="dark"] .auth-hero-pill {
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme-version="dark"] .auth-hero-pill .text-dark {
+  color: #f8fafc !important;
 }
 
 .auth-hero-pill:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(0, 129, 238, 0.15);
+}
+
+.auth-hero-pill:focus-visible {
+  outline: 2px solid #0081EE;
+  outline-offset: 2px;
 }
 
 .auth-pill-icon {

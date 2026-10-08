@@ -67,8 +67,9 @@
                                             <tr>
                                                 <th style="width: 50px;">#</th>
                                                 <th><%= language.Shop_Name %></th>
-                                                <th style="width: 130px;"><%= language.Store_ID %></th>
-                                                <th style="width: 120px;"><%= language.Status %></th>
+                                                <th><%= language.Contact_Person || 'Contact Person' %></th>
+                                                <th style="width: 120px;"><%= language.Store_ID %></th>
+                                                <th style="width: 110px;"><%= language.Status %></th>
                                                 <th class="text-center" style="width: 100px;"><%= language.Action %></th>
                                             </tr>
                                         </thead>
@@ -181,6 +182,19 @@
                             data: 'name',
                             render: function(data) {
                                 return `<div class="fw-bold text-dark">${escapeHtml(data)}</div>`;
+                            }
+                        },
+                        {
+                            data: 'contact_last_name',
+                            render: function(data, type, row) {
+                                const lastName = (row.contact_last_name || '').trim();
+                                const firstName = (row.contact_first_name || '').trim();
+                                if (lastName || firstName) {
+                                    const formatted = [lastName, firstName].filter(Boolean).join(', ');
+                                    const phoneHtml = row.contact_phone ? `<div class="text-muted fs-11 mt-1"><i class="fa fa-phone me-1 text-muted"></i>${escapeHtml(row.contact_phone)}</div>` : '';
+                                    return `<div class="fw-semibold text-dark"><i class="fa fa-user-tie me-1 text-primary"></i>${escapeHtml(formatted)}</div>${phoneHtml}`;
+                                }
+                                return '<span class="text-muted fs-12">&mdash;</span>';
                             }
                         },
                         {

@@ -784,6 +784,21 @@ router.get("/type", auth, async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
+    // Compute next sequence number for new service type
+    const seqRows = await DataFind(
+      "SELECT store_ID, COALESCE(MAX(sequence_no), 0) AS max_seq FROM tbl_services_type GROUP BY store_ID",
+    );
+    const nextSeqMap = {};
+    if (seqRows && seqRows.length > 0) {
+      seqRows.forEach((r) => {
+        nextSeqMap[String(r.store_ID)] = Number(r.max_seq) + 1;
+      });
+    }
+    const defaultStoreId = ismulty
+      ? (storeList.length > 0 ? String(storeList[0].id) : "1")
+      : (store ? String(store) : "1");
+    const nextSequence = nextSeqMap[defaultStoreId] || 1;
+
     if (
       rolldetail[0].rollType === "master" &&
       rolldetail[0].service.includes("read")
@@ -793,6 +808,8 @@ router.get("/type", auth, async (req, res) => {
         ismulty,
         storeList,
         accessdata,
+        nextSequence,
+        nextSeqMap,
         language: req.language_data,
         language_name: req.language_name,
       });
@@ -805,6 +822,8 @@ router.get("/type", auth, async (req, res) => {
         ismulty: false,
         storeList: [],
         accessdata,
+        nextSequence: nextSeqMap[String(store)] || 1,
+        nextSeqMap,
         language: req.language_data,
         language_name: req.language_name,
       });
@@ -814,6 +833,8 @@ router.get("/type", auth, async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    req.flash("error", "An error occurred while loading service types");
+    return res.redirect(req.get("Referrer") || "/");
   }
 });
 
@@ -903,22 +924,31 @@ router.get("/type/data", auth, async (req, res) => {
       from: `tbl_services_type LEFT JOIN tbl_store ON tbl_services_type.store_ID = tbl_store.id`,
       searchColumns: [
         "tbl_services_type.services_type",
+        "tbl_services_type.sequence_no",
         "tbl_services_type.id",
         "tbl_store.name",
       ],
       baseWhere: scopeConditions,
       filterWhere: filterConditions,
-      defaultOrder: "tbl_services_type.id DESC",
-      columnMap: {
-        0: "tbl_services_type.id",
-        1: "tbl_services_type.services_type",
-        2: "tbl_services_type.id",
-        3: "tbl_store.name",
+      defaultOrder: "tbl_services_type.sequence_no ASC, tbl_services_type.id DESC",
+      columnMap: isMaster ? {
+        0: "tbl_services_type.sequence_no",
+        1: "tbl_services_type.sequence_no",
+        2: "tbl_services_type.services_type",
+        3: "tbl_services_type.id",
+        4: "tbl_store.name",
+        5: "tbl_services_type.status",
+      } : {
+        0: "tbl_services_type.sequence_no",
+        1: "tbl_services_type.sequence_no",
+        2: "tbl_services_type.services_type",
+        3: "tbl_services_type.id",
         4: "tbl_services_type.status",
       },
       postProcess: async (rows) => {
         return rows.map((st) => ({
           id: st.id,
+          sequence_no: parseInt(st.sequence_no) || 0,
           services_type: st.services_type || "",
           store: st.store || "",
           status: parseInt(st.status) || 0,
@@ -958,24 +988,22 @@ router.post("/addtype", auth, async (req, res) => {
   WHERE sr.id = ${roll}
 `);
     if (rolldetail[0].service.includes("write")) {
-      var { service_name, active, storeid } = req.body;
+      var { service_name, sequence_no, active, storeid } = req.body;
       active ? (active = 0) : (active = 1);
       storeid ? storeid : (storeid = store);
 
-      // var qury =
-      //   "INSERT INTO tbl_services_type (services_type,status,store_ID) VALUE ('" +
-      //   service_name +
-      //   "', " +
-      //   active +
-      //   "," +
-      //   storeid +
-      //   ")";
-      // const newservtype = await DataFind(qury);
+      let seqVal = parseInt(sequence_no);
+      if (isNaN(seqVal) || seqVal <= 0) {
+        const maxRow = await DataFind(
+          `SELECT COALESCE(MAX(sequence_no), 0) AS max_seq FROM tbl_services_type WHERE store_ID = ${storeid}`,
+        );
+        seqVal = (maxRow && maxRow[0] && Number(maxRow[0].max_seq) + 1) || 1;
+      }
 
       const newservtype = await DataInsert(
         `tbl_services_type`,
-        `services_type,status,store_ID`,
-        `${await mysql.escape(service_name)}, ${active}, ${storeid}`,
+        `services_type,sequence_no,status,store_ID`,
+        `${await mysql.escape(service_name)}, ${seqVal}, ${active}, ${storeid}`,
         req.hostname,
         req.protocol,
       );
@@ -993,6 +1021,8 @@ router.post("/addtype", auth, async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    req.flash("error", "An error occurred while adding service type");
+    return res.redirect(req.get("Referrer") || "/");
   }
 });
 
@@ -1070,23 +1100,18 @@ router.post("/updateservicestype/:id", auth, async (req, res) => {
   WHERE sr.id = ${roll}
 `);
     if (rolldetail[0].service.includes("edit")) {
-      var { service_name, active } = req.body;
+      var { service_name, sequence_no, active } = req.body;
       var dataid = req.params.id;
       active ? (active = 0) : (active = 1);
 
-      // const newservtype = await DataFind(
-      //   "UPDATE tbl_services_type SET services_type='" +
-      //     service_name +
-      //     "', status=" +
-      //     active +
-      //     " WHERE id=" +
-      //     dataid +
-      //     ""
-      // );
+      let seqVal = parseInt(sequence_no);
+      if (isNaN(seqVal) || seqVal <= 0) {
+        seqVal = 1;
+      }
 
       const updateServiceType = await DataUpdate(
         "tbl_services_type",
-        `services_type = '${service_name}', status = ${active}`,
+        `services_type = ${await mysql.escape(service_name)}, sequence_no = ${seqVal}, status = ${active}`,
         `id = ${dataid}`,
         req.hostname,
         req.protocol,
@@ -1105,6 +1130,8 @@ router.post("/updateservicestype/:id", auth, async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    req.flash("error", "An error occurred while updating service type");
+    return res.redirect("back");
   }
 });
 

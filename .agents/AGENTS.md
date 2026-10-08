@@ -194,7 +194,25 @@ This document establishes the universal rules and constraints for the **iCleaner
 3. **Strict HTML Tag Balancing in Multi-Card Forms**:
    * Multi-section settings views (`master_settings.ejs`, `store_settings_bymaster.ejs`, etc.) contain deep nested Bootstrap grids. Every opening column (`<div class="col-12">`) and card must be rigorously balanced.
    * Unclosed column wrappers cause subsequent section cards to nest inside preceding columns and pull the sticky footer inside the flex row, breaking grid flow.
+### P. Customer Name Partitioning & Phone-Based Default Authentication Invariant
+1. **Name Field Partitioning & Display Order**:
+   * In `tbl_customer`, customer names are split into `first_name` and `last_name`.
+   * Across customer tables, POS customer dropdowns, and details views, format and display customer names as: **`Last Name, First Name`** (e.g., `Smith, John`).
+2. **Default Credential Generation**:
+   * When registering or adding customers, the customer's phone number (`mobile_no`) serves as both the default `username` and default `password` (hashed via md5/bcrypt per repository convention) if explicit credentials are not entered.
 
+### Q. POS Rate & Quantity Input Dimensions Invariant
+1. **Rate Field Minimum Visibility**:
+   * POS line-item inputs for rates/prices must provide adequate width (`min-width: 85px` - `95px` or `w-100` in dedicated flex containers) to completely display decimal rates up to `###.##` without truncation or clipping.
+   * Step intervals must support `0.25` increments on rate and quantity inputs where fractional pricing applies.
+2. **Quantity Field Clearance**:
+   * POS line item quantity inputs must maintain sufficient width to display integers or decimal quantities with responsive spin controls.
 
-
+### R. Service Type & Item Catalog Sequencing Invariant
+1. **Integer Sequence Storage**:
+   * Both service types (`tbl_services_type`) and service entries (`tbl_services`) maintain an explicit integer sequence ordering column (`sequence_no INT NOT NULL DEFAULT 0`).
+2. **Default Ascending Sequence Sorting**:
+   * Server-side DataTables and list views for service types and services must sort by `sequence_no ASC, id DESC` by default.
+3. **Automatic Sequence Pre-calculation**:
+   * Creation modals and forms must pre-calculate the next available sequence index per store (`(MAX(sequence_no) + 1)` with fallback to `1`) to streamline intake.
 

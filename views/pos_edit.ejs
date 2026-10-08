@@ -4,7 +4,7 @@
 <head>
     <!-- meta and links start -->
     <%- include('templet/meta')-%>
-    <link rel="stylesheet" href="/css/pos-compact.css">
+    <link rel="stylesheet" href="/css/pos-compact.css?v=5">
 
 </head>
 
@@ -185,10 +185,10 @@
                                     <table class="pos-cart-table table-bordered verticle-middle text-center">
                                         <thead>
                                             <tr>
-                                                <th style="width: 38%; text-align: left; padding-left: 8px !important;"><%= language.Service %></th>
-                                                <th style="width: 14%;"><%= language.Color %></th>
-                                                <th style="width: 22%;"><%= language.Rate %></th>
-                                                <th style="width: 18%;"><%= language.Qty %></th>
+                                                <th style="width: 28%; text-align: left; padding-left: 8px !important;"><%= language.Service %></th>
+                                                <th style="width: 8%;"><%= language.Color %></th>
+                                                <th style="width: 28%;"><%= language.Rate %></th>
+                                                <th style="width: 28%;"><%= language.Qty %></th>
                                                 <th style="width: 8%;"></th>
                                             </tr>
                                         </thead>
@@ -212,21 +212,32 @@
                                                             id="POS_service_color" data-id="<%= x.id %>">
                                                     </td>
                                                     <td class="text-center">
-                                                        <input type="number"
-                                                            class="form-control pos-table-input pos-table-input-price"
-                                                            value="<%= x.service_type_price %>"
-                                                            name="service_type_price"
-                                                            id="edit_POSservice_type_price"
-                                                            data-id="<%= x.id %>"
-                                                            data-order_id="<%= order_date[0].id %>">
+                                                        <div class="pos-stepper pos-stepper-rate <%= (typeof login !== 'undefined' && (login=='master' || login=='store')) ? '' : (typeof login !== 'undefined' ? 'is-readonly' : '') %>">
+                                                            <button type="button" class="pos-stepper-btn pos-stepper-btn-minus" <%= (typeof login !== 'undefined' && (login=='master' || login=='store')) ? '' : (typeof login !== 'undefined' ? 'disabled' : '') %> tabindex="-1"></button>
+                                                            <input type="number"
+                                                                step="0.25"
+                                                                class="pos-stepper-input pos-table-input-price"
+                                                                value="<%= x.service_type_price %>"
+                                                                name="service_type_price"
+                                                                id="edit_POSservice_type_price"
+                                                                data-id="<%= x.id %>"
+                                                                data-order_id="<%= order_date[0].id %>"
+                                                                min="0"
+                                                                <%= (typeof login !== 'undefined' && (login=='master' || login=='store')) ? '' : (typeof login !== 'undefined' ? 'readonly' : '') %>>
+                                                            <button type="button" class="pos-stepper-btn pos-stepper-btn-plus" <%= (typeof login !== 'undefined' && (login=='master' || login=='store')) ? '' : (typeof login !== 'undefined' ? 'disabled' : '') %> tabindex="-1"></button>
+                                                        </div>
                                                     </td>
                                                     <td class="text-center">
-                                                        <input type="number"
-                                                            class="form-control pos-table-input pos-table-input-qty"
-                                                            id="edit_POSservice_type_quntity"
-                                                            value="<%= x.service_quntity %>" min="1"
-                                                            data-id="<%= x.id %>"
-                                                            data-order_id="<%= order_date[0].id %>">
+                                                        <div class="pos-stepper pos-stepper-qty">
+                                                            <button type="button" class="pos-stepper-btn pos-stepper-btn-minus" tabindex="-1"></button>
+                                                            <input type="number"
+                                                                class="pos-stepper-input pos-table-input-qty"
+                                                                id="edit_POSservice_type_quntity"
+                                                                value="<%= x.service_quntity %>" min="1" step="1"
+                                                                data-id="<%= x.id %>"
+                                                                data-order_id="<%= order_date[0].id %>">
+                                                            <button type="button" class="pos-stepper-btn pos-stepper-btn-plus" tabindex="-1"></button>
+                                                        </div>
                                                     </td>
                                                     <td class="text-center">
                                                         <a class="pos-btn-del" id="edit_remove_service_list"

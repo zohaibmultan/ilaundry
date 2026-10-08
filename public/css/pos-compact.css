@@ -420,6 +420,171 @@
   width: 100% !important;
 }
 
+/* Stylish Number Stepper (inspired by Nikita Hlopov pen/bGzLYyL) */
+.pos-stepper {
+  display: inline-flex !important;
+  align-items: stretch !important;
+  height: 30px !important;
+  width: 100% !important;
+  max-width: 90px !important;
+  background-color: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  vertical-align: middle !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pos-stepper:focus-within {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+.pos-stepper-rate {
+  max-width: 115px !important;
+  width: 115px !important;
+}
+
+.pos-stepper-rate .pos-stepper-btn {
+  width: 22px !important;
+  min-width: 22px !important;
+  max-width: 22px !important;
+}
+
+.pos-stepper-rate .pos-stepper-input {
+  font-size: 12.5px !important;
+  padding: 0 2px !important;
+}
+
+.pos-stepper-qty {
+  max-width: 105px !important;
+  width: 105px !important;
+}
+
+.pos-stepper-qty .pos-stepper-btn {
+  width: 22px !important;
+  min-width: 22px !important;
+  max-width: 22px !important;
+}
+
+.pos-stepper-qty .pos-stepper-input {
+  font-size: 13px !important;
+  padding: 0 2px !important;
+}
+
+.pos-stepper-btn {
+  outline: none !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 24px !important;
+  min-width: 24px !important;
+  max-width: 24px !important;
+  height: 100% !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative !important;
+  color: #475569 !important;
+  flex-shrink: 0 !important;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  user-select: none !important;
+  box-shadow: none !important;
+}
+
+.pos-stepper-btn:hover:not(:disabled) {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.pos-stepper-btn:active:not(:disabled) {
+  background-color: #e2e8f0 !important;
+}
+
+.pos-stepper-btn::before,
+.pos-stepper-btn::after {
+  display: block !important;
+  position: absolute !important;
+  content: '' !important;
+  width: 9px !important;
+  height: 2px !important;
+  background-color: currentColor !important;
+  border-radius: 1px !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  pointer-events: none !important;
+}
+
+.pos-stepper-btn-minus::after {
+  display: none !important;
+}
+
+.pos-stepper-btn-plus::after {
+  transform: translate(-50%, -50%) rotate(90deg) !important;
+}
+
+.pos-stepper-input {
+  display: block !important;
+  flex: 1 1 auto !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: 1px solid #e2e8f0 !important;
+  border-right: 1px solid #e2e8f0 !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 27px !important;
+  color: #1e293b !important;
+  text-align: center !important;
+  box-shadow: none !important;
+  outline: none !important;
+  appearance: textfield !important;
+  -moz-appearance: textfield !important;
+  box-sizing: border-box !important;
+}
+
+.pos-stepper-input::-webkit-outer-spin-button,
+.pos-stepper-input::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+.pos-stepper.is-readonly {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+.pos-stepper.is-readonly .pos-stepper-btn,
+.pos-stepper-btn:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.3 !important;
+  pointer-events: none !important;
+}
+
+.pos-stepper.is-readonly .pos-stepper-input,
+.pos-stepper-input[readonly] {
+  cursor: not-allowed !important;
+  color: #64748b !important;
+  background-color: #f8fafc !important;
+}
+
 /* Delete Button */
 .pos-btn-del {
   width: 27px;
@@ -673,6 +838,47 @@
   background-color: #101726 !important;
   border-color: #2e3d5b !important;
   color: #f1f5f9 !important;
+}
+
+[data-theme-version="dark"] .pos-stepper {
+  background-color: #101726 !important;
+  border-color: #2e3d5b !important;
+}
+
+[data-theme-version="dark"] .pos-stepper:focus-within {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+}
+
+[data-theme-version="dark"] .pos-stepper-btn {
+  color: #94a3b8 !important;
+}
+
+[data-theme-version="dark"] .pos-stepper-btn:hover:not(:disabled) {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] .pos-stepper-btn:active:not(:disabled) {
+  background-color: #334155 !important;
+}
+
+[data-theme-version="dark"] .pos-stepper-input {
+  border-left-color: #2e3d5b !important;
+  border-right-color: #2e3d5b !important;
+  background-color: #101726 !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme-version="dark"] .pos-stepper.is-readonly {
+  background-color: #0b1120 !important;
+  border-color: #1e293b !important;
+}
+
+[data-theme-version="dark"] .pos-stepper.is-readonly .pos-stepper-input,
+[data-theme-version="dark"] .pos-stepper-input[readonly] {
+  background-color: #0b1120 !important;
+  color: #64748b !important;
 }
 
 [data-theme-version="dark"] .pos-total-row {
