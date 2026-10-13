@@ -126,8 +126,91 @@
             }
         };
 
+        if (options.rowReorder && $.fn.dataTable && $.fn.dataTable.RowReorder) {
+            defaultOptions.rowReorder = {
+                selector: options.rowReorder.selector || '.reorder-drag-handle',
+                dataSrc: options.rowReorder.dataSrc || 'sequence_no',
+                update: false
+            };
+        }
+
         var finalConfig = $.extend(true, {}, defaultOptions, options);
         var dataTable = $table.DataTable(finalConfig);
+
+        // Bind RowReorder event if enabled
+        if (options.rowReorder && $.fn.dataTable && $.fn.dataTable.RowReorder) {
+            var reorderEntity = options.rowReorder.entity || 'service';
+            var reorderUrl = options.rowReorder.url || '/services/reorder_sequence';
+
+            dataTable.on('row-reorder', function (e, diff, edit) {
+                if (!diff || diff.length === 0) return;
+                var reorderList = [];
+                for (var i = 0; i < diff.length; i++) {
+                    var rData = dataTable.row(diff[i].node).data();
+                    if (rData && rData.id) {
+                        reorderList.push({
+                            id: rData.id,
+                            sequence_no: parseInt(diff[i].newData, 10)
+                        });
+                    }
+                }
+
+                // If duplicate or missing sequence numbers exist in diff, recalculate from DOM order
+                var hasInvalid = false;
+                var seenSeq = {};
+                for (var j = 0; j < reorderList.length; j++) {
+                    var s = reorderList[j].sequence_no;
+                    if (s === undefined || s === null || isNaN(s) || seenSeq[s]) {
+                        hasInvalid = true;
+                        break;
+                    }
+                    seenSeq[s] = true;
+                }
+
+                if (hasInvalid || reorderList.length === 0) {
+                    reorderList = [];
+                    var pageStart = (dataTable.page.info && dataTable.page.info().start) || 0;
+                    $table.find('tbody tr').each(function (idx) {
+                        var rData = dataTable.row(this).data();
+                        if (rData && rData.id) {
+                            reorderList.push({
+                                id: rData.id,
+                                sequence_no: pageStart + idx + 1
+                            });
+                        }
+                    });
+                }
+
+                if (reorderList.length > 0) {
+                    $.ajax({
+                        url: reorderUrl,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            action: 'drag_reorder',
+                            entity: reorderEntity,
+                            reorderList: reorderList
+                        }),
+                        success: function (res) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success('Sequence reordered successfully');
+                            }
+                            dataTable.ajax.reload(null, false);
+                        },
+                        error: function (xhr) {
+                            var errMsg = 'Failed to reorder sequence';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errMsg += ': ' + xhr.responseJSON.message;
+                            }
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(errMsg);
+                            }
+                            dataTable.ajax.reload(null, false);
+                        }
+                    });
+                }
+            });
+        }
 
         // Bind Search Input with 350ms debounce
         if (options.searchInput) {
@@ -176,6 +259,139 @@
 
         return dataTable;
     }
+
+    // Global "Move Position" Dialog for Cross-Page Reordering (e.g. Page 3 to Page 1)
+    function ensureMovePositionModal() {
+        if ($('#modalMoveSequencePosition').length) return;
+        var modalHtml = [
+            '<div class="modal fade" id="modalMoveSequencePosition" tabindex="-1" aria-hidden="true" style="z-index: 1065;">',
+            '  <div class="modal-dialog modal-dialog-centered modal-sm">',
+            '    <div class="modal-content shadow-lg border-0 rounded-4">',
+            '      <div class="modal-header border-bottom py-2 px-3">',
+            '        <h6 class="modal-title fw-bold text-dark d-flex align-items-center mb-0">',
+            '          <i class="fas fa-sort-numeric-down text-primary me-2"></i> Move Position',
+            '        </h6>',
+            '        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>',
+            '      </div>',
+            '      <div class="modal-body p-3">',
+            '        <div class="text-center mb-3">',
+            '          <div class="text-muted small">Moving item</div>',
+            '          <div class="fw-bold fs-6 text-dark text-truncate px-2" id="moveItemTitle">Item</div>',
+            '          <div class="badge bg-light text-secondary border mt-1 px-2 py-1">Current Position: #<span id="moveCurrentPos">1</span></div>',
+            '        </div>',
+            '        <div class="d-grid gap-2 mb-3">',
+            '          <button type="button" class="btn btn-outline-primary btn-sm rounded-pill fw-semibold btn-quick-move" data-pos="top">',
+            '            <i class="fas fa-arrow-up me-1"></i> Move to Top (Page 1, #1)',
+            '          </button>',
+            '          <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill fw-semibold btn-quick-move" data-pos="bottom">',
+            '            <i class="fas fa-arrow-down me-1"></i> Move to Bottom',
+            '          </button>',
+            '        </div>',
+            '        <div class="border-top pt-2">',
+            '          <label class="form-label small fw-bold text-muted mb-1">Or Enter Exact Position #</label>',
+            '          <div class="input-group input-group-sm">',
+            '            <span class="input-group-text bg-white"><i class="fas fa-hashtag text-muted"></i></span>',
+            '            <input type="number" class="form-control" id="moveTargetPosInput" min="1" step="1" placeholder="e.g. 1">',
+            '            <button class="btn btn-primary btn-apply-move" type="button">',
+            '              <i class="fas fa-check me-1"></i> Move',
+            '            </button>',
+            '          </div>',
+            '        </div>',
+            '      </div>',
+            '    </div>',
+            '  </div>',
+            '</div>'
+        ].join('\n');
+        $('body').append(modalHtml);
+    }
+
+    var activeMoveContext = null;
+
+    $(document).on('click', '.btn-move-sequence', function (e) {
+        e.preventDefault();
+        ensureMovePositionModal();
+        var $btn = $(this);
+        activeMoveContext = {
+            id: $btn.attr('data-id'),
+            name: $btn.attr('data-name') || 'Item #' + $btn.attr('data-id'),
+            seq: $btn.attr('data-seq') || '1',
+            entity: $btn.attr('data-entity') || 'service',
+            tableSelector: $btn.closest('table').attr('id') ? '#' + $btn.closest('table').attr('id') : null
+        };
+        $('#moveItemTitle').text(activeMoveContext.name);
+        $('#moveCurrentPos').text(activeMoveContext.seq);
+        $('#moveTargetPosInput').val('');
+        var modalEl = document.getElementById('modalMoveSequencePosition');
+        var modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modal.show();
+    });
+
+    function submitMovePosition(targetPos) {
+        if (!activeMoveContext || !activeMoveContext.id) return;
+        var tableSelector = activeMoveContext.tableSelector;
+        var dataTable = tableSelector ? $(tableSelector).DataTable() : null;
+        var pageLen = dataTable ? dataTable.page.len() : 10;
+
+        $.ajax({
+            url: '/services/reorder_sequence',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                action: 'move_to_position',
+                entity: activeMoveContext.entity,
+                id: activeMoveContext.id,
+                target_position: targetPos,
+                page_length: pageLen
+            }),
+            success: function (res) {
+                var modalEl = document.getElementById('modalMoveSequencePosition');
+                var modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) modalInstance.hide();
+
+                if (typeof toastr !== 'undefined') {
+                    toastr.success(res.message || 'Item moved successfully');
+                }
+
+                if (dataTable) {
+                    if (res.targetPage !== undefined && res.targetPage !== null) {
+                        dataTable.page(res.targetPage).draw('page');
+                    } else {
+                        dataTable.ajax.reload(null, false);
+                    }
+                }
+            },
+            error: function (xhr) {
+                var msg = 'Failed to move position';
+                try {
+                    var parsed = JSON.parse(xhr.responseText);
+                    if (parsed && parsed.message) msg = parsed.message;
+                } catch(e) {}
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(msg);
+                }
+            }
+        });
+    }
+
+    $(document).on('click', '.btn-quick-move', function () {
+        var pos = $(this).attr('data-pos');
+        submitMovePosition(pos);
+    });
+
+    $(document).on('click', '.btn-apply-move', function () {
+        var pos = $('#moveTargetPosInput').val();
+        if (!pos || parseInt(pos) < 1) {
+            alert('Please enter a valid positive position number.');
+            return;
+        }
+        submitMovePosition(parseInt(pos));
+    });
+
+    $(document).on('keypress', '#moveTargetPosInput', function (e) {
+        if (e.which === 13) {
+            $('.btn-apply-move').trigger('click');
+        }
+    });
 
     window.initServerDataTable = initServerDataTable;
 

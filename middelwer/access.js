@@ -14,7 +14,6 @@ let staff_roll = await mySqlQury(`
 `);
 let rolldetail = {}
 if(staff_roll.length>0){
-console.log("staff_roll",staff_roll);
 
 let main_roll = await mySqlQury(`SELECT * FROM tbl_roll WHERE id = '${staff_roll[0].main_roll_id}'`);
 
@@ -57,7 +56,6 @@ verifyData.forEach((key) => {
 });
  
 }
-console.log(rolldetail);
 
     if (loginas == 0) {
       var logas = "custmor";
@@ -85,13 +83,9 @@ console.log(rolldetail);
         LEFT JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id
         WHERE tbl_customer.id = "${id}"
 `);
-      console.log("if topbardata", topbardata);
-
-      // console.log(topbardata);
       
       let staff_roll = await mySqlQury(`SELECT * FROM  tbl_roll  WHERE id = ${topbardata[0].main_roll_id} AND roll_status = 'active'`);
         rolldetail = staff_roll[0]
-        console.log("rolldetail222",rolldetail);
         
       // var topbardata = await mySqlQury("select * from tbl_customer where id = "+id+"")
       // console.log(topbardata);
@@ -101,8 +95,6 @@ console.log(rolldetail);
       var topbardata = await mySqlQury(
         `SELECT tbl_admin.id,tbl_admin.name,tbl_admin.number,tbl_admin.email,tbl_admin.username,tbl_admin.password,tbl_admin.store_ID,tbl_admin.roll_id,tbl_admin.approved,tbl_admin.delet_flage,tbl_admin.img,tbl_admin.is_staff, IFNULL(tbl_store.name, '') AS store_name, IFNULL(tbl_store.logo, '') AS store_logo FROM tbl_admin LEFT JOIN tbl_store ON tbl_admin.store_ID = tbl_store.id WHERE tbl_admin.id = "${id}"`
       );
-
-      console.log("else topbardata", topbardata);
 
       // console.log(topbardata);
       // var topbardata = await mySqlQury("select * from tbl_admin where id = "+id+"")
@@ -159,8 +151,6 @@ console.log(rolldetail);
       `SELECT * FROM tbl_notification WHERE received = '${topbardata[0].id}' ORDER BY id DESC LIMIT 5`
     );
     }
-    
-console.log("notification_data",notification_data);
 // console.log("topbardata[0].id",topbardata[0].id);
 
     return {

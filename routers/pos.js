@@ -438,9 +438,13 @@ router.get("/pos", auth, async (req, res) => {
       let isDefaultCustomerEnabled = true;
       if (targetStoreId && targetStoreId != 0) {
         const storeCheck = await DataFind(
-          `SELECT default_customer_enabled FROM tbl_store WHERE id = '${targetStoreId}'`
+          `SELECT default_customer_enabled FROM tbl_store WHERE id = '${targetStoreId}'`,
         );
-        if (storeCheck.length > 0 && (storeCheck[0].default_customer_enabled == 0 || storeCheck[0].default_customer_enabled === '0')) {
+        if (
+          storeCheck.length > 0 &&
+          (storeCheck[0].default_customer_enabled == 0 ||
+            storeCheck[0].default_customer_enabled === "0")
+        ) {
           isDefaultCustomerEnabled = false;
         }
       }
@@ -466,9 +470,15 @@ router.get("/pos", auth, async (req, res) => {
           // Setting disabled: do NOT auto-assign walk-in customer. If current cart customer is a walk-in, clear it to 0.
           if (cart[0].customer_id && cart[0].customer_id != 0) {
             const currentCus = await DataFind(
-              `SELECT id, username, name FROM tbl_customer WHERE id = '${cart[0].customer_id}'`
+              `SELECT id, username, name FROM tbl_customer WHERE id = '${cart[0].customer_id}'`,
             );
-            if (currentCus.length > 0 && (currentCus[0].username == null || currentCus[0].username === '' || (currentCus[0].name && currentCus[0].name.toLowerCase().includes('walk in')))) {
+            if (
+              currentCus.length > 0 &&
+              (currentCus[0].username == null ||
+                currentCus[0].username === "" ||
+                (currentCus[0].name &&
+                  currentCus[0].name.toLowerCase().includes("walk in")))
+            ) {
               await DataUpdate(
                 `tbl_cart`,
                 `customer_id='0'`,
@@ -481,7 +491,10 @@ router.get("/pos", auth, async (req, res) => {
           }
         }
 
-        customerList = await getStoreScopedCustomers(targetStoreId, isDefaultCustomerEnabled);
+        customerList = await getStoreScopedCustomers(
+          targetStoreId,
+          isDefaultCustomerEnabled,
+        );
         service_list = await DataFind(
           "SELECT * FROM tbl_services WHERE status=0 AND store_ID=" +
             targetStoreId +
@@ -509,19 +522,45 @@ router.get("/pos", auth, async (req, res) => {
     const readySchedule = await getEffectiveReadySchedule(targetStoreId);
     let storePrinterConfig = null;
     if (targetStoreId) {
-      const spRows = await DataFind(`SELECT printing_server_url, invoice_printer_name, invoice_printer_format, tag_printer_name, tag_printer_format, silent_print_enabled, printer_auto_cut, printer_open_cash_drawer, printer_copies FROM tbl_store WHERE id = '${targetStoreId}' LIMIT 1`);
+      const spRows = await DataFind(
+        `SELECT printing_server_url, invoice_printer_name, invoice_printer_format, tag_printer_name, tag_printer_format, silent_print_enabled, printer_auto_cut, printer_open_cash_drawer, printer_copies FROM tbl_store WHERE id = '${targetStoreId}' LIMIT 1`,
+      );
       if (spRows.length > 0) storePrinterConfig = spRows[0];
     }
 
-    if (!cart[0].delivery_date || String(cart[0].delivery_date).slice(0, 10) === String(cart[0].order_date).slice(0, 10)) {
-      const autoReady = calculateReadyDateTime(cart[0].order_date || new Date(), readySchedule);
+    let categoryList = [];
+    let subcategoryList = [];
+    if (targetStoreId) {
+      categoryList = await DataFind(`
+        SELECT id, name, sequence_no 
+        FROM tbl_service_category 
+        WHERE store_ID = '${targetStoreId}' AND delete_flage = '0' AND status = '0' 
+        ORDER BY sequence_no ASC, name ASC
+      `);
+      subcategoryList = await DataFind(`
+        SELECT id, category_id, name, sequence_no 
+        FROM tbl_service_subcategory 
+        WHERE store_ID = '${targetStoreId}' AND delete_flage = '0' AND status = '0' 
+        ORDER BY sequence_no ASC, name ASC
+      `);
+    }
+
+    if (
+      !cart[0].delivery_date ||
+      String(cart[0].delivery_date).slice(0, 10) ===
+        String(cart[0].order_date).slice(0, 10)
+    ) {
+      const autoReady = calculateReadyDateTime(
+        cart[0].order_date || new Date(),
+        readySchedule,
+      );
       cart[0].delivery_date = autoReady.combinedTimestamp;
       await DataUpdate(
         `tbl_cart`,
         `delivery_date='${autoReady.combinedTimestamp}'`,
         `created_by='${loginas},${id}'`,
         req.hostname,
-        req.protocol
+        req.protocol,
       );
     }
 
@@ -530,6 +569,8 @@ router.get("/pos", auth, async (req, res) => {
       login,
       storeList,
       service_list,
+      categoryList,
+      subcategoryList,
       ismulty,
       customerList,
       addonlist,
@@ -547,7 +588,10 @@ router.get("/pos", auth, async (req, res) => {
       assignedStoreName:
         typeof assignedStoreName !== "undefined" ? assignedStoreName : "",
       isMaster: typeof isMaster !== "undefined" ? isMaster : false,
-      isDefaultCustomerEnabled: typeof isDefaultCustomerEnabled !== "undefined" ? isDefaultCustomerEnabled : true,
+      isDefaultCustomerEnabled:
+        typeof isDefaultCustomerEnabled !== "undefined"
+          ? isDefaultCustomerEnabled
+          : true,
       language: req.language_data,
       language_name: req.language_name,
       splite_id,
@@ -605,7 +649,9 @@ router.get("/edit/:id", auth, async (req, res) => {
       `SELECT * FROM tbl_services WHERE (store_ID = '${order_date[0].store_id}' OR store_id = 0 OR store_id IS NULL) AND status=0 ORDER BY sequence_no ASC, id ASC`,
     );
     if (!service_list || service_list.length === 0) {
-      service_list = await DataFind(`SELECT * FROM tbl_services WHERE status=0 ORDER BY sequence_no ASC, id ASC`);
+      service_list = await DataFind(
+        `SELECT * FROM tbl_services WHERE status=0 ORDER BY sequence_no ASC, id ASC`,
+      );
     }
 
     var cartservice = [];
@@ -627,7 +673,9 @@ router.get("/edit/:id", auth, async (req, res) => {
       addonlist = await DataFind(`SELECT * FROM tbl_addons WHERE status = 0`);
     }
 
-    const readySchedule = await getEffectiveReadySchedule(order_date[0].store_id);
+    const readySchedule = await getEffectiveReadySchedule(
+      order_date[0].store_id,
+    );
 
     res.render("pos_edit", {
       accessdata,
@@ -688,7 +736,13 @@ router.get("/servicelist/:id", auth, async (req, res) => {
         safeStoreId +
         " ORDER BY sequence_no ASC, id ASC",
     );
-    res.status(200).json({ service_list });
+    const categories = await DataFind(
+      `SELECT id, name, sequence_no FROM tbl_service_category WHERE store_ID = '${safeStoreId}' AND delete_flage = '0' AND status = '0' ORDER BY sequence_no ASC, name ASC`,
+    );
+    const subcategories = await DataFind(
+      `SELECT id, category_id, name, sequence_no FROM tbl_service_subcategory WHERE store_ID = '${safeStoreId}' AND delete_flage = '0' AND status = '0' ORDER BY sequence_no ASC, name ASC`,
+    );
+    res.status(200).json({ service_list, categories, subcategories });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -815,14 +869,21 @@ router.get("/customerlist/:id", auth, async (req, res) => {
     let isDefaultCustomerEnabled = true;
     if (safeStoreId && safeStoreId != 0) {
       const storeCheck = await DataFind(
-        `SELECT default_customer_enabled FROM tbl_store WHERE id = '${safeStoreId}'`
+        `SELECT default_customer_enabled FROM tbl_store WHERE id = '${safeStoreId}'`,
       );
-      if (storeCheck.length > 0 && (storeCheck[0].default_customer_enabled == 0 || storeCheck[0].default_customer_enabled === '0')) {
+      if (
+        storeCheck.length > 0 &&
+        (storeCheck[0].default_customer_enabled == 0 ||
+          storeCheck[0].default_customer_enabled === "0")
+      ) {
         isDefaultCustomerEnabled = false;
       }
     }
 
-    const customerList = await getStoreScopedCustomers(safeStoreId, isDefaultCustomerEnabled);
+    const customerList = await getStoreScopedCustomers(
+      safeStoreId,
+      isDefaultCustomerEnabled,
+    );
     let defaultCustomerId = 0;
 
     if (!isMaster && isDefaultCustomerEnabled) {
@@ -853,7 +914,12 @@ router.get("/customerlist/:id", auth, async (req, res) => {
       );
     }
 
-    res.status(200).json({ customerList, defaultCustomerId, isStaff, defaultCustomerEnabled: isDefaultCustomerEnabled });
+    res.status(200).json({
+      customerList,
+      defaultCustomerId,
+      isStaff,
+      defaultCustomerEnabled: isDefaultCustomerEnabled,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -870,8 +936,13 @@ router.post("/addservicelist", auth, async (req, res) => {
     const serviceimage = req.body.serviceid.split(",")[2] || "";
     let servicePieces = parseInt(req.body.serviceid.split(",")[3]);
     if (!servicePieces || isNaN(servicePieces) || servicePieces < 1) {
-      const svc = await DataFind(`SELECT no_of_items FROM tbl_services WHERE id = ${parseInt(serviceid) || 0}`);
-      servicePieces = (svc && svc.length > 0 && svc[0].no_of_items) ? parseInt(svc[0].no_of_items) : 1;
+      const svc = await DataFind(
+        `SELECT no_of_items FROM tbl_services WHERE id = ${parseInt(serviceid) || 0}`,
+      );
+      servicePieces =
+        svc && svc.length > 0 && svc[0].no_of_items
+          ? parseInt(svc[0].no_of_items)
+          : 1;
     }
 
     const servicetypeid = req.body.servicetype.split(",")[0];
@@ -952,8 +1023,13 @@ router.post("/editservicelist", auth, async (req, res) => {
     const serviceimage = req.body.serviceid.split(",")[2] || "";
     let servicePieces = parseInt(req.body.serviceid.split(",")[3]);
     if (!servicePieces || isNaN(servicePieces) || servicePieces < 1) {
-      const svc = await DataFind(`SELECT no_of_items FROM tbl_services WHERE id = ${parseInt(serviceid) || 0}`);
-      servicePieces = (svc && svc.length > 0 && svc[0].no_of_items) ? parseInt(svc[0].no_of_items) : 1;
+      const svc = await DataFind(
+        `SELECT no_of_items FROM tbl_services WHERE id = ${parseInt(serviceid) || 0}`,
+      );
+      servicePieces =
+        svc && svc.length > 0 && svc[0].no_of_items
+          ? parseInt(svc[0].no_of_items)
+          : 1;
     }
 
     const servicetypeid = req.body.servicetype.split(",")[0];
@@ -1271,7 +1347,13 @@ router.get("/getservicetype/:id", auth, async (req, res) => {
       .split(",")
       .map((rt) => rt.trim());
     const service =
-      s.id + "," + (s.name || "") + "," + (s.image || "default.png") + "," + (s.no_of_items || 1);
+      s.id +
+      "," +
+      (s.name || "") +
+      "," +
+      (s.image || "default.png") +
+      "," +
+      (s.no_of_items || 1);
 
     const typlist = [];
     for (let i = 0; i < types.length; i++) {
@@ -1284,8 +1366,9 @@ router.get("/getservicetype/:id", auth, async (req, res) => {
         typlist.push({
           id: typeId,
           servicetype: stResult[0].services_type,
-          price: prices[i] !== undefined && prices[i] !== "" ? prices[i] : "0.00",
-          sequence: parseInt(sequences[i]) || (i + 1),
+          price:
+            prices[i] !== undefined && prices[i] !== "" ? prices[i] : "0.00",
+          sequence: parseInt(sequences[i]) || i + 1,
           items: parseInt(itemsList[i]) || 1,
           ready_time: parseInt(readyTimes[i]) || 1440,
         });
@@ -1381,7 +1464,10 @@ router.post("/date", auth, async (req, res) => {
 
     let updateFields = `order_date='${date}'`;
     if (delivery_date) {
-      let fullDelivery = formatMySQLDateTime(delivery_date, delivery_time || "16:00:00");
+      let fullDelivery = formatMySQLDateTime(
+        delivery_date,
+        delivery_time || "16:00:00",
+      );
       updateFields += `, delivery_date='${fullDelivery}'`;
     } else {
       const cartCheck = await DataFind(
@@ -1425,7 +1511,10 @@ router.post("/delivery_date", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     var { delivery_date, delivery_time } = req.body;
 
-    let fullDelivery = formatMySQLDateTime(delivery_date, delivery_time || "16:00:00");
+    let fullDelivery = formatMySQLDateTime(
+      delivery_date,
+      delivery_time || "16:00:00",
+    );
 
     let cart = await DataUpdate(
       `tbl_cart`,
@@ -1455,7 +1544,10 @@ router.post("/edit_date", auth, async (req, res) => {
 
     let updateFields = `order_date='${date}'`;
     if (delivery_date) {
-      let fullDelivery = formatMySQLDateTime(delivery_date, delivery_time || "16:00:00");
+      let fullDelivery = formatMySQLDateTime(
+        delivery_date,
+        delivery_time || "16:00:00",
+      );
       updateFields += `, delivery_date='${fullDelivery}'`;
     } else {
       const orderCheck = await DataFind(
@@ -1497,7 +1589,10 @@ router.post("/edit_delivery_date", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     const { delivery_date, delivery_time, order_id } = req.body;
 
-    let fullDelivery = formatMySQLDateTime(delivery_date, delivery_time || "16:00:00");
+    let fullDelivery = formatMySQLDateTime(
+      delivery_date,
+      delivery_time || "16:00:00",
+    );
 
     let orderUpdate = await DataUpdate(
       `tbl_order`,
@@ -2974,7 +3069,10 @@ router.post("/edit_order", auth, async (req, res) => {
 
     let delDate = deliverydate || order.delivery_date;
     if (delDate) {
-      delDate = formatMySQLDateTime(delDate, req.body.deliverytime || "16:00:00");
+      delDate = formatMySQLDateTime(
+        delDate,
+        req.body.deliverytime || "16:00:00",
+      );
     }
 
     const orderNotes = note !== undefined ? note : order.note;
@@ -3120,7 +3218,10 @@ router.post("/edit_order_direct", auth, async (req, res) => {
 
     let deliveryUpdate = "";
     if (delivery_date) {
-      let fullDelivery = formatMySQLDateTime(delivery_date, req.body.delivery_time || "16:00:00");
+      let fullDelivery = formatMySQLDateTime(
+        delivery_date,
+        req.body.delivery_time || "16:00:00",
+      );
       deliveryUpdate = `delivery_date = '${fullDelivery}',`;
     }
 
@@ -3153,8 +3254,14 @@ router.post("/order", auth, async (req, res) => {
     const accessdata = await access(req.user);
     var orderid = await idfororder();
 
-    var { deliverydate, deliverytime, extradiscount, paid_amount, note, reference_number } =
-      req.body;
+    var {
+      deliverydate,
+      deliverytime,
+      extradiscount,
+      paid_amount,
+      note,
+      reference_number,
+    } = req.body;
 
     paid_amount ? (paid_amount = paid_amount) : (paid_amount = 0);
     extradiscount ? (extradiscount = extradiscount) : (extradiscount = 0);
@@ -3185,9 +3292,9 @@ router.post("/order", auth, async (req, res) => {
     let order_fullDate = `${order_year}-${order_month}-${order_day}`;
     let finalDeliveryDate = deliverydate
       ? formatMySQLDateTime(deliverydate, deliverytime || "16:00:00")
-      : (cart[0].delivery_date
+      : cart[0].delivery_date
         ? formatMySQLDateTime(cart[0].delivery_date)
-        : `${order_fullDate} 16:00:00`);
+        : `${order_fullDate} 16:00:00`;
 
     const order = await DataInsert(
       `tbl_order`,
@@ -3509,9 +3616,18 @@ router.post("/order", auth, async (req, res) => {
     if (coust[0].name != "Walk in customer") {
       // ========= sms ============ //
 
-      let tsid = (shope && shope.length > 0 && shope[0].twilio_sid) ? shope[0].twilio_sid : accessdata.masterstore.twilio_sid;
-      let ttoken = (shope && shope.length > 0 && shope[0].twilio_auth_token) ? shope[0].twilio_auth_token : accessdata.masterstore.twilio_auth_token;
-      let tphone = (shope && shope.length > 0 && shope[0].twilio_phone_no) ? shope[0].twilio_phone_no : accessdata.masterstore.twilio_phone_no;
+      let tsid =
+        shope && shope.length > 0 && shope[0].twilio_sid
+          ? shope[0].twilio_sid
+          : accessdata.masterstore.twilio_sid;
+      let ttoken =
+        shope && shope.length > 0 && shope[0].twilio_auth_token
+          ? shope[0].twilio_auth_token
+          : accessdata.masterstore.twilio_auth_token;
+      let tphone =
+        shope && shope.length > 0 && shope[0].twilio_phone_no
+          ? shope[0].twilio_phone_no
+          : accessdata.masterstore.twilio_phone_no;
 
       if (tsid && ttoken) {
         let ACCOUNT_SID = tsid;
@@ -3596,8 +3712,14 @@ router.post("/save_order", auth, async (req, res) => {
     const accessdata = await access(req.user);
     var orderid = await idfororder();
 
-    var { deliverydate, deliverytime, extradiscount, paid_amount, note, reference_number } =
-      req.body;
+    var {
+      deliverydate,
+      deliverytime,
+      extradiscount,
+      paid_amount,
+      note,
+      reference_number,
+    } = req.body;
 
     paid_amount = paid_amount ? parseFloat(paid_amount) || 0 : 0;
     extradiscount = extradiscount ? parseFloat(extradiscount) || 0 : 0;
@@ -3607,8 +3729,15 @@ router.post("/save_order", auth, async (req, res) => {
     const cart = await DataFind(
       " SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
     );
-    if (!cart || cart.length === 0 || !cart[0].service_list_id || cart[0].service_list_id === "0") {
-      return res.status(400).json({ success: false, message: "Cart is empty or not found." });
+    if (
+      !cart ||
+      cart.length === 0 ||
+      !cart[0].service_list_id ||
+      cart[0].service_list_id === "0"
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Cart is empty or not found." });
     }
 
     const gross = parseFloat(cart[0].gross_total) - parseFloat(extradiscount);
@@ -3621,7 +3750,10 @@ router.post("/save_order", auth, async (req, res) => {
     );
 
     const comi_amount =
-      (parseFloat(gross) * parseFloat((comiss && comiss.length > 0 && comiss[0].shop_commission) || 0)) /
+      (parseFloat(gross) *
+        parseFloat(
+          (comiss && comiss.length > 0 && comiss[0].shop_commission) || 0,
+        )) /
       parseFloat(100);
 
     let order_date = new Date(cart[0].order_date);
@@ -3633,9 +3765,9 @@ router.post("/save_order", auth, async (req, res) => {
     let order_fullDate = `${order_year}-${order_month}-${order_day}`;
     let finalDeliveryDate = deliverydate
       ? formatMySQLDateTime(deliverydate, deliverytime || "16:00:00")
-      : (cart[0].delivery_date
+      : cart[0].delivery_date
         ? formatMySQLDateTime(cart[0].delivery_date)
-        : `${order_fullDate} 16:00:00`);
+        : `${order_fullDate} 16:00:00`;
 
     const order = await DataInsert(
       `tbl_order`,
@@ -3658,7 +3790,10 @@ router.post("/save_order", auth, async (req, res) => {
     );
 
     if (order == -1) {
-      return res.status(500).json({ success: false, message: process.env.dataerror || "Database error creating order." });
+      return res.status(500).json({
+        success: false,
+        message: process.env.dataerror || "Database error creating order.",
+      });
     }
 
     const custnotifiction = await DataInsert(
@@ -3801,7 +3936,9 @@ router.post("/save_order", auth, async (req, res) => {
           let mailDetails = {
             from: emailData[0].frommail,
             to: coust[0].email,
-            subject: "Email From " + (shope && shope.length > 0 ? shope[0].name : "Store"),
+            subject:
+              "Email From " +
+              (shope && shope.length > 0 ? shope[0].name : "Store"),
             html: `
       <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
       <h2 style="color: #4CAF50;">Thank you for your order, ${
@@ -3825,10 +3962,10 @@ router.post("/save_order", auth, async (req, res) => {
       <p>We appreciate your business and hope you enjoy your purchase!</p>
       <hr>
       <p style="font-size: 12px; color: #999;">
-        ${shope && shope.length > 0 ? shope[0].name : ''} <br>
-        📞 ${shope && shope.length > 0 ? shope[0].mobile_number : ''} <br>
-        ✉️ ${shope && shope.length > 0 ? shope[0].store_email : ''} <br>
-        📍 ${shope && shope.length > 0 ? shope[0].city : ''}
+        ${shope && shope.length > 0 ? shope[0].name : ""} <br>
+        📞 ${shope && shope.length > 0 ? shope[0].mobile_number : ""} <br>
+        ✉️ ${shope && shope.length > 0 ? shope[0].store_email : ""} <br>
+        📍 ${shope && shope.length > 0 ? shope[0].city : ""}
       </p>
     </div>
   `,
@@ -3846,9 +3983,18 @@ router.post("/save_order", auth, async (req, res) => {
     }
 
     if (coust.length > 0 && coust[0].number != null) {
-      let tsid = (shope && shope.length > 0 && shope[0].twilio_sid) ? shope[0].twilio_sid : accessdata.masterstore.twilio_sid;
-      let ttoken = (shope && shope.length > 0 && shope[0].twilio_auth_token) ? shope[0].twilio_auth_token : accessdata.masterstore.twilio_auth_token;
-      let tphone = (shope && shope.length > 0 && shope[0].twilio_phone_no) ? shope[0].twilio_phone_no : accessdata.masterstore.twilio_phone_no;
+      let tsid =
+        shope && shope.length > 0 && shope[0].twilio_sid
+          ? shope[0].twilio_sid
+          : accessdata.masterstore.twilio_sid;
+      let ttoken =
+        shope && shope.length > 0 && shope[0].twilio_auth_token
+          ? shope[0].twilio_auth_token
+          : accessdata.masterstore.twilio_auth_token;
+      let tphone =
+        shope && shope.length > 0 && shope[0].twilio_phone_no
+          ? shope[0].twilio_phone_no
+          : accessdata.masterstore.twilio_phone_no;
 
       if (tsid && ttoken) {
         try {
@@ -3869,7 +4015,10 @@ router.post("/save_order", auth, async (req, res) => {
     }
 
     // Notification
-    let onesignalAppId = (shope && shope.length > 0 && shope[0].onesignal_app_id) ? shope[0].onesignal_app_id : accessdata.masterstore.onesignal_app_id;
+    let onesignalAppId =
+      shope && shope.length > 0 && shope[0].onesignal_app_id
+        ? shope[0].onesignal_app_id
+        : accessdata.masterstore.onesignal_app_id;
     if (onesignalAppId) {
       let message = {
         app_id: onesignalAppId,
@@ -3917,11 +4066,14 @@ router.post("/save_order", auth, async (req, res) => {
       success: true,
       message: "Order placed successfully!",
       order_id: orderid,
-      id: order.insertId
+      id: order.insertId,
     });
   } catch (error) {
     console.error("Error saving order:", error);
-    return res.status(500).json({ success: false, message: "An unexpected error occurred while placing the order." });
+    return res.status(500).json({
+      success: false,
+      message: "An unexpected error occurred while placing the order.",
+    });
   }
 });
 
@@ -3932,7 +4084,10 @@ const renderPosPrint = async (req, res) => {
     const accessdata = await access(req.user);
 
     var orderid =
-      req.query.id || req.query.orderid || req.params.id || (req.body && (req.body.id || req.body.orderid));
+      req.query.id ||
+      req.query.orderid ||
+      req.params.id ||
+      (req.body && (req.body.id || req.body.orderid));
 
     if (!orderid) {
       req.flash("errors", "Order ID is required");
@@ -3954,7 +4109,10 @@ const renderPosPrint = async (req, res) => {
 
     const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
     if (isStaff && staffStoreId && orderdata[0].store_id != staffStoreId) {
-      req.flash("errors", "You are not authorized to view orders from other stores");
+      req.flash(
+        "errors",
+        "You are not authorized to view orders from other stores",
+      );
       return res.redirect("/admin/pos");
     }
 
@@ -3996,11 +4154,15 @@ const renderPosPrint = async (req, res) => {
     var paymenttype = "No Amount Paid";
     if (orderdata[0].payment_data && orderdata[0].payment_data != "0") {
       const pRows = await DataFind(
-        "SELECT * FROM tbl_order_payment WHERE id='" + orderdata[0].payment_data + "'",
+        "SELECT * FROM tbl_order_payment WHERE id='" +
+          orderdata[0].payment_data +
+          "'",
       );
       if (pRows && pRows.length > 0 && pRows[0].payment_account) {
         const accRows = await DataFind(
-          "SELECT ac_name FROM tbl_account WHERE id='" + pRows[0].payment_account + "'",
+          "SELECT ac_name FROM tbl_account WHERE id='" +
+            pRows[0].payment_account +
+            "'",
         );
         if (accRows && accRows.length > 0) {
           paymenttype = accRows[0].ac_name;
@@ -4014,39 +4176,84 @@ const renderPosPrint = async (req, res) => {
       "SELECT * From tbl_customer WHERE id=" + orderdata[0].customer_id + "",
     );
 
-    let oate = new Date(orderdata[0].order_date).toLocaleDateString("en-CA");
+    let oate = new Date(orderdata[0].order_date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    let oate2 = new Date(orderdata[0].order_date)
+      .toLocaleString("en-US", {
+        weekday: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
+      .replace(",", "");
     let delDateObj = new Date(orderdata[0].delivery_date);
-    let ddate = delDateObj.toLocaleDateString("en-CA");
+    let ddate = "";
+
     if (!isNaN(delDateObj.getTime())) {
-      let hours = delDateObj.getHours();
-      let minutes = String(delDateObj.getMinutes()).padStart(2, "0");
-      let ampm = hours >= 12 ? "PM" : "AM";
-      hours = hours % 12;
-      hours = hours ? hours : 12;
-      ddate += ` ${hours}:${minutes} ${ampm}`;
+      ddate = delDateObj
+        .toLocaleString("en-US", {
+          weekday: "short",
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        })
+        .replace(",", ""); // Removes the comma after the day name
     }
 
     let logoFileName = "";
-    if (shope && shope.length > 0 && shope[0].logo && shope[0].logo.trim() !== "") {
+    if (
+      shope &&
+      shope.length > 0 &&
+      shope[0].logo &&
+      shope[0].logo.trim() !== ""
+    ) {
       logoFileName = shope[0].logo.trim();
-    } else if (accessdata && accessdata.masterstore && accessdata.masterstore.app_logo) {
+    } else if (
+      accessdata &&
+      accessdata.masterstore &&
+      accessdata.masterstore.app_logo
+    ) {
       logoFileName = accessdata.masterstore.app_logo;
-    } else if (accessdata && accessdata.masterstore && accessdata.masterstore.app_favicon) {
+    } else if (
+      accessdata &&
+      accessdata.masterstore &&
+      accessdata.masterstore.app_favicon
+    ) {
       logoFileName = accessdata.masterstore.app_favicon;
     }
 
     let invoice_logo_base64 = "";
     if (logoFileName) {
       try {
-        const logoPath = path.join(__dirname, "../public/uploads", logoFileName);
+        const logoPath = path.join(
+          __dirname,
+          "../public/uploads",
+          logoFileName,
+        );
         if (fs.existsSync(logoPath)) {
           const ext = path.extname(logoFileName).toLowerCase().replace(".", "");
-          const mimeType = ext === "jpg" || ext === "jpeg" ? "image/jpeg" : (ext === "svg" ? "image/svg+xml" : (ext === "webp" ? "image/webp" : "image/png"));
+          const mimeType =
+            ext === "jpg" || ext === "jpeg"
+              ? "image/jpeg"
+              : ext === "svg"
+                ? "image/svg+xml"
+                : ext === "webp"
+                  ? "image/webp"
+                  : "image/png";
           const fileBuf = fs.readFileSync(logoPath);
           invoice_logo_base64 = `data:${mimeType};base64,${fileBuf.toString("base64")}`;
         }
       } catch (logoErr) {
-        console.warn("Could not encode invoice logo to base64:", logoErr.message);
+        console.warn(
+          "Could not encode invoice logo to base64:",
+          logoErr.message,
+        );
       }
     }
 
@@ -4056,10 +4263,12 @@ const renderPosPrint = async (req, res) => {
       order: orderdata[0],
       addonslist,
       paymenttype,
-      customer: coust && coust.length > 0 ? coust[0] : { name: "Walk in customer" },
+      customer:
+        coust && coust.length > 0 ? coust[0] : { name: "Walk in customer" },
       master: accessdata.masterstore,
       oate,
       ddate,
+      oate2,
       accessdata,
       invoice_logo_base64,
     });
@@ -4094,14 +4303,12 @@ router.get("/notification/data", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
     if (loginas == 0) {
-      return res
-        .status(403)
-        .json({
-          draw: parseInt(req.query.draw) || 1,
-          recordsTotal: 0,
-          recordsFiltered: 0,
-          data: [],
-        });
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
     }
 
     const accessdata = await access(req.user);

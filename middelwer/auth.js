@@ -19,8 +19,7 @@ const auth = async (req, res, next)=>{
             req.flash("error", "Session expired or invalid, please login again");
             return res.redirect('/');
         }
-        console.log("decode" , decode);
-        req.user = decode
+        req.user = decode;
 
         const { createLanguageProxy, getMultiLanguageEnabled } = require('./language');
         const isMultiLang = await getMultiLanguageEnabled();

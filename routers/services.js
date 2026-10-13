@@ -73,6 +73,7 @@ router.get("/list", auth, async (req, res) => {
   WHERE sr.id = ${roll}
 `);
     let storeList = [];
+    let categoryList = [];
     if (
       rolldetail[0].rollType === "master" &&
       rolldetail[0].service.includes("read")
@@ -84,11 +85,15 @@ router.get("/list", auth, async (req, res) => {
           "SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0",
         );
       }
+      categoryList = await DataFind(
+        "SELECT id, name FROM tbl_service_category WHERE delete_flage=0 AND status='0' ORDER BY sequence_no ASC, name ASC",
+      );
 
       res.render("service", {
         servicesdata: [],
         ismulty,
         storeList,
+        categoryList,
         accessdata,
         language: req.language_data,
         language_name: req.language_name,
@@ -97,10 +102,15 @@ router.get("/list", auth, async (req, res) => {
       rolldetail[0].rollType === "store" &&
       rolldetail[0].service.includes("read")
     ) {
+      categoryList = await DataFind(
+        `SELECT id, name FROM tbl_service_category WHERE (store_ID='${store}' OR store_ID='1') AND delete_flage=0 AND status='0' ORDER BY sequence_no ASC, name ASC`,
+      );
+
       res.render("service", {
         servicesdata: [],
         ismulty: false,
         storeList: [],
+        categoryList,
         accessdata,
         language: req.language_data,
         language_name: req.language_name,
@@ -172,6 +182,26 @@ router.get("/list/data", auth, async (req, res) => {
       filterConditions.push(`tbl_services.status = '${cleanStatus}'`);
     }
 
+    const categoryParam = req.query.category_filter;
+    if (
+      categoryParam !== undefined &&
+      categoryParam !== null &&
+      !["all", "ALL", "", "0"].includes(String(categoryParam).trim())
+    ) {
+      const cleanCat = parseInt(categoryParam) || 0;
+      if (cleanCat > 0) filterConditions.push(`tbl_services.category_id = ${cleanCat}`);
+    }
+
+    const subcategoryParam = req.query.subcategory_filter;
+    if (
+      subcategoryParam !== undefined &&
+      subcategoryParam !== null &&
+      !["all", "ALL", "", "0"].includes(String(subcategoryParam).trim())
+    ) {
+      const cleanSubcat = parseInt(subcategoryParam) || 0;
+      if (cleanSubcat > 0) filterConditions.push(`tbl_services.subcategory_id = ${cleanSubcat}`);
+    }
+
     const storeParam = req.query.store_filter || req.query.store_id;
     if (
       storeParam &&
@@ -198,9 +228,14 @@ router.get("/list/data", auth, async (req, res) => {
     const result = await paginateDataTable(req, {
       select: `tbl_services.*, 
                COALESCE(tbl_store.name, '') as store, 
+               COALESCE(tbl_service_category.name, 'Uncategorized') as category_name,
+               COALESCE(tbl_service_subcategory.name, '—') as subcategory_name,
                (SELECT GROUP_CONCAT(tbl_services_type.services_type) FROM tbl_services_type WHERE FIND_IN_SET(tbl_services_type.id, tbl_services.services_type_id)) as serviceType`,
-      from: `tbl_services LEFT JOIN tbl_store ON tbl_services.store_ID = tbl_store.id`,
-      searchColumns: ["tbl_services.name", "tbl_store.name"],
+      from: `tbl_services 
+             LEFT JOIN tbl_store ON tbl_services.store_ID = tbl_store.id
+             LEFT JOIN tbl_service_category ON tbl_services.category_id = tbl_service_category.id
+             LEFT JOIN tbl_service_subcategory ON tbl_services.subcategory_id = tbl_service_subcategory.id`,
+      searchColumns: ["tbl_services.name", "tbl_store.name", "tbl_service_category.name", "tbl_service_subcategory.name"],
       baseWhere: scopeConditions,
       filterWhere: filterConditions,
       defaultOrder: "tbl_services.sequence_no ASC, tbl_services.id ASC",
@@ -208,16 +243,19 @@ router.get("/list/data", auth, async (req, res) => {
         0: "tbl_services.id",
         1: "tbl_services.sequence_no",
         2: "tbl_services.name",
-        3: "tbl_services.no_of_items",
-        4: "tbl_services.id",
-        5: isMaster ? "tbl_store.name" : "tbl_services.status",
-        6: "tbl_services.status",
+        3: "tbl_service_category.name",
+        4: "tbl_services.no_of_items",
+        5: "tbl_services.id",
+        6: isMaster ? "tbl_store.name" : "tbl_services.status",
+        7: "tbl_services.status",
       },
       postProcess: async (rows) => {
         return rows.map((s) => ({
           id: s.id,
           sequence_no: s.sequence_no !== undefined ? s.sequence_no : 0,
           name: s.name || "",
+          category_name: s.category_name || "Uncategorized",
+          subcategory_name: s.subcategory_name || "—",
           no_of_items: parseInt(s.no_of_items) > 0 ? parseInt(s.no_of_items) : 1,
           image: s.image || "",
           serviceType: s.serviceType || "",
@@ -298,9 +336,20 @@ router.get("/addservice", auth, async (req, res) => {
       return res.redirect(req.get("Referrer") || "/");
     }
 
+    const defaultStoreId = ismulty
+      ? (storeList.length > 0 ? storeList[0].id : (assignedStore || "1"))
+      : (assignedStore || "1");
+
+    const categories = await DataFind(`
+      SELECT id, name FROM tbl_service_category 
+      WHERE (store_ID = '${defaultStoreId}' OR store_ID = '1') AND delete_flage = '0' AND status = '0' 
+      ORDER BY sequence_no ASC, name ASC
+    `);
+
     res.render("add_service", {
       ismulty,
       storeList,
+      categories,
       accessdata,
       assigned_store_id: assignedStore,
       language: req.language_data,
@@ -336,6 +385,8 @@ router.post("/addservice", auth, upload.single("image"), async (req, res) => {
 
       var {
         name,
+        category_id,
+        subcategory_id,
         sequence_no,
         no_of_items,
         service_type_seq,
@@ -346,6 +397,14 @@ router.post("/addservice", auth, upload.single("image"), async (req, res) => {
         active,
         storeid,
       } = req.body;
+
+      const cleanCatId = parseInt(category_id) || 0;
+      if (cleanCatId <= 0) {
+        req.flash("error", "Category is required!");
+        return res.redirect(req.get("Referrer") || "/services/addservice");
+      }
+      const cleanSubcatId = parseInt(subcategory_id) || null;
+      const subcatSql = cleanSubcatId ? cleanSubcatId : "NULL";
 
       const adminData = await DataFind(
         `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
@@ -391,13 +450,18 @@ router.post("/addservice", auth, upload.single("image"), async (req, res) => {
         service_type_ready_time,
       );
       active = active ? "0" : "1";
-      const cleanSeqNo = parseInt(sequence_no) || 0;
       const cleanNoOfItems = parseInt(no_of_items) > 0 ? parseInt(no_of_items) : 1;
+
+      // Automatically assign the next sequence number (last number in store)
+      const maxRow = await DataFind(
+        `SELECT COALESCE(MAX(sequence_no), 0) AS max_seq FROM tbl_services WHERE store_ID = '${storeid}'`,
+      );
+      const cleanSeqNo = (maxRow && maxRow[0] && Number(maxRow[0].max_seq) + 1) || 1;
 
       const newservtype = await DataInsert(
         `tbl_services`,
-        `name,image,sequence_no,no_of_items,services_type_sequence,services_type_id,services_type_price,services_type_items,services_type_ready_time,store_ID,status`,
-        `'${name}', '${img}', '${cleanSeqNo}', '${cleanNoOfItems}', '${normalized.services_type_sequence}', '${normalized.services_type_id}', '${normalized.services_type_price}', '${normalized.services_type_items}', '${normalized.services_type_ready_time}', '${storeid}', '${active}'`,
+        `name,image,sequence_no,sequance_no,no_of_items,services_type_sequence,services_type_id,services_type_price,services_type_items,services_type_ready_time,store_ID,status,category_id,subcategory_id`,
+        `'${name}', '${img}', '${cleanSeqNo}', '${cleanSeqNo}', '${cleanNoOfItems}', '${normalized.services_type_sequence}', '${normalized.services_type_id}', '${normalized.services_type_price}', '${normalized.services_type_items}', '${normalized.services_type_ready_time}', '${storeid}', '${active}', ${cleanCatId}, ${subcatSql}`,
         req.hostname,
         req.protocol,
       );
@@ -599,8 +663,25 @@ router.get("/updateService/:id", auth, async (req, res) => {
       }
       tiers.sort((a, b) => a.sequence - b.sequence);
 
+      const serviceStoreId = servicesdata[0].store_ID || "1";
+      const categories = await DataFind(`
+        SELECT id, name FROM tbl_service_category 
+        WHERE (store_ID = '${serviceStoreId}' OR store_ID = '1') AND delete_flage = '0' AND status = '0' 
+        ORDER BY sequence_no ASC, name ASC
+      `);
+      let subcategories = [];
+      if (servicesdata[0].category_id) {
+        subcategories = await DataFind(`
+          SELECT id, name FROM tbl_service_subcategory 
+          WHERE category_id = ${servicesdata[0].category_id} AND delete_flage = '0' AND status = '0' 
+          ORDER BY sequence_no ASC, name ASC
+        `);
+      }
+
       res.render("edit_service", {
         services: servicesdata[0],
+        categories,
+        subcategories,
         typedata: servicestypedata,
         type: tiers.map((t) => t.id),
         price: tiers.map((t) => t.price),
@@ -706,6 +787,8 @@ router.post(
 
         var {
           name_update,
+          category_id_update,
+          subcategory_id_update,
           sequence_no_update,
           no_of_items_update,
           service_type_seq,
@@ -715,6 +798,14 @@ router.post(
           service_type_ready_time,
           active_update,
         } = req.body;
+
+        const cleanCatId = parseInt(category_id_update || req.body.category_id) || 0;
+        if (cleanCatId <= 0) {
+          req.flash("error", "Category is required!");
+          return res.redirect(req.get("Referrer") || `/services/updateService/${req.params.id}`);
+        }
+        const cleanSubcatId = parseInt(subcategory_id_update || req.body.subcategory_id) || null;
+        const subcatSql = cleanSubcatId ? cleanSubcatId : "NULL";
 
         const normalized = normalizeParallelTiers(
           service_type_seq,
@@ -729,7 +820,7 @@ router.post(
 
         const newservtype = await DataUpdate(
           "tbl_services",
-          `name = '${name_update}', sequence_no = '${cleanSeqNo}', no_of_items = '${cleanNoOfItems}', services_type_sequence = '${normalized.services_type_sequence}', services_type_id = '${normalized.services_type_id}', services_type_price = '${normalized.services_type_price}', services_type_items = '${normalized.services_type_items}', services_type_ready_time = '${normalized.services_type_ready_time}', status = '${active_update}'`,
+          `name = '${name_update}', category_id = ${cleanCatId}, subcategory_id = ${subcatSql}, no_of_items = '${cleanNoOfItems}', services_type_sequence = '${normalized.services_type_sequence}', services_type_id = '${normalized.services_type_id}', services_type_price = '${normalized.services_type_price}', services_type_items = '${normalized.services_type_items}', services_type_ready_time = '${normalized.services_type_ready_time}', status = '${active_update}'`,
           `id = ${req.params.id}`,
           req.hostname,
           req.protocol,
@@ -988,17 +1079,15 @@ router.post("/addtype", auth, async (req, res) => {
   WHERE sr.id = ${roll}
 `);
     if (rolldetail[0].service.includes("write")) {
-      var { service_name, sequence_no, active, storeid } = req.body;
+      var { service_name, active, storeid } = req.body;
       active ? (active = 0) : (active = 1);
       storeid ? storeid : (storeid = store);
 
-      let seqVal = parseInt(sequence_no);
-      if (isNaN(seqVal) || seqVal <= 0) {
-        const maxRow = await DataFind(
-          `SELECT COALESCE(MAX(sequence_no), 0) AS max_seq FROM tbl_services_type WHERE store_ID = ${storeid}`,
-        );
-        seqVal = (maxRow && maxRow[0] && Number(maxRow[0].max_seq) + 1) || 1;
-      }
+      // Auto-assign next sequence number (last number in store)
+      const maxRow = await DataFind(
+        `SELECT COALESCE(MAX(sequence_no), 0) AS max_seq FROM tbl_services_type WHERE store_ID = '${storeid}'`,
+      );
+      const seqVal = (maxRow && maxRow[0] && Number(maxRow[0].max_seq) + 1) || 1;
 
       const newservtype = await DataInsert(
         `tbl_services_type`,
@@ -1100,18 +1189,13 @@ router.post("/updateservicestype/:id", auth, async (req, res) => {
   WHERE sr.id = ${roll}
 `);
     if (rolldetail[0].service.includes("edit")) {
-      var { service_name, sequence_no, active } = req.body;
+      var { service_name, active } = req.body;
       var dataid = req.params.id;
       active ? (active = 0) : (active = 1);
 
-      let seqVal = parseInt(sequence_no);
-      if (isNaN(seqVal) || seqVal <= 0) {
-        seqVal = 1;
-      }
-
       const updateServiceType = await DataUpdate(
         "tbl_services_type",
-        `services_type = ${await mysql.escape(service_name)}, sequence_no = ${seqVal}, status = ${active}`,
+        `services_type = ${await mysql.escape(service_name)}, status = ${active}`,
         `id = ${dataid}`,
         req.hostname,
         req.protocol,
@@ -1187,6 +1271,1038 @@ router.get("/typelist/:id", auth, async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
+});
+
+// <<<<<<<<<<<<<<<<<<<< SERVICES CATEGORIES CRUD ROUTERS >>>>>>>>>>>>>>>>>>>>
+
+router.get("/category", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    const storeList = await DataFind(
+      "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0",
+    );
+    const multiy = await DataFind("SELECT type FROM tbl_master_shop");
+    const ismulty = multiy && multiy.length > 0 && multiy[0].type == 1;
+
+    if (loginas == 0) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (
+      !rolldetail ||
+      rolldetail.length === 0 ||
+      !rolldetail[0].service ||
+      !rolldetail[0].service.includes("read")
+    ) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const adminData = await DataFind(
+      `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
+    );
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const assignedStore =
+      adminData.length > 0 &&
+      adminData[0].store_ID &&
+      String(adminData[0].store_ID) !== "0"
+        ? String(adminData[0].store_ID)
+        : store
+          ? String(store)
+          : "1";
+
+    const seqRows = await DataFind(
+      "SELECT store_ID, COALESCE(MAX(sequence_no), 0) AS max_seq FROM tbl_service_category WHERE delete_flage = '0' GROUP BY store_ID",
+    );
+    const nextSeqMap = {};
+    if (seqRows && seqRows.length > 0) {
+      seqRows.forEach((r) => {
+        nextSeqMap[String(r.store_ID)] = Number(r.max_seq) + 1;
+      });
+    }
+
+    const defaultStoreId = ismulty
+      ? (storeList.length > 0 ? String(storeList[0].id) : "1")
+      : assignedStore;
+    const nextSequence = nextSeqMap[defaultStoreId] || 1;
+
+    return res.render("service_category", {
+      ismulty: ismulty && rolldetail[0].rollType === "master" && !isStaff,
+      storeList,
+      accessdata,
+      assigned_store_id: assignedStore,
+      nextSequence,
+      nextSeqMap,
+      language: req.language_data,
+      language_name: req.language_name,
+    });
+  } catch (error) {
+    console.error("Error in /category:", error);
+    req.flash("error", "An error occurred while loading categories");
+    return res.redirect(req.get("Referrer") || "/");
+  }
+});
+
+router.get("/category/data", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    if (loginas == 0) {
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    const adminData = await DataFind(
+      `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
+    );
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const assignedStore =
+      adminData.length > 0 &&
+      adminData[0].store_ID &&
+      String(adminData[0].store_ID) !== "0"
+        ? String(adminData[0].store_ID)
+        : store
+          ? String(store)
+          : "";
+
+    let scopeConditions = ["tbl_service_category.delete_flage = '0'"];
+    let isMaster = false;
+    if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].rollType === "master" &&
+      !isStaff &&
+      (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === "0") &&
+      rolldetail[0].service &&
+      rolldetail[0].service.includes("read")
+    ) {
+      isMaster = true;
+    } else if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].service &&
+      rolldetail[0].service.includes("read")
+    ) {
+      scopeConditions.push(`tbl_service_category.store_ID = '${assignedStore}'`);
+    } else {
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
+    }
+
+    const filterConditions = [];
+    const statusParam = req.query.status_filter || req.query.status;
+    if (
+      statusParam !== undefined &&
+      statusParam !== null &&
+      !["all", "ALL", ""].includes(String(statusParam).trim())
+    ) {
+      const cleanStatus = String(statusParam).trim() === "0" ? "0" : "1";
+      filterConditions.push(`tbl_service_category.status = '${cleanStatus}'`);
+    }
+
+    const storeParam = req.query.store_filter || req.query.store_id;
+    if (
+      storeParam &&
+      isMaster &&
+      !["all", "ALL", "", "0"].includes(String(storeParam).trim())
+    ) {
+      const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_service_category.store_ID = '${cleanStore}'`);
+    }
+
+    const canEdit = Boolean(
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.service &&
+      accessdata.roll.service.includes("edit"),
+    );
+    const canDelete = Boolean(
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.service &&
+      accessdata.roll.service.includes("delete"),
+    );
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_service_category.*, COALESCE(tbl_store.name, '') as store_name`,
+      from: `tbl_service_category LEFT JOIN tbl_store ON tbl_service_category.store_ID = tbl_store.id`,
+      searchColumns: ["tbl_service_category.name", "tbl_store.name"],
+      baseWhere: scopeConditions,
+      filterWhere: filterConditions,
+      defaultOrder: "tbl_service_category.sequence_no ASC, tbl_service_category.id ASC",
+      columnMap: {
+        0: "tbl_service_category.id",
+        1: "tbl_service_category.sequence_no",
+        2: "tbl_service_category.name",
+        3: isMaster ? "tbl_store.name" : "tbl_service_category.status",
+        4: "tbl_service_category.status",
+      },
+      postProcess: async (rows) => {
+        return rows.map((r) => ({
+          id: r.id,
+          sequence_no: r.sequence_no !== undefined ? r.sequence_no : 0,
+          name: r.name || "",
+          store_name: r.store_name || "",
+          status: parseInt(r.status) || 0,
+          canEdit,
+          canDelete,
+        }));
+      },
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Category list data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
+  }
+});
+
+router.post("/addcategory", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+    const { id, roll, store } = req.user;
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (
+      !rolldetail ||
+      rolldetail.length === 0 ||
+      !rolldetail[0].service ||
+      !rolldetail[0].service.includes("write")
+    ) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    let { name, sequence_no, active, storeid } = req.body;
+    active = active ? "0" : "1";
+    
+    const adminData = await DataFind(
+      `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
+    );
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const assignedStore =
+      adminData.length > 0 &&
+      adminData[0].store_ID &&
+      String(adminData[0].store_ID) !== "0"
+        ? String(adminData[0].store_ID)
+        : store
+          ? String(store)
+          : "1";
+    const isMaster =
+      rolldetail[0].rollType === "master" &&
+      !isStaff &&
+      (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === "0");
+
+    if (!isMaster) {
+      storeid = assignedStore;
+    } else if (!storeid) {
+      storeid = assignedStore || "1";
+    }
+
+    // Auto-assign next sequence number (last number in store)
+    const maxRow = await DataFind(
+      `SELECT COALESCE(MAX(sequence_no), 0) AS max_seq FROM tbl_service_category WHERE store_ID = '${storeid}' AND delete_flage = '0'`,
+    );
+    const seqVal = (maxRow && maxRow[0] && Number(maxRow[0].max_seq) + 1) || 1;
+
+    const insertResult = await DataInsert(
+      "tbl_service_category",
+      "name, sequence_no, status, store_ID, delete_flage",
+      `${mysql.escape(name)}, ${seqVal}, '${active}', '${storeid}', '0'`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (insertResult === -1) {
+      req.flash("error", "Action failed, please check input and try again");
+      return res.redirect("back");
+    }
+
+    req.flash("success", "New Service Category Added!");
+    return res.redirect("back");
+  } catch (error) {
+    console.error("Error in /addcategory:", error);
+    req.flash("error", "An error occurred while adding category");
+    return res.redirect(req.get("Referrer") || "/");
+  }
+});
+
+router.post("/updatecategory/:id", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+    const { id, roll } = req.user;
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (
+      !rolldetail ||
+      rolldetail.length === 0 ||
+      !rolldetail[0].service ||
+      !rolldetail[0].service.includes("edit")
+    ) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const catId = req.params.id;
+    let { name, active } = req.body;
+    active = active ? "0" : "1";
+
+    const updateResult = await DataUpdate(
+      "tbl_service_category",
+      `name = ${mysql.escape(name)}, status = '${active}'`,
+      `id = ${catId}`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (updateResult === -1) {
+      req.flash("error", "Action failed, please check input and try again");
+      return res.redirect("back");
+    }
+
+    req.flash("success", "Category Updated Successfully!");
+    return res.redirect("back");
+  } catch (error) {
+    console.error("Error in /updatecategory:", error);
+    req.flash("error", "An error occurred while updating category");
+    return res.redirect("back");
+  }
+});
+
+router.get("/deletecategory/:id", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+    const { roll } = req.user;
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (
+      !rolldetail ||
+      rolldetail.length === 0 ||
+      !rolldetail[0].service ||
+      !rolldetail[0].service.includes("delete")
+    ) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const catId = req.params.id;
+
+    // Check if any active services are assigned
+    const activeServices = await DataFind(
+      `SELECT id FROM tbl_services WHERE category_id = ${catId} LIMIT 1`,
+    );
+    if (activeServices && activeServices.length > 0) {
+      req.flash("error", "Cannot delete category: active services are currently assigned to it. Reassign them first.");
+      return res.redirect("back");
+    }
+
+    const deleteResult = await DataUpdate(
+      "tbl_service_category",
+      "delete_flage = '1'",
+      `id = ${catId}`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (deleteResult === -1) {
+      req.flash("error", "Action failed, please check input and try again");
+      return res.redirect("back");
+    }
+
+    // Also soft-delete any associated subcategories
+    await DataUpdate(
+      "tbl_service_subcategory",
+      "delete_flage = '1'",
+      `category_id = ${catId}`,
+      req.hostname,
+      req.protocol,
+    );
+
+    req.flash("success", "Category Deleted Successfully");
+    return res.redirect("back");
+  } catch (error) {
+    console.error("Error in /deletecategory:", error);
+    req.flash("error", "An error occurred while deleting category");
+    return res.redirect("back");
+  }
+});
+
+// <<<<<<<<<<<<<<<<<<<< SERVICES SUB CATEGORIES CRUD ROUTERS >>>>>>>>>>>>>>>>>>>>
+
+router.get("/subcategory", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    const storeList = await DataFind(
+      "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0",
+    );
+    const multiy = await DataFind("SELECT type FROM tbl_master_shop");
+    const ismulty = multiy && multiy.length > 0 && multiy[0].type == 1;
+
+    if (loginas == 0) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (
+      !rolldetail ||
+      rolldetail.length === 0 ||
+      !rolldetail[0].service ||
+      !rolldetail[0].service.includes("read")
+    ) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const adminData = await DataFind(
+      `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
+    );
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const assignedStore =
+      adminData.length > 0 &&
+      adminData[0].store_ID &&
+      String(adminData[0].store_ID) !== "0"
+        ? String(adminData[0].store_ID)
+        : store
+          ? String(store)
+          : "1";
+
+    const defaultStoreId = ismulty
+      ? (storeList.length > 0 ? String(storeList[0].id) : "1")
+      : assignedStore;
+
+    // Load active categories for the default store
+    const categoryList = await DataFind(`
+      SELECT id, name, store_ID FROM tbl_service_category 
+      WHERE delete_flage = '0' AND status = '0' AND store_ID = '${defaultStoreId}'
+      ORDER BY sequence_no ASC, name ASC
+    `);
+
+    const maxRow = await DataFind(
+      `SELECT COALESCE(MAX(sequence_no), 0) AS max_seq FROM tbl_service_subcategory WHERE store_ID = '${defaultStoreId}' AND delete_flage = '0'`,
+    );
+    const nextSequence = (maxRow && maxRow[0] && Number(maxRow[0].max_seq) + 1) || 1;
+
+    return res.render("service_subcategory", {
+      ismulty: ismulty && rolldetail[0].rollType === "master" && !isStaff,
+      storeList,
+      categoryList,
+      accessdata,
+      assigned_store_id: assignedStore,
+      nextSequence,
+      language: req.language_data,
+      language_name: req.language_name,
+    });
+  } catch (error) {
+    console.error("Error in /subcategory:", error);
+    req.flash("error", "An error occurred while loading subcategories");
+    return res.redirect(req.get("Referrer") || "/");
+  }
+});
+
+router.get("/subcategory/data", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    if (loginas == 0) {
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    const adminData = await DataFind(
+      `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
+    );
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const assignedStore =
+      adminData.length > 0 &&
+      adminData[0].store_ID &&
+      String(adminData[0].store_ID) !== "0"
+        ? String(adminData[0].store_ID)
+        : store
+          ? String(store)
+          : "";
+
+    let scopeConditions = ["tbl_service_subcategory.delete_flage = '0'"];
+    let isMaster = false;
+    if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].rollType === "master" &&
+      !isStaff &&
+      (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === "0") &&
+      rolldetail[0].service &&
+      rolldetail[0].service.includes("read")
+    ) {
+      isMaster = true;
+    } else if (
+      rolldetail &&
+      rolldetail.length > 0 &&
+      rolldetail[0].service &&
+      rolldetail[0].service.includes("read")
+    ) {
+      scopeConditions.push(`tbl_service_subcategory.store_ID = '${assignedStore}'`);
+    } else {
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
+    }
+
+    const filterConditions = [];
+    const statusParam = req.query.status_filter || req.query.status;
+    if (
+      statusParam !== undefined &&
+      statusParam !== null &&
+      !["all", "ALL", ""].includes(String(statusParam).trim())
+    ) {
+      const cleanStatus = String(statusParam).trim() === "0" ? "0" : "1";
+      filterConditions.push(`tbl_service_subcategory.status = '${cleanStatus}'`);
+    }
+
+    const catParam = req.query.category_filter;
+    if (catParam && !["all", "ALL", "", "0"].includes(String(catParam).trim())) {
+      const cleanCat = parseInt(catParam) || 0;
+      if (cleanCat > 0) filterConditions.push(`tbl_service_subcategory.category_id = ${cleanCat}`);
+    }
+
+    const storeParam = req.query.store_filter || req.query.store_id;
+    if (
+      storeParam &&
+      isMaster &&
+      !["all", "ALL", "", "0"].includes(String(storeParam).trim())
+    ) {
+      const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_service_subcategory.store_ID = '${cleanStore}'`);
+    }
+
+    const canEdit = Boolean(
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.service &&
+      accessdata.roll.service.includes("edit"),
+    );
+    const canDelete = Boolean(
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.service &&
+      accessdata.roll.service.includes("delete"),
+    );
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_service_subcategory.*, COALESCE(tbl_service_category.name, 'Uncategorized') as category_name, COALESCE(tbl_store.name, '') as store_name`,
+      from: `tbl_service_subcategory LEFT JOIN tbl_service_category ON tbl_service_subcategory.category_id = tbl_service_category.id LEFT JOIN tbl_store ON tbl_service_subcategory.store_ID = tbl_store.id`,
+      searchColumns: ["tbl_service_subcategory.name", "tbl_service_category.name", "tbl_store.name"],
+      baseWhere: scopeConditions,
+      filterWhere: filterConditions,
+      defaultOrder: "tbl_service_subcategory.sequence_no ASC, tbl_service_subcategory.id ASC",
+      columnMap: {
+        0: "tbl_service_subcategory.id",
+        1: "tbl_service_subcategory.sequence_no",
+        2: "tbl_service_subcategory.name",
+        3: "tbl_service_category.name",
+        4: isMaster ? "tbl_store.name" : "tbl_service_subcategory.status",
+        5: "tbl_service_subcategory.status",
+      },
+      postProcess: async (rows) => {
+        return rows.map((r) => ({
+          id: r.id,
+          sequence_no: r.sequence_no !== undefined ? r.sequence_no : 0,
+          name: r.name || "",
+          category_id: r.category_id,
+          category_name: r.category_name || "Uncategorized",
+          store_id: r.store_ID || r.store_id || "",
+          store_name: r.store_name || "",
+          status: parseInt(r.status) || 0,
+          canEdit,
+          canDelete,
+        }));
+      },
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Subcategory list data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
+  }
+});
+
+router.post("/addsubcategory", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+    const { id, roll, store } = req.user;
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (
+      !rolldetail ||
+      rolldetail.length === 0 ||
+      !rolldetail[0].service ||
+      !rolldetail[0].service.includes("write")
+    ) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    let { category_id, name, sequence_no, active, storeid } = req.body;
+    active = active ? "0" : "1";
+
+    const cleanCatId = parseInt(category_id) || 0;
+    if (cleanCatId <= 0) {
+      req.flash("error", "Please select a valid parent category!");
+      return res.redirect("back");
+    }
+
+    const adminData = await DataFind(
+      `SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`,
+    );
+    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+    const assignedStore =
+      adminData.length > 0 &&
+      adminData[0].store_ID &&
+      String(adminData[0].store_ID) !== "0"
+        ? String(adminData[0].store_ID)
+        : store
+          ? String(store)
+          : "1";
+    const isMaster =
+      rolldetail[0].rollType === "master" &&
+      !isStaff &&
+      (!adminData[0] || !adminData[0].store_ID || String(adminData[0].store_ID) === "0");
+
+    if (!isMaster) {
+      storeid = assignedStore;
+    } else if (!storeid) {
+      storeid = assignedStore || "1";
+    }
+
+    // Auto-assign next sequence number scoped by store and parent category
+    const maxRow = await DataFind(
+      `SELECT COALESCE(MAX(sequence_no), 0) AS max_seq FROM tbl_service_subcategory WHERE store_ID = '${storeid}' AND category_id = ${cleanCatId} AND delete_flage = '0'`,
+    );
+    const seqVal = (maxRow && maxRow[0] && Number(maxRow[0].max_seq) + 1) || 1;
+
+    const insertResult = await DataInsert(
+      "tbl_service_subcategory",
+      "category_id, name, sequence_no, status, store_ID, delete_flage",
+      `${cleanCatId}, ${mysql.escape(name)}, ${seqVal}, '${active}', '${storeid}', '0'`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (insertResult === -1) {
+      req.flash("error", "Action failed, please check input and try again");
+      return res.redirect("back");
+    }
+
+    req.flash("success", "New Sub Category Added!");
+    return res.redirect("back");
+  } catch (error) {
+    console.error("Error in /addsubcategory:", error);
+    req.flash("error", "An error occurred while adding sub category");
+    return res.redirect(req.get("Referrer") || "/");
+  }
+});
+
+router.post("/updatesubcategory/:id", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+    const { roll } = req.user;
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (
+      !rolldetail ||
+      rolldetail.length === 0 ||
+      !rolldetail[0].service ||
+      !rolldetail[0].service.includes("edit")
+    ) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const subcatId = req.params.id;
+    let { category_id, name, active } = req.body;
+    active = active ? "0" : "1";
+    const cleanCatId = parseInt(category_id) || 0;
+
+    if (cleanCatId <= 0) {
+      req.flash("error", "Please select a valid parent category!");
+      return res.redirect("back");
+    }
+
+    const updateResult = await DataUpdate(
+      "tbl_service_subcategory",
+      `category_id = ${cleanCatId}, name = ${mysql.escape(name)}, status = '${active}'`,
+      `id = ${subcatId}`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (updateResult === -1) {
+      req.flash("error", "Action failed, please check input and try again");
+      return res.redirect("back");
+    }
+
+    req.flash("success", "Sub Category Updated Successfully!");
+    return res.redirect("back");
+  } catch (error) {
+    console.error("Error in /updatesubcategory:", error);
+    req.flash("error", "An error occurred while updating sub category");
+    return res.redirect("back");
+  }
+});
+
+router.get("/deletesubcategory/:id", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+    const { roll } = req.user;
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (
+      !rolldetail ||
+      rolldetail.length === 0 ||
+      !rolldetail[0].service ||
+      !rolldetail[0].service.includes("delete")
+    ) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const subcatId = req.params.id;
+
+    const deleteResult = await DataUpdate(
+      "tbl_service_subcategory",
+      "delete_flage = '1'",
+      `id = ${subcatId}`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (deleteResult === -1) {
+      req.flash("error", "Action failed, please check input and try again");
+      return res.redirect("back");
+    }
+
+    // Set subcategory_id to NULL on any services currently using this subcategory
+    await DataFind(`UPDATE tbl_services SET subcategory_id = NULL WHERE subcategory_id = ${subcatId}`);
+
+    req.flash("success", "Sub Category Deleted Successfully");
+    return res.redirect("back");
+  } catch (error) {
+    console.error("Error in /deletesubcategory:", error);
+    req.flash("error", "An error occurred while deleting sub category");
+    return res.redirect("back");
+  }
+});
+
+// <<<<<<<<<<<<<<<<<<<< CATEGORIES / SUBCATEGORIES AJAX ENDPOINTS >>>>>>>>>>>>>>>>>>>>
+
+router.get("/categories_by_store/:store_id", auth, async (req, res) => {
+  try {
+    const storeIdParam = req.params.store_id;
+    let whereClause = "delete_flage = '0' AND status = '0'";
+    if (storeIdParam && storeIdParam !== "all" && storeIdParam !== "0") {
+      const cleanStore = String(storeIdParam).trim().replace(/'/g, "\\'");
+      whereClause += ` AND store_ID = '${cleanStore}'`;
+    }
+    const categories = await DataFind(
+      `SELECT id, name, sequence_no, store_ID FROM tbl_service_category WHERE ${whereClause} ORDER BY sequence_no ASC, name ASC`
+    );
+    return res.status(200).json({ categories });
+  } catch (error) {
+    console.error("Error in /categories_by_store:", error);
+    return res.status(500).json({ categories: [], error: error.message });
+  }
+});
+
+router.get("/subcategories_by_category/:category_id", auth, async (req, res) => {
+  try {
+    const catIdParam = parseInt(req.params.category_id) || 0;
+    if (catIdParam <= 0) {
+      return res.status(200).json({ subcategories: [] });
+    }
+    const subcategories = await DataFind(
+      `SELECT id, name, sequence_no FROM tbl_service_subcategory WHERE category_id = ${catIdParam} AND delete_flage = '0' AND status = '0' ORDER BY sequence_no ASC, name ASC`
+    );
+    return res.status(200).json({ subcategories });
+  } catch (error) {
+    console.error("Error in /subcategories_by_category:", error);
+    return res.status(500).json({ subcategories: [], error: error.message });
+  }
+});
+
+// <<<<<<<<<<<<<<<<<<<< UNIFIED SEQUENCE REORDERING & CROSS-PAGE MOVEMENT >>>>>>>>>>>>>>>>>>>>
+router.post("/reorder_sequence", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      return res.status(403).json({ success: false, message: "Demo mode: write operations disabled." });
+    }
+
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    let rolldetail = [];
+    if (roll && roll !== "0" && roll !== 0) {
+      rolldetail = await DataFind(`
+        SELECT sr.*, r.roll_status, r.rollType 
+        FROM tbl_staff_roll sr
+        JOIN tbl_roll r ON sr.main_roll_id = r.id
+        WHERE sr.id = ${roll}
+      `);
+    }
+
+    const isMaster = Boolean(
+      String(loginas) === "1" ||
+      Number(loginas) === 1 ||
+      (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master") ||
+      !store ||
+      String(store) === "0"
+    );
+
+    const hasServicePermission = Boolean(
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.service &&
+      (accessdata.roll.service.includes("edit") || accessdata.roll.service.includes("write"))
+    );
+
+    const canEdit = isMaster || hasServicePermission;
+
+    if (!canEdit) {
+      return res.status(403).json({ success: false, message: "Unauthorized to reorder sequences." });
+    }
+
+    const { entity, action, reorderList, id: targetId, target_position, page_length } = req.body;
+
+    const entityConfig = {
+      category: {
+        table: "tbl_service_category",
+        seqCol: "sequence_no",
+        hasDualSeq: false,
+        whereActive: "delete_flage = '0'",
+      },
+      subcategory: {
+        table: "tbl_service_subcategory",
+        seqCol: "sequence_no",
+        hasDualSeq: false,
+        whereActive: "delete_flage = '0'",
+      },
+      service_type: {
+        table: "tbl_services_type",
+        seqCol: "sequence_no",
+        hasDualSeq: false,
+        whereActive: "1 = 1",
+      },
+      service: {
+        table: "tbl_services",
+        seqCol: "sequence_no",
+        hasDualSeq: true,
+        whereActive: "1 = 1",
+      },
+    };
+
+    const cfg = entityConfig[entity];
+    if (!cfg) {
+      return res.status(400).json({ success: false, message: "Invalid entity: " + entity });
+    }
+
+    // ACTION 1: DRAG & DROP REORDER (within current view / page)
+    if (action === "drag_reorder" || Array.isArray(reorderList)) {
+      const items = Array.isArray(reorderList) ? reorderList : [];
+      for (const item of items) {
+        const itemId = parseInt(item.id) || 0;
+        const newSeq = parseInt(item.sequence_no) || 0;
+        if (itemId > 0 && newSeq >= 0) {
+          if (cfg.hasDualSeq) {
+            await DataUpdate(
+              cfg.table,
+              `sequence_no = ${newSeq}, sequance_no = ${newSeq}`,
+              `id = ${itemId}`,
+              req.hostname,
+              req.protocol
+            );
+          } else {
+            await DataUpdate(
+              cfg.table,
+              `sequence_no = ${newSeq}`,
+              `id = ${itemId}`,
+              req.hostname,
+              req.protocol
+            );
+          }
+        }
+      }
+      return res.status(200).json({ success: true, message: "Rows reordered successfully" });
+    }
+
+    // ACTION 2: MOVE TO POSITION (e.g. Page 3 to Page 1, Move to Top, Move to Bottom, or specific rank)
+    if (action === "move_to_position") {
+      const itemId = parseInt(targetId) || 0;
+      if (itemId <= 0) {
+        return res.status(400).json({ success: false, message: "Valid item ID required." });
+      }
+
+      const itemRows = await DataFind(`SELECT * FROM ${cfg.table} WHERE id = ${itemId}`);
+      if (!itemRows || itemRows.length === 0) {
+        return res.status(404).json({ success: false, message: "Item not found." });
+      }
+      const item = itemRows[0];
+      const storeId = (item.store_ID && String(item.store_ID) !== "0") ? String(item.store_ID) : (store ? String(store) : "1");
+
+      const allRows = await DataFind(`
+        SELECT id, sequence_no 
+        FROM ${cfg.table} 
+        WHERE store_ID = '${storeId}' AND ${cfg.whereActive}
+        ORDER BY sequence_no ASC, id ASC
+      `);
+
+      let idList = allRows.map((r) => r.id);
+      const currentIndex = idList.indexOf(itemId);
+      if (currentIndex === -1) {
+        idList.push(itemId);
+      } else {
+        idList.splice(currentIndex, 1);
+      }
+
+      let newIndex = 0;
+      if (target_position === "top" || parseInt(target_position) <= 1) {
+        newIndex = 0;
+      } else if (target_position === "bottom" || parseInt(target_position) >= idList.length + 1) {
+        newIndex = idList.length;
+      } else {
+        newIndex = Math.max(0, parseInt(target_position) - 1);
+        if (newIndex > idList.length) newIndex = idList.length;
+      }
+
+      idList.splice(newIndex, 0, itemId);
+
+      for (let i = 0; i < idList.length; i++) {
+        const sid = idList[i];
+        const assignedSeq = i + 1;
+        if (cfg.hasDualSeq) {
+          await DataUpdate(
+            cfg.table,
+            `sequence_no = ${assignedSeq}, sequance_no = ${assignedSeq}`,
+            `id = ${sid}`,
+            req.hostname,
+            req.protocol
+          );
+        } else {
+          await DataUpdate(
+            cfg.table,
+            `sequence_no = ${assignedSeq}`,
+            `id = ${sid}`,
+            req.hostname,
+            req.protocol
+          );
+        }
+      }
+
+      const pLen = parseInt(page_length) || 10;
+      const targetPage = Math.floor(newIndex / pLen);
+
+      return res.status(200).json({
+        success: true,
+        message: `Item moved to position #${newIndex + 1} successfully.`,
+        targetPage,
+        newPosition: newIndex + 1,
+      });
+    }
+
+    return res.status(400).json({ success: false, message: "Invalid action." });
+  } catch (error) {
+    console.error("Error in /reorder_sequence:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 });
 

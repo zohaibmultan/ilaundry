@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+</head>
+
+<body>
+
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+    <!--********** Content body start **********-->
+
+    <div class="content-body">
+        <div class="container-fluid" style="min-height: 100vh;">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div>
+                                <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
+                                    <i class="fa fa-sitemap text-primary me-2"></i><%= language.Sub_Categories || 'Sub Categories' %>
+                                </h3>
+                                <small class="text-muted"><%= language.Configure_subcategories || 'Organize and group laundry services by sub-classifications under parent categories' %></small>
+                            </div>
+                            <div>
+                                <button
+                                    class="btn btn-sm btn-primary <%= accessdata.roll.service.includes('write') ? '' : 'd-none' %>"
+                                    data-bs-toggle="modal" data-bs-target="#add_subcategory_modal">
+                                    <i class="fa fa-plus me-2"></i>
+                                    <%= language.Add_Sub_Category || 'Add Sub Category' %>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <!-- Server-side DataTable Toolbar -->
+                            <div class="row g-2 mb-3">
+                                <div class="<%= ismulty ? 'col-12 col-md-3 col-lg-3' : 'col-12 col-md-4 col-lg-4' %>">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
+                                        <input class="form-control" type="search" id="dtSubCategorySearch" placeholder="<%= language.Search || 'Search sub categories...' %>">
+                                    </div>
+                                </div>
+
+                                <div class="<%= ismulty ? 'col-6 col-sm-4 col-md-3 col-lg-3' : 'col-6 col-sm-4 col-md-3 col-lg-3' %>">
+                                    <select class="form-select" id="dtSubCategoryFilterCat">
+                                        <option value="all"><%= language.All_Category || 'All Categories' %></option>
+                                        <% (categoryList || []).forEach(function(c) { %>
+                                            <option value="<%= c.id %>"><%= c.name %></option>
+                                        <% }) %>
+                                    </select>
+                                </div>
+
+                                <div class="<%= ismulty ? 'col-6 col-sm-4 col-md-2 col-lg-2' : 'col-6 col-sm-4 col-md-2 col-lg-2' %>">
+                                    <select class="form-select" id="dtSubCategoryStatus">
+                                        <option value="all"><%= language.All_Status || 'All Status' %></option>
+                                        <option value="0"><%= language.Active || 'Active' %></option>
+                                        <option value="1"><%= language.Deactive || 'Deactive' %></option>
+                                    </select>
+                                </div>
+
+                                <% if (ismulty) { %>
+                                    <div class="col-6 col-sm-4 col-md-2 col-lg-2">
+                                        <select class="form-select" id="dtSubCategoryStore">
+                                            <option value="all"><%= language.All_Store || 'All Stores' %></option>
+                                            <% (storeList || []).forEach(function(st) { %>
+                                                <option value="<%= st.id %>"><%= st.name %></option>
+                                            <% }) %>
+                                        </select>
+                                    </div>
+                                <% } %>
+
+                                <div class="<%= ismulty ? 'col-6 col-sm-4 col-md-2 col-lg-2' : 'col-6 col-sm-4 col-md-3 col-lg-3' %>">
+                                    <select class="form-select" id="dtSubCategoryPageLength">
+                                        <option value="10">10 <%= language.Entries || 'entries' %></option>
+                                        <option value="25">25 <%= language.Entries || 'entries' %></option>
+                                        <option value="50">50 <%= language.Entries || 'entries' %></option>
+                                        <option value="100">100 <%= language.Entries || 'entries' %></option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table id="server_service_subcategory_table" class="table display server-side-dt" style="width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 50px;">#</th>
+                                            <th style="width: 110px;"><%= language.Sequence_No || 'Sequence No' %></th>
+                                            <th><%= language.Sub_Category_Name || 'Sub Category Name' %></th>
+                                            <th><%= language.Parent_Category || 'Parent Category' %></th>
+                                            <th class="<%= ismulty ? '' : 'd-none' %>"><%= language.Store_Name || 'Store Name' %></th>
+                                            <th style="width: 110px;"><%= language.Status || 'Status' %></th>
+                                            <th class="text-center" style="width: 110px;"><%= language.Action || 'Action' %></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--********** Content body end **********-->
+
+    <!-- Modal Add Sub Category -->
+    <div class="modal fade" id="add_subcategory_modal">
+        <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <%= language.Add_Sub_Category || 'Add Sub Category' %>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="/services/addsubcategory" method="post" class="need-validation" id="add_subcategory_form">
+                        <div class="row g-2 align-items-center">
+                            <% if (ismulty) { %>
+                                <div class="col-12 mb-2">
+                                    <label class="form-label fw-bold">
+                                        <%= language.Store_List || 'Store' %> <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-control form-select" name="storeid" id="subcategory_storelist" required>
+                                        <option value="" disabled selected>Select Store *</option>
+                                        <% (storeList || []).forEach(function(x){ %>
+                                            <option value="<%= x.id %>"><%= x.name %></option>
+                                        <% }) %>
+                                    </select>
+                                </div>
+                            <% } else { %>
+                                <input type="hidden" name="storeid" id="subcategory_storelist" value="<%= (typeof assigned_store_id !== 'undefined' && assigned_store_id) ? assigned_store_id : '' %>">
+                            <% } %>
+
+                            <div class="col-12 mb-2">
+                                <label class="form-label fw-bold">
+                                    <%= language.Parent_Category || 'Parent Category' %> <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control form-select" name="category_id" id="add_subcat_category_id" required>
+                                    <% if (ismulty) { %>
+                                        <option value="" disabled selected><%= language.Select_Store_First || 'Please select a store first *' %></option>
+                                    <% } else { %>
+                                        <option value="" disabled selected><%= language.Select_Category || 'Select Parent Category *' %></option>
+                                        <% (categoryList || []).forEach(function(c) { %>
+                                            <option value="<%= c.id %>"><%= c.name %></option>
+                                        <% }) %>
+                                    <% } %>
+                                </select>
+                            </div>
+
+                            <div class="col-12 mb-2">
+                                <label class="form-label fw-bold">
+                                    <%= language.Sub_Category_Name || 'Sub Category Name' %> <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" name="name" placeholder="Enter Sub Category Name (e.g. Formal Shirts, Winter Blankets)" required>
+                            </div>
+
+                            <input type="hidden" name="sequence_no" id="subcategory_sequence_no" value="0">
+
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="subcategory_active" name="active" value="0" checked>
+                                    <label class="form-check-label fw-bold" for="subcategory_active">
+                                        <%= language.Is_Active || 'Is Active' %> ?
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer px-0 pb-0 mt-3 border-top pt-3">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-2"></i><%= language.Save || 'Save' %>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Update Sub Category -->
+    <div class="modal fade" id="update_subcategory_modal">
+        <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <%= language.Edit_Sub_Category || 'Edit Sub Category' %>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="" id="update_subcategory_form" method="post" class="need-validation">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-12 mb-2">
+                                <label class="form-label fw-bold">
+                                    <%= language.Parent_Category || 'Parent Category' %> <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-control form-select" name="category_id" id="update_subcat_category_id" required>
+                                    <option value="" disabled selected><%= language.Select_Category || 'Select Parent Category *' %></option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 mb-2">
+                                <label class="form-label fw-bold">
+                                    <%= language.Sub_Category_Name || 'Sub Category Name' %> <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" name="name" id="update_subcategory_name" placeholder="Enter Sub Category Name" required>
+                            </div>
+
+                            <input type="hidden" name="sequence_no" id="update_subcategory_sequence" value="0">
+
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="update_subcategory_active" name="active" value="0">
+                                    <label class="form-check-label fw-bold" for="update_subcategory_active">
+                                        <%= language.Is_Active || 'Is Active' %> ?
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer px-0 pb-0 mt-3 border-top pt-3">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-2"></i><%= language.Save || 'Save' %>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Delete Confirmation -->
+    <div class="modal fade" id="deleteSubCategoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger"><i class="fa fa-exclamation-triangle me-2"></i><%= language.Confirm_Delete || 'Confirm Delete' %></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0"><%= language.Delete_Sub_Category_Msg || 'Are you sure you want to delete sub category' %>: <strong id="deleteSubCategoryModalTitle"></strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><%= language.Cancel || 'Cancel' %></button>
+                    <a href="#" id="deleteSubCategoryConfirmBtn" class="btn btn-danger"><i class="fa fa-trash me-2"></i><%= language.Delete || 'Delete' %></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('templet/script')-%>
+    <script>
+        const ismulty = <%= Boolean(ismulty) %>;
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        $(document).ready(function() {
+            const columns = [
+                {
+                    data: 'id',
+                    orderable: false,
+                    searchable: false,
+                    render: function(data, type, row, meta) {
+                        return meta.row + meta.settings._iDisplayStart + 1;
+                    }
+                },
+                {
+                    data: 'sequence_no',
+                    orderable: true,
+                    className: 'text-center',
+                    render: function(data, type, row) {
+                        const seq = data !== undefined ? data : 0;
+                        return `
+                            <div class="d-inline-flex align-items-center justify-content-center gap-1 reorder-cell">
+                                <i class="fas fa-grip-vertical reorder-drag-handle text-muted me-1" title="Drag to reorder" style="cursor: grab;"></i>
+                                <button type="button" class="btn btn-xs btn-light border fw-bold px-2 py-0 btn-move-sequence"
+                                    data-id="${row.id}" data-name="${escapeHtml(row.name)}" data-seq="${seq}" data-entity="subcategory"
+                                    title="Click to move across pages / change position">
+                                    ${seq}
+                                </button>
+                            </div>
+                        `;
+                    }
+                },
+                {
+                    data: 'name',
+                    orderable: true,
+                    render: function(data) {
+                        return `<span class="fw-bold text-dark">${escapeHtml(data)}</span>`;
+                    }
+                },
+                {
+                    data: 'category_name',
+                    orderable: true,
+                    render: function(data) {
+                        return `<span class="badge bg-primary-subtle text-primary border border-primary-subtle">${escapeHtml(data || 'Uncategorized')}</span>`;
+                    }
+                }
+            ];
+
+            if (ismulty) {
+                columns.push({
+                    data: 'store_name',
+                    orderable: true,
+                    render: function(data) {
+                        return `<span class="badge bg-light text-primary border">${escapeHtml(data || 'All Stores')}</span>`;
+                    }
+                });
+            }
+
+            columns.push({
+                data: 'status',
+                orderable: true,
+                render: function(data) {
+                    const isActive = String(data) === '0';
+                    return `<span class="badge-status-pill ${isActive ? 'status-completed' : 'status-canceled'}">${isActive ? '<%= language.Active || "Active" %>' : '<%= language.Deactive || "Deactive" %>'}</span>`;
+                }
+            });
+
+            columns.push({
+                data: null,
+                orderable: false,
+                searchable: false,
+                className: 'text-center',
+                render: function(data, type, row) {
+                    let html = '<div class="tbl-action-group justify-content-center">';
+                    if (row.canEdit) {
+                        html += `
+                            <a href="#" class="btn-dt-action btn-edit btn-edit-subcat" data-bs-toggle="modal"
+                               data-bs-target="#update_subcategory_modal" data-id="${row.id}"
+                               data-name="${escapeHtml(row.name)}" data-category-id="${row.category_id}"
+                               data-store-id="${row.store_id || ''}"
+                               data-sequence="${row.sequence_no !== undefined ? row.sequence_no : 0}" data-status="${row.status}"
+                               title="<%= language.Edit || 'Edit' %>">
+                                <i class="fas fa-pencil-alt"></i>
+                            </a>
+                        `;
+                    }
+                    if (row.canDelete) {
+                        html += `
+                            <button type="button" class="btn-dt-action btn-delete btn-delete-subcat" 
+                               data-bs-toggle="modal"
+                               data-bs-target="#deleteSubCategoryModal"
+                               data-id="${row.id}"
+                               data-name="${escapeHtml(row.name || '')}"
+                               title="<%= language.Delete || 'Delete' %>">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        `;
+                    }
+                    html += '</div>';
+                    return html;
+                }
+            });
+
+            window.subcategoryTable = window.initServerDataTable('#server_service_subcategory_table', {
+                ajaxUrl: '/services/subcategory/data',
+                columns: columns,
+                order: [[1, 'asc']],
+                searchInput: '#dtSubCategorySearch',
+                pageLengthSelect: '#dtSubCategoryPageLength',
+                rowReorder: {
+                    entity: 'subcategory',
+                    selector: '.reorder-drag-handle'
+                },
+                filterElements: {
+                    category_filter: '#dtSubCategoryFilterCat',
+                    status_filter: '#dtSubCategoryStatus',
+                    store_filter: '#dtSubCategoryStore'
+                }
+            });
+
+            function loadCategoriesForSelect(storeId, $selectElement, selectedCategoryId, placeholderText) {
+                if (!storeId || storeId === 'all') {
+                    $selectElement.empty().append(`<option value="" disabled selected>${placeholderText || 'Select Store First *'}</option>`);
+                    return Promise.resolve();
+                }
+                return $.ajax({
+                    url: '/services/categories_by_store/' + storeId,
+                    type: 'GET',
+                    dataType: 'json'
+                }).then(function(res) {
+                    $selectElement.empty().append(`<option value="" disabled ${!selectedCategoryId ? 'selected' : ''}>${placeholderText || 'Select Parent Category *'}</option>`);
+                    if (res && res.categories && res.categories.length > 0) {
+                        res.categories.forEach(function(c) {
+                            const isSel = (selectedCategoryId && String(c.id) === String(selectedCategoryId));
+                            $selectElement.append(`<option value="${c.id}" ${isSel ? 'selected' : ''}>${escapeHtml(c.name)}</option>`);
+                        });
+                        if (selectedCategoryId) {
+                            $selectElement.val(String(selectedCategoryId));
+                        }
+                    } else {
+                        $selectElement.empty().append('<option value="" disabled selected>No categories found for this store</option>');
+                    }
+                }).catch(function(err) {
+                    console.error('Failed to load categories:', err);
+                });
+            }
+
+            // Populate Edit Modal
+            $(document).on('click', '.btn-edit-subcat', function () {
+                const id = $(this).attr('data-id');
+                const name = $(this).attr('data-name') || '';
+                const categoryId = $(this).attr('data-category-id') || '';
+                const storeId = $(this).attr('data-store-id') || (ismulty ? '' : '<%= assigned_store_id %>');
+                const sequenceNo = $(this).attr('data-sequence') || '0';
+                const status = $(this).attr('data-status');
+
+                $('#update_subcategory_form').attr('action', '/services/updatesubcategory/' + id);
+                $('#update_subcategory_name').val(name);
+                $('#update_subcategory_sequence').val(sequenceNo);
+                $('#update_subcategory_active').prop('checked', String(status) === '0');
+
+                loadCategoriesForSelect(storeId, $('#update_subcat_category_id'), categoryId, 'Select Parent Category *');
+            });
+
+            // Form submission guard
+            $('#update_subcategory_form').on('submit', function(e) {
+                const action = $(this).attr('action');
+                if (!action || action === '' || action.includes('undefined')) {
+                    e.preventDefault();
+                    alert('Invalid destination: please re-open the dialog and try again.');
+                    return false;
+                }
+            });
+
+            // Auto-sync store and categories when Add Modal opens
+            $('#add_subcategory_modal').on('show.bs.modal', function () {
+                if (ismulty) {
+                    const currentStoreFilter = $('#dtSubCategoryStore').val();
+                    if (currentStoreFilter && currentStoreFilter !== 'all') {
+                        $('#subcategory_storelist').val(currentStoreFilter);
+                        loadCategoriesForSelect(currentStoreFilter, $('#add_subcat_category_id'), null, 'Select Parent Category *');
+                    } else {
+                        $('#subcategory_storelist').val('');
+                        $('#add_subcat_category_id').empty().append('<option value="" disabled selected><%= language.Select_Store_First || "Please select a store first *" %></option>');
+                    }
+                } else {
+                    loadCategoriesForSelect('<%= assigned_store_id %>', $('#add_subcat_category_id'), null, 'Select Parent Category *');
+                }
+            });
+
+            // Populate Delete Modal
+            $(document).on('click', '.btn-delete-subcat', function () {
+                const id = $(this).attr('data-id');
+                const cleanId = String(id).replace(/['"]/g, '').trim();
+                const name = $(this).attr('data-name') || '';
+
+                $('#deleteSubCategoryModalTitle').text(name || ('#' + cleanId));
+                $('#deleteSubCategoryConfirmBtn').attr('href', '/services/deletesubcategory/' + cleanId);
+            });
+
+            // Dynamic category reload when store changes in Add modal
+            $('#subcategory_storelist').on('change', function() {
+                const storeId = $(this).val();
+                loadCategoriesForSelect(storeId, $('#add_subcat_category_id'), null, 'Select Parent Category *');
+            });
+
+            // Dynamic category reload when store filter changes in toolbar
+            $('#dtSubCategoryStore').on('change', function() {
+                const storeId = $(this).val();
+                const url = storeId && storeId !== 'all' ? '/services/categories_by_store/' + storeId : '/services/categories_by_store/all';
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(res) {
+                        const $filterCat = $('#dtSubCategoryFilterCat');
+                        $filterCat.empty().append('<option value="all"><%= language.All_Category || "All Categories" %></option>');
+                        if (res && res.categories && res.categories.length > 0) {
+                            res.categories.forEach(function(c) {
+                                $filterCat.append(`<option value="${c.id}">${escapeHtml(c.name)}</option>`);
+                            });
+                        }
+                        $filterCat.trigger('change');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

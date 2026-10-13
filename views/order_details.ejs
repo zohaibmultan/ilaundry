@@ -216,33 +216,33 @@
                                 <div class="card-header">
 
                                     <div>
-                                        <% if (customer.name !='Walk in customer' ) { %>
+                                        <% if (customer && customer.name && customer.name !='Walk in customer' ) { %>
                                             <h4 class="mb-0">
                                                 <%= language.Invoice_To %> :
                                             </h4>
                                             <p class="mb-0">
                                                 <%= language.Name %> : <span>
-                                                        <%=customer.name%>
+                                                        <%= customer.name || '' %>
                                                     </span>
                                             </p>
                                             <p class="mb-0">
                                                 <%= language.Phone_No %> : <span>
-                                                        <%=customer.number%>
+                                                        <%= customer.number || '' %>
                                                     </span>
                                             </p>
                                             <p class="mb-0">
                                                 <%= language.Email %> : <span>
-                                                        <%=customer.email%>
+                                                        <%= customer.email || '' %>
                                                     </span>
                                             </p>
                                             <p class="mb-0 text-break w-100">
                                                 <%= language.Address %> : <span>
-                                                        <%=customer.address%>
+                                                        <%= customer.address || '' %>
                                                     </span>
                                             </p>
                                             <p class="mb-0">
                                                 <%= language.TAX %> : <span>
-                                                        <%=customer.taxnumber%>
+                                                        <%= customer.taxnumber || '' %>
                                                     </span>
                                             </p>
                                             <% } %>
@@ -463,7 +463,7 @@
                                                 <%= language.Customer_Name %> :
                                             </div>
                                             <div class="col-auto text-sm">
-                                                <%=customer.name%>
+                                                <%= (customer && customer.name) ? customer.name : 'Walk in customer' %>
                                             </div>
                                         </div>
 
@@ -784,7 +784,7 @@
 
                                         </div>
 
-                                        <% if (customer.name !='Walk in customer' ) { %>
+                                        <% if (customer && customer.name && customer.name !='Walk in customer' ) { %>
                                             <hr>
 
                                             <p class="mb-0 px-4">
@@ -797,7 +797,7 @@
                                                             <%= language.Name %> :
                                                         </td>
                                                         <td class="py-0 text-end">
-                                                            <%=customer.name%>
+                                                            <%= customer.name || '' %>
                                                         </td>
                                                     </tr>
                                                     <tr>
@@ -805,7 +805,7 @@
                                                             <%= language.Number %> :
                                                         </td>
                                                         <td class="py-0 text-end">
-                                                            <%=customer.number%>
+                                                            <%= customer.number || '' %>
                                                         </td>
                                                     </tr>
                                                     <tr>
@@ -813,7 +813,7 @@
                                                             <%= language.Email %> :
                                                         </td>
                                                         <td class="py-0 text-end">
-                                                            <%=customer.email%>
+                                                            <%= customer.email || '' %>
                                                         </td>
                                                     </tr>
                                                     <tr>
@@ -821,7 +821,7 @@
                                                             <%= language.Address %> :
                                                         </td>
                                                         <td class="py-0 text-end">
-                                                            <%=customer.address%>
+                                                            <%= customer.address || '' %>
                                                         </td>
                                                     </tr>
                                                     <tr>
@@ -829,7 +829,7 @@
                                                             <%= language.Tax_ID %> :
                                                         </td>
                                                         <td class="py-0 text-end">
-                                                            <%=customer.taxnumber%>
+                                                            <%= customer.taxnumber || '' %>
                                                         </td>
                                                     </tr>
                                                 </tbody>

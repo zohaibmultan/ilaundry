@@ -121,7 +121,31 @@
                                             <% } %>
 
                                             <div class="row g-3 mb-3">
-                                                <div class="col-md-5">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">
+                                                        <i class="fas fa-folder text-primary me-1"></i>
+                                                        <%= language.Category || 'Category' %> <span class="text-danger">*</span>
+                                                    </label>
+                                                    <select class="form-select" name="category_id" id="service_category_id" required>
+                                                        <option value="" disabled selected><%= language.Select_Category || 'Select Category' %> *</option>
+                                                        <% (categories || []).forEach(function(c) { %>
+                                                            <option value="<%= c.id %>"><%= c.name %></option>
+                                                        <% }) %>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">
+                                                        <i class="fas fa-sitemap text-primary me-1"></i>
+                                                        <%= language.Sub_Category || 'Sub Category' %> <small class="text-muted fw-normal">(Optional)</small>
+                                                    </label>
+                                                    <select class="form-select" name="subcategory_id" id="service_subcategory_id">
+                                                        <option value=""><%= language.Select_Sub_Category || 'Select Sub Category (Optional)' %></option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="row g-3 mb-3">
+                                                <div class="col-md-7">
                                                     <label class="form-label fw-bold">
                                                         <i class="fas fa-tag text-primary me-1"></i>
                                                         <%= language.Service_Name %> <span class="text-danger">*</span>
@@ -129,7 +153,7 @@
                                                     <input type="text" placeholder="Enter Service Name (e.g. Dry Cleaning, Wash & Fold)" class="form-control" name="name" required>
                                                     <input type="hidden" id="servalid" value="0" min="1" required>
                                                 </div>
-                                                <div class="col-md-4">
+                                                <div class="col-md-5">
                                                     <label class="form-label fw-bold">
                                                         <i class="fas fa-layer-group text-primary me-1"></i>
                                                         Number of Items / Pieces <span class="text-danger">*</span>
@@ -137,13 +161,7 @@
                                                     <input type="number" placeholder="1" class="form-control" name="no_of_items" value="1" min="1" required>
                                                     <div class="form-text text-muted small">Items included per unit (e.g. 2 for 2-piece suit)</div>
                                                 </div>
-                                                <div class="col-md-3">
-                                                    <label class="form-label fw-bold">
-                                                        <i class="fas fa-sort-numeric-down text-primary me-1"></i>
-                                                        Sequence No <span class="text-danger">*</span>
-                                                    </label>
-                                                    <input type="number" placeholder="1" class="form-control" name="sequence_no" value="1" min="0" required>
-                                                </div>
+                                                <input type="hidden" name="sequence_no" value="0">
                                             </div>
 
                                             <div class="pt-2">
@@ -317,6 +335,47 @@
             fileInput.value = '';
             document.getElementById('ImgRequired').classList.add('d-none');
         }
+
+        $(document).ready(function() {
+            $('#service_category_id').on('change', function() {
+                const catId = $(this).val();
+                const $subSelect = $('#service_subcategory_id');
+                $subSelect.empty().append('<option value=""><%= language.Select_Sub_Category || "Select Sub Category (Optional)" %></option>');
+                if (!catId) return;
+                $.ajax({
+                    url: '/services/subcategories_by_category/' + catId,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res && res.subcategories && res.subcategories.length > 0) {
+                            res.subcategories.forEach(function(s) {
+                                $subSelect.append(`<option value="${s.id}">${s.name}</option>`);
+                            });
+                        }
+                    }
+                });
+            });
+
+            $('#add_servie_storelist').on('change', function() {
+                const storeId = $(this).val();
+                if (!storeId) return;
+                $.ajax({
+                    url: '/services/categories_by_store/' + storeId,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(res) {
+                        const $catSelect = $('#service_category_id');
+                        $catSelect.empty().append('<option value="" disabled selected><%= language.Select_Category || "Select Category" %> *</option>');
+                        $('#service_subcategory_id').empty().append('<option value=""><%= language.Select_Sub_Category || "Select Sub Category (Optional)" %></option>');
+                        if (res && res.categories && res.categories.length > 0) {
+                            res.categories.forEach(function(c) {
+                                $catSelect.append(`<option value="${c.id}">${c.name}</option>`);
+                            });
+                        }
+                    }
+                });
+            });
+        });
     </script>
 
 </body>

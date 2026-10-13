@@ -40,13 +40,21 @@
                             <div class="card-body p-4">
                                 <!-- Server-side DataTable Toolbar -->
                                 <div class="row g-2 mb-3">
-                                    <div class="<%= ismulty ? 'col-12 col-md-4 col-lg-4' : 'col-12 col-md-6 col-lg-6' %>">
+                                    <div class="<%= ismulty ? 'col-12 col-md-3 col-lg-3' : 'col-12 col-md-4 col-lg-4' %>">
                                         <div class="input-group">
                                             <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
                                             <input class="form-control" type="search" id="dtServiceSearch" placeholder="<%= language.Search || 'Search services...' %>">
                                         </div>
                                     </div>
-                                    <div class="<%= ismulty ? 'col-6 col-sm-4 col-md-3 col-lg-3' : 'col-6 col-sm-6 col-md-3 col-lg-3' %>">
+                                    <div class="<%= ismulty ? 'col-6 col-sm-4 col-md-2 col-lg-2' : 'col-6 col-sm-6 col-md-3 col-lg-3' %>">
+                                        <select class="form-select" id="dtServiceCategory">
+                                            <option value="all"><%= language.All_Category || 'All Categories' %></option>
+                                            <% (categoryList || []).forEach(function(c) { %>
+                                                <option value="<%= c.id %>"><%= c.name %></option>
+                                            <% }) %>
+                                        </select>
+                                    </div>
+                                    <div class="<%= ismulty ? 'col-6 col-sm-4 col-md-2 col-lg-2' : 'col-6 col-sm-6 col-md-2 col-lg-2' %>">
                                         <select class="form-select" id="dtServiceStatus">
                                             <option value="all"><%= language.All_Status || 'All Status' %></option>
                                             <option value="0"><%= language.Active || 'Active' %></option>
@@ -65,7 +73,7 @@
                                         </div>
                                     <% } %>
 
-                                    <div class="<%= ismulty ? 'col-12 col-sm-4 col-md-2 col-lg-2' : 'col-12 col-sm-6 col-md-3 col-lg-3' %>">
+                                    <div class="<%= ismulty ? 'col-6 col-sm-4 col-md-2 col-lg-2' : 'col-6 col-sm-6 col-md-3 col-lg-3' %>">
                                         <select class="form-select" id="dtServicePageLength">
                                             <option value="10">10 <%= language.Entries || 'entries' %></option>
                                             <option value="25">25 <%= language.Entries || 'entries' %></option>
@@ -82,6 +90,7 @@
                                                 <th style="width: 50px;">#</th>
                                                 <th style="width: 70px;" class="text-center">Seq</th>
                                                 <th><%= language.Service_Name %></th>
+                                                <th><%= language.Category || 'Category' %></th>
                                                 <th class="text-center" style="width: 90px;">Items</th>
                                                 <th class="text-center"><%= language.Service_Type %></th>
                                                 <th class="<%= ismulty ? '' : 'd-none' %>"><%= language.Store_Name %></th>
@@ -169,8 +178,18 @@
                     {
                         data: 'sequence_no',
                         className: 'text-center',
-                        render: function(data) {
-                            return `<span class="badge bg-light text-primary border fw-bold">${data !== undefined ? data : 0}</span>`;
+                        render: function(data, type, row) {
+                            const seq = data !== undefined ? data : 0;
+                            return `
+                                <div class="d-inline-flex align-items-center justify-content-center gap-1 reorder-cell">
+                                    <i class="fas fa-grip-vertical reorder-drag-handle text-muted me-1" title="Drag to reorder" style="cursor: grab;"></i>
+                                    <button type="button" class="btn btn-xs btn-light border fw-bold px-2 py-0 btn-move-sequence"
+                                        data-id="${row.id}" data-name="${escapeHtml(row.name)}" data-seq="${seq}" data-entity="service"
+                                        title="Click to move across pages / change position">
+                                        ${seq}
+                                    </button>
+                                </div>
+                            `;
                         }
                     },
                     {
@@ -185,6 +204,15 @@
                                     <span class="fw-bold text-dark">${escapeHtml(data)}</span>
                                 </div>
                             `;
+                        }
+                    },
+                    {
+                        data: 'category_name',
+                        render: function(data, type, row) {
+                            let subHtml = row.subcategory_name && row.subcategory_name !== '—'
+                                ? `<br><small class="text-muted"><i class="fa fa-angle-right me-1 text-primary"></i>${escapeHtml(row.subcategory_name)}</small>`
+                                : '';
+                            return `<div><span class="badge bg-primary-subtle text-primary border border-primary-subtle">${escapeHtml(data || 'Uncategorized')}</span>${subHtml}</div>`;
                         }
                     },
                     {
@@ -265,7 +293,12 @@
                     order: [[1, 'asc']],
                     searchInput: '#dtServiceSearch',
                     pageLengthSelect: '#dtServicePageLength',
+                    rowReorder: {
+                        entity: 'service',
+                        selector: '.reorder-drag-handle'
+                    },
                     filterElements: {
+                        category_filter: '#dtServiceCategory',
                         status_filter: '#dtServiceStatus',
                         store_filter: '#dtServiceStore'
                     }

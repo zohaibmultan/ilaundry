@@ -118,6 +118,38 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Category & Subcategory Filter Tabs -->
+                                <div class="pos-category-filter-container mb-2">
+                                    <!-- Primary Category Pills -->
+                                    <div class="d-flex align-items-center gap-1 overflow-auto pb-1" id="pos_category_pills" style="scrollbar-width: thin; -webkit-overflow-scrolling: touch;">
+                                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1 pos-cat-pill active text-nowrap fw-semibold" data-cat-id="all">
+                                            <i class="fas fa-layer-group me-1"></i> All
+                                        </button>
+                                        <% if (typeof categoryList !== 'undefined' && categoryList && categoryList.length > 0) { %>
+                                            <% categoryList.forEach(function(cat) { %>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 pos-cat-pill text-nowrap" data-cat-id="<%= cat.id %>">
+                                                    <%= cat.name %>
+                                                </button>
+                                            <% }) %>
+                                        <% } %>
+                                    </div>
+
+                                    <!-- Secondary Subcategory Pills -->
+                                    <div class="d-flex align-items-center gap-1 overflow-auto pt-1 pb-1 d-none" id="pos_subcategory_pills" style="scrollbar-width: thin; -webkit-overflow-scrolling: touch;">
+                                        <button type="button" class="btn btn-xs btn-primary rounded-pill px-2 py-0 pos-subcat-pill active text-nowrap" data-subcat-id="all">
+                                            All Subcategories
+                                        </button>
+                                        <% if (typeof subcategoryList !== 'undefined' && subcategoryList && subcategoryList.length > 0) { %>
+                                            <% subcategoryList.forEach(function(sub) { %>
+                                                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-0 pos-subcat-pill text-nowrap" data-subcat-id="<%= sub.id %>" data-parent-cat-id="<%= sub.category_id %>" style="display: none;">
+                                                    <%= sub.name %>
+                                                </button>
+                                            <% }) %>
+                                        <% } %>
+                                    </div>
+                                </div>
+
                                 <div class="pos-services-grid mt-2" id="pos_service">
                                     <% if(service_list.length < 1 && login=='master' && cart.store_id==0){ %>
                                         <div class="p-3 text-center w-100">
@@ -136,6 +168,8 @@
                                                 <% service_list.forEach(function(data){ %>
                                                     <a href="#" class="pos-service-item services text-decoration-none"
                                                         data-name="<%= (data.name || '').toLowerCase() %>"
+                                                        data-category-id="<%= data.category_id || '' %>"
+                                                        data-subcategory-id="<%= data.subcategory_id || '' %>"
                                                         data-bs-toggle="modal" data-bs-target="#service_type_model"
                                                         data-id="<%= data.id %>">
                                                         <div class="card h-100 shadow-sm border rounded-3 text-center overflow-hidden pos-service-card position-relative">
@@ -1400,6 +1434,8 @@
                         
 
                         window.POS_READY_SCHEDULE = <%- JSON.stringify((typeof readySchedule !== 'undefined' && readySchedule) ? readySchedule : (typeof locals !== 'undefined' && locals.readySchedule ? locals.readySchedule : {})) %>;
+                        window.POS_INITIAL_CATEGORIES = <%- JSON.stringify((typeof categoryList !== 'undefined' && categoryList) ? categoryList : []) %>;
+                        window.POS_INITIAL_SUBCATEGORIES = <%- JSON.stringify((typeof subcategoryList !== 'undefined' && subcategoryList) ? subcategoryList : []) %>;
 
                         document.addEventListener('DOMContentLoaded', () => {
                             pingPosPrintingServer(false);

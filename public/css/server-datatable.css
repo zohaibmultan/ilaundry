@@ -657,3 +657,97 @@
     }
 }
 
+/* RowReorder Drag & Drop and Sequence Movement */
+.reorder-cell {
+    user-select: none;
+}
+
+.reorder-drag-handle {
+    cursor: grab;
+    padding: 3px 6px;
+    color: #94a3b8;
+    font-size: 13px;
+    border-radius: 4px;
+    transition: all 0.18s ease;
+}
+
+.reorder-drag-handle:hover {
+    color: #0081ee;
+    background: rgba(0, 129, 238, 0.08);
+}
+
+.reorder-drag-handle:active {
+    cursor: grabbing;
+}
+
+.btn-move-sequence {
+    font-size: 0.8rem !important;
+    border-radius: 6px !important;
+    transition: all 0.18s ease !important;
+}
+
+.btn-move-sequence:hover {
+    background: #0081ee !important;
+    color: #ffffff !important;
+    border-color: #0081ee !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 129, 238, 0.25);
+}
+
+[data-theme-version="dark"] .reorder-drag-handle {
+    color: #64748b;
+}
+
+[data-theme-version="dark"] .reorder-drag-handle:hover {
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+}
+
+[data-theme-version="dark"] .btn-move-sequence {
+    background: rgba(30, 41, 59, 0.8) !important;
+    color: #f1f5f9 !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme-version="dark"] .btn-move-sequence:hover {
+    background: #0081ee !important;
+    color: #ffffff !important;
+    border-color: #0081ee !important;
+}
+
+[data-theme-version="dark"] table.dt-rowReorder-float {
+    background: rgba(15, 23, 42, 0.95) !important;
+    outline-color: #38bdf8 !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme-version="dark"] tr.dt-rowReorder-moving {
+    outline-color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.12) !important;
+}
+
+[data-theme-version="dark"] #modalMoveSequencePosition .modal-content {
+    background: #1e293b !important;
+    color: #f8fafc !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme-version="dark"] #modalMoveSequencePosition .modal-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme-version="dark"] #modalMoveSequencePosition #moveItemTitle {
+    color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] #modalMoveSequencePosition .input-group-text {
+    background: #0f172a !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme-version="dark"] #modalMoveSequencePosition input#moveTargetPosInput {
+    background: #0f172a !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: #f8fafc !important;
+}
+

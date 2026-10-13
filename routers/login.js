@@ -1027,9 +1027,15 @@ router.get("/index", auth, async (req, res) => {
       `);
 
       const chartOrders = await DataFind(`
-        SELECT id, order_date, gross_total 
+        SELECT 
+          YEAR(order_date) AS year,
+          MONTH(order_date) AS month,
+          COUNT(id) AS total_orders,
+          COALESCE(SUM(gross_total), 0) AS total_sales
         FROM tbl_order 
         WHERE store_id = '${activeStoreId}' AND YEAR(order_date) = YEAR(CURDATE()) AND order_status != '6'
+        GROUP BY YEAR(order_date), MONTH(order_date)
+        ORDER BY month ASC
       `);
 
       let orderfunction = await groupOrdersByYearAndMonth(chartOrders);
@@ -1098,9 +1104,15 @@ router.get("/index", auth, async (req, res) => {
       `);
 
       const chartOrders = await DataFind(`
-        SELECT id, order_date, gross_total 
+        SELECT 
+          YEAR(order_date) AS year,
+          MONTH(order_date) AS month,
+          COUNT(id) AS total_orders,
+          COALESCE(SUM(gross_total), 0) AS total_sales
         FROM tbl_order 
         WHERE YEAR(order_date) = YEAR(CURDATE()) AND order_status != '6'
+        GROUP BY YEAR(order_date), MONTH(order_date)
+        ORDER BY month ASC
       `);
 
       let orderfunction = await groupOrdersByYearAndMonth(chartOrders);
@@ -1255,6 +1267,29 @@ router.get("/api/dashboard-stats", auth, async (req, res) => {
 });
 
 async function groupOrdersByYearAndMonth(orders) {
+  if (!orders || orders.length === 0) {
+    return { totorder: "", totsales: "" };
+  }
+
+  // If already aggregated by MySQL query (has month & total_orders/total_sales)
+  if (orders[0].month !== undefined && (orders[0].total_orders !== undefined || orders[0].total_sales !== undefined)) {
+    const currentYear = new Date().getFullYear();
+    let totmonth = "";
+    let totmonsales = "";
+    orders.forEach((r) => {
+      const tm = r.month;
+      const to = r.total_orders || 0;
+      const ts = Number(r.total_sales || 0).toFixed(0);
+      totmonth += totmonth === "" ? `${tm}#${to}` : `@${tm}#${to}`;
+      totmonsales += totmonsales === "" ? `${tm}#${ts}` : `@${tm}#${ts}`;
+    });
+    return {
+      totorder: totmonth ? `${currentYear}&!${totmonth}` : "",
+      totsales: totmonsales ? `${currentYear}&!${totmonsales}` : ""
+    };
+  }
+
+  // Fallback for raw order rows
   const groupedOrders = [];
   let totorder = "",
     totsales = "";
@@ -1282,19 +1317,19 @@ async function groupOrdersByYearAndMonth(orders) {
   groupedOrders.forEach((yearGroup) => {
     let totmonth = "",
       totmonsales = "";
-    yearGroup.months.forEach((monthGroup, index) => {
+    yearGroup.months.forEach((monthGroup) => {
       let tm = monthGroup.month,
         to = monthGroup.orders.length,
         gtotal = 0;
       monthGroup.totalOrders = to;
 
-      totmonth += totmonth == "" ? `${tm}#${to}` : `@${tm}#${to}`;
+      totmonth += totmonth === "" ? `${tm}#${to}` : `@${tm}#${to}`;
 
       monthGroup.orders.forEach((gross) => {
         gtotal += parseFloat(gross.gross_total);
       });
       totmonsales +=
-        totmonsales == ""
+        totmonsales === ""
           ? `${tm}#${gtotal.toFixed(0)}`
           : `@${tm}#${gtotal.toFixed(0)}`;
 
@@ -1302,11 +1337,11 @@ async function groupOrdersByYearAndMonth(orders) {
     });
 
     totorder +=
-      totorder == ""
+      totorder === ""
         ? yearGroup.year + "&!" + totmonth
         : "&&!" + yearGroup.year + "&!" + totmonth;
     totsales +=
-      totsales == ""
+      totsales === ""
         ? yearGroup.year + "&!" + totmonsales
         : "&&!" + yearGroup.year + "&!" + totmonsales;
   });

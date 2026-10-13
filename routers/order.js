@@ -586,9 +586,22 @@ router.get("/view/:id", auth, async (req, res) => {
         order[0].payment_data +
         "')",
     );
-    const customer = await DataFind(
-      "SELECT * FROM tbl_customer WHERE id=" + order[0].customer_id + "",
-    );
+    let customerData = {
+      id: 0,
+      name: "Walk in customer",
+      number: "",
+      email: "",
+      address: "",
+      taxnumber: "",
+    };
+    if (order[0].customer_id) {
+      const customer = await DataFind(
+        "SELECT * FROM tbl_customer WHERE id=" + order[0].customer_id + "",
+      );
+      if (customer && customer.length > 0) {
+        customerData = customer[0];
+      }
+    }
     const account = await DataFind(
       "SELECT * FROM tbl_account WHERE store_ID=" +
         order[0].store_id +
@@ -621,8 +634,8 @@ router.get("/view/:id", auth, async (req, res) => {
       orderServiceList,
       addonlist,
       payments,
-      customer: customer[0],
-      storedata: storedata[0],
+      customer: customerData,
+      storedata: storedata && storedata.length > 0 ? storedata[0] : {},
       account,
       accessdata,
       availableStores: availableStores || [],
@@ -633,6 +646,8 @@ router.get("/view/:id", auth, async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+    req.flash("error", "Error loading order details: " + error.message);
+    return res.redirect("/order/list");
   }
 });
 

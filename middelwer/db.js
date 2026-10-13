@@ -8,13 +8,17 @@ const dbUser = (process.env.DB_USER || 'root').replace(/['"]/g, '').trim();
 const dbPassword = process.env.DB_PASSWORD !== undefined ? String(process.env.DB_PASSWORD).replace(/^["']|["']$/g, '') : '';
 const dbName = (process.env.DB_NAME || 'lndry').replace(/['"]/g, '').trim();
 
+const connectionLimit = Number(process.env.DB_CONNECTION_LIMIT || 15);
+
 var conn = mysql.createPool({
     host: dbHost,
     port: dbPort,
     user: dbUser,
     password: dbPassword,
     database: dbName,
-    connectionLimit: 100,
+    connectionLimit: connectionLimit,
+    waitForConnections: true,
+    queueLimit: 0,
     charset: 'utf8mb4',
 });
 

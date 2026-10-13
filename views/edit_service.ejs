@@ -98,7 +98,34 @@
                                             </h6>
 
                                             <div class="row g-3 mb-3">
-                                                <div class="col-md-5">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">
+                                                        <i class="fas fa-folder text-primary me-1"></i>
+                                                        <%= language.Category || 'Category' %> <span class="text-danger">*</span>
+                                                    </label>
+                                                    <select class="form-select" name="category_id_update" id="edit_service_category_id" required>
+                                                        <option value="" disabled><%= language.Select_Category || 'Select Category' %> *</option>
+                                                        <% (categories || []).forEach(function(c) { %>
+                                                            <option value="<%= c.id %>" <%= (services.category_id == c.id) ? 'selected' : '' %>><%= c.name %></option>
+                                                        <% }) %>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">
+                                                        <i class="fas fa-sitemap text-primary me-1"></i>
+                                                        <%= language.Sub_Category || 'Sub Category' %> <small class="text-muted fw-normal">(Optional)</small>
+                                                    </label>
+                                                    <select class="form-select" name="subcategory_id_update" id="edit_service_subcategory_id">
+                                                        <option value=""><%= language.Select_Sub_Category || 'Select Sub Category (Optional)' %></option>
+                                                        <% (subcategories || []).forEach(function(s) { %>
+                                                            <option value="<%= s.id %>" <%= (services.subcategory_id == s.id) ? 'selected' : '' %>><%= s.name %></option>
+                                                        <% }) %>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="row g-3 mb-3">
+                                                <div class="col-md-7">
                                                     <label class="form-label fw-bold">
                                                         <i class="fas fa-tag text-primary me-1"></i>
                                                         <%= language.Service_Name %> <span class="text-danger">*</span>
@@ -107,7 +134,7 @@
                                                     <input type="hidden" id="servalid" value="<%= (typeof tiers !== 'undefined' ? tiers.length : type.length) %>" min="1" required>
                                                     <input type="hidden" id="add_servie_storelist" value="<%= services.store_ID %>">
                                                 </div>
-                                                <div class="col-md-4">
+                                                <div class="col-md-5">
                                                     <label class="form-label fw-bold">
                                                         <i class="fas fa-layer-group text-primary me-1"></i>
                                                         Number of Items / Pieces <span class="text-danger">*</span>
@@ -115,13 +142,7 @@
                                                     <input type="number" placeholder="1" class="form-control" name="no_of_items_update" value="<%= (typeof services.no_of_items !== 'undefined' && services.no_of_items !== null) ? services.no_of_items : 1 %>" min="1" required>
                                                     <div class="form-text text-muted small">Items included per unit (e.g. 2 for 2-piece suit)</div>
                                                 </div>
-                                                <div class="col-md-3">
-                                                    <label class="form-label fw-bold">
-                                                        <i class="fas fa-sort-numeric-down text-primary me-1"></i>
-                                                        Sequence No <span class="text-danger">*</span>
-                                                    </label>
-                                                    <input type="number" placeholder="1" class="form-control" name="sequence_no_update" value="<%= (typeof services.sequence_no !== 'undefined') ? services.sequence_no : 0 %>" min="0" required>
-                                                </div>
+                                                <input type="hidden" name="sequence_no_update" value="<%= (typeof services.sequence_no !== 'undefined') ? services.sequence_no : 0 %>">
                                             </div>
 
                                             <div class="pt-2">
@@ -314,6 +335,27 @@
             const fileInput = document.getElementById('file-1');
             fileInput.value = '';
         }
+
+        $(document).ready(function() {
+            $('#edit_service_category_id').on('change', function() {
+                const catId = $(this).val();
+                const $subSelect = $('#edit_service_subcategory_id');
+                $subSelect.empty().append('<option value=""><%= language.Select_Sub_Category || "Select Sub Category (Optional)" %></option>');
+                if (!catId) return;
+                $.ajax({
+                    url: '/services/subcategories_by_category/' + catId,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res && res.subcategories && res.subcategories.length > 0) {
+                            res.subcategories.forEach(function(s) {
+                                $subSelect.append(`<option value="${s.id}">${s.name}</option>`);
+                            });
+                        }
+                    }
+                });
+            });
+        });
     </script>
 
 </body>

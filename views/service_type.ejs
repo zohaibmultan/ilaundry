@@ -123,13 +123,7 @@
                                         id="servicetype_name_update" placeholder="Enter Service Type Name" required>
                                 </div>
 
-                                <div class="form-group mb-2">
-                                    <label><strong>
-                                            <%= language.Sequence_No || 'Sequence No' %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" name="sequence_no"
-                                        id="servicetype_sequence_update" placeholder="Enter Sequence Number" min="1" step="1" required>
-                                </div>
+                                <input type="hidden" name="sequence_no" id="servicetype_sequence_update" value="0">
 
                                 <div class="form-group">
                                     <div class="form-check form-switch">
@@ -187,15 +181,7 @@
                                         placeholder="Enter Service Type Name" required>
                                 </div>
 
-                                <!-- Sequence Number -->
-                                <div class="form-group mb-2">
-                                    <label><strong>
-                                            <%= language.Sequence_No || 'Sequence No' %>
-                                        </strong><span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" name="sequence_no" id="service_sequence_no"
-                                        value="<%= (typeof nextSequence !== 'undefined') ? nextSequence : 1 %>"
-                                        placeholder="Enter Sequence Number" min="1" step="1" required>
-                                </div>
+                                <input type="hidden" name="sequence_no" id="service_sequence_no" value="0">
 
                                 <!-- Store List (only if ismulty is true) -->
                                 <div class="col-md-12 mb-1 <%= ismulty ? '' : 'd-none' %>">
@@ -311,8 +297,19 @@
                             },
                             {
                                 data: 'sequence_no',
-                                render: function(data) {
-                                    return `<span class="badge bg-light text-dark px-2 py-1 fw-bold fs-7">${escapeHtml(data !== undefined && data !== null ? data : 0)}</span>`;
+                                className: 'text-center',
+                                render: function(data, type, row) {
+                                    const seq = data !== undefined && data !== null ? data : 0;
+                                    return `
+                                        <div class="d-inline-flex align-items-center justify-content-center gap-1 reorder-cell">
+                                            <i class="fas fa-grip-vertical reorder-drag-handle text-muted me-1" title="Drag to reorder" style="cursor: grab;"></i>
+                                            <button type="button" class="btn btn-xs btn-light border fw-bold px-2 py-0 btn-move-sequence"
+                                                data-id="${row.id}" data-name="${escapeHtml(row.services_type)}" data-seq="${seq}" data-entity="service_type"
+                                                title="Click to move across pages / change position">
+                                                ${seq}
+                                            </button>
+                                        </div>
+                                    `;
                                 }
                             },
                             {
@@ -388,6 +385,10 @@
                             order: [[1, 'asc']],
                             searchInput: '#dtServiceTypeSearch',
                             pageLengthSelect: '#dtServiceTypePageLength',
+                            rowReorder: {
+                                entity: 'service_type',
+                                selector: '.reorder-drag-handle'
+                            },
                             filterElements: {
                                 status_filter: '#dtServiceTypeStatus',
                                 store_filter: '#dtServiceTypeStore'

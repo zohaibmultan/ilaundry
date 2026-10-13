@@ -45,10 +45,15 @@
       const timer = setTimeout(() => controller.abort(), this.timeout);
 
       try {
+        const headers = { Accept: "application/json", ...(options.headers || {}) };
+        if (options.body && !headers["Content-Type"]) {
+          headers["Content-Type"] = "application/json";
+        }
+
         const res = await fetch(this.baseUrl + path, {
           ...options,
           signal: controller.signal,
-          headers: { "Content-Type": "application/json", ...(options.headers || {}) }
+          headers
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);

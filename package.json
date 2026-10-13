@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "nodemon app.js",
+    "dev": "nodemon app.js",
     "debug": "node --inspect app.js",
     "debug:nodemon": "nodemon --inspect=9229 app.js",
     "debug:brk": "node --inspect-brk app.js",
@@ -17,6 +18,7 @@
     "@types/set-tz": "^0.2.0",
     "bcrypt": "^6.0.0",
     "body-parser": "^1.20.1",
+    "compression": "^1.8.2",
     "connect-flash": "^0.1.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -27,6 +29,7 @@
     "ejs": "^3.1.8",
     "exceljs": "^4.3.0",
     "express": "^4.18.2",
+    "express-mysql-session": "^3.0.3",
     "express-session": "^1.17.3",
     "fast-csv": "^4.3.6",
     "jsonwebtoken": "^9.0.0",

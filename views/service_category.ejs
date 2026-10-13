@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <!-- meta and links start -->
+    <%- include('templet/meta')-%>
+</head>
+
+<body>
+
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+    <!--********** Content body start **********-->
+
+    <div class="content-body">
+        <div class="container-fluid" style="min-height: 100vh;">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div>
+                                <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
+                                    <i class="fa fa-folder-open text-primary me-2"></i><%= language.Categories || 'Categories' %>
+                                </h3>
+                                <small class="text-muted"><%= language.Configure_categories || 'Organize and group laundry services by primary categories' %></small>
+                            </div>
+                            <div>
+                                <button
+                                    class="btn btn-sm btn-primary <%= accessdata.roll.service.includes('write') ? '' : 'd-none' %>"
+                                    data-bs-toggle="modal" data-bs-target="#add_category_modal">
+                                    <i class="fa fa-plus me-2"></i>
+                                    <%= language.Add_Category || 'Add Category' %>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <!-- Server-side DataTable Toolbar -->
+                            <div class="row g-2 mb-3">
+                                <div class="<%= ismulty ? 'col-12 col-md-4 col-lg-4' : 'col-12 col-md-6 col-lg-6' %>">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
+                                        <input class="form-control" type="search" id="dtCategorySearch" placeholder="<%= language.Search || 'Search categories...' %>">
+                                    </div>
+                                </div>
+                                <div class="<%= ismulty ? 'col-6 col-sm-4 col-md-3 col-lg-3' : 'col-6 col-sm-6 col-md-3 col-lg-3' %>">
+                                    <select class="form-select" id="dtCategoryStatus">
+                                        <option value="all"><%= language.All_Status || 'All Status' %></option>
+                                        <option value="0"><%= language.Active || 'Active' %></option>
+                                        <option value="1"><%= language.Deactive || 'Deactive' %></option>
+                                    </select>
+                                </div>
+
+                                <% if (ismulty) { %>
+                                    <div class="col-6 col-sm-4 col-md-3 col-lg-3">
+                                        <select class="form-select" id="dtCategoryStore">
+                                            <option value="all"><%= language.All_Store || 'All Stores' %></option>
+                                            <% (storeList || []).forEach(function(st) { %>
+                                                <option value="<%= st.id %>"><%= st.name %></option>
+                                            <% }) %>
+                                        </select>
+                                    </div>
+                                <% } %>
+
+                                <div class="<%= ismulty ? 'col-12 col-sm-4 col-md-2 col-lg-2' : 'col-12 col-sm-6 col-md-3 col-lg-3' %>">
+                                    <select class="form-select" id="dtCategoryPageLength">
+                                        <option value="10">10 <%= language.Entries || 'entries' %></option>
+                                        <option value="25">25 <%= language.Entries || 'entries' %></option>
+                                        <option value="50">50 <%= language.Entries || 'entries' %></option>
+                                        <option value="100">100 <%= language.Entries || 'entries' %></option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table id="server_service_category_table" class="table display server-side-dt" style="width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 50px;">#</th>
+                                            <th style="width: 110px;"><%= language.Sequence_No || 'Sequence No' %></th>
+                                            <th><%= language.Category_Name || 'Category Name' %></th>
+                                            <th class="<%= ismulty ? '' : 'd-none' %>"><%= language.Store_Name || 'Store Name' %></th>
+                                            <th style="width: 110px;"><%= language.Status || 'Status' %></th>
+                                            <th class="text-center" style="width: 110px;"><%= language.Action || 'Action' %></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--********** Content body end **********-->
+
+    <!-- Modal Add Category -->
+    <div class="modal fade" id="add_category_modal">
+        <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <%= language.Add_Category || 'Add Category' %>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="/services/addcategory" method="post" class="need-validation" id="add_category_form">
+                        <div class="row g-2 align-items-center">
+                            <% if (ismulty) { %>
+                                <div class="col-12 mb-2">
+                                    <label class="form-label fw-bold">
+                                        <%= language.Store_List || 'Store' %> <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-control form-select" name="storeid" id="category_storelist" required>
+                                        <option value="" disabled selected>Select Store *</option>
+                                        <% (storeList || []).forEach(function(x){ %>
+                                            <option value="<%= x.id %>"><%= x.name %></option>
+                                        <% }) %>
+                                    </select>
+                                </div>
+                            <% } else { %>
+                                <input type="hidden" name="storeid" value="<%= (typeof assigned_store_id !== 'undefined' && assigned_store_id) ? assigned_store_id : '' %>">
+                            <% } %>
+
+                            <div class="col-12 mb-2">
+                                <label class="form-label fw-bold">
+                                    <%= language.Category_Name || 'Category Name' %> <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" name="name" placeholder="Enter Category Name (e.g. Men's Wear, Bedding)" required>
+                            </div>
+
+                            <input type="hidden" name="sequence_no" id="category_sequence_no" value="0">
+
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="category_active" name="active" value="0" checked>
+                                    <label class="form-check-label fw-bold" for="category_active">
+                                        <%= language.Is_Active || 'Is Active' %> ?
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer px-0 pb-0 mt-3 border-top pt-3">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-2"></i><%= language.Save || 'Save' %>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Update Category -->
+    <div class="modal fade" id="update_category_modal">
+        <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <%= language.Edit_Category || 'Edit Category' %>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="" id="update_category_form" method="post" class="need-validation">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-12 mb-2">
+                                <label class="form-label fw-bold">
+                                    <%= language.Category_Name || 'Category Name' %> <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" name="name" id="update_category_name" placeholder="Enter Category Name" required>
+                            </div>
+
+                            <input type="hidden" name="sequence_no" id="update_category_sequence" value="0">
+
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="update_category_active" name="active" value="0">
+                                    <label class="form-check-label fw-bold" for="update_category_active">
+                                        <%= language.Is_Active || 'Is Active' %> ?
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer px-0 pb-0 mt-3 border-top pt-3">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-2"></i><%= language.Save || 'Save' %>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Delete Confirmation -->
+    <div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger"><i class="fa fa-exclamation-triangle me-2"></i><%= language.Confirm_Delete || 'Confirm Delete' %></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0"><%= language.Delete_Category_Msg || 'Are you sure you want to delete category' %>: <strong id="deleteCategoryModalTitle"></strong>?</p>
+                    <small class="text-muted d-block mt-1">Services attached to this category should be reassigned.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><%= language.Cancel || 'Cancel' %></button>
+                    <a href="#" id="deleteCategoryConfirmBtn" class="btn btn-danger"><i class="fa fa-trash me-2"></i><%= language.Delete || 'Delete' %></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('templet/script')-%>
+    <script>
+        const ismulty = <%= Boolean(ismulty) %>;
+        const nextSeqMap = <%- JSON.stringify(typeof nextSeqMap !== 'undefined' ? nextSeqMap : {}) %>;
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        $(document).ready(function() {
+            const columns = [
+                {
+                    data: 'id',
+                    orderable: false,
+                    searchable: false,
+                    render: function(data, type, row, meta) {
+                        return meta.row + meta.settings._iDisplayStart + 1;
+                    }
+                },
+                {
+                    data: 'sequence_no',
+                    orderable: true,
+                    className: 'text-center',
+                    render: function(data, type, row) {
+                        const seq = data !== undefined ? data : 0;
+                        return `
+                            <div class="d-inline-flex align-items-center justify-content-center gap-1 reorder-cell">
+                                <i class="fas fa-grip-vertical reorder-drag-handle text-muted me-1" title="Drag to reorder" style="cursor: grab;"></i>
+                                <button type="button" class="btn btn-xs btn-light border fw-bold px-2 py-0 btn-move-sequence"
+                                    data-id="${row.id}" data-name="${escapeHtml(row.name)}" data-seq="${seq}" data-entity="category"
+                                    title="Click to move across pages / change position">
+                                    ${seq}
+                                </button>
+                            </div>
+                        `;
+                    }
+                },
+                {
+                    data: 'name',
+                    orderable: true,
+                    render: function(data) {
+                        return `<span class="fw-bold text-dark">${escapeHtml(data)}</span>`;
+                    }
+                }
+            ];
+
+            if (ismulty) {
+                columns.push({
+                    data: 'store_name',
+                    orderable: true,
+                    render: function(data) {
+                        return `<span class="badge bg-light text-primary border">${escapeHtml(data || 'All Stores')}</span>`;
+                    }
+                });
+            }
+
+            columns.push({
+                data: 'status',
+                orderable: true,
+                render: function(data) {
+                    const isActive = String(data) === '0';
+                    return `<span class="badge-status-pill ${isActive ? 'status-completed' : 'status-canceled'}">${isActive ? '<%= language.Active || "Active" %>' : '<%= language.Deactive || "Deactive" %>'}</span>`;
+                }
+            });
+
+            columns.push({
+                data: null,
+                orderable: false,
+                searchable: false,
+                className: 'text-center',
+                render: function(data, type, row) {
+                    let html = '<div class="tbl-action-group justify-content-center">';
+                    if (row.canEdit) {
+                        html += `
+                            <a href="#" class="btn-dt-action btn-edit btn-edit-category" data-bs-toggle="modal"
+                               data-bs-target="#update_category_modal" data-id="${row.id}"
+                               data-name="${escapeHtml(row.name)}" data-sequence="${row.sequence_no !== undefined ? row.sequence_no : 0}" data-status="${row.status}"
+                               title="<%= language.Edit || 'Edit' %>">
+                                <i class="fas fa-pencil-alt"></i>
+                            </a>
+                        `;
+                    }
+                    if (row.canDelete) {
+                        html += `
+                            <button type="button" class="btn-dt-action btn-delete btn-delete-category" 
+                               data-bs-toggle="modal"
+                               data-bs-target="#deleteCategoryModal"
+                               data-id="${row.id}"
+                               data-name="${escapeHtml(row.name || '')}"
+                               title="<%= language.Delete || 'Delete' %>">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        `;
+                    }
+                    html += '</div>';
+                    return html;
+                }
+            });
+
+            window.categoryTable = window.initServerDataTable('#server_service_category_table', {
+                ajaxUrl: '/services/category/data',
+                columns: columns,
+                order: [[1, 'asc']],
+                searchInput: '#dtCategorySearch',
+                pageLengthSelect: '#dtCategoryPageLength',
+                rowReorder: {
+                    entity: 'category',
+                    selector: '.reorder-drag-handle'
+                },
+                filterElements: {
+                    status_filter: '#dtCategoryStatus',
+                    store_filter: '#dtCategoryStore'
+                }
+            });
+
+            // Populate Edit Modal
+            $(document).on('click', '.btn-edit-category', function () {
+                const id = $(this).attr('data-id');
+                const name = $(this).attr('data-name') || '';
+                const sequenceNo = $(this).attr('data-sequence') || '0';
+                const status = $(this).attr('data-status');
+
+                $('#update_category_form').attr('action', '/services/updatecategory/' + id);
+                $('#update_category_name').val(name);
+                $('#update_category_sequence').val(sequenceNo);
+                $('#update_category_active').prop('checked', String(status) === '0');
+            });
+
+            // Form submission guard for dynamic action
+            $('#update_category_form').on('submit', function(e) {
+                const action = $(this).attr('action');
+                if (!action || action === '' || action.includes('undefined')) {
+                    e.preventDefault();
+                    alert('Invalid destination: please re-open the dialog and try again.');
+                    return false;
+                }
+            });
+
+            // Populate Delete Modal
+            $(document).on('click', '.btn-delete-category', function () {
+                const id = $(this).attr('data-id');
+                const cleanId = String(id).replace(/['"]/g, '').trim();
+                const name = $(this).attr('data-name') || '';
+
+                $('#deleteCategoryModalTitle').text(name || ('#' + cleanId));
+                $('#deleteCategoryConfirmBtn').attr('href', '/services/deletecategory/' + cleanId);
+            });
+
+            // Auto update sequence number when store dropdown changes in Add modal
+            $('#category_storelist').on('change', function () {
+                const selectedStoreId = $(this).val();
+                if (selectedStoreId && nextSeqMap[selectedStoreId] !== undefined) {
+                    $('#category_sequence_no').val(nextSeqMap[selectedStoreId]);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

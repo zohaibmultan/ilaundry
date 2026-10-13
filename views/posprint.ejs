@@ -315,7 +315,6 @@
       gap: 8px;
       color: #b91c1c;
       font-size: 10px;
-      font-weight: 600;
     }
 
     .preview-tag-cut-guide::before,
@@ -349,8 +348,8 @@
     }
 
     .cloth-tag .tag-store-name {
-      font-size: 11px;
-      font-weight: 800;
+      font-size: 14px;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       line-height: 1.2;
@@ -360,12 +359,8 @@
     .cloth-tag .tag-order-row {
       display: flex;
       justify-content: space-between;
-      font-size: 10px;
-      font-weight: 700;
-      border-top: 1px solid #000;
-      border-bottom: 1px solid #000;
-      padding: 2px 0;
-      margin-bottom: 3px;
+      font-size: 14px;
+      font-weight: 600;
     }
 
     .cloth-tag .tag-item-name {
@@ -574,8 +569,8 @@
     }
 
     .store-name {
-      font-size: 13px;
-      font-weight: 800;
+      font-size: 18px;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.3px;
       line-height: 1.15;
@@ -583,8 +578,8 @@
     }
 
     .store-info {
-      font-size: 10px;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 600;
       line-height: 1.25;
       color: #222;
       margin-top: 2px;
@@ -623,19 +618,19 @@
     .items-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 10.5px;
+      font-size: 12px;
       font-weight: 500;
-      margin-top: 2px;
       table-layout: fixed;
+      margin-top: 5px;
     }
 
     .items-table th {
-      font-size: 10px;
-      font-weight: 700;
+      font-size: 12px;
+      font-weight: 600;
       text-transform: uppercase;
       padding: 2px 1px;
       border-bottom: 1px dashed #000;
-      letter-spacing: 0.2px;
+      border-top: 1px dashed #000;
     }
 
     .items-table td {
@@ -645,8 +640,8 @@
     }
 
     .item-name {
-      font-weight: 700;
-      font-size: 10.5px;
+      font-weight: 600;
+      font-size: 12px;
       line-height: 1.15;
       word-break: break-word;
     }
@@ -661,7 +656,7 @@
     /* Financial Summary */
     .summary-table {
       width: 100%;
-      font-size: 10.5px;
+      font-size: 12px;
       font-weight: 600;
       margin-top: 2px;
       table-layout: fixed;
@@ -674,15 +669,15 @@
 
     .grand-total-row td {
       font-size: 12px;
-      font-weight: 800;
+      font-weight: 600;
       padding: 2px 0;
     }
 
     /* Footer */
     .receipt-footer {
       text-align: center;
-      font-size: 10px;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 600;
       margin-top: 4px;
       line-height: 1.2;
       word-wrap: break-word;
@@ -786,98 +781,68 @@
   <div id="printNotification" class="print-alert-banner no-print"></div>
 
   <div class="receipt-container">
+
+      <!-- <pre>
+    <%= JSON.stringify(shope,null,2) %>
+  </pre>
+      <pre>
+    <%= JSON.stringify(cartservice,null,2) %>
+  </pre> -->
+
     <!-- Store Header -->
     <div class="store-header">
-      <% 
-        let displayLogo = (typeof invoice_logo_base64 !== 'undefined' && invoice_logo_base64) ? invoice_logo_base64 : '';
-        if (!displayLogo) {
-          let invoiceLogo = '';
-          if (shope && shope.logo && shope.logo.trim() !== '') {
-            invoiceLogo = shope.logo.trim();
-          } else if (accessdata && accessdata.masterstore && accessdata.masterstore.app_logo) {
-            invoiceLogo = accessdata.masterstore.app_logo;
-          } else if (accessdata && accessdata.masterstore && accessdata.masterstore.app_favicon) {
-            invoiceLogo = accessdata.masterstore.app_favicon;
-          }
-          if (invoiceLogo) {
-            displayLogo = '/uploads/' + invoiceLogo;
-          }
-        }
-      %>
-      <% if (displayLogo) { %>
-        <img src="<%= displayLogo %>" class="store-logo" alt="Store Logo" />
-      <% } %>
           <div class="store-name">
             <%= (shope && shope.name) ? shope.name : (accessdata && accessdata.masterstore ?
               accessdata.masterstore.app_name : '' ) %>
           </div>
           <div class="store-info">
-            <% if (shope && shope.address) { %>
-              <%= shope.address %>
-                <% if (shope.city) { %>, <%= shope.city %>
-                    <% } %><br />
-                      <% } %>
-                        <% if (shope && shope.mobile_number) { %>
-                          Tel: <%= shope.mobile_number %>
-                            <% if (shope.store_email) { %> <br />Email: <%= shope.store_email %>
-                                <% } %>
-                                  <% } %>
+            <%= shope.address.trim() %>, <%= shope.city.trim() %>
+          </div>
+          <hr class="border-dashed" />
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;" >
+            <div><%= oate %></div>
+            <div><%= shope.mobile_number %></div>
+            <div><%= oate2 %></div>
           </div>
     </div>
 
-    <!-- Invoice Banner (Crisp outline, saves 100% black ink) -->
-    <div class="invoice-badge">POS Order Receipt</div>
+      <% 
+      const isInvoiceBarcodeActive = (shope && shope.invoice_barcode_enabled !== undefined && shope.invoice_barcode_enabled !== null) 
+        ? (shope.invoice_barcode_enabled != 0) 
+        : ((master && master.invoice_barcode_enabled !== undefined && master.invoice_barcode_enabled !== null) ? (master.invoice_barcode_enabled != 0) : true);
+    %>
 
-    <!-- Order & Customer Meta (Tight 2-column key-value) -->
-    <table class="meta-table">
-      <tr>
-        <td class="text-start"><b>Order #:</b>
-          <%= order.order_id %>
-        </td>
-        <td class="text-end"><b>Status:</b>
-          <%= (order.order_status_name || 'Confirmed' ) %>
-        </td>
-      </tr>
-      <tr>
-        <td class="text-start"><b>Date:</b>
-          <%= oate %>
-        </td>
-        <td class="text-end"><b>Ready:</b>
-          <%= ddate %>
-        </td>
-      </tr>
-      <% let custObj=(Array.isArray(customer) && customer.length> 0) ? customer[0] : (customer || {});
-        let custName = custObj.name || '';
-        let custNumber = custObj.number || '';
-        %>
-        <% if (custName) { %>
-          <tr>
-            <td class="text-start" colspan="2">
-              <b>Customer:</b>
-              <%= custName %>
-                <% if (custNumber) { %> &bull; <%= custNumber %>
-                    <% } %>
-            </td>
-          </tr>
-          <% } %>
-    </table>
+    <% if (isInvoiceBarcodeActive) { %>
+      <hr class="border-dashed" />
+      <div class="receipt-barcode-wrap" id="invoiceBarcodeWrap">
+        <svg id="invoice_barcode_svg" class="receipt-barcode-svg"></svg>
+      </div>
+    <% } %>
 
     <hr class="border-dashed" />
+    <div style="font-size: 16px; font-weight: 600; text-align: center;">
+      <%= shope.contact_last_name %>, <%= shope.contact_first_name %>
+      <br/>
+      <%= shope.contact_phone %> %>
+    </div>
 
     <!-- Items Table -->
     <table class="items-table">
       <thead>
         <tr>
-          <th class="text-start" style="width: 45%;">Item</th>
-          <th class="text-end" style="width: 20%;">Rate</th>
-          <th class="text-end" style="width: 15%;">Qty</th>
-          <th class="text-end" style="width: 20%;">Total</th>
+          <th class="text-start" style="width: 10%;">Qty</th>
+          <th class="text-start" style="width: 50%;">Item Name</th>
+          <th class="text-center" style="width: 15%;">Items</th>
+          <th class="text-end" style="width: 25%;">Total</th>
         </tr>
       </thead>
       <tbody>
         <% if (cartservice && cartservice.length> 0) { %>
           <% cartservice.forEach(function(item) { %>
             <tr>
+              <td class="text-start">
+                <%= item.service_quntity %>
+              </td>
               <td class="text-start">
                 <span class="item-name">
                   <%= item.service_name %><% if (item.no_of_items && parseInt(item.no_of_items) > 1) { %> (<%= item.no_of_items %> Pcs)<% } %>
@@ -886,19 +851,11 @@
                   <span class="item-subtext">[<%= item.service_type_name %>]</span>
                   <% } %>
               </td>
-              <td class="text-end">
-                <% if (accessdata.plac=="1" ) { %>
-                  <%= parseFloat(item.service_type_price).toFixed(2) %>
-                    <%= accessdata.symbol %>
-                      <% } else { %>
-                        
-                          <%= parseFloat(item.service_type_price).toFixed(2) %>
-                            <% } %>
+              <td class="text-center">
+                <%= item.no_of_items %>
               </td>
+
               <td class="text-end">
-                <%= item.service_quntity %>
-              </td>
-              <td class="text-end fw-bold">
                 <% let lineTotal=(parseFloat(item.service_type_price) * parseFloat(item.service_quntity)).toFixed(2); %>
                   <% if (accessdata.plac=="1" ) { %>
                     <%= lineTotal %>
@@ -909,23 +866,24 @@
                               <% } %>
               </td>
             </tr>
-            <% }) %>
-              <% } %>
+          <% }) %>
+        <% } %>
 
                 <% if (addonslist && addonslist.length> 0) { %>
+                  <tr>
+                    <th colspan="4">Addons</td>
+                  </tr>
                   <% addonslist.forEach(function(addon) { %>
                     <tr>
+                      <td class="text-start">1</td>
                       <td class="text-start" colspan="2">
-                        <span class="item-name">+ <%= addon.name %></span>
-                        <span class="item-subtext">[Addon]</span>
+                        <span class="item-name"><%= addon.name %></span>
                       </td>
-                      <td class="text-center">1</td>
-                      <td class="text-end fw-bold">
+                      <td class="text-end">
                         <% if (accessdata.plac=="1" ) { %>
                           <%= parseFloat(addon.price).toFixed(2) %>
                             <%= accessdata.symbol %>
                               <% } else { %>
-                                <%= accessdata.symbol %>
                                   <%= parseFloat(addon.price).toFixed(2) %>
                                     <% } %>
                       </td>
@@ -953,15 +911,15 @@
     <table class="summary-table">
       <% if (totalOrderQty > 0) { %>
       <tr>
-        <td class="text-start">Total Qty:</td>
-        <td class="text-end fw-bold">
-          Items: <%= totalOrderQty %><% if (totalGarmentPcs > totalOrderQty) { %> , Pieces: <%= totalGarmentPcs %>  <% } %>
+        <td class="text-start" style="width: 30%;">Total Qty:</td>
+        <td class="text-end">
+          Services: <%= totalOrderQty %><% if (totalGarmentPcs > totalOrderQty) { %> , Items: <%= totalGarmentPcs %>  <% } %>
         </td>
       </tr>
       <% } %>
       <tr>
         <td class="text-start">Sub Total:</td>
-        <td class="text-end fw-bold">
+        <td class="text-end">
           <% if (accessdata.plac=="1" ) { %>
             <%= parseFloat(order.sub_total).toFixed(2) %>
               <%= accessdata.symbol %>
@@ -1033,8 +991,8 @@
                     <% } %>
 
                       <tr class="grand-total-row">
-                        <td class="text-start" style="border-top: 1px solid #000; padding-top: 2px;">Gross Total:</td>
-                        <td class="text-end" style="border-top: 1px solid #000; padding-top: 2px;">
+                        <td class="text-start" style="border-top: 1px dashed #000; padding-top: 2px;">Gross Total:</td>
+                        <td class="text-end" style="border-top: 1px dashed #000; padding-top: 2px;">
                           <% if (accessdata.plac=="1" ) { %>
                             <%= parseFloat(order.gross_total).toFixed(2) %>
                               <%= accessdata.symbol %>
@@ -1047,7 +1005,7 @@
 
                       <tr>
                         <td class="text-start">Paid Amount:</td>
-                        <td class="text-end fw-bold">
+                        <td class="text-end">
                           <% if (accessdata.plac=="1" ) { %>
                             <%= parseFloat(order.paid_amount).toFixed(2) %>
                               <%= accessdata.symbol %>
@@ -1060,8 +1018,8 @@
 
                       <% if (Number(order.balance_amount) !=0) { %>
                         <tr>
-                          <td class="text-start"><b>Due / Balance:</b></td>
-                          <td class="text-end fw-bold">
+                          <td class="text-start" style="font-size: 14px;">Balance:</td>
+                          <td class="text-end" style="font-size: 14px;">
                             <% if (accessdata.plac=="1" ) { %>
                               <%= parseFloat(order.balance_amount).toFixed(2) %>
                                 <%= accessdata.symbol %>
@@ -1073,10 +1031,17 @@
                         </tr>
                         <% } %>
 
+                        <tr>
+                          <td class="text-start" style="font-size: 12px;">Ready:</td>
+                          <td class="text-end" style="font-size: 12px;">
+                            <%= ddate %>
+                          </td>
+                        </tr>
+
                           <% if (order.reference_number && order.reference_number.trim()) { %>
                             <tr>
-                              <td class="text-start">Ref / Txn No:</td>
-                              <td class="text-end fw-bold">
+                              <td class="text-start">Ref No:</td>
+                              <td class="text-end">
                                 <%= order.reference_number %>
                               </td>
                             </tr>
@@ -1087,22 +1052,13 @@
 
     <!-- Notes & Footer -->
     <% if (order.note && order.note.trim()) { %>
-      <div style="font-size: 10px; font-style: italic; margin: 2px 0;">
+      <div style="font-size: 12px; font-style: italic; margin: 2px;">
         <b>Note:</b>
         <%= order.note %>
       </div>
+      <hr class="border-dashed" />
       <% } %>
 
-    <% 
-      const isInvoiceBarcodeActive = (shope && shope.invoice_barcode_enabled !== undefined && shope.invoice_barcode_enabled !== null) 
-        ? (shope.invoice_barcode_enabled != 0) 
-        : ((master && master.invoice_barcode_enabled !== undefined && master.invoice_barcode_enabled !== null) ? (master.invoice_barcode_enabled != 0) : true);
-    %>
-    <% if (isInvoiceBarcodeActive) { %>
-      <div class="receipt-barcode-wrap" id="invoiceBarcodeWrap">
-        <svg id="invoice_barcode_svg" class="receipt-barcode-svg"></svg>
-      </div>
-    <% } %>
 
     <div class="receipt-footer">
       <div>*** Thank You For Your Business! ***</div>
@@ -1286,15 +1242,12 @@
 
             html += `
               <div class="cloth-tag" id="cloth_tag_${pieceIndex}" data-tag-index="${pieceIndex}">
-                <div class="tag-store-name">${storeName}</div>
                 <div class="tag-order-row">
-                  <span>ORD: <b>${orderData.order_id || ''}</b></span>
-                  <span>Piece <b>${pieceIndex}/${totalPieces}</b></span>
+                  <span><b>${orderData.order_id || ''}</b></span>
+                  <span><b>${pieceIndex}/${totalPieces}</b></span>
                 </div>
-                <div class="tag-item-name">${itemTitle}</div>
-                <div class="tag-cust-row">${custName}${custPhone}</div>
-                <div class="tag-date-row">Delivery: <b>${deliveryDate}</b></div>
-                ${barcodeSvgMarkup}
+                <div class="tag-order-row">${custName}</div>
+                <div class="tag-order-row"><b>${deliveryDate}</b></div>
               </div>
             `;
 
@@ -1340,10 +1293,10 @@
         try {
           JsBarcode("#invoice_barcode_svg", String(orderData.order_id || "0000"), {
             format: "CODE128",
-            width: 1.5,
-            height: 36,
+            height: 100,
+            width: 6,
             displayValue: true,
-            fontSize: 11,
+            fontSize: 80,
             text: String(orderData.order_id || ""),
             margin: 2
           });
@@ -1649,6 +1602,7 @@
       setInterval(() => updateServerStatus(true), 25000);
     };
   </script>
+  <%- include('templet/dev_reload') %>
 </body>
 
 </html>

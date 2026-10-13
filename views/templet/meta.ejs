@@ -105,6 +105,7 @@
 <link rel="icon" type="image/png" sizes="16x16" href="/uploads/<%= accessdata?.masterstore?.app_favicon %>">
 <!-- Datatable -->
 <link href="/vendor/datatables/css/jquery.dataTables.min.css" rel="stylesheet">
+<link href="/vendor/datatables/css/rowReorder.dataTables.min.css" rel="stylesheet">
 <!-- global style sheet for topbar and sidebar -->
 
 <!-- Google Fonts (Inter) -->
@@ -176,56 +177,4 @@
 </script>
 <% } %>
 
-<%# Live Reload for Local Development (CSS hot reload & EJS auto refresh) %>
-<script>
-  (function () {
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      var isReconnecting = false;
-      function startLiveReload() {
-        if (!window.EventSource) return;
-        var es = new EventSource('/dev-reload-stream');
-        
-        es.onmessage = function (e) {
-          if (e.data === 'reload-css') {
-            console.log('⚡ [LiveReload] CSS updated, reloading stylesheets in-place...');
-            var links = document.querySelectorAll('link[rel="stylesheet"]');
-            links.forEach(function (link) {
-              var href = link.getAttribute('href');
-              if (href && !href.startsWith('http://') && !href.startsWith('https://')) {
-                var cleanHref = href.split('?')[0];
-                link.setAttribute('href', cleanHref + '?v=' + Date.now());
-              }
-            });
-          } else if (e.data === 'reload-page') {
-            console.log('⚡ [LiveReload] Template updated, refreshing page...');
-            window.location.reload();
-          }
-        };
-
-        es.onerror = function () {
-          es.close();
-          if (!isReconnecting) {
-            isReconnecting = true;
-            console.log('⚡ [LiveReload] Server rebooting, waiting to reconnect...');
-            var poll = setInterval(function () {
-              fetch('/dev-reload-stream', { method: 'HEAD', cache: 'no-store' })
-                .then(function (res) {
-                  if (res.ok) {
-                    clearInterval(poll);
-                    console.log('⚡ [LiveReload] Server reconnected, refreshing...');
-                    window.location.reload();
-                  }
-                })
-                .catch(function () {});
-            }, 700);
-          }
-        };
-      }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', startLiveReload);
-      } else {
-        startLiveReload();
-      }
-    }
-  })();
-</script>
+<%- include('dev_reload') %>

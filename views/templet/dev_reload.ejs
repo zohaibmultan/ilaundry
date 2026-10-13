@@ -1,0 +1,63 @@
+<% if (typeof devReload !== 'undefined' && devReload) { %>
+<%# Live Reload for Local Development (CSS hot reload & EJS auto refresh) %>
+<script>
+  (function () {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      var isReconnecting = false;
+      var retries = 0;
+      function startLiveReload() {
+        if (!window.EventSource) return;
+        var es = new EventSource('/dev-reload-stream');
+        
+        es.onopen = function () {
+          retries = 0;
+          isReconnecting = false;
+        };
+
+        es.onmessage = function (e) {
+          if (e.data === 'reload-css') {
+            console.log('⚡ [LiveReload] CSS updated, reloading stylesheets in-place...');
+            var links = document.querySelectorAll('link[rel="stylesheet"]');
+            links.forEach(function (link) {
+              var href = link.getAttribute('href');
+              if (href && !href.startsWith('http://') && !href.startsWith('https://')) {
+                var cleanHref = href.split('?')[0];
+                link.setAttribute('href', cleanHref + '?v=' + Date.now());
+              }
+            });
+          } else if (e.data === 'reload-page') {
+            console.log('⚡ [LiveReload] Template updated, refreshing page...');
+            window.location.reload();
+          }
+        };
+
+        es.onerror = function () {
+          es.close();
+          if (!isReconnecting && retries < 25) {
+            isReconnecting = true;
+            retries++;
+            var poll = setInterval(function () {
+              fetch('/dev-reload-stream', { method: 'HEAD', cache: 'no-store' })
+                .then(function (res) {
+                  if (res.ok) {
+                    clearInterval(poll);
+                    console.log('⚡ [LiveReload] Server reconnected, refreshing...');
+                    window.location.reload();
+                  } else if (res.status === 404) {
+                    clearInterval(poll);
+                  }
+                })
+                .catch(function () {});
+            }, 800);
+          }
+        };
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startLiveReload);
+      } else {
+        startLiveReload();
+      }
+    }
+  })();
+</script>
+<% } %>
