@@ -88,6 +88,18 @@
                                         </div>
                                     </div>
 
+                                    <!-- Order Prefix -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Order_Prefix || 'Order Number Prefix' %> <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-barcode"></i></span>
+                                            <input type="text" class="form-control text-uppercase" name="order_prefix" value="<%= data.order_prefix || 'A' %>" placeholder="e.g. A, B, NYC" maxlength="4" style="text-transform: uppercase;" <%= update ? 'required' : 'readonly' %>>
+                                        </div>
+                                        <small class="text-muted fs-12">Prefix for invoices (e.g. 'A' produces A100001, A100002).</small>
+                                    </div>
+
                                     <!-- Username -->
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">

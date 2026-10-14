@@ -51,25 +51,10 @@ function formatMySQLDateTime(d, fallbackTime = "16:00:00") {
   return String(d);
 }
 
-async function idfororder() {
-  const orderiddata = await DataFind(
-    `SELECT id FROM tbl_order ORDER BY ID DESC LIMIT 1`,
-  );
-  if (orderiddata.length > 0) {
-    var n = ++orderiddata[0].id;
-  } else {
-    var n = 1;
-  }
+const { generateOrderId } = require("../middelwer/orderIdHelper");
 
-  if (n < 10) {
-    return "#ORD000" + n.toString();
-  } else if (n < 100) {
-    return "#ORD00" + n.toString();
-  } else if (n < 1000) {
-    return "#ORD0" + n.toString();
-  } else {
-    return "#ORD" + n;
-  }
+async function idfororder(storeId) {
+  return await generateOrderId(storeId);
 }
 
 async function getStaffScope(userId, loginas) {
@@ -242,6 +227,12 @@ router.get("/pos", auth, async (req, res) => {
         "SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
       );
 
+      if (cartdata.length > 0 && cartdata[0].order_id && String(cartdata[0].store_id) === String(targetStoreId)) {
+        orderid = cartdata[0].order_id;
+      } else {
+        orderid = await idfororder(targetStoreId);
+      }
+
       if (cartdata.length > 0) {
         const currentCartStore = String(cartdata[0].store_id || "0");
         if (currentCartStore !== String(targetStoreId)) {
@@ -412,6 +403,11 @@ router.get("/pos", auth, async (req, res) => {
       const cartdata = await DataFind(
         "SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
       );
+      if (cartdata.length > 0 && cartdata[0].order_id && String(cartdata[0].store_id) === String(targetStoreId)) {
+        orderid = cartdata[0].order_id;
+      } else if (targetStoreId && targetStoreId != 0) {
+        orderid = await idfororder(targetStoreId);
+      }
       if (cartdata.length > 0) {
         await DataUpdate(
           `tbl_cart`,
@@ -1388,22 +1384,11 @@ router.get("/getservicetype/:id", auth, async (req, res) => {
   }
 });
 
-// customer change save in cart
+// customer change save in cart & return customer intelligence stats
 router.get("/newcustomerid/:id", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
     var customerid = req.params.id;
-    // console.log("customerid",customerid);
-
-    // var cart = await DataFind(
-    //   "UPDATE tbl_cart SET customer_id=" +
-    //     customerid +
-    //     " WHERE created_by='" +
-    //     loginas +
-    //     "," +
-    //     id +
-    //     "'"
-    // );
 
     let cart = await DataUpdate(
       `tbl_cart`,
@@ -1418,9 +1403,81 @@ router.get("/newcustomerid/:id", auth, async (req, res) => {
       return res.redirect("/valid_license");
     }
 
-    res.status(200).json({ status: 200 });
+    const cleanCustomerId = String(customerid).trim().replace(/'/g, "\\'");
+    let stats = {
+      total_orders: 0,
+      unpaid_orders: 0,
+      unpaid_amount: 0,
+      memo: ""
+    };
+
+    if (cleanCustomerId && cleanCustomerId !== "0" && cleanCustomerId !== "null" && cleanCustomerId !== "undefined") {
+      const custData = await DataFind(`SELECT id, name, memo FROM tbl_customer WHERE id='${cleanCustomerId}' LIMIT 1`);
+      if (custData && custData.length > 0) {
+        stats.memo = custData[0].memo || "";
+      }
+
+      const orderStats = await DataFind(`
+        SELECT 
+          COUNT(id) as total_orders, 
+          COALESCE(SUM(CASE WHEN balance_amount > 0 THEN 1 ELSE 0 END), 0) as unpaid_orders, 
+          COALESCE(SUM(CASE WHEN balance_amount > 0 THEN balance_amount ELSE 0 END), 0) as unpaid_amount 
+        FROM tbl_order 
+        WHERE customer_id = '${cleanCustomerId}'
+      `);
+
+      if (orderStats && orderStats.length > 0) {
+        stats.total_orders = parseInt(orderStats[0].total_orders) || 0;
+        stats.unpaid_orders = parseInt(orderStats[0].unpaid_orders) || 0;
+        stats.unpaid_amount = parseFloat(orderStats[0].unpaid_amount) || 0;
+      }
+    }
+
+    return res.status(200).json({ status: 200, success: true, stats });
   } catch (error) {
-    console.log(error);
+    console.error("Error in /newcustomerid:", error);
+    return res.status(500).json({ status: 500, success: false, message: error.message });
+  }
+});
+
+// Standalone Customer Stats & Memo lookup for POS
+router.get("/customer-stats/:id", auth, async (req, res) => {
+  try {
+    const customerid = req.params.id;
+    const cleanCustomerId = String(customerid).trim().replace(/'/g, "\\'");
+    let stats = {
+      total_orders: 0,
+      unpaid_orders: 0,
+      unpaid_amount: 0,
+      memo: ""
+    };
+
+    if (cleanCustomerId && cleanCustomerId !== "0" && cleanCustomerId !== "null" && cleanCustomerId !== "undefined") {
+      const custData = await DataFind(`SELECT id, name, memo FROM tbl_customer WHERE id='${cleanCustomerId}' LIMIT 1`);
+      if (custData && custData.length > 0) {
+        stats.memo = custData[0].memo || "";
+      }
+
+      const orderStats = await DataFind(`
+        SELECT 
+          COUNT(id) as total_orders, 
+          COALESCE(SUM(CASE WHEN balance_amount > 0 THEN 1 ELSE 0 END), 0) as unpaid_orders, 
+          COALESCE(SUM(CASE WHEN balance_amount > 0 THEN balance_amount ELSE 0 END), 0) as unpaid_amount 
+        FROM tbl_order 
+        WHERE customer_id = '${cleanCustomerId}'
+      `);
+
+      if (orderStats && orderStats.length > 0) {
+        stats.total_orders = parseInt(orderStats[0].total_orders) || 0;
+        stats.unpaid_orders = parseInt(orderStats[0].unpaid_orders) || 0;
+        stats.unpaid_amount = parseFloat(orderStats[0].unpaid_amount) || 0;
+      }
+    }
+
+    return res.status(200).json({ success: true, stats });
+  } catch (error) {
+    console.error("Error fetching customer stats:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -1619,11 +1676,11 @@ router.get("/clearcart", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
 
-    var orderid = await idfororder();
-
     const cart = await DataFind(
       " SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
     );
+    const storeId = (cart && cart.length > 0) ? cart[0].store_id : store;
+    var orderid = await idfororder(storeId);
     console.log(cart);
 
     var tax = await DataFind(
@@ -3252,7 +3309,6 @@ router.post("/order", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
-    var orderid = await idfororder();
 
     var {
       deliverydate,
@@ -3270,6 +3326,13 @@ router.post("/order", auth, async (req, res) => {
     const cart = await DataFind(
       " SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
     );
+
+    const storeId = (cart && cart.length > 0) ? cart[0].store_id : store;
+    let orderid = (cart && cart.length > 0 && cart[0].order_id && cart[0].order_id.trim()) ? cart[0].order_id.trim() : null;
+    const existingOrder = orderid ? await DataFind(`SELECT id FROM tbl_order WHERE order_id = '${orderid}' LIMIT 1`) : [];
+    if (!orderid || existingOrder.length > 0) {
+      orderid = await idfororder(storeId);
+    }
 
     const gross = parseFloat(cart[0].gross_total) - parseFloat(extradiscount);
     const balance =
@@ -3443,8 +3506,7 @@ router.post("/order", auth, async (req, res) => {
     }
 
     // clear cart
-
-    var orderid = await idfororder();
+    orderid = await idfororder(cart[0].store_id);
     var tax = await DataFind(
       "SELECT tax_percent FROM tbl_store WHERE id=" + cart[0].store_id + "",
     );
@@ -3710,7 +3772,6 @@ router.post("/save_order", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
-    var orderid = await idfororder();
 
     var {
       deliverydate,
@@ -3738,6 +3799,13 @@ router.post("/save_order", auth, async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "Cart is empty or not found." });
+    }
+
+    const storeId = cart[0].store_id || store;
+    let orderid = (cart[0].order_id && cart[0].order_id.trim()) ? cart[0].order_id.trim() : null;
+    const existingOrder = orderid ? await DataFind(`SELECT id FROM tbl_order WHERE order_id = '${orderid}' LIMIT 1`) : [];
+    if (!orderid || existingOrder.length > 0) {
+      orderid = await idfororder(storeId);
     }
 
     const gross = parseFloat(cart[0].gross_total) - parseFloat(extradiscount);
@@ -3868,7 +3936,7 @@ router.post("/save_order", auth, async (req, res) => {
     }
 
     // clear cart
-    var neworderid = await idfororder();
+    var neworderid = await idfororder(cart[0].store_id);
     var tax = await DataFind(
       "SELECT tax_percent FROM tbl_store WHERE id=" + cart[0].store_id + "",
     );

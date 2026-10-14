@@ -804,10 +804,11 @@ router.post(
         const safeContactPhone = (contact_phone || "").trim().replace(/'/g, "\\'");
         const safeContactEmail = (contact_email || "").trim().replace(/'/g, "\\'");
         const safeDistrict = (district || "").trim().replace(/'/g, "\\'");
+        const safeOrderPrefix = (req.body.order_prefix || "A").trim().toUpperCase().slice(0, 4).replace(/'/g, "\\'") || "A";
 
         const storeUpdate = await DataUpdate(
           "tbl_store",
-          `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${safeDistrict}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}, onesignal_app_id='${onesignalAppId}', onesignal_api_key='${onesignalApiKey}', twilio_sid='${twilioSid}', twilio_auth_token='${twilioAuthToken}', twilio_phone_no='${twilioPhoneNo}', default_customer_enabled=${defaultCustomerEnabled}, contact_first_name='${safeContactFName}', contact_last_name='${safeContactLName}', contact_phone='${safeContactPhone}', contact_email='${safeContactEmail}'`,
+          `name='${name}', order_prefix='${safeOrderPrefix}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${safeDistrict}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}, onesignal_app_id='${onesignalAppId}', onesignal_api_key='${onesignalApiKey}', twilio_sid='${twilioSid}', twilio_auth_token='${twilioAuthToken}', twilio_phone_no='${twilioPhoneNo}', default_customer_enabled=${defaultCustomerEnabled}, contact_first_name='${safeContactFName}', contact_last_name='${safeContactLName}', contact_phone='${safeContactPhone}', contact_email='${safeContactEmail}'`,
           `id=${dataid}`,
           req.hostname,
           req.protocol,
@@ -1369,10 +1370,11 @@ router.post(
         const safeContactPhone = (contact_phone || "").trim().replace(/'/g, "\\'");
         const safeContactEmail = (contact_email || "").trim().replace(/'/g, "\\'");
         const safeDistrict = (district || "").trim().replace(/'/g, "\\'");
+        const safeOrderPrefix = (req.body.order_prefix || "A").trim().toUpperCase().slice(0, 4).replace(/'/g, "\\'") || "A";
 
         const storeUpdate = await DataUpdate(
           "tbl_store",
-          `name='${name}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${safeDistrict}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', status=${status}, roll_ID=${roll}, logo='${imgFiled}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}, onesignal_app_id='${onesignalAppId}', onesignal_api_key='${onesignalApiKey}', twilio_sid='${twilioSid}', twilio_auth_token='${twilioAuthToken}', twilio_phone_no='${twilioPhoneNo}', default_customer_enabled=${defaultCustomerEnabled}, contact_first_name='${safeContactFName}', contact_last_name='${safeContactLName}', contact_phone='${safeContactPhone}', contact_email='${safeContactEmail}'`,
+          `name='${name}', order_prefix='${safeOrderPrefix}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, country='${country}', state='${state}', city='${city}', district='${safeDistrict}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', status=${status}, roll_ID=${roll}, logo='${imgFiled}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}, onesignal_app_id='${onesignalAppId}', onesignal_api_key='${onesignalApiKey}', twilio_sid='${twilioSid}', twilio_auth_token='${twilioAuthToken}', twilio_phone_no='${twilioPhoneNo}', default_customer_enabled=${defaultCustomerEnabled}, contact_first_name='${safeContactFName}', contact_last_name='${safeContactLName}', contact_phone='${safeContactPhone}', contact_email='${safeContactEmail}'`,
           `id=${dataid}`,
           req.hostname,
           req.protocol,
@@ -1676,10 +1678,24 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
       const safeContactEmail = (contact_email || "").trim().replace(/'/g, "\\'");
       const safeDistrict = (district || "").trim().replace(/'/g, "\\'");
 
+      let safeOrderPrefix = (req.body.order_prefix || "").trim().toUpperCase().slice(0, 4).replace(/'/g, "\\'");
+      if (!safeOrderPrefix) {
+        const storePrefixes = await DataFind("SELECT order_prefix FROM tbl_store WHERE order_prefix IS NOT NULL AND order_prefix != ''");
+        const used = new Set(storePrefixes.map(p => p.order_prefix.toUpperCase()));
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        for (let ch of letters) {
+          if (!used.has(ch)) {
+            safeOrderPrefix = ch;
+            break;
+          }
+        }
+        if (!safeOrderPrefix) safeOrderPrefix = (name && name.charAt(0).toUpperCase()) || "A";
+      }
+
       const newstore = await DataInsert(
         `tbl_store`,
-        `name,logo,mobile_number,username,password,shop_commission,tax_percent,country,state,city,district,zipcode,store_email,store_tax_number,address,admin_id,status,roll_ID,contact_first_name,contact_last_name,contact_phone,contact_email`,
-        `'${name}','${logo}','${number}','${username}','${hashpass}',${commission},${taxpercent},'${country} ','${state}','${city}','${safeDistrict}','${zip_code}','${store_email}',
+        `name,order_prefix,logo,mobile_number,username,password,shop_commission,tax_percent,country,state,city,district,zipcode,store_email,store_tax_number,address,admin_id,status,roll_ID,contact_first_name,contact_last_name,contact_phone,contact_email`,
+        `'${name}','${safeOrderPrefix}','${logo}','${number}','${username}','${hashpass}',${commission},${taxpercent},'${country} ','${state}','${city}','${safeDistrict}','${zip_code}','${store_email}',
         '${tax_number}','${address} ',${newid},${status},${rollid},'${safeContactFName}','${safeContactLName}','${safeContactPhone}','${safeContactEmail}'`,
         req.hostname,
         req.protocol,

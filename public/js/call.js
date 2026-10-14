@@ -1104,19 +1104,25 @@
    })
 
    $('body').on("change", "#single-select", async function () {
-      // await clearcart();
-
-      var id = this.value
+      var id = this.value;
+      if (!id || id === '0') {
+         if (typeof window.updatePosCustomerIntelligence === 'function') {
+            window.updatePosCustomerIntelligence({ total_orders: 0, unpaid_orders: 0, unpaid_amount: 0, memo: '' });
+         }
+         return;
+      }
       var baseUrl = window.location.origin;
       $.ajax({
          type: 'get',
          url: baseUrl + "/admin/newcustomerid/" + id,
          dataType: 'json',
          success: function (res) {
-
+            if (res && res.stats && typeof window.updatePosCustomerIntelligence === 'function') {
+               window.updatePosCustomerIntelligence(res.stats);
+            }
          }
-      })
-   })
+      });
+   });
 
    $(document).on("click", ".pos-service-item, .services, #POS_service, [data-bs-target='#service_type_model']", function (e) {
       let $item = $(this).closest('.pos-service-item, .services, [data-id]');

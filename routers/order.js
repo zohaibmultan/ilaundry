@@ -13,26 +13,10 @@ var {
 } = require("../middelwer/databaseQurey");
 const { paginateDataTable } = require("../middelwer/dataTableHelper");
 
-async function idfororder() {
-  const orderiddata = await DataFind(
-    `SELECT id FROM tbl_order ORDER BY ID DESC LIMIT 1`,
-  );
+const { generateOrderId } = require("../middelwer/orderIdHelper");
 
-  if (orderiddata.length > 0) {
-    var n = ++orderiddata[0].id;
-  } else {
-    var n = 1;
-  }
-
-  if (n < 10) {
-    return "#ORD000" + n.toString();
-  } else if (n < 100) {
-    return "#ORD00" + n.toString();
-  } else if (n < 1000) {
-    return "#ORD0" + n.toString();
-  } else {
-    return "#ORD" + n;
-  }
+async function idfororder(storeId) {
+  return await generateOrderId(storeId);
 }
 
 async function getStaffScope(userId, loginas) {

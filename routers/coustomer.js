@@ -226,7 +226,7 @@ router.post("/update/:id", async (req, res) => {
   try {
     const id = req.params.id;
 
-    const { first_name, last_name, name, number, email, tax, address } = req.body;
+    const { first_name, last_name, name, number, email, tax, address, memo } = req.body;
 
     var approved;
     req.body.approved == 1 ? (approved = 1) : (approved = 0);
@@ -255,6 +255,7 @@ router.post("/update/:id", async (req, res) => {
     const safeEmail = (email || '').trim().replace(/'/g, "\\'");
     const safeAddress = (address || '').trim().replace(/'/g, "\\'");
     const safeTax = (tax || '').trim().replace(/'/g, "\\'");
+    const safeMemo = (memo || '').trim().replace(/'/g, "\\'");
 
     const data = await DataUpdate(
       `tbl_customer`,
@@ -264,6 +265,7 @@ router.post("/update/:id", async (req, res) => {
        number='${safeNumber}',
        email='${safeEmail}',
        address='${safeAddress}',
+       memo='${safeMemo}',
        taxnumber='${safeTax}',
        approved='${approved}'`,
       `id=${id}`,
@@ -285,6 +287,31 @@ router.post("/update/:id", async (req, res) => {
   }
 });
 
+// Quick update customer memo (AJAX from POS / modal)
+router.post("/update-memo", auth, async (req, res) => {
+  try {
+    const { customer_id, memo } = req.body;
+    if (!customer_id || customer_id === '0' || customer_id === 'null') {
+      return res.status(400).json({ success: false, message: "Valid Customer ID is required" });
+    }
+    const cleanId = String(customer_id).trim().replace(/'/g, "\\'");
+    const safeMemo = (memo || '').trim().replace(/'/g, "\\'");
+
+    await DataUpdate(
+      `tbl_customer`,
+      `memo='${safeMemo}'`,
+      `id='${cleanId}'`,
+      req.hostname,
+      req.protocol
+    );
+
+    return res.status(200).json({ success: true, message: "Customer memo updated", memo: (memo || '').trim() });
+  } catch (error) {
+    console.error("Error updating customer memo:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 router.post("/register", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
@@ -292,7 +319,7 @@ router.post("/register", auth, async (req, res) => {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     } else {
-      const { first_name, last_name, name, number, email, taxnumber, address, username, password } =
+      const { first_name, last_name, name, number, email, taxnumber, address, memo, username, password } =
         req.body;
       const verfiyStore = await DataFind(`SELECT * FROM tbl_admin WHERE id=${id}`);
       const isStaff = verfiyStore.length > 0 && verfiyStore[0].is_staff != 0;
@@ -405,12 +432,13 @@ router.post("/register", auth, async (req, res) => {
       const safeEmail = (email || '').trim().replace(/'/g, "\\'");
       const safeAddress = (address || '').trim().replace(/'/g, "\\'");
       const safeTaxNumber = (taxnumber || '').trim().replace(/'/g, "\\'");
+      const safeMemo = (memo || '').trim().replace(/'/g, "\\'");
       const safeUsername = cleanUsername.replace(/'/g, "\\'");
 
       const data = await DataInsert(
         `tbl_customer`,
-        `name,first_name,last_name,number,email,address,taxnumber,username,password,store_ID,reffstore,main_roll_id,approved`,
-        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeTaxNumber}','${safeUsername}','${hashpass}','${storeid}','${storeid}',${main_roll[0].id},1`,
+        `name,first_name,last_name,number,email,address,memo,taxnumber,username,password,store_ID,reffstore,main_roll_id,approved`,
+        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeMemo}','${safeTaxNumber}','${safeUsername}','${hashpass}','${storeid}','${storeid}',${main_roll[0].id},1`,
         req.hostname,
         req.protocol
       );

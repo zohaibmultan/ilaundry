@@ -359,8 +359,8 @@
     .cloth-tag .tag-order-row {
       display: flex;
       justify-content: space-between;
-      font-size: 14px;
-      font-weight: 600;
+      font-size: 18px;
+      font-weight: 400;
     }
 
     .cloth-tag .tag-item-name {
@@ -796,7 +796,7 @@
               accessdata.masterstore.app_name : '' ) %>
           </div>
           <div class="store-info">
-            <%= shope.address.trim() %>, <%= shope.city.trim() %>
+            <%= shope.address.trim() %> <%= shope.city.trim() %>
           </div>
           <hr class="border-dashed" />
           <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;" >
@@ -820,10 +820,8 @@
     <% } %>
 
     <hr class="border-dashed" />
-    <div style="font-size: 16px; font-weight: 600; text-align: center;">
+    <div style="font-size: 20px; font-weight: 600; text-align: center;">
       <%= shope.contact_last_name %>, <%= shope.contact_first_name %>
-      <br/>
-      <%= shope.contact_phone %> %>
     </div>
 
     <!-- Items Table -->
@@ -1222,7 +1220,7 @@
             const svgId = `tag_barcode_svg_${pieceIndex}`;
             const piecePart = pieces > 1 ? ` (Part ${p}/${pieces})` : "";
             const itemTitle = item.service_name + (item.service_type_name ? ` [${item.service_type_name}]` : "") + piecePart;
-            const custName = customerData.name || "Customer";
+            const custName = customerData.last_name || "Customer";
             const custPhone = customerData.number ? ` &bull; ${customerData.number}` : "";
 
             // Visual cut divider between cloth tags in screen preview

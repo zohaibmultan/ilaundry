@@ -163,6 +163,13 @@
                     <input type="text" class="form-control" name="address" id="address" placeholder="Enter address">
                   </div>
 
+                  <div class="col-12">
+                    <label class="form-label fw-bold">
+                      <%= language.Customer_Memo || 'Customer Memo / Note' %>
+                    </label>
+                    <textarea class="form-control" name="memo" id="memo" rows="2" placeholder="Special instructions, preferences, laundry notes..."></textarea>
+                  </div>
+
                   <div class="col-12 <%= login == 'customer' ? 'd-none' : '' %>">
                     <div class="form-check form-switch pt-1">
                       <input class="form-check-input" type="checkbox" id="Approved" name="approved" value="1">
@@ -255,6 +262,13 @@
                       <%= language.Address %>
                     </label>
                     <input type="text" class="form-control" name="address" placeholder="Enter address">
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label fw-bold">
+                      <%= language.Customer_Memo || 'Customer Memo / Note' %>
+                    </label>
+                    <textarea class="form-control" name="memo" rows="2" placeholder="Special instructions, preferences, laundry notes..."></textarea>
                   </div>
                 </div>
               </div>
@@ -398,6 +412,7 @@
         data-number="${escapeHtml(row.number)}" 
         data-email="${escapeHtml(row.email)}" 
         data-addresh="${escapeHtml(row.address)}"
+        data-memo="${escapeHtml(row.memo || '')}"
         data-tax="${escapeHtml(row.taxnumber)}" 
         data-approved="${row.approved}" 
         data-active="${row.delet_flage}" 
@@ -511,6 +526,7 @@
     $('#number').val($(this).attr('data-number'));
     $('#email').val($(this).attr('data-email'));
     $('#address').val($(this).attr('data-addresh'));
+    $('#memo').val($(this).attr('data-memo') || '');
     $('#tax').val($(this).attr('data-tax'));
     $("#coustomer_form").attr('action', act);
     if (approved == 1) {

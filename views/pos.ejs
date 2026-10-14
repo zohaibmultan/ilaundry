@@ -5,10 +5,9 @@
     <!-- meta and links start -->
     <%- include('templet/meta')-%>
         <link rel="stylesheet" href="/css/pos-compact.css?v=5">
-
 </head>
 
-<body>
+<body class="pos-screen-layout">
     <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
         <!--********** Content body start **********-->
 
@@ -29,6 +28,7 @@
                 </div>
 
                 <div class="row pos-main-row">
+
                     <!-- left side service list part -->
                     <div class="d-none">
                         <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
@@ -37,86 +37,249 @@
                     </div>
 
                     <div class="col-xl-7 col-lg-6 pos-tab-panel-catalog" id="posCatalogColumn">
-                        <div class="pos-card">
-                            <div class="pos-card-body">
-                                <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-                                    <div class="pos-search-box flex-grow-1 mb-0">
-                                        <i class="fa fa-search pos-search-icon"></i>
-                                        <input type="text" class="form-control pos-search-input" id="service_pos_search"
-                                            placeholder="Search services..." autocomplete="off">
-                                        <span class="pos-search-clear" id="pos_search_clear" style="display:none;"
-                                            title="Clear search">
-                                            <i class="fa fa-times"></i>
-                                        </span>
-                                    </div>
+                        <!-- POS Top Compact Menu Bar -->
+                        <div class="card pos-menu-bar border-0 shadow-sm rounded-3 mb-2">
+                            <div class="card-body p-1.5 px-2 d-flex align-items-center justify-content-between">
+                                <!-- Left Section: Sidebar Toggle & Dashboard Navigation -->
+                                <div class="d-flex align-items-center gap-2">
+                                    <!-- Sidebar Expand/Collapse Toggle Button -->
+                                    <button type="button" class="btn btn-sm pos-menu-btn d-flex align-items-center justify-content-center" id="pos_sidebar_toggle" title="Toggle Sidebar">
+                                        <i class="fa fa-bars fs-14"></i>
+                                    </button>
 
-                                    <!-- Printing Server Live Status Badge -->
+                                    <!-- Back to Dashboard Button -->
+                                    <a href="/index" class="btn btn-sm pos-menu-btn d-flex align-items-center gap-1.5 fw-semibold text-nowrap" title="<%= language.Back_to_Dashboard || 'Back to Dashboard' %>">
+                                        <i class="fa fa-arrow-left fs-12 me-2"></i>
+                                        <span class="d-none d-sm-inline fs-12"><%= language.Dashboard || 'Dashboard' %></span>
+                                    </a>
+                                </div>
+
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                        <i class="fa fa-store"></i>
+                                    </div>
+                                    <div>
+                                        <strong class="text-dark fs-14"><%= assignedStoreName || 'Main Store' %></strong>
+                                    </div>
+                                </div>
+
+                                <!-- Right Section: Printer Status, Theme, Notifications & Profile -->
+                                <div class="d-flex align-items-center gap-2">
+                                    <!-- Printing Server Live Status Badge Dropdown -->
                                     <div class="dropdown pos-printer-dropdown">
                                         <button
                                             class="btn btn-sm pos-printer-badge-btn dropdown-toggle d-flex align-items-center gap-1"
                                             type="button" id="posPrinterStatusBtn" data-bs-toggle="dropdown"
                                             aria-expanded="false" title="Printing Server Status">
                                             <span class="pos-printer-dot dot-checking" id="posPrinterStatusDot"></span>
-                                            <span class="pos-printer-label" id="posPrinterStatusText">Checking
-                                                Printer...</span>
-                                            <i class="fas fa-chevron-down ms-1"
-                                                style="font-size: 9px; opacity: 0.7;"></i>
+                                            <span class="pos-printer-label d-none d-md-inline" id="posPrinterStatusText">Checking Printer...</span>
+                                            <i class="fas fa-chevron-down ms-1" style="font-size: 8px; opacity: 0.7;"></i>
                                         </button>
                                         <div class="dropdown-menu dropdown-menu-end pos-printer-popover p-3 shadow-lg"
                                             aria-labelledby="posPrinterStatusBtn"
                                             style="min-width: 290px; border-radius: 12px; z-index: 1060;">
-                                            <div
-                                                class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
-                                                <strong style="font-size: 13px;"><i
-                                                        class="fas fa-print me-1 text-primary"></i> Silent Printing
-                                                    Service</strong>
+                                            <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
+                                                <strong style="font-size: 13px;"><i class="fas fa-print me-1 text-primary"></i> Silent Printing Service</strong>
                                                 <span class="badge" id="posPopoverStatusBadge">Checking</span>
                                             </div>
                                             <div class="small mb-2">
                                                 <div class="d-flex justify-content-between text-muted mb-1">
                                                     <span>Server URL:</span>
                                                     <span class="fw-semibold text-dark" id="posPopoverServerUrl">
-                                                        <%= accessdata?.masterstore?.printing_server_url
-                                                            || 'http://127.0.0.1:4321' %>
+                                                        <%= accessdata?.masterstore?.printing_server_url || 'http://127.0.0.1:4321' %>
                                                     </span>
                                                 </div>
                                                 <div class="d-flex justify-content-between text-muted mb-1">
                                                     <span>Active Printer:</span>
-                                                    <span class="fw-semibold text-dark text-truncate"
-                                                        style="max-width: 150px;" id="posPopoverPrinterName">
-                                                        <%= accessdata?.masterstore?.invoice_printer_name
-                                                            || 'System Default' %>
+                                                    <span class="fw-semibold text-dark text-truncate" style="max-width: 150px;" id="posPopoverPrinterName">
+                                                        <%= accessdata?.masterstore?.invoice_printer_name || 'System Default' %>
                                                     </span>
                                                 </div>
                                                 <div class="d-flex justify-content-between text-muted mb-1">
                                                     <span>Format:</span>
                                                     <span class="fw-semibold text-dark">
-                                                        <%= accessdata?.masterstore?.invoice_printer_format==2
+                                                        <%= accessdata?.masterstore?.invoice_printer_format == 2
                                                             ? '58mm Roll' :
-                                                            (accessdata?.masterstore?.invoice_printer_format==0
+                                                            (accessdata?.masterstore?.invoice_printer_format == 0
                                                             ? 'A4 Sheet' : '80mm Thermal' ) %>
                                                     </span>
                                                 </div>
                                                 <div class="d-flex justify-content-between text-muted">
                                                     <span>Mode:</span>
-                                                    <span class="fw-semibold"
-                                                        id="posPopoverModeText">Auto-detecting...</span>
+                                                    <span class="fw-semibold" id="posPopoverModeText">Auto-detecting...</span>
                                                 </div>
                                             </div>
                                             <div class="d-grid gap-2 pt-2 border-top">
-                                                <button type="button" class="btn btn-outline-primary btn-xs w-100"
-                                                    onclick="pingPosPrintingServer(true)">
+                                                <button type="button" class="btn btn-outline-primary btn-xs w-100" onclick="pingPosPrintingServer(true)">
                                                     <i class="fas fa-sync-alt me-1"></i> Check Connection Now
                                                 </button>
-                                                <% if (login==='master' ) { %>
-                                                    <a href="/tool/setting"
-                                                        class="btn btn-light btn-xs text-center text-muted w-100">
+                                                <% if (login === 'master') { %>
+                                                    <a href="/tool/setting" class="btn btn-light btn-xs text-center text-muted w-100">
                                                         <i class="fas fa-cog me-1"></i> Hardware Settings
                                                     </a>
-                                                    <% } %>
+                                                <% } %>
                                             </div>
                                         </div>
                                     </div>
+
+                                    <!-- Light/Dark Theme Switcher Button -->
+                                    <button type="button" class="btn btn-sm pos-header-icon-btn pos-theme-toggle" id="pos_theme_toggle" onclick="window.toggleAppTheme(event)" title="Toggle Dark/Light Mode">
+                                        <div class="mode" data-id="dark">
+                                            <svg class="lighticon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                                <path fill-rule="evenodd" clip-rule="evenodd"
+                                                    d="M18.1377 13.7902C19.2217 14.8742 16.3477 21.0542 10.6517 21.0542C6.39771 21.0542 2.94971 17.6062 2.94971 13.3532C2.94971 8.05317 8.17871 4.66317 9.67771 6.16217C10.5407 7.02517 9.56871 11.0862 11.1167 12.6352C12.6647 14.1842 17.0537 12.7062 18.1377 13.7902Z"
+                                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                                            </svg>
+                                            <svg class="darkicon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.5"></circle>
+                                                <path d="M12 2V4M12 20V22M4 12H2M22 12H20M19.07 4.93L17.66 6.34M6.34 17.66L4.93 19.07M19.07 19.07L17.66 17.66M6.34 6.34L4.93 4.93"
+                                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+                                            </svg>
+                                        </div>
+                                    </button>
+
+                                    <!-- Notifications Dropdown -->
+                                    <div class="dropdown pos-notification-dropdown">
+                                        <button class="btn btn-sm pos-header-icon-btn position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="<%= language.Notifications || 'Notifications' %>">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                            </svg>
+                                            <% if(accessdata?.notification_data?.length > 0){ %>
+                                                <span class="header-badge-dot"></span>
+                                            <% } %>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-end notification-glass-menu shadow-lg">
+                                            <div class="notif-header">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <h6 class="mb-0 fw-bold"><%= language.Notifications || 'Notifications' %></h6>
+                                                    <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1 fs-11">
+                                                        <%= accessdata?.notification_data ? accessdata.notification_data.length : 0 %>
+                                                    </span>
+                                                </div>
+                                                <a href="/admin/notification" class="fs-12 text-primary text-decoration-none fw-medium"><%= language.View_All || 'View All' %></a>
+                                            </div>
+                                            <div class="widget-media dz-scroll" style="max-height: 320px; overflow-y: auto; overflow-x: hidden;">
+                                                <% if(accessdata?.notification_data?.length > 0){ %>
+                                                    <% accessdata.notification_data.forEach((data) => { %>
+                                                        <a href="/admin/notification" class="notif-item">
+                                                            <div class="bg-primary-subtle text-primary rounded-circle notif-item-icon">
+                                                                <i class="fa fa-bell fs-12"></i>
+                                                            </div>
+                                                            <div class="notif-item-body">
+                                                                <div class="notif-item-text"><%= data.notification %></div>
+                                                                <div class="notif-item-time">
+                                                                    <i class="fa fa-clock fs-10"></i>
+                                                                    <span><%= data.date %></span>
+                                                                </div>
+                                                            </div>
+                                                        </a>
+                                                    <% }) %>
+                                                <% } else { %>
+                                                    <div class="text-center py-4 text-muted">
+                                                        <i class="fa fa-bell-slash fs-2 mb-2 d-block text-secondary opacity-50"></i>
+                                                        <span class="fs-12"><%= language.No_Notifications_Found || 'No notifications found' %></span>
+                                                    </div>
+                                                <% } %>
+                                            </div>
+                                            <div class="notif-footer">
+                                                <a href="/admin/notification" class="d-flex align-items-center justify-content-center gap-1">
+                                                    <span><%= language.Check_All_Notification || 'Check All Notifications' %></span>
+                                                    <i class="fas fa-chevron-right fs-10"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- User Profile Dropdown -->
+                                    <% 
+                                        let userDisplayName = accessdata?.topbardata?.name || 'Administrator';
+                                        let userRoleName = accessdata?.roll?.roll || '';
+                                        let defaultAvatar = accessdata?.logas === 'custmor' ? '/images/profile-default.png' : '/images/default.png';
+                                        let userAvatarImg = (accessdata?.topbardata?.img && accessdata.topbardata.img.trim() !== '' && accessdata.topbardata.img !== 'default.png')
+                                            ? ('/uploads/' + accessdata.topbardata.img)
+                                            : defaultAvatar;
+
+                                        if (accessdata?.logas === 'custmor') {
+                                            userRoleName = userRoleName || 'Customer';
+                                        } else if (accessdata?.topbardata?.is_staff != 0) {
+                                            userRoleName = userRoleName || 'Staff';
+                                        } else if (accessdata?.isstore === true || accessdata?.logas === 'store') {
+                                            userRoleName = userRoleName || 'Store Manager';
+                                        } else {
+                                            userRoleName = userRoleName || 'Master Admin';
+                                        }
+                                    %>
+                                    <div class="dropdown header-profile pos-profile-dropdown">
+                                        <a class="nav-link p-0 d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="<%= userDisplayName %>">
+                                            <img class="img-fluid rounded-circle" style="width: 32px; height: 32px; object-fit: cover; border: 2px solid rgba(0, 129, 238, 0.35);" src="<%= userAvatarImg %>"
+                                                onerror="this.onerror=null;this.src='<%= defaultAvatar %>';" alt="avatar">
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-end profile-glass-menu shadow-lg">
+                                            <div class="profile-card-header">
+                                                <div class="profile-header-avatar">
+                                                    <img src="<%= userAvatarImg %>" onerror="this.onerror=null;this.src='<%= defaultAvatar %>';" alt="avatar">
+                                                </div>
+                                                <div class="profile-header-meta">
+                                                    <h6 class="profile-user-name mb-0"><%= userDisplayName %></h6>
+                                                    <span class="profile-role-badge"><%= userRoleName %></span>
+                                                </div>
+                                            </div>
+                                            <div class="profile-menu-divider"></div>
+                                            <div class="profile-menu-items">
+                                                <a href="/profile" class="profile-menu-link">
+                                                    <div class="profile-menu-icon profile-icon-primary">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                                            <circle cx="12" cy="7" r="4"></circle>
+                                                        </svg>
+                                                    </div>
+                                                    <span class="profile-menu-text"><%= language.Profile || 'My Profile' %></span>
+                                                    <i class="fas fa-chevron-right profile-chevron"></i>
+                                                </a>
+                                                <% if (login === 'master') { %>
+                                                <a href="/tool/master_setting" class="profile-menu-link">
+                                                    <div class="profile-menu-icon profile-icon-info">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <circle cx="12" cy="12" r="3"></circle>
+                                                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <span class="profile-menu-text"><%= language.Master_Settings || 'Master Settings' %></span>
+                                                    <i class="fas fa-chevron-right profile-chevron"></i>
+                                                </a>
+                                                <% } %>
+                                                <a href="/logout" class="profile-menu-link profile-menu-logout">
+                                                    <div class="profile-menu-icon profile-icon-danger">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                                            <polyline points="16 17 21 12 16 7"></polyline>
+                                                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                                                        </svg>
+                                                    </div>
+                                                    <span class="profile-menu-text"><%= language.Logout || 'Logout' %></span>
+                                                    <i class="fas fa-sign-out-alt profile-chevron"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pos-card">
+                            <div class="pos-card-body">
+                                <div class="pos-search-box w-100 mb-2">
+                                    <i class="fa fa-search pos-search-icon"></i>
+                                    <input type="text" class="form-control pos-search-input" id="service_pos_search"
+                                        placeholder="Search services..." autocomplete="off">
+                                    <span class="pos-search-clear" id="pos_search_clear" style="display:none;"
+                                        title="Clear search">
+                                        <i class="fa fa-times"></i>
+                                    </span>
                                 </div>
 
                                 <!-- Category & Subcategory Filter Tabs -->
@@ -206,94 +369,61 @@
                     <div class="col-xl-5 col-lg-6 pos-tab-panel-cart pos-panel-hidden" id="posCartColumn">
                         <div class="pos-card pos-cart-card">
                             <div class="pos-card-body">
-                                <div class="row g-2 mb-3">
-                                    <% if (login === 'customer') { %>
-                                        <div class="col-12">
-                                            <div class="d-flex align-items-center justify-content-between p-2 rounded border">
+                                <div class="row g-2 mb-2 pos-cart-header-row">
+                                    <!-- Column 1: Order & Customer Intake (col-12 col-md-6) -->
+                                    <div class="col-12 col-md-6">
+                                        <!-- Customer Selector -->
+                                        <% if (login === 'customer') { %>
+                                            <div class="d-flex align-items-center justify-content-between p-2 rounded border mb-1.5 bg-light">
                                                 <div class="d-flex align-items-center gap-2">
-                                                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                                                        <i class="fa fa-store"></i>
+                                                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
+                                                        <i class="fa fa-user fs-12"></i>
                                                     </div>
                                                     <div>
-                                                        <span class="fs-11 text-muted text-uppercase fw-semibold d-block">Ordering from Branch</span>
-                                                        <strong class="text-dark fs-14"><%= assignedStoreName || 'Main Store' %></strong>
+                                                        <span class="fs-11 text-muted text-uppercase fw-semibold d-block">Customer</span>
+                                                        <strong class="text-dark fs-13"><%= (customerList && customerList[0] && customerList[0].name) ? customerList[0].name : 'Customer' %></strong>
                                                     </div>
-                                                </div>
-                                                <div class="d-flex align-items-center gap-1">
-                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 fs-12">
-                                                        <i class="fa fa-user me-1"></i><%= (customerList && customerList[0] && customerList[0].name) ? customerList[0].name : 'Customer' %>
-                                                    </span>
                                                 </div>
                                             </div>
                                             <input type="hidden" name="store" id="pos_store_id" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
                                             <input type="hidden" id="pos_staff_store_id" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
                                             <input type="hidden" id="single-select" name="customer" value="<%= (customerList && customerList[0]) ? customerList[0].id : (cart.customer_id || 0) %>">
-                                        </div>
-                                    <% } else { %>
-                                        <% if (typeof showStoreSelect !== 'undefined' && showStoreSelect) { %>
-                                            <div class="col-12 col-md-6">
-                                                <div class="pos-date-group">
-                                                    <label class="pos-field-label"><%= language.Select_Store || 'Select Store' %> <span
-                                                            class="text-danger">*</span></label>
-                                                    <select class="default-select wide w-100" name="store"
-                                                        id="pos_store_id" data-live-search="true" required>
-                                                        <option value="0" <%=(!cart.store_id || cart.store_id==0)
-                                                            ? 'selected' : '' %> disabled><%= language.Select_Store || 'Select Store' %> *</option>
+                                        <% } else { %>
+                                            <% if (typeof showStoreSelect !== 'undefined' && showStoreSelect) { %>
+                                                <div class="pos-date-group mb-1.5">
+                                                    <label class="pos-field-label mb-0"><%= language.Select_Store || 'Select Store' %> <span class="text-danger">*</span></label>
+                                                    <select class="default-select wide w-100" name="store" id="pos_store_id" data-live-search="true" required>
+                                                        <option value="0" <%=(!cart.store_id || cart.store_id==0) ? 'selected' : '' %> disabled><%= language.Select_Store || 'Select Store' %> *</option>
                                                         <% storeList.forEach(function(x){ %>
-                                                            <option value="<%= x.id %>" <%=(cart.store_id==x.id)
-                                                                ? 'selected' : '' %>><%= x.name %>
-                                                            </option>
-                                                            <% }) %>
+                                                            <option value="<%= x.id %>" <%=(cart.store_id==x.id) ? 'selected' : '' %>><%= x.name %></option>
+                                                        <% }) %>
                                                     </select>
                                                 </div>
-                                            </div>
-                                        <% } else { %>
-                                            <input type="hidden" name="store" id="pos_store_id" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
-                                            <input type="hidden" id="pos_staff_store_id" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
-                                        <% } %>
+                                            <% } else { %>
+                                                <input type="hidden" name="store" id="pos_store_id" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
+                                                <input type="hidden" id="pos_staff_store_id" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
+                                            <% } %>
 
-                                        <div class="<%= (typeof showStoreSelect !== 'undefined' && showStoreSelect) ? 'col-12 col-md-6' : 'col-12' %>">
-                                            <div class="pos-date-group">
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div class="d-flex align-items-center">
-                                                        <label class="pos-field-label mb-0"><%= language.Select_Customer || 'Select Customer' %>
-                                                            <span class="text-danger">*</span>
-                                                        </label>
-                                                        <% if (typeof showStoreSelect !== 'undefined' && !showStoreSelect && typeof assignedStoreName !== 'undefined' && assignedStoreName) { %>
-                                                            <span class="badge bg-light text-primary border ms-2"><i class="fa fa-store me-1"></i><%= assignedStoreName %></span>
-                                                        <% } %>
-                                                    </div>
-                                                    <a href="javascript:void(0)" style="font-size: 12px;" class="btn btn-outline-primary py-0 px-2 border-0" data-bs-toggle="modal"
-                                                        data-bs-target="#addcustomer">
+                                            <div class="pos-date-group mb-3">
+                                                <div class="d-flex justify-content-between align-items-center mb-0.5">
+                                                    <label class="pos-field-label mb-0"><%= language.Select_Customer || 'Select Customer' %> <span class="text-danger">*</span></label>
+                                                    <a href="javascript:void(0)" style="font-size: 11px;" class="btn btn-outline-primary py-0 px-1.5 border-0" data-bs-toggle="modal" data-bs-target="#addcustomer">
                                                         <i class="fa fa-plus"></i> <%= language.Add || 'Add' %>
                                                     </a>
                                                 </div>
-                                                <select id="single-select" name="customer"
-                                                    class="default-select wide w-100" data-live-search="true"
-                                                    required <%= (typeof showStoreSelect !== 'undefined' && showStoreSelect && (!cart.store_id || cart.store_id==0)) ? 'disabled' : '' %>>
+                                                <select id="single-select" name="customer" class="default-select wide w-100" data-live-search="true" required <%= (typeof showStoreSelect !== 'undefined' && showStoreSelect && (!cart.store_id || cart.store_id==0)) ? 'disabled' : '' %>>
                                                     <option value="0" disabled <%= (!cart.customer_id || cart.customer_id==0) ? 'selected' : '' %>>
-                                                        <%= (typeof showStoreSelect !== 'undefined' && showStoreSelect && (!cart.store_id || cart.store_id==0))
-                                                            ? (language.Select_Store_First || 'Select Store First') + ' *' : (language.Select_Customer || 'Select Customer') + ' *' %>
+                                                        <%= (typeof showStoreSelect !== 'undefined' && showStoreSelect && (!cart.store_id || cart.store_id==0)) ? (language.Select_Store_First || 'Select Store First') + ' *' : (language.Select_Customer || 'Select Customer') + ' *' %>
                                                     </option>
                                                     <% customerList.forEach(function(x) { %>
                                                         <% let showExtra="" ; %>
-                                                        <% if ((x.username=='' || x.username==null) &&
-                                                            (x.email==null || x.email=='' ) && (x.number==null
-                                                            || x.number=='' )) { %>
-                                                            <% if (accessdata.logas !='store' ) {
-                                                                showExtra=x.store_name; } %>
+                                                        <% if ((x.username=='' || x.username==null) && (x.email==null || x.email=='' ) && (x.number==null || x.number=='' )) { %>
+                                                            <% if (accessdata.logas !='store' ) { showExtra=x.store_name; } %>
                                                         <% } else { %>
                                                             <% showExtra=x.number; %>
                                                         <% } %>
-                                                        <% let isWalkIn=(x.username=='' ||
-                                                            x.username==null || (x.name &&
-                                                            x.name.toLowerCase().includes('walkin')));
-                                                            let selected=(cart.customer_id==x.id
-                                                            || ((typeof isDefaultCustomerEnabled === 'undefined' || isDefaultCustomerEnabled) &&
-                                                            (typeof showStoreSelect !== 'undefined' && !showStoreSelect) &&
-                                                            (!cart.customer_id ||
-                                                            cart.customer_id==0) &&
-                                                            isWalkIn)) ? 'selected' : '' ;
+                                                        <% let isWalkIn=(x.username=='' || x.username==null || (x.name && x.name.toLowerCase().includes('walkin')));
+                                                            let selected=(cart.customer_id==x.id || ((typeof isDefaultCustomerEnabled === 'undefined' || isDefaultCustomerEnabled) && (typeof showStoreSelect !== 'undefined' && !showStoreSelect) && (!cart.customer_id || cart.customer_id==0) && isWalkIn)) ? 'selected' : '' ;
                                                         %>
                                                         <option value="<%= x.id %>" <%=selected %>>
                                                             <%= x.name %><% if (showExtra) { %> (<%= showExtra %>)<% } %>
@@ -301,45 +431,34 @@
                                                     <% }); %>
                                                 </select>
                                             </div>
-                                        </div>
-                                    <% } %>
-                                </div>
-                                <div class="row g-2 mb-3">
-                                    <div class="col-6 col-sm-3 col-lg-3">
-                                        <div class="pos-date-group">
-                                            <label class="pos-field-label" style="height: 23px;"><%= language.Order_No || 'Order #' %></label>
-                                            <input type="text" id="pos_order_id" class="form-control pos-input-sm w-100"
-                                                value="<%= cart.order_id %>" readonly title="Order ID">
-                                        </div>
-                                    </div>
+                                        <% } %>
 
-                                    <div class="col-6 col-sm-3 col-lg-3">
-                                        <div class="pos-date-group">
-                                            <label class="pos-field-label" style="height: 23px;">
-                                                <%= language.Order_Date || 'Order Date' %>
-                                            </label>
-                                            <% let new_date=new Date(cart.order_date) %>
-                                                <% let year=new_date.getFullYear() %>
-                                                    <% let new_day=(new_date.getDate() < 10 ? '0' : '' ) +
-                                                        new_date.getDate() %>
-                                                        <% let new_month=((new_date.getMonth()+1) < 10 ? '0' : '' ) +
-                                                            (new_date.getMonth()+1) %>
-                                                            <% let fullDate=`${year}-${new_month}-${new_day}` %>
-                                                                <input type="date"
-                                                                    class="form-control pos-input-sm w-100"
-                                                                    id="POS_order_date" value="<%=fullDate %>"
-                                                                    title="<%= language.Order_Date || 'Order Date' %>"
-                                                                    <%=login==='customer' ? 'readonly' : '' %>>
+                                        <!-- Row with Order No and Order Date -->
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-6">
+                                                <div class="pos-date-group">
+                                                    <label class="pos-field-label mb-0"><%= language.Order_No || 'Order #' %></label>
+                                                    <input type="text" id="pos_order_id" class="form-control pos-input-sm w-100" value="<%= cart.order_id %>" readonly title="Order ID">
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="pos-date-group">
+                                                    <label class="pos-field-label mb-0"><%= language.Order_Date || 'Order Date' %></label>
+                                                    <% let new_date=new Date(cart.order_date) %>
+                                                    <% let year=new_date.getFullYear() %>
+                                                    <% let new_day=(new_date.getDate() < 10 ? '0' : '' ) + new_date.getDate() %>
+                                                    <% let new_month=((new_date.getMonth()+1) < 10 ? '0' : '' ) + (new_date.getMonth()+1) %>
+                                                    <% let fullDate=`${year}-${new_month}-${new_day}` %>
+                                                    <input type="date" class="form-control pos-input-sm w-100" id="POS_order_date" value="<%=fullDate %>" title="<%= language.Order_Date || 'Order Date' %>" <%=login==='customer' ? 'readonly' : '' %>>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div class="col-12 col-sm-5 col-lg-6">
+                                        <!-- Ready Date & Time -->
                                         <div class="pos-date-group">
-                                            <div class="d-flex align-items-center justify-content-between mb-1">
-                                                <label class="pos-field-label mb-0">
-                                                    <%= language.Delivery_Date || 'Ready Date & Time' %>
-                                                </label>
-                                                <button type="button" class="btn btn-outline-primary py-0 px-2 border-0" id="btn_auto_ready_schedule" title="Reset to automated ready schedule" style="font-size: 12px;">
+                                            <div class="d-flex align-items-center justify-content-between mb-0.5">
+                                                <label class="pos-field-label mb-0"><%= language.Delivery_Date || 'Ready Date & Time' %></label>
+                                                <button type="button" class="btn btn-outline-primary py-0 px-1.5 border-0" id="btn_auto_ready_schedule" title="Reset to automated ready schedule" style="font-size: 11px;">
                                                     <i class="fas fa-magic me-1"></i>Auto
                                                 </button>
                                             </div>
@@ -355,20 +474,76 @@
                                                 let del_time = (del_hours !== '00' || del_mins !== '00') ? `${del_hours}:${del_mins}` : '16:00';
                                             %>
                                             <div class="input-group input-group-sm">
-                                                <input type="date"
-                                                    class="form-control pos-input-sm"
-                                                    id="POS_delivery_date" name="pos_delivery_date"
-                                                    value="<%= del_fullDate %>"
-                                                    min="<%= fullDate %>"
-                                                    title="<%= language.Delivery_Date || 'Ready Date' %>"
-                                                    <%=login==='customer' ? 'readonly' : '' %>>
-                                                <input type="time"
-                                                    class="form-control pos-input-sm"
-                                                    id="POS_delivery_time" name="pos_delivery_time"
-                                                    value="<%= del_time %>"
-                                                    style="max-width: 50%;"
-                                                    title="Ready Time"
-                                                    <%=login==='customer' ? 'readonly' : '' %>>
+                                                <input type="date" class="form-control pos-input-sm" id="POS_delivery_date" name="pos_delivery_date" value="<%= del_fullDate %>" min="<%= fullDate %>" title="<%= language.Delivery_Date || 'Ready Date' %>" <%=login==='customer' ? 'readonly' : '' %>>
+                                                <input type="time" class="form-control pos-input-sm" id="POS_delivery_time" name="pos_delivery_time" value="<%= del_time %>" style="max-width: 50%;" title="Ready Time" <%=login==='customer' ? 'readonly' : '' %>>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Column 2: Customer Intelligence & Memo (col-12 col-md-6) -->
+                                    <div class="col-12 col-md-6 d-flex flex-column justify-content-between">
+                                        <!-- 3 Compact Stat Tiles (Horizontal Row) -->
+                                        <div>
+                                            <div class="pos-cust-stats-row mb-3">
+                                                <!-- Total Orders -->
+                                                <div class="pos-cust-stat-tile tile-total" title="Total Lifetime Orders">
+                                                    <div class="stat-icon"><i class="fa fa-shopping-bag"></i></div>
+                                                    <div class="stat-meta">
+                                                        <span class="stat-num" id="pos_cust_stat_total">0</span>
+                                                        <span class="stat-lbl">Total Orders</span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Unpaid Orders Count -->
+                                                <div class="pos-cust-stat-tile tile-unpaid" title="Orders Unpaid / Partially Paid">
+                                                    <div class="stat-icon"><i class="fa fa-clock"></i></div>
+                                                    <div class="stat-meta">
+                                                        <span class="stat-num" id="pos_cust_stat_unpaid">0</span>
+                                                        <span class="stat-lbl">Unpaid Orders</span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Unpaid Balance Amount -->
+                                                <div class="pos-cust-stat-tile tile-balance" title="Total Outstanding Balance">
+                                                    <div class="stat-icon"><i class="fa fa-exclamation-triangle"></i></div>
+                                                    <div class="stat-meta">
+                                                        <span class="stat-num" id="pos_cust_stat_balance"><%= accessdata.symbol %> 0.00</span>
+                                                        <span class="stat-lbl">Total Due</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Customer Memo Card with Quick-Edit -->
+                                            <div class="pos-cust-memo-card">
+                                                <div class="memo-header d-flex align-items-center justify-content-between pb-1 border-bottom">
+                                                    <span class="memo-title d-flex align-items-center gap-1">
+                                                        <i class="fa fa-sticky-note text-warning"></i>
+                                                        <strong><%= language.Customer_Memo || 'Customer Memo' %></strong>
+                                                    </span>
+                                                    <button type="button" class="btn btn-xs btn-link p-0 text-primary text-decoration-none" id="btn_toggle_pos_memo_edit" title="Edit Memo">
+                                                        <i class="fas fa-pencil-alt fs-11"></i> <span class="fs-11">Edit</span>
+                                                    </button>
+                                                </div>
+
+                                                <!-- View Mode -->
+                                                <div class="memo-view-mode pt-1" id="pos_memo_view_container">
+                                                    <p class="memo-text mb-0 text-muted" id="pos_cust_memo_text">
+                                                        <em>Select a customer to view memo/notes.</em>
+                                                    </p>
+                                                </div>
+
+                                                <!-- Quick Edit Mode (Hidden by default) -->
+                                                <div class="memo-edit-mode pt-1 d-none" id="pos_memo_edit_container">
+                                                    <textarea class="form-control form-control-sm mb-1 pos-memo-textarea" id="pos_cust_memo_input" rows="2" placeholder="Add laundry preferences, allergies, or special notes..."></textarea>
+                                                    <div class="d-flex align-items-center justify-content-end gap-1">
+                                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" id="btn_cancel_pos_memo">
+                                                            Cancel
+                                                        </button>
+                                                        <button type="button" class="btn btn-xs btn-primary py-0 px-2" id="btn_save_pos_memo">
+                                                            <i class="fa fa-check me-1"></i>Save Note
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -821,6 +996,13 @@
                                             <input type="text" class="form-control" name="address" placeholder="Enter address">
                                         </div>
                                     <% } %>
+
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold">
+                                            <%= language.Customer_Memo || 'Customer Memo / Note' %>
+                                        </label>
+                                        <textarea class="form-control" name="memo" rows="2" placeholder="Special instructions, preferences, laundry notes..."></textarea>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1437,7 +1619,158 @@
                         window.POS_INITIAL_CATEGORIES = <%- JSON.stringify((typeof categoryList !== 'undefined' && categoryList) ? categoryList : []) %>;
                         window.POS_INITIAL_SUBCATEGORIES = <%- JSON.stringify((typeof subcategoryList !== 'undefined' && subcategoryList) ? subcategoryList : []) %>;
 
+                        // Customer Intelligence & Memo UI Update Helper
+                        window.updatePosCustomerIntelligence = function(stats) {
+                            if (!stats) stats = { total_orders: 0, unpaid_orders: 0, unpaid_amount: 0, memo: '' };
+                            const sym = document.querySelector('input[name="sym"]')?.value || '$';
+                            const elTotal = document.getElementById('pos_cust_stat_total');
+                            const elUnpaid = document.getElementById('pos_cust_stat_unpaid');
+                            const elBalance = document.getElementById('pos_cust_stat_balance');
+                            const elMemoText = document.getElementById('pos_cust_memo_text');
+                            const elMemoInput = document.getElementById('pos_cust_memo_input');
+
+                            if (elTotal) elTotal.textContent = stats.total_orders || 0;
+                            if (elUnpaid) elUnpaid.textContent = stats.unpaid_orders || 0;
+                            if (elBalance) {
+                                const amt = parseFloat(stats.unpaid_amount || 0).toFixed(2);
+                                elBalance.textContent = sym + ' ' + amt;
+                            }
+
+                            const cleanMemo = (stats.memo && stats.memo.trim() !== '') ? stats.memo.trim() : '';
+                            if (elMemoText) {
+                                if (cleanMemo) {
+                                    elMemoText.textContent = cleanMemo;
+                                    elMemoText.classList.remove('text-muted');
+                                } else {
+                                    elMemoText.innerHTML = '<em>No notes recorded for this customer.</em>';
+                                    elMemoText.classList.add('text-muted');
+                                }
+                            }
+                            if (elMemoInput) {
+                                elMemoInput.value = cleanMemo;
+                            }
+                        };
+
+                        function fetchCurrentCustomerStats(customerId) {
+                            if (!customerId || customerId === '0' || customerId === 'null') {
+                                window.updatePosCustomerIntelligence({ total_orders: 0, unpaid_orders: 0, unpaid_amount: 0, memo: '' });
+                                return;
+                            }
+                            fetch('/admin/customer-stats/' + encodeURIComponent(customerId))
+                                .then(r => r.json())
+                                .then(data => {
+                                    if (data && data.success && data.stats) {
+                                        window.updatePosCustomerIntelligence(data.stats);
+                                    }
+                                })
+                                .catch(err => console.error('Error fetching customer stats:', err));
+                        }
+                        window.fetchCurrentCustomerStats = fetchCurrentCustomerStats;
+
                         document.addEventListener('DOMContentLoaded', () => {
+                            // Auto-collapse sidebar to mini-icon mode for large POS workstation view
+                            const mainWrapper = document.getElementById('main-wrapper');
+                            if (mainWrapper) {
+                                mainWrapper.classList.add('menu-toggle');
+                            }
+                            const hamburger = document.querySelector('.hamburger');
+                            if (hamburger) {
+                                hamburger.classList.add('is-active');
+                            }
+
+                            // POS Sidebar Expand/Collapse Toggle Button
+                            const posSidebarBtn = document.getElementById('pos_sidebar_toggle');
+                            if (posSidebarBtn) {
+                                posSidebarBtn.addEventListener('click', (e) => {
+                                    e.preventDefault();
+                                    const navControl = document.querySelector('.nav-control');
+                                    if (navControl) {
+                                        navControl.click();
+                                    } else {
+                                        if (mainWrapper) mainWrapper.classList.toggle('menu-toggle');
+                                        if (hamburger) hamburger.classList.toggle('is-active');
+                                    }
+                                });
+                            }
+
+                            // Initial customer intelligence stats population
+                            const custSelect = document.getElementById('single-select');
+                            if (custSelect && custSelect.value && custSelect.value !== '0') {
+                                fetchCurrentCustomerStats(custSelect.value);
+                            }
+
+                            // Quick memo editing interactions
+                            const btnEditMemo = document.getElementById('btn_toggle_pos_memo_edit');
+                            const btnCancelMemo = document.getElementById('btn_cancel_pos_memo');
+                            const btnSaveMemo = document.getElementById('btn_save_pos_memo');
+                            const memoViewContainer = document.getElementById('pos_memo_view_container');
+                            const memoEditContainer = document.getElementById('pos_memo_edit_container');
+                            const memoInput = document.getElementById('pos_cust_memo_input');
+
+                            if (btnEditMemo && memoViewContainer && memoEditContainer) {
+                                btnEditMemo.addEventListener('click', (e) => {
+                                    e.preventDefault();
+                                    memoViewContainer.classList.add('d-none');
+                                    memoEditContainer.classList.remove('d-none');
+                                    if (memoInput) memoInput.focus();
+                                });
+                            }
+
+                            if (btnCancelMemo && memoViewContainer && memoEditContainer) {
+                                btnCancelMemo.addEventListener('click', (e) => {
+                                    e.preventDefault();
+                                    memoEditContainer.classList.add('d-none');
+                                    memoViewContainer.classList.remove('d-none');
+                                });
+                            }
+
+                            if (btnSaveMemo) {
+                                btnSaveMemo.addEventListener('click', (e) => {
+                                    e.preventDefault();
+                                    const custId = custSelect ? custSelect.value : null;
+                                    if (!custId || custId === '0') {
+                                        if (typeof toastr !== 'undefined') toastr.warning('Please select a customer first');
+                                        return;
+                                    }
+                                    const newMemo = memoInput ? memoInput.value : '';
+                                    btnSaveMemo.disabled = true;
+                                    btnSaveMemo.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving...';
+
+                                    fetch('/coustomer/update-memo', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ customer_id: custId, memo: newMemo })
+                                    })
+                                    .then(r => r.json())
+                                    .then(res => {
+                                        btnSaveMemo.disabled = false;
+                                        btnSaveMemo.innerHTML = '<i class="fa fa-check me-1"></i>Save Note';
+                                        if (res && res.success) {
+                                            if (memoEditContainer) memoEditContainer.classList.add('d-none');
+                                            if (memoViewContainer) memoViewContainer.classList.remove('d-none');
+                                            const elMemoText = document.getElementById('pos_cust_memo_text');
+                                            if (elMemoText) {
+                                                if (newMemo && newMemo.trim()) {
+                                                    elMemoText.textContent = newMemo.trim();
+                                                    elMemoText.classList.remove('text-muted');
+                                                } else {
+                                                    elMemoText.innerHTML = '<em>No notes recorded for this customer.</em>';
+                                                    elMemoText.classList.add('text-muted');
+                                                }
+                                            }
+                                            if (typeof toastr !== 'undefined') toastr.success('Customer memo updated successfully');
+                                        } else {
+                                            if (typeof toastr !== 'undefined') toastr.error(res?.message || 'Failed to update memo');
+                                        }
+                                    })
+                                    .catch(err => {
+                                        btnSaveMemo.disabled = false;
+                                        btnSaveMemo.innerHTML = '<i class="fa fa-check me-1"></i>Save Note';
+                                        if (typeof toastr !== 'undefined') toastr.error('Failed to update memo');
+                                    });
+                                });
+                            }
+
                             pingPosPrintingServer(false);
                             setInterval(() => pingPosPrintingServer(false), 25000);
 
