@@ -142,4 +142,28 @@ $('#update_form').on('submit', function (e) {
 });
 ```
 
+---
+
+## 3. Canonical 7-Column Orders & Recent Orders Table Pattern
+
+All order lists (including `/order/list`, `views/index.ejs`, and `views/staff_dashboard.ejs`) must strictly share the 7-column schema and companion modal suite:
+
+1. **Columns**:
+   - `Order Info`: Order ID link (`/order/view/:id`), Order Type badge (`badge bg-light text-dark border py-1 px-2`), Order Date, dynamic Pick-up/Delivery Date.
+   - `Customer`: Customer Name (`Last Name, First Name`) and phone number (`<i class="fa fa-phone me-1 opacity-50"></i>`).
+   - `Order Amount`: Gross total formatted to 2 decimals with `.symbol font-w600`.
+   - `Status`: `.badge-status-pill ${statusClass}`.
+   - `Payment`: Breakdown `Total: ... | Paid: ...` + `Add Payment` button (calling `open_patment_model(id)`) if balance > 0, or `Fully Paid` badge.
+   - `Store Name`: Visible for superadmin/master when `mutibranch === true`.
+   - `Actions`: `.server-dt-actions` with View, Edit (if `canEdit`), Barcode modal, POS Thermal Invoice, and Delete modal (if `canDelete`).
+
+2. **Required Companion Modals**:
+   - `#addpaymentmodel1`: Add Payment modal with select2 payment dropdown.
+   - `#exampleModalLong`: Barcode printing modal.
+   - `#deleteOrderModal`: Delete confirmation modal.
+
+3. **Backend Row Enrichment (`enrichRecentOrders`)**:
+   Compute `formattedOrderDate`, `formattedDeliveryDate`, `formattedPickupDate`, `order_type`, `statusClass`, `canDelete`, `canEdit`, and `balance_amount` before rendering.
+
+
 

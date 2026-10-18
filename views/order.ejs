@@ -38,14 +38,14 @@
                             </div>
                             <div class="card-body p-4">
                                 <div class="row g-2 mb-3">
-                                    <div class="<%= (login==='master' && typeof storeList !=='undefined' && storeList.length > 0) ? 'col-12 col-md-4 col-lg-3' : 'col-12 col-md-5 col-lg-4' %>">
+                                    <div class="<%= (login==='master' && typeof storeList !=='undefined' && storeList.length > 0) ? 'col-12 col-md-4 col-lg-3' : 'col-12 col-md-4 col-lg-3' %>">
                                         <div class="input-group">
                                             <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
                                             <input type="text" class="form-control" id="order_search_input"
                                                 placeholder="<%= language.Search || 'Search by Order ID, Customer, Phone, Store, Ref...' %>">
                                         </div>
                                     </div>
-                                    <div class="<%= (login==='master' && typeof storeList !=='undefined' && storeList.length > 0) ? 'col-6 col-sm-6 col-md-4 col-lg-2' : 'col-6 col-sm-6 col-md-3 col-lg-2' %>">
+                                    <div class="col-6 col-sm-6 col-md-3 col-lg-2">
                                         <select class="form-select" id="order_status_filter">
                                             <option value="" selected><%= language.All_Orders || 'All Statuses' %></option>
                                             <% Ordersatus.forEach(function (data){ %>
@@ -53,8 +53,17 @@
                                             <% }) %>
                                         </select>
                                     </div>
+                                    <div class="col-6 col-sm-6 col-md-3 col-lg-2">
+                                        <select class="form-select" id="order_type_filter">
+                                            <option value="" selected><%= language.All_Order_Types || 'All Order Types' %></option>
+                                            <option value="Customer drop-off & Customer pick-up">Drop-off &amp; Pick-up</option>
+                                            <option value="Customer drop-off & Store delivery">Drop-off &amp; Delivery</option>
+                                            <option value="Store collection & Customer pick-up">Collection &amp; Pick-up</option>
+                                            <option value="Store collection & Store delivery">Collection &amp; Delivery</option>
+                                        </select>
+                                    </div>
                                     <% if (login==='master' && typeof storeList !=='undefined' && storeList.length > 0) { %>
-                                        <div class="col-6 col-sm-6 col-md-4 col-lg-2">
+                                        <div class="col-6 col-sm-6 col-md-3 col-lg-2">
                                             <select class="form-select" id="order_store_filter">
                                                 <option value="" selected><%= language.All_Stores || 'All Stores' %></option>
                                                 <% storeList.forEach(function (st){ %>
@@ -63,13 +72,13 @@
                                             </select>
                                         </div>
                                     <% } %>
-                                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                                    <div class="col-6 col-sm-4 col-md-3 col-lg-1">
                                         <input type="date" class="form-control" id="order_start_date" title="Start Date">
                                     </div>
-                                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                                    <div class="col-6 col-sm-4 col-md-3 col-lg-1">
                                         <input type="date" class="form-control" id="order_end_date" title="End Date">
                                     </div>
-                                    <div class="<%= (login==='master' && typeof storeList !=='undefined' && storeList.length > 0) ? 'col-12 col-sm-4 col-md-2 col-lg-1' : 'col-12 col-sm-4 col-md-3 col-lg-2' %>">
+                                    <div class="col-12 col-sm-4 col-md-2 col-lg-1">
                                         <select class="form-select" id="order_page_length">
                                             <option value="10" selected>10 / page</option>
                                             <option value="25">25 / page</option>
@@ -322,10 +331,11 @@
                             ajaxUrl: '/order/list/data',
                             searchInput: '#order_search_input',
                             pageLengthSelect: '#order_page_length',
-                            filterInputs: '#order_status_filter, #order_store_filter, #order_start_date, #order_end_date',
+                            filterInputs: '#order_status_filter, #order_type_filter, #order_store_filter, #order_start_date, #order_end_date',
                             getFilters: function () {
                                 return {
                                     status_filter: $('#order_status_filter').val() || '',
+                                    order_type: $('#order_type_filter').val() || '',
                                     store_filter: $('#order_store_filter').length ? ($('#order_store_filter').val() || '') : '',
                                     start_date: $('#order_start_date').val() || '',
                                     end_date: $('#order_end_date').val() || ''
@@ -335,16 +345,22 @@
                                 {
                                     data: 'order_id',
                                     render: function (data, type, row) {
+                                        var isDel = (row.order_type === 'Customer drop-off & Store delivery' || row.order_type === 'Store collection & Store delivery');
+                                        var dateLabel = isDel ? '<%= language.Delivery_Date || "Delivery Date" %>' : '<%= language.Pickup_Date || "Pick-up Date" %>';
+                                        var dateValue = isDel ? (row.formattedDeliveryDate || '') : (row.formattedPickupDate || row.formattedDeliveryDate || '');
+                                        var orderTypeBadge = row.order_type ? '<span class="badge bg-light text-dark border py-1 px-2 text-wrap d-inline-block mt-1" style="font-size: 0.72rem; line-height: 1.1;">' + row.order_type + '</span>' : '';
+
                                         return '<div class="server-dt-primary-text mb-1">' +
                                             '<span class="me-1 fw-bold text-primary">' + (data || '') + '</span>' +
                                             '</div>' +
+                                            (orderTypeBadge ? '<div class="mb-1">' + orderTypeBadge + '</div>' : '') +
                                             '<div class="server-dt-secondary-text mb-0">' +
                                             '<span class="me-1 opacity-75"><%= language.Order_Date || "Order Date" %>:</span>' +
                                             '<span>' + (row.formattedOrderDate || '') + '</span>' +
                                             '</div>' +
                                             '<div class="server-dt-secondary-text mb-0">' +
-                                            '<span class="me-1 opacity-75"><%= language.Delivery_Date || "Delivery Date" %>:</span>' +
-                                            '<span>' + (row.formattedDeliveryDate || '') + '</span>' +
+                                            '<span class="me-1 opacity-75">' + dateLabel + ':</span>' +
+                                            '<span>' + dateValue + '</span>' +
                                             '</div>';
                                     }
                                 },

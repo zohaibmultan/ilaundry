@@ -43,6 +43,12 @@
                                                 <span>Transferred from: <%= transferredFromStore.name %></span>
                                             </span>
                                         <% } %>
+                                        <% if (order.order_type) { %>
+                                            <span class="badge bg-light text-dark border d-inline-flex align-items-center gap-1 py-1 px-2 rounded-pill fs-12 fw-semibold">
+                                                <i class="fa fa-tag text-muted"></i>
+                                                <span><%= order.order_type %></span>
+                                            </span>
+                                        <% } %>
                                     </div>
                                     <small class="text-muted d-block mb-3"><%= language.Order_Details_Subtitle || 'Comprehensive invoice summary, service breakdown, and tracking details' %></small>
                                     <p class="text-sm mb-1">
@@ -62,23 +68,23 @@
                                                                 <%=Order_fullDate %>
                                                             </span>
                                     </p>
+                                    <% 
+                                        const isDeliveryOrder = (order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery');
+                                        const orderDateLabel = isDeliveryOrder ? (language.Delivery_Date || 'Delivery Date') : (language.Pickup_Date || 'Pick-up Date');
+                                        const activeDateVal = isDeliveryOrder ? order.delivery_date : (order.pickup_date || order.delivery_date);
+                                        let Delivery_date = new Date(activeDateVal);
+                                        let Delivery_day = (Delivery_date.getDate() < 10 ? '0' : '') + Delivery_date.getDate();
+                                        let Delivery_month = ((Delivery_date.getMonth()+1) < 10 ? '0' : '') + (Delivery_date.getMonth()+1);
+                                        let Delivery_year = Delivery_date.getFullYear();
+                                        let Delivery_fullDate = `${Delivery_year}-${Delivery_month}-${Delivery_day}`;
+                                    %>
                                     <p class="text-sm mb-3">
                                         <span>
-                                            <%= language.Delivery_Date %> :
+                                            <%= orderDateLabel %> :
                                         </span>
-                                        <% let Delivery_date=new Date(order.delivery_date) %>
-
-                                            <% let Delivery_day=(Delivery_date.getDate() < 10 ? '0' : '' ) +
-                                                Delivery_date.getDate() %>
-                                                <% let Delivery_month=((Delivery_date.getMonth()+1) < 10 ? '0' : '' ) +
-                                                    (Delivery_date.getMonth()+1) %>
-                                                    <% let Delivery_year=Delivery_date.getFullYear() %>
-                                                        <% let
-                                                            Delivery_fullDate=`${Delivery_year}-${Delivery_month}-${Delivery_day}`
-                                                            %>
-                                                            <span>
-                                                                <%=Delivery_fullDate %>
-                                                            </span>
+                                        <span>
+                                            <%=Delivery_fullDate %>
+                                        </span>
                                     </p>
                                     <div class="d-flex align-items-center">
                                         <div>
@@ -487,7 +493,7 @@
 
                                         <div class="row mb-50 align-items-center">
                                             <div class="col text-sm">
-                                                <%= language.Delivery_Date %> :
+                                                <%= orderDateLabel %> :
                                             </div>
                                             <div class="col-auto text-sm">
                                                 <%=Delivery_fullDate %>

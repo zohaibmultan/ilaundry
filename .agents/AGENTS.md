@@ -216,3 +216,44 @@ This document establishes the universal rules and constraints for the **iCleaner
 3. **Automatic Sequence Pre-calculation**:
    * Creation modals and forms must pre-calculate the next available sequence index per store (`(MAX(sequence_no) + 1)` with fallback to `1`) to streamline intake.
 
+### S. POS Order Types & Dynamic Pick-up vs. Delivery Scheduling Invariant
+1. **Four Canonical Order Types**:
+   * The application strictly recognizes four customer order types:
+     1. `Customer drop-off & Customer pick-up` (triggers `#pickup_date` and `#pickup_time`)
+     2. `Customer drop-off & Store delivery` (triggers `#delivery_date` and `#delivery_time`)
+     3. `Store collection & Customer pick-up` (triggers `#pickup_date` and `#pickup_time`)
+     4. `Store collection & Store delivery` (triggers `#delivery_date` and `#delivery_time`)
+2. **Conditional POS Input Display**:
+   * When option 1 or 3 is selected: display `#pickup_date` and `#pickup_time` wrappers; hide delivery date/time wrappers.
+   * When option 2 or 4 is selected: display `#delivery_date` and `#delivery_time` wrappers; hide pickup date/time wrappers.
+3. **Dynamic Pick-up vs. Delivery Date Labeling Invariant**:
+   * Orders with Store delivery (options 2 and 4) must strictly display **"Delivery Date:"** across catalog cards, order details, order list, recent orders, POS thermal invoices, and garment cloth tags.
+   * Orders with Customer pick-up (options 1 and 3) must strictly display **"Pick-up Date:"** across all of the aforementioned views.
+4. **Database Persistence**:
+   * Persist `order_type` (`VARCHAR(100)`), `pickup_date` (`TIMESTAMP NULL`), and `delivery_date` (`TIMESTAMP NULL`) across both `tbl_cart` and `tbl_order`.
+
+### T. Unified Orders & Recent Orders Table Architecture Invariant
+1. **Parity Between Orders Page & Dashboard Tables**:
+   * The Recent Orders list on both the Main Dashboard (`views/index.ejs`) and Staff Dashboard (`views/staff_dashboard.ejs`) must maintain 100% visual, structural, and functional parity with the main Orders list (`views/order.ejs`).
+2. **Standard 7-Column Layout**:
+   * **Col 1 (Order Info)**: Order ID link (`/order/view/:id`), Order Type badge (`badge bg-light text-dark border py-1 px-2`), Order Date, and dynamic Pick-up/Delivery Date.
+   * **Col 2 (Customer)**: Customer Name (`Last Name, First Name` or Walk In Customer) and customer phone number with telephone icon.
+   * **Col 3 (Order Amount)**: Gross total formatted to 2 decimals with `.symbol font-w600`.
+   * **Col 4 (Status)**: Status pill `.badge-status-pill ${data.statusClass}` (`status-pending`, `status-processing`, `status-ready`, `status-delivered`, `status-returned`, `status-cancelled`).
+   * **Col 5 (Payment)**: Secondary breakdown (`Total: gross | Paid: paid`), plus interactive `Add Payment` button calling `open_patment_model(id)` if balance > 0, or `Fully Paid` badge if settled.
+   * **Col 6 (Store Name)**: Store badge (`badge bg-light text-dark fw-bold border`), visible for master admin when `mutibranch === true`.
+   * **Col 7 (Actions)**: Standard `.server-dt-actions` with `.btn-dt-action` toolbar:
+     - 👁️ View (`.btn-view` to `/order/view/:id`)
+     - ✏️ Edit (`.btn-edit` to `/admin/edit/:id` if `canEdit` and not cancelled)
+     - 🏷️ Barcode Modal (`.btn-print #print_barcode` opening `#exampleModalLong`)
+     - 🧾 POS Thermal Invoice (`.btn-print` to `/order/pos_invoice/:id` in new tab)
+     - 🗑️ Delete Modal (`.btn-delete` opening `#deleteOrderModal` if `canDelete`)
+3. **Companion Modal Trio Invariant**:
+   * Any view rendering this table must include the companion modal trio before the footer:
+     - `#addpaymentmodel1`: Add payment modal with select2 payment method dropdown.
+     - `#exampleModalLong`: Barcode preview and printing modal.
+     - `#deleteOrderModal`: Safe delete confirmation dialog with dynamic order code and destination URL assignment.
+4. **Backend Row Enrichment**:
+   * Routes querying orders for dashboard tables must pass rows through `enrichRecentOrders()` to compute `formattedOrderDate`, `formattedDeliveryDate`, `formattedPickupDate`, `order_type`, `statusClass`, `canDelete`, `canEdit`, and `balance_amount`.
+
+

@@ -155,56 +155,125 @@
                             <div class="card-body p-0">
                                 <% if (recentOrder && recentOrder.length > 0) { %>
                                     <div class="table-responsive">
-                                        <table class="table table-hover align-middle mb-0">
-                                            <thead class="bg-light-subtle text-muted text-uppercase fs-12">
+                                        <table class="table verticle-middle table-responsive-md mb-0">
+                                            <thead>
                                                 <tr>
-                                                    <th class="ps-4 py-3"><%= language.Order_Info || 'Order Info' %></th>
-                                                    <th class="py-3"><%= language.Customers || 'Customer' %></th>
-                                                    <th class="py-3 text-end"><%= language.Order_Amount || 'Order Amount' %></th>
-                                                    <th class="py-3 text-center"><%= language.Status || 'Status' %></th>
-                                                    <th class="py-3 text-end"><%= language.Payment_Amount || 'Paid Amount' %></th>
-                                                    <th class="pe-4 py-3 text-center" style="width: 70px;"><%= language.Action || 'Action' %></th>
+                                                    <th scope="col" class="ps-4">
+                                                        <%= language.Order_Info || 'Order Info' %>
+                                                    </th>
+                                                    <th scope="col">
+                                                        <%= language.Customer || language.Customers || 'Customer' %>
+                                                    </th>
+                                                    <th scope="col">
+                                                        <%= language.Order_Amount || 'Order Amount' %>
+                                                    </th>
+                                                    <th scope="col">
+                                                        <%= language.Status || 'Status' %>
+                                                    </th>
+                                                    <th scope="col">
+                                                        <%= language.Payment || language.Payment_Amount || 'Payment' %>
+                                                    </th>
+                                                    <th scope="col" class="text-center pe-4" style="width: 170px;">
+                                                        <%= language.Action || 'Action' %>
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <% recentOrder.forEach(function(order) { %>
                                                     <tr>
-                                                        <td class="ps-4 py-3">
-                                                            <div class="fw-bold text-dark"><%= order.order_id %></div>
-                                                            <small class="text-muted fs-11">
-                                                                <i class="far fa-calendar-alt me-1"></i><%= (order.order_date) ? new Date(order.order_date).toLocaleDateString() : '-' %>
-                                                            </small>
+                                                        <td class="ps-4">
+                                                            <div class="server-dt-primary-text mb-1">
+                                                                <a href="/order/view/<%= order.id %>" class="me-1 fw-bold text-primary"><%= order.order_id || '' %></a>
+                                                            </div>
+                                                            <% if (order.order_type) { %>
+                                                                <div class="mb-1">
+                                                                    <span class="badge bg-light text-dark border py-1 px-2 text-wrap d-inline-block mt-1" style="font-size: 0.72rem; line-height: 1.1;">
+                                                                        <%= order.order_type %>
+                                                                    </span>
+                                                                </div>
+                                                            <% } %>
+                                                            <div class="server-dt-secondary-text mb-0">
+                                                                <span class="me-1 opacity-75"><%= language.Order_Date || 'Order Date' %>:</span>
+                                                                <span><%= order.formattedOrderDate || '' %></span>
+                                                            </div>
+                                                            <div class="server-dt-secondary-text mb-0">
+                                                                <% 
+                                                                    var isDel = (order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery');
+                                                                    var dateLabel = isDel ? (language.Delivery_Date || 'Delivery Date') : (language.Pickup_Date || 'Pick-up Date');
+                                                                    var dateValue = isDel ? (order.formattedDeliveryDate || '') : (order.formattedPickupDate || order.formattedDeliveryDate || '');
+                                                                %>
+                                                                <span class="me-1 opacity-75"><%= dateLabel %>:</span>
+                                                                <span><%= dateValue %></span>
+                                                            </div>
                                                         </td>
-                                                        <td class="py-3">
-                                                            <span class="fw-semibold text-dark"><%= order.customer || '-' %></span>
-                                                        </td>
-                                                        <td class="py-3 text-end fw-bold text-dark">
-                                                            <%= accessdata?.masterstore?.currency_symbol || accessdata?.symbol || '$' %> <%= Number(order.gross_total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
-                                                        </td>
-                                                        <td class="py-3 text-center">
-                                                            <% if (order.order_status == 1) { %>
-                                                                <span class="badge bg-dark rounded-pill px-3 py-1"><%= order.status || 'Order Placed' %></span>
-                                                            <% } else if (order.order_status == 2) { %>
-                                                                <span class="badge bg-warning text-dark rounded-pill px-3 py-1"><%= order.status || 'In Progress' %></span>
-                                                            <% } else if (order.order_status == 3) { %>
-                                                                <span class="badge bg-secondary rounded-pill px-3 py-1"><%= order.status || 'Cleaning' %></span>
-                                                            <% } else if (order.order_status == 4) { %>
-                                                                <span class="badge bg-info text-white rounded-pill px-3 py-1"><%= order.status || 'Delivered' %></span>
-                                                            <% } else if (order.order_status == 5) { %>
-                                                                <span class="badge bg-danger rounded-pill px-3 py-1"><%= order.status || 'Returned' %></span>
-                                                            <% } else if (order.order_status == 6) { %>
-                                                                <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1"><%= order.status || 'Cancelled' %></span>
-                                                            <% } else { %>
-                                                                <span class="badge bg-secondary rounded-pill px-3 py-1"><%= order.status || 'Pending' %></span>
+                                                        <td>
+                                                            <div class="server-dt-primary-text"><%= order.customer_name || order.customer || 'Walk In Customer' %></div>
+                                                            <% if (order.customer_number) { %>
+                                                                <div class="server-dt-secondary-text">
+                                                                    <i class="fa fa-phone me-1 opacity-50"></i><%= order.customer_number %>
+                                                                </div>
                                                             <% } %>
                                                         </td>
-                                                        <td class="py-3 text-end fw-semibold text-success">
-                                                            <%= accessdata?.masterstore?.currency_symbol || accessdata?.symbol || '$' %> <%= Number(order.paid_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                                                        <td class="symbol font-w600">
+                                                            <%= parseFloat(order.gross_total || 0).toFixed(2) %>
                                                         </td>
-                                                        <td class="pe-4 py-3 text-center">
-                                                            <a href="/order/view/<%= order.id %>" class="btn btn-sm btn-outline-primary rounded-circle" style="width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center;" title="<%= language.View || 'View Order' %>">
-                                                                <i class="fa fa-eye"></i>
-                                                            </a>
+                                                        <td>
+                                                            <span class="badge-status-pill <%= order.statusClass %>">
+                                                                <%= order.orderStatusName || order.status || 'Pending' %>
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <% 
+                                                                var gross = parseFloat(order.gross_total || 0).toFixed(2);
+                                                                var paid = parseFloat(order.paid_amount || 0).toFixed(2);
+                                                                var balance = parseFloat(order.balance_amount !== undefined ? order.balance_amount : (order.gross_total - order.paid_amount));
+                                                            %>
+                                                            <div class="server-dt-secondary-text mb-1">
+                                                                <span class="me-1">Total:</span><span class="symbol fw-bold"><%= gross %></span>
+                                                                | <span class="me-1">Paid:</span><span class="symbol text-success"><%= paid %></span>
+                                                            </div>
+                                                            <div>
+                                                                <% if (balance > 0.001) { %>
+                                                                    <% if (accessdata?.logas === 'custmor') { %>
+                                                                        <span class="badge badge-warning light btn-xxs"><%= language.Pending || 'Pending' %></span>
+                                                                    <% } else { %>
+                                                                        <button type="button" onclick="open_patment_model('<%= order.id %>')" class="btn btn-xs btn-outline-success py-1 px-2">
+                                                                            <i class="fa fa-plus-circle me-1"></i> <%= language.Add_Payment || 'Add Payment' %>
+                                                                        </button>
+                                                                    <% } %>
+                                                                <% } else { %>
+                                                                    <span class="badge badge-dark light btn-xxs"><%= language.Fully_Paid || 'Fully Paid' %></span>
+                                                                <% } %>
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-center pe-4">
+                                                            <div class="server-dt-actions justify-content-center">
+                                                                <% if (accessdata?.logas === 'custmor') { %>
+                                                                    <a href="/order/view/<%= order.id %>" class="btn-dt-action btn-view" title="<%= language.View || 'View' %>">
+                                                                        <i class="fa fa-eye"></i>
+                                                                    </a>
+                                                                <% } else { %>
+                                                                    <% if (order.order_status != 6 && order.canEdit) { %>
+                                                                        <a href="/admin/edit/<%= order.id %>" class="btn-dt-action btn-edit" title="<%= language.Edit || 'Edit' %>">
+                                                                            <i class="fas fa-pencil-alt"></i>
+                                                                        </a>
+                                                                    <% } %>
+                                                                    <a href="/order/view/<%= order.id %>" class="btn-dt-action btn-view" title="<%= language.View || 'View' %>">
+                                                                        <i class="fa fa-eye"></i>
+                                                                    </a>
+                                                                    <button type="button" class="btn-dt-action btn-print" id="print_barcode" data-bs-toggle="modal" data-bs-target="#exampleModalLong" data-id="<%= order.id %>" title="<%= language.Barcode || 'Barcode' %>">
+                                                                        <i class="fa fa-barcode"></i>
+                                                                    </button>
+                                                                    <a href="/order/pos_invoice/<%= order.id %>" class="btn-dt-action btn-print" target="_blank" title="POS Thermal Invoice">
+                                                                        <i class="fa fa-receipt"></i>
+                                                                    </a>
+                                                                    <% if (order.canDelete) { %>
+                                                                        <button type="button" class="btn-dt-action btn-delete" data-bs-toggle="modal" data-bs-target="#deleteOrderModal" data-id="<%= order.id %>" data-orderid="<%= order.order_id %>" title="<%= language.Delete || 'Delete' %>">
+                                                                            <i class="fa fa-trash"></i>
+                                                                        </button>
+                                                                    <% } %>
+                                                                <% } %>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 <% }); %>
@@ -234,6 +303,168 @@
     </div>
     <!-- Content body end -->
 
+    <!-- Modal add Payment -->
+    <div class="modal fade" id="addpaymentmodel1">
+        <div class="modal-dialog modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <%= language.Payment || 'Add Payment' %>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body" id="orderlistpaymentmodel">
+                    <form id="add_order_payment" method="post" class="need-validation">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-12">
+                                <div class="row mb-50 align-items-center">
+                                    <div class="col text-sm">
+                                        <%= language.Customer_Name || 'Customer Name' %> :
+                                    </div>
+                                    <div class="col-auto text-sm"></div>
+                                </div>
+
+                                <div class="row mb-50 align-items-center">
+                                    <div class="col text-sm">
+                                        <%= language.Order_ID || 'Order ID' %> :
+                                    </div>
+                                    <div class="col-auto text-sm"></div>
+                                </div>
+
+                                <div class="row mb-50 align-items-center">
+                                    <div class="col text-sm">
+                                        <%= language.Order_Date || 'Order Date' %> :
+                                    </div>
+                                    <div class="col-auto text-sm"></div>
+                                </div>
+
+                                <div class="row mb-50 align-items-center">
+                                    <div class="col text-sm">
+                                        <%= language.Delivery_Date || 'Delivery Date' %> :
+                                    </div>
+                                    <div class="col-auto text-sm"></div>
+                                </div>
+
+                                <hr>
+
+                                <div class="row mb-50 align-items-center">
+                                    <div class="col text-sm">
+                                        <%= language.Order_Amount || 'Order Amount' %> :
+                                    </div>
+                                    <div class="col-auto text-sm"></div>
+                                </div>
+
+                                <div class="row mb-50 align-items-center">
+                                    <div class="col text-sm">
+                                        <%= language.Paid_Amount || 'Paid Amount' %> :
+                                    </div>
+                                    <div class="col-auto text-sm"></div>
+                                </div>
+
+                                <hr>
+
+                                <div class="row align-items-center">
+                                    <div class="col text-sm">
+                                        <%= language.Balance || 'Balance' %> :
+                                    </div>
+                                    <div class="col-auto text-sm"></div>
+                                </div>
+
+                                <hr>
+
+                                <div class="row align-items-center">
+                                    <div class="col-md-6 mb-1">
+                                        <label class="form-label">
+                                            <%= language.Paid_Amount || 'Paid Amount' %>
+                                        </label>
+                                        <input type="number" class="form-control" name="paid" id="paid"
+                                            placeholder="Enter Amount">
+                                    </div>
+                                    <div class="col-md-6 mb-1">
+                                        <label class="form-label">
+                                            <%= language.Payment_Type || 'Payment Type' %>
+                                        </label>
+                                        <select class="form-control wide" name="payment" id="payment">
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+                    </button>
+                    <button type="submit" value="submit" class="btn btn-primary" id="add_order_payment_submit">
+                        <i class="fa fa-save me-2"></i><%= language.Save || 'Save' %>
+                    </button>
+                </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barcode Modal -->
+    <div class="modal fade" id="exampleModalLong">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <%= language.Barcode || 'Barcode' %>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center" id="add_barcode"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-info" id="print_label" data-bs-dismiss="modal">
+                        <i class="fa fa-print me-2"></i><%= language.Print_Barcode || 'Print Barcode' %>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Order Confirmation Modal -->
+    <div class="modal fade" id="deleteOrderModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+            <div class="modal-content text-center p-3" style="border-radius: 16px;">
+                <div class="modal-body pt-4">
+                    <div class="mb-3">
+                        <div
+                            style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; justify-content: center; color: #ef4444; font-size: 28px;">
+                            <i class="fa fa-exclamation-triangle"></i>
+                        </div>
+                    </div>
+                    <h4 class="mb-2 fw-bold text-dark">
+                        <%= language.Delete_Order || 'Delete Order' %>
+                    </h4>
+                    <p class="text-muted mb-1">
+                        <%= language.Are_you_sure_delete || 'Are you sure you want to delete this order?' %>
+                    </p>
+                    <p class="fw-bold text-danger fs-5 mb-3" id="deleteOrderModalCode"></p>
+                    <p class="text-xs text-muted mb-4">
+                        <%= language.Action_cannot_be_undone
+                            || 'This action will remove the order, related payments, and ledger transactions permanently.'
+                            %>
+                    </p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+                        </button>
+                        <a href="#" id="deleteOrderConfirmBtn" class="btn btn-danger">
+                            <i class="fa fa-trash me-2"></i>
+                            <%= language.Delete || 'Yes, Delete' %>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer start -->
     <%- include('templet/footer') -%>
     <!-- Footer end -->
@@ -241,6 +472,22 @@
     <!-- Scripts -->
     <%- include('templet/script') -%>
     <script>
+        $('#addpaymentmodel1').on('shown.bs.modal', function () {
+            $('#payment').select2({
+                dropdownParent: $('#addpaymentmodel1'),
+                placeholder: 'Select Account',
+                width: '100%',
+                allowClear: true
+            });
+        });
+
+        $(document).on('click', '.btn-dt-action.btn-delete[data-bs-target="#deleteOrderModal"]', function () {
+            const orderId = $(this).attr('data-id');
+            const orderCode = $(this).attr('data-orderid');
+            $('#deleteOrderModalCode').text(orderCode || ('#' + orderId));
+            $('#deleteOrderConfirmBtn').attr('href', '/order/delete/' + orderId);
+        });
+
         (function () {
             function updateStaffMetrics(d) {
                 var ordersEl = document.getElementById('stat-orders');

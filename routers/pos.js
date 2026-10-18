@@ -1593,6 +1593,78 @@ router.post("/delivery_date", auth, async (req, res) => {
   }
 });
 
+// POS Order Type change
+router.post("/pos_order_type", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const { order_type, pickup_date, pickup_time, delivery_date, delivery_time } = req.body;
+
+    let updateParts = [];
+    if (order_type) {
+      updateParts.push(`order_type='${order_type.replace(/'/g, "\\'")}'`);
+    }
+    if (pickup_date) {
+      let fullPickup = formatMySQLDateTime(pickup_date, pickup_time || "16:00:00");
+      updateParts.push(`pickup_date='${fullPickup}'`);
+    }
+    if (delivery_date) {
+      let fullDelivery = formatMySQLDateTime(delivery_date, delivery_time || "16:00:00");
+      updateParts.push(`delivery_date='${fullDelivery}'`);
+    }
+
+    if (updateParts.length > 0) {
+      let cart = await DataUpdate(
+        `tbl_cart`,
+        updateParts.join(", "),
+        `created_by='${loginas},${id}'`,
+        req.hostname,
+        req.protocol,
+      );
+
+      if (cart == -1) {
+        req.flash("errors", process.env.dataerror);
+        return res.redirect("/valid_license");
+      }
+    }
+
+    return res.status(200).json({ status: 200, success: true, order_type });
+  } catch (error) {
+    console.error("Error in /admin/pos_order_type:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POS Pickup Date change
+router.post("/pickup_date", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    var { pickup_date, pickup_time } = req.body;
+
+    let fullPickup = formatMySQLDateTime(
+      pickup_date,
+      pickup_time || "16:00:00",
+    );
+
+    let cart = await DataUpdate(
+      `tbl_cart`,
+      `pickup_date='${fullPickup}'`,
+      `created_by='${loginas},${id}'`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (cart == -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
+
+    return res.status(200).json({ status: 200, pickup_date: fullPickup });
+  } catch (error) {
+    console.error("Error in /admin/pickup_date:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 //  POS Edit Order Date change
 router.post("/edit_date", auth, async (req, res) => {
   try {
@@ -1671,6 +1743,78 @@ router.post("/edit_delivery_date", auth, async (req, res) => {
   }
 });
 
+// POS Edit Order Type change
+router.post("/edit_pos_order_type", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const { order_id, order_type, pickup_date, pickup_time, delivery_date, delivery_time } = req.body;
+
+    let updateParts = [];
+    if (order_type) {
+      updateParts.push(`order_type='${order_type.replace(/'/g, "\\'")}'`);
+    }
+    if (pickup_date) {
+      let fullPickup = formatMySQLDateTime(pickup_date, pickup_time || "16:00:00");
+      updateParts.push(`pickup_date='${fullPickup}'`);
+    }
+    if (delivery_date) {
+      let fullDelivery = formatMySQLDateTime(delivery_date, delivery_time || "16:00:00");
+      updateParts.push(`delivery_date='${fullDelivery}'`);
+    }
+
+    if (updateParts.length > 0 && order_id) {
+      let orderUpdate = await DataUpdate(
+        `tbl_order`,
+        updateParts.join(", "),
+        `id='${order_id}'`,
+        req.hostname,
+        req.protocol,
+      );
+
+      if (orderUpdate == -1) {
+        req.flash("errors", process.env.dataerror);
+        return res.redirect("/valid_license");
+      }
+    }
+
+    return res.status(200).json({ status: 200, success: true, order_type });
+  } catch (error) {
+    console.error("Error in /admin/edit_pos_order_type:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POS Edit Pickup Date change
+router.post("/edit_pickup_date", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const { pickup_date, pickup_time, order_id } = req.body;
+
+    let fullPickup = formatMySQLDateTime(
+      pickup_date,
+      pickup_time || "16:00:00",
+    );
+
+    let orderUpdate = await DataUpdate(
+      `tbl_order`,
+      `pickup_date='${fullPickup}'`,
+      `id='${order_id}'`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (orderUpdate == -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
+
+    return res.status(200).json({ status: 200, pickup_date: fullPickup });
+  } catch (error) {
+    console.error("Error in /admin/edit_pickup_date:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 //  POS Clear cart
 router.get("/clearcart", auth, async (req, res) => {
   try {
@@ -1690,10 +1834,6 @@ router.get("/clearcart", auth, async (req, res) => {
       const servicelist = cart[0].service_list_id.split(",");
       await Promise.all(
         servicelist.map(async (data, i) => {
-          // await DataFind(
-          //   "DELETE FROM tbl_cart_servicelist WHERE id=" + data + ""
-          // );
-
           if (
             (await DataDelete(
               `tbl_cart_servicelist`,
@@ -1707,9 +1847,6 @@ router.get("/clearcart", auth, async (req, res) => {
           }
         }),
       );
-      // await DataFind(`UPDATE tbl_cart SET order_date=CURRENT_TIMESTAMP,service_list_id=0,order_id=0,addon_id=0,addon_price=0,delivery_date=CURRENT_TIMESTAMP,extra_discount=0,
-      //                       coupon_id=0,coupon_discount=0,tax_amount=0,sub_total=0,gross_total=0,paid_amount=0,payment_type=0, order_id='${orderid}',
-      //                       balance=0,notes='', tax=${tax[0].tax_percent} WHERE created_by='${loginas},${id}'`);
 
       let cartReset = await DataUpdate(
         `tbl_cart`,
@@ -1720,6 +1857,8 @@ router.get("/clearcart", auth, async (req, res) => {
     addon_id = 0,
     addon_price = 0,
     delivery_date = CURRENT_TIMESTAMP,
+    pickup_date = CURRENT_TIMESTAMP,
+    order_type = 'Customer drop-off & Customer pick-up',
     extra_discount = 0,
     coupon_id = 0,
     coupon_discount = 0,
@@ -3132,6 +3271,16 @@ router.post("/edit_order", auth, async (req, res) => {
       );
     }
 
+    let pickDate = req.body.pickupdate || order.pickup_date || delDate;
+    if (pickDate) {
+      pickDate = formatMySQLDateTime(
+        pickDate,
+        req.body.pickuptime || "16:00:00",
+      );
+    }
+
+    let editOrderType = req.body.order_type || order.order_type || "Customer drop-off & Customer pick-up";
+
     const orderNotes = note !== undefined ? note : order.note;
     const refNum =
       reference_number !== undefined
@@ -3141,6 +3290,8 @@ router.post("/edit_order", auth, async (req, res) => {
     await DataUpdate(
       `tbl_order`,
       `
+        order_type = '${editOrderType.replace(/'/g, "\\'")}',
+        pickup_date = '${pickDate}',
         delivery_date = '${delDate}',
         extra_discount = ${extradiscount},
         sub_total = ${sub_total},
@@ -3279,7 +3430,17 @@ router.post("/edit_order_direct", auth, async (req, res) => {
         delivery_date,
         req.body.delivery_time || "16:00:00",
       );
-      deliveryUpdate = `delivery_date = '${fullDelivery}',`;
+      deliveryUpdate += `delivery_date = '${fullDelivery}',`;
+    }
+    if (req.body.pickup_date) {
+      let fullPickup = formatMySQLDateTime(
+        req.body.pickup_date,
+        req.body.pickup_time || "16:00:00",
+      );
+      deliveryUpdate += `pickup_date = '${fullPickup}',`;
+    }
+    if (req.body.order_type) {
+      deliveryUpdate += `order_type = '${req.body.order_type.replace(/'/g, "\\'")}',`;
     }
 
     await DataUpdate(
@@ -3353,18 +3514,24 @@ router.post("/order", auth, async (req, res) => {
       (order_date.getMonth() + 1 < 10 ? "0" : "") + (order_date.getMonth() + 1);
     let order_year = order_date.getFullYear();
     let order_fullDate = `${order_year}-${order_month}-${order_day}`;
+    let order_type = req.body.order_type || cart[0].order_type || "Customer drop-off & Customer pick-up";
     let finalDeliveryDate = deliverydate
       ? formatMySQLDateTime(deliverydate, deliverytime || "16:00:00")
       : cart[0].delivery_date
         ? formatMySQLDateTime(cart[0].delivery_date)
         : `${order_fullDate} 16:00:00`;
+    let finalPickupDate = req.body.pickupdate
+      ? formatMySQLDateTime(req.body.pickupdate, req.body.pickuptime || "16:00:00")
+      : cart[0].pickup_date
+        ? formatMySQLDateTime(cart[0].pickup_date)
+        : (order_type.includes("pick-up") ? finalDeliveryDate : null);
 
     const order = await DataInsert(
       `tbl_order`,
-      `order_id,order_date,delivery_date,order_status,service_list,customer_id,created_by,store_id,addon_data,
+      `order_id,order_date,delivery_date,pickup_date,order_type,order_status,service_list,customer_id,created_by,store_id,addon_data,
         addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission, commission_status,reference_number`,
       `'${orderid}',
-        '${order_fullDate}','${finalDeliveryDate}',${1},'${
+        '${order_fullDate}','${finalDeliveryDate}',${finalPickupDate ? `'${finalPickupDate}'` : 'NULL'},'${order_type.replace(/'/g, "\\'")}',${1},'${
           cart[0].service_list_id
         }','${cart[0].customer_id}','${cart[0].created_by}','${
           cart[0].store_id
@@ -3522,6 +3689,8 @@ router.post("/order", auth, async (req, res) => {
    addon_id = 0,
    addon_price = 0,
    delivery_date = CURRENT_TIMESTAMP,
+   pickup_date = CURRENT_TIMESTAMP,
+   order_type = 'Customer drop-off & Customer pick-up',
    extra_discount = 0,
    coupon_id = 0,
    coupon_discount = 0,
@@ -3831,18 +4000,24 @@ router.post("/save_order", auth, async (req, res) => {
       (order_date.getMonth() + 1 < 10 ? "0" : "") + (order_date.getMonth() + 1);
     let order_year = order_date.getFullYear();
     let order_fullDate = `${order_year}-${order_month}-${order_day}`;
+    let order_type = req.body.order_type || cart[0].order_type || "Customer drop-off & Customer pick-up";
     let finalDeliveryDate = deliverydate
       ? formatMySQLDateTime(deliverydate, deliverytime || "16:00:00")
       : cart[0].delivery_date
         ? formatMySQLDateTime(cart[0].delivery_date)
         : `${order_fullDate} 16:00:00`;
+    let finalPickupDate = req.body.pickupdate
+      ? formatMySQLDateTime(req.body.pickupdate, req.body.pickuptime || "16:00:00")
+      : cart[0].pickup_date
+        ? formatMySQLDateTime(cart[0].pickup_date)
+        : (order_type.includes("pick-up") ? finalDeliveryDate : null);
 
     const order = await DataInsert(
       `tbl_order`,
-      `order_id,order_date,delivery_date,order_status,service_list,customer_id,created_by,store_id,addon_data,
+      `order_id,order_date,delivery_date,pickup_date,order_type,order_status,service_list,customer_id,created_by,store_id,addon_data,
         addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission,commission_status,reference_number`,
       `'${orderid}',
-        '${order_fullDate}','${finalDeliveryDate}',${1},'${
+        '${order_fullDate}','${finalDeliveryDate}',${finalPickupDate ? `'${finalPickupDate}'` : 'NULL'},'${order_type.replace(/'/g, "\\'")}',${1},'${
           cart[0].service_list_id
         }','${cart[0].customer_id}','${cart[0].created_by}','${
           cart[0].store_id
@@ -3948,6 +4123,8 @@ router.post("/save_order", auth, async (req, res) => {
    addon_id = 0,
    addon_price = 0,
    delivery_date = CURRENT_TIMESTAMP,
+   pickup_date = CURRENT_TIMESTAMP,
+   order_type = 'Customer drop-off & Customer pick-up',
    extra_discount = 0,
    coupon_id = 0,
    coupon_discount = 0,
@@ -4274,6 +4451,22 @@ const renderPosPrint = async (req, res) => {
         .replace(",", ""); // Removes the comma after the day name
     }
 
+    let pickDateObj = new Date(orderdata[0].pickup_date || orderdata[0].delivery_date);
+    let pdate = "";
+    if (!isNaN(pickDateObj.getTime())) {
+      pdate = pickDateObj
+        .toLocaleString("en-US", {
+          weekday: "short",
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        })
+        .replace(",", "");
+    }
+
     let logoFileName = "";
     if (
       shope &&
@@ -4336,6 +4529,7 @@ const renderPosPrint = async (req, res) => {
       master: accessdata.masterstore,
       oate,
       ddate,
+      pdate,
       oate2,
       accessdata,
       invoice_logo_base64,

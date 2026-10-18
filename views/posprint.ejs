@@ -1029,10 +1029,19 @@
                         </tr>
                         <% } %>
 
+                        <% const isDelPos = (order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery'); %>
+                        <% if (order.order_type) { %>
                         <tr>
-                          <td class="text-start" style="font-size: 12px;">Ready:</td>
+                          <td class="text-start" style="font-size: 11px;">Type:</td>
+                          <td class="text-end" style="font-size: 11px;">
+                            <%= order.order_type %>
+                          </td>
+                        </tr>
+                        <% } %>
+                        <tr>
+                          <td class="text-start" style="font-size: 12px;"><%= isDelPos ? 'Delivery:' : 'Pick-up:' %></td>
                           <td class="text-end" style="font-size: 12px;">
-                            <%= ddate %>
+                            <%= isDelPos ? ddate : (pdate || ddate) %>
                           </td>
                         </tr>
 
@@ -1098,7 +1107,10 @@
     const orderData = <%- JSON.stringify(order || {}) %>;
     const customerData = <%- JSON.stringify((Array.isArray(customer) && customer.length > 0) ? customer[0] : (customer || {})) %>;
     const storeName = "<%= (shope && shope.name) ? shope.name : (accessdata && accessdata.masterstore ? accessdata.masterstore.app_name : '') %>";
-    const deliveryDate = "<%= ddate %>";
+    const orderType = "<%= (order && order.order_type) ? order.order_type : 'Customer drop-off & Customer pick-up' %>";
+    const isDelivery = "<%= (order && (order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery')) ? '1' : '0' %>" === "1";
+    const readyDate = isDelivery ? "<%= ddate %>" : "<%= pdate || ddate %>";
+    const tagDateSuffix = isDelivery ? " [Del]" : " [Pick]";
 
     const posClient = new POSPrintClient({ baseUrl: serverUrl, timeout: 4000 });
     let isServerOnline = false;
@@ -1245,7 +1257,7 @@
                   <span><b>${pieceIndex}/${totalPieces}</b></span>
                 </div>
                 <div class="tag-order-row">${custName}</div>
-                <div class="tag-order-row"><b>${deliveryDate}</b></div>
+                <div class="tag-order-row"><b>${readyDate}${tagDateSuffix}</b></div>
               </div>
             `;
 

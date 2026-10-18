@@ -910,6 +910,81 @@ router.post("/shopregister", upload.single("logo"), async (req, res) => {
   }
 });
 
+function enrichRecentOrders(orders, accessdata, isMaster = false) {
+  const canDelete = isMaster || Boolean(
+    accessdata &&
+    accessdata.roll &&
+    accessdata.roll.orders &&
+    accessdata.roll.orders.includes("delete")
+  );
+  const canEdit = isMaster || Boolean(
+    accessdata &&
+    accessdata.roll &&
+    accessdata.roll.orders &&
+    accessdata.roll.orders.includes("edit")
+  );
+
+  return (orders || []).map((order) => {
+    const oDate = order.order_date ? new Date(order.order_date) : null;
+    let formattedOrderDate = "";
+    if (oDate && !isNaN(oDate.getTime())) {
+      const oDay = (oDate.getDate() < 10 ? "0" : "") + oDate.getDate();
+      const oMonth = (oDate.getMonth() + 1 < 10 ? "0" : "") + (oDate.getMonth() + 1);
+      const oYear = oDate.getFullYear();
+      formattedOrderDate = `${oYear}-${oMonth}-${oDay}`;
+    }
+
+    const dDate = order.delivery_date ? new Date(order.delivery_date) : null;
+    let formattedDeliveryDate = "";
+    if (dDate && !isNaN(dDate.getTime())) {
+      const dDay = (dDate.getDate() < 10 ? "0" : "") + dDate.getDate();
+      const dMonth = (dDate.getMonth() + 1 < 10 ? "0" : "") + (dDate.getMonth() + 1);
+      const dYear = dDate.getFullYear();
+      formattedDeliveryDate = `${dYear}-${dMonth}-${dDay}`;
+    }
+
+    const pDate = order.pickup_date ? new Date(order.pickup_date) : null;
+    let formattedPickupDate = "";
+    if (pDate && !isNaN(pDate.getTime())) {
+      const pDay = (pDate.getDate() < 10 ? "0" : "") + pDate.getDate();
+      const pMonth = (pDate.getMonth() + 1 < 10 ? "0" : "") + (pDate.getMonth() + 1);
+      const pYear = pDate.getFullYear();
+      formattedPickupDate = `${pYear}-${pMonth}-${pDay}`;
+    }
+
+    let statusClass = "status-processing";
+    if (order.order_status == 1) statusClass = "status-pending";
+    else if (order.order_status == 2) statusClass = "status-processing";
+    else if (order.order_status == 3) statusClass = "status-ready";
+    else if (order.order_status == 4) statusClass = "status-delivered";
+    else if (order.order_status == 5) statusClass = "status-returned";
+    else if (order.order_status == 6) statusClass = "status-cancelled";
+
+    const gross = parseFloat(order.gross_total || 0);
+    const paid = parseFloat(order.paid_amount || 0);
+    const balance = (order.balance_amount !== undefined && order.balance_amount !== null)
+      ? parseFloat(order.balance_amount)
+      : Math.max(0, gross - paid);
+
+    return {
+      ...order,
+      customer_name: order.customer || order.customer_name || 'Walk In Customer',
+      customer_number: order.customer_number || '',
+      storeName: order.store || order.storeName || '',
+      orderStatusName: order.status || order.orderStatusName || 'Pending',
+      formattedOrderDate,
+      formattedDeliveryDate,
+      formattedPickupDate,
+      order_type: order.order_type || 'Customer drop-off & Customer pick-up',
+      statusClass,
+      balance_amount: balance,
+      canDelete,
+      canEdit,
+      isMaster,
+    };
+  });
+}
+
 // home page
 router.get("/index", auth, async (req, res) => {
   try {
@@ -976,16 +1051,33 @@ router.get("/index", auth, async (req, res) => {
         WHERE (created_by = '1,${id}' OR created_by = '${id}')
       `);
 
-      const recentOrder = await DataFind(`
-        SELECT tbl_order.order_id, tbl_order.id, tbl_order.order_date, tbl_order.gross_total, tbl_order.paid_amount, tbl_order.store_id, tbl_order.order_status, tbl_customer.name as customer, tbl_orderstatus.status, tbl_store.name as store
+      const rawRecentOrder = await DataFind(`
+        SELECT 
+          tbl_order.order_id, 
+          tbl_order.id, 
+          tbl_order.order_date, 
+          tbl_order.delivery_date, 
+          tbl_order.pickup_date, 
+          tbl_order.order_type, 
+          tbl_order.gross_total, 
+          tbl_order.paid_amount, 
+          tbl_order.balance_amount, 
+          tbl_order.store_id, 
+          tbl_order.order_status, 
+          COALESCE(tbl_customer.name, 'Walk In Customer') as customer, 
+          COALESCE(tbl_customer.number, '') as customer_number, 
+          COALESCE(tbl_orderstatus.status, 'Pending') as status, 
+          COALESCE(tbl_store.name, '') as store
         FROM tbl_order
-        JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id  
-        JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
+        LEFT JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id  
+        LEFT JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
         LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
         WHERE (tbl_order.created_by = '1,${id}' OR tbl_order.created_by = '${id}')
         ORDER BY tbl_order.id DESC 
         LIMIT 10
       `);
+
+      const recentOrder = enrichRecentOrders(rawRecentOrder, accessdata, false);
 
       return res.render("staff_dashboard", {
         accessdata,
@@ -1015,16 +1107,33 @@ router.get("/index", auth, async (req, res) => {
           (SELECT COUNT(*) FROM tbl_customer WHERE store_ID = '${activeStoreId}' AND approved = '1' AND delet_flage != '1' AND name != 'Walk in Customer') AS totalcustomer
       `);
 
-      const recentOrder = await DataFind(`
-        SELECT tbl_order.order_id, tbl_order.id, tbl_order.gross_total, tbl_order.paid_amount, tbl_order.store_id, tbl_order.order_status, tbl_customer.name as customer, tbl_orderstatus.status, tbl_store.name as store
+      const rawRecentOrder = await DataFind(`
+        SELECT 
+          tbl_order.order_id, 
+          tbl_order.id, 
+          tbl_order.order_date, 
+          tbl_order.delivery_date, 
+          tbl_order.pickup_date, 
+          tbl_order.order_type, 
+          tbl_order.gross_total, 
+          tbl_order.paid_amount, 
+          tbl_order.balance_amount, 
+          tbl_order.store_id, 
+          tbl_order.order_status, 
+          COALESCE(tbl_customer.name, 'Walk In Customer') as customer, 
+          COALESCE(tbl_customer.number, '') as customer_number, 
+          COALESCE(tbl_orderstatus.status, 'Pending') as status, 
+          COALESCE(tbl_store.name, '') as store
         FROM tbl_order
-        JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id  
-        JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
+        LEFT JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id  
+        LEFT JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
         JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
         WHERE tbl_order.store_id = '${activeStoreId}'
         ORDER BY tbl_order.id DESC 
         LIMIT 10
       `);
+
+      const recentOrder = enrichRecentOrders(rawRecentOrder, accessdata, false);
 
       const chartOrders = await DataFind(`
         SELECT 
@@ -1093,15 +1202,32 @@ router.get("/index", auth, async (req, res) => {
         ORDER BY s.id ASC
       `);
 
-      const recentOrder = await DataFind(`
-        SELECT tbl_order.order_id, tbl_order.id, tbl_order.gross_total, tbl_order.paid_amount, tbl_order.store_id, tbl_order.order_status, tbl_customer.name as customer, tbl_orderstatus.status, tbl_store.name as store 
+      const rawRecentOrder = await DataFind(`
+        SELECT 
+          tbl_order.order_id, 
+          tbl_order.id, 
+          tbl_order.order_date, 
+          tbl_order.delivery_date, 
+          tbl_order.pickup_date, 
+          tbl_order.order_type, 
+          tbl_order.gross_total, 
+          tbl_order.paid_amount, 
+          tbl_order.balance_amount, 
+          tbl_order.store_id, 
+          tbl_order.order_status, 
+          COALESCE(tbl_customer.name, 'Walk In Customer') as customer, 
+          COALESCE(tbl_customer.number, '') as customer_number, 
+          COALESCE(tbl_orderstatus.status, 'Pending') as status, 
+          COALESCE(tbl_store.name, '') as store 
         FROM tbl_order 
-        JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id 
-        JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
+        LEFT JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id 
+        LEFT JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
         LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
         ORDER BY tbl_order.id DESC 
         LIMIT 10
       `);
+
+      const recentOrder = enrichRecentOrders(rawRecentOrder, accessdata, true);
 
       const chartOrders = await DataFind(`
         SELECT 

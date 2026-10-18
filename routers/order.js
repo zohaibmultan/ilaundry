@@ -269,6 +269,15 @@ router.get("/list/data", auth, async (req, res) => {
       filterConditions.push(`tbl_order.store_id = '${cleanStore}'`);
     }
 
+    const orderTypeParam = req.query.order_type;
+    if (
+      orderTypeParam &&
+      !["all", "ALL", "", "0"].includes(String(orderTypeParam).trim())
+    ) {
+      const cleanOrderType = String(orderTypeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_order.order_type = '${cleanOrderType}'`);
+    }
+
     if (req.query.start_date) {
       const cleanStartDate = String(req.query.start_date)
         .trim()
@@ -314,6 +323,7 @@ router.get("/list/data", auth, async (req, res) => {
         "tbl_store.name",
         "tbl_orderstatus.status",
         "tbl_order.reference_number",
+        "tbl_order.order_type",
       ],
       baseWhere: scopeConditions,
       filterWhere: filterConditions,
@@ -346,6 +356,16 @@ router.get("/list/data", auth, async (req, res) => {
           const formattedOrderDate = `${oYear}-${oMonth}-${oDay}`;
           const formattedDeliveryDate = `${dYear}-${dMonth}-${dDay}`;
 
+          const pDate = order.pickup_date ? new Date(order.pickup_date) : null;
+          let formattedPickupDate = "";
+          if (pDate && !isNaN(pDate.getTime())) {
+            const pDay = (pDate.getDate() < 10 ? "0" : "") + pDate.getDate();
+            const pMonth =
+              (pDate.getMonth() + 1 < 10 ? "0" : "") + (pDate.getMonth() + 1);
+            const pYear = pDate.getFullYear();
+            formattedPickupDate = `${pYear}-${pMonth}-${pDay}`;
+          }
+
           let statusClass = "status-processing";
           if (order.order_status == 1) statusClass = "status-pending";
           else if (order.order_status == 2) statusClass = "status-processing";
@@ -358,6 +378,8 @@ router.get("/list/data", auth, async (req, res) => {
             ...order,
             formattedOrderDate,
             formattedDeliveryDate,
+            formattedPickupDate,
+            order_type: order.order_type || 'Customer drop-off & Customer pick-up',
             statusClass,
             canDelete,
             canEdit,
@@ -1339,6 +1361,9 @@ const renderOrderPrint = async (req, res) => {
     let ddate = new Date(orderdata[0].delivery_date).toLocaleDateString(
       "en-CA",
     );
+    let pdate = orderdata[0].pickup_date
+      ? new Date(orderdata[0].pickup_date).toLocaleDateString("en-CA")
+      : ddate;
 
     res.render("orderprint", {
       cartservice: orderServiceList,
@@ -1352,6 +1377,7 @@ const renderOrderPrint = async (req, res) => {
       master: accessdata.masterstore,
       oate,
       ddate,
+      pdate,
       accessdata,
     });
   } catch (error) {

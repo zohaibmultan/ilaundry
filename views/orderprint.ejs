@@ -271,14 +271,22 @@
           <%= oate %>
         </td>
       </tr>
+      <% const isDelOrderPrint = (order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery'); %>
       <tr>
-        <td class="text-start"><b>Delivery:</b>
-          <%= ddate %>
+        <td class="text-start"><b><%= isDelOrderPrint ? 'Delivery:' : 'Pick-up:' %></b>
+          <%= isDelOrderPrint ? ddate : (pdate || ddate) %>
         </td>
         <td class="text-end"><b>Status:</b>
           <%= order.order_status_name %>
         </td>
       </tr>
+      <% if (order.order_type) { %>
+      <tr>
+        <td class="text-start" colspan="2"><b>Type:</b>
+          <%= order.order_type %>
+        </td>
+      </tr>
+      <% } %>
       <% let custObj=(Array.isArray(customer) && customer.length> 0) ? customer[0] : (customer || {});
         let custName = custObj.name || '';
         let custNumber = custObj.number || '';

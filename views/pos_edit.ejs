@@ -118,7 +118,19 @@
                                         <input type="text" id="order_id" value="<%= order_date[0].id %>" readonly>
                                     </div>
 
-                                    <div class="col-6 col-sm-3 col-lg-3">
+                                    <div class="col-12">
+                                        <div class="pos-date-group">
+                                            <label class="pos-field-label mb-0" for="edit_pos_order_type"><%= language.Order_Type || 'Order Type' %></label>
+                                            <select class="form-select form-select-sm pos-input-sm w-100" id="edit_pos_order_type" name="edit_pos_order_type">
+                                                <option value="Customer drop-off & Customer pick-up" <%= (!order_date[0].order_type || order_date[0].order_type === 'Customer drop-off & Customer pick-up') ? 'selected' : '' %>>1. Customer drop-off & Customer pick-up</option>
+                                                <option value="Customer drop-off & Store delivery" <%= (order_date[0].order_type === 'Customer drop-off & Store delivery') ? 'selected' : '' %>>2. Customer drop-off & Store delivery</option>
+                                                <option value="Store collection & Customer pick-up" <%= (order_date[0].order_type === 'Store collection & Customer pick-up') ? 'selected' : '' %>>3. Store collection & Customer pick-up</option>
+                                                <option value="Store collection & Store delivery" <%= (order_date[0].order_type === 'Store collection & Store delivery') ? 'selected' : '' %>>4. Store collection & Store delivery</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-6 col-sm-6">
                                         <div class="pos-date-group">
                                             <label class="pos-field-label">Order #</label>
                                             <input type="text" id="pos_order_id" class="form-control pos-input-sm w-100"
@@ -126,7 +138,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-6 col-sm-4 col-lg-4">
+                                    <div class="col-6 col-sm-6">
                                         <div class="pos-date-group">
                                             <label class="pos-field-label"><%= language.Order_Date || 'Order Date' %></label>
                                             <% let new_date=new Date(order_date[0].order_date) %>
@@ -142,25 +154,68 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-12 col-sm-5 col-lg-5">
+                                    <% 
+                                        let editOrderType = order_date[0].order_type || 'Customer drop-off & Customer pick-up';
+                                        let editIsDelivery = editOrderType === 'Customer drop-off & Store delivery' || editOrderType === 'Store collection & Store delivery';
+
+                                        let pick_raw = order_date[0].pickup_date || order_date[0].delivery_date || order_date[0].order_date;
+                                        let pick_date = new Date(pick_raw);
+                                        let pick_year = pick_date.getFullYear();
+                                        let pick_day = (pick_date.getDate() < 10 ? '0' : '' ) + pick_date.getDate();
+                                        let pick_month = ((pick_date.getMonth()+1) < 10 ? '0' : '') + (pick_date.getMonth()+1);
+                                        let pick_fullDate = `${pick_year}-${pick_month}-${pick_day}`;
+                                        let pick_hours = (pick_date.getHours() < 10 ? '0' : '') + pick_date.getHours();
+                                        let pick_mins = (pick_date.getMinutes() < 10 ? '0' : '') + pick_date.getMinutes();
+                                        let pick_time = (pick_hours !== '00' || pick_mins !== '00') ? `${pick_hours}:${pick_mins}` : '16:00';
+
+                                        let del_raw = order_date[0].delivery_date || order_date[0].order_date;
+                                        let del_date = new Date(del_raw);
+                                        let del_year = del_date.getFullYear();
+                                        let del_day = (del_date.getDate() < 10 ? '0' : '' ) + del_date.getDate();
+                                        let del_month = ((del_date.getMonth()+1) < 10 ? '0' : '') + (del_date.getMonth()+1);
+                                        let del_fullDate = `${del_year}-${del_month}-${del_day}`;
+                                        let del_hours = (del_date.getHours() < 10 ? '0' : '') + del_date.getHours();
+                                        let del_mins = (del_date.getMinutes() < 10 ? '0' : '') + del_date.getMinutes();
+                                        let del_time = (del_hours !== '00' || del_mins !== '00') ? `${del_hours}:${del_mins}` : '16:00';
+                                    %>
+
+                                    <!-- Pick-up Date & Time -->
+                                    <div class="col-12" id="edit_pos_pickup_date_group" style="<%= editIsDelivery ? 'display: none;' : '' %>">
                                         <div class="pos-date-group">
                                             <div class="d-flex align-items-center justify-content-between mb-1">
-                                                <label class="pos-field-label mb-0"><%= language.Delivery_Date || 'Ready Date & Time' %></label>
+                                                <label class="pos-field-label mb-0"><%= language.Pickup_Date || 'Pick-up Date & Time' %></label>
+                                                <button type="button" class="btn btn-outline-primary py-0 px-2 border-0" id="btn_auto_edit_pickup_schedule" title="Reset to automated ready schedule" style="font-size: 11px;">
+                                                    <i class="fas fa-magic me-1"></i>Auto
+                                                </button>
+                                            </div>
+                                            <div class="input-group input-group-sm">
+                                                <input type="date"
+                                                    class="form-control pos-input-sm"
+                                                    id="edit_POS_pickup_date"
+                                                    name="edit_pos_pickup_date"
+                                                    value="<%= pick_fullDate %>"
+                                                    min="<%= fullDate %>"
+                                                    title="<%= language.Pickup_Date || 'Pick-up Date' %>">
+                                                <input type="time"
+                                                    class="form-control pos-input-sm"
+                                                    id="edit_POS_pickup_time"
+                                                    name="edit_pos_pickup_time"
+                                                    value="<%= pick_time %>"
+                                                    style="max-width: 115px;"
+                                                    title="Pick-up Time">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Delivery Date & Time -->
+                                    <div class="col-12" id="edit_pos_delivery_date_group" style="<%= !editIsDelivery ? 'display: none;' : '' %>">
+                                        <div class="pos-date-group">
+                                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                                <label class="pos-field-label mb-0"><%= language.Delivery_Date || 'Delivery Date & Time' %></label>
                                                 <button type="button" class="btn btn-outline-primary py-0 px-2 border-0" id="btn_auto_edit_ready_schedule" title="Reset to automated ready schedule" style="font-size: 11px;">
                                                     <i class="fas fa-magic me-1"></i>Auto
                                                 </button>
                                             </div>
-                                            <% 
-                                                let del_raw = order_date[0].delivery_date || order_date[0].order_date;
-                                                let del_date = new Date(del_raw);
-                                                let del_year = del_date.getFullYear();
-                                                let del_day = (del_date.getDate() < 10 ? '0' : '' ) + del_date.getDate();
-                                                let del_month = ((del_date.getMonth()+1) < 10 ? '0' : '' ) + (del_date.getMonth()+1);
-                                                let del_fullDate = `${del_year}-${del_month}-${del_day}`;
-                                                let del_hours = (del_date.getHours() < 10 ? '0' : '') + del_date.getHours();
-                                                let del_mins = (del_date.getMinutes() < 10 ? '0' : '') + del_date.getMinutes();
-                                                let del_time = (del_hours !== '00' || del_mins !== '00') ? `${del_hours}:${del_mins}` : '16:00';
-                                            %>
                                             <div class="input-group input-group-sm">
                                                 <input type="date"
                                                     class="form-control pos-input-sm"
@@ -168,14 +223,14 @@
                                                     name="edit_pos_delivery_date"
                                                     value="<%= del_fullDate %>"
                                                     min="<%= fullDate %>"
-                                                    title="<%= language.Delivery_Date || 'Ready Date' %>">
+                                                    title="<%= language.Delivery_Date || 'Delivery Date' %>">
                                                 <input type="time"
                                                     class="form-control pos-input-sm"
                                                     id="edit_POS_delivery_time"
                                                     name="edit_pos_delivery_time"
                                                     value="<%= del_time %>"
                                                     style="max-width: 115px;"
-                                                    title="Ready Time">
+                                                    title="Delivery Time">
                                             </div>
                                         </div>
                                     </div>
@@ -471,24 +526,44 @@
                                     <!-- Left Column: Inputs -->
                                     <div class="col-12 col-lg-7">
                                         <div class="row g-3 align-items-start mb-3">
-                                             <div class="col-12 col-sm-6">
+                                            <input type="hidden" name="order_type" id="edit_modal_order_type" value="<%= order_date[0].order_type || 'Customer drop-off & Customer pick-up' %>">
+
+                                            <!-- Pick-up Date & Time in Edit Payment Modal -->
+                                            <div class="col-12 col-sm-6" id="edit_modal_pickup_group" style="<%= editIsDelivery ? 'display: none;' : '' %>">
                                                 <div class="pos-modal-field-header">
-                                                    <label class="form-label mb-0" for="deliverydate">
-                                                        <%= language.Delivery_Date || 'Ready Date & Time' %>
+                                                    <label class="form-label mb-0" for="edit_pickupdate">
+                                                        <%= language.Pickup_Date || 'Pick-up Date & Time' %>
                                                     </label>
                                                 </div>
                                                 <div class="input-group input-group-sm">
-                                                    <input type="date" class="form-control" name="deliverydate"
+                                                    <input type="date" class="form-control me-3" name="pickupdate"
+                                                        id="edit_pickupdate">
+                                                    <input type="time" class="form-control" name="pickuptime"
+                                                        id="edit_pickuptime" value="16:00" style="max-width: 105px;">
+                                                </div>
+                                                <input type="date" class="form-control" name="pickupdate_hidden"
+                                                    id="edit_pickupdate_hidden" hidden>
+                                            </div>
+
+                                            <!-- Delivery Date & Time in Edit Payment Modal -->
+                                            <div class="col-12 col-sm-6" id="edit_modal_delivery_group" style="<%= !editIsDelivery ? 'display: none;' : '' %>">
+                                                <div class="pos-modal-field-header">
+                                                    <label class="form-label mb-0" for="deliverydate">
+                                                        <%= language.Delivery_Date || 'Delivery Date & Time' %>
+                                                    </label>
+                                                </div>
+                                                <div class="input-group input-group-sm">
+                                                    <input type="date" class="form-control me-3" name="deliverydate"
                                                         id="deliverydate">
                                                     <input type="time" class="form-control" name="deliverytime"
                                                         id="deliverytime" value="16:00" style="max-width: 105px;">
                                                 </div>
-
                                                 <input type="date" class="form-control" name="deliverydate_hidden"
                                                     id="deliverydate_hidden" hidden>
-                                                <input type="hidden" id="POS_gross_order" value="" name="gross">
-                                                <input type="hidden" id="POS_subtotal_order" value="" name="sub">
                                             </div>
+
+                                            <input type="hidden" id="POS_gross_order" value="" name="gross">
+                                            <input type="hidden" id="POS_subtotal_order" value="" name="sub">
                                             <div class="col-12 col-sm-6">
                                                 <div class="pos-modal-field-header">
                                                     <label class="form-label mb-0" for="edit_POS_extra_discount_order">

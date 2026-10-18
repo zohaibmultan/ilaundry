@@ -1098,8 +1098,14 @@
          }
       })
 
-      if (!window.isPosDeliveryScheduleManual && typeof updatePosReadyScheduleUI === 'function') {
-         updatePosReadyScheduleUI('#POS_delivery_date', '#POS_delivery_time', '#btn_auto_ready_schedule', $('#POS_order_date').val(), false);
+      if (typeof updatePosReadyScheduleUI === 'function') {
+         let currentOrderType = $('#pos_order_type').val() || 'Customer drop-off & Customer pick-up';
+         let isDel = (currentOrderType === 'Customer drop-off & Store delivery' || currentOrderType === 'Store collection & Store delivery');
+         if (isDel && !window.isPosDeliveryScheduleManual) {
+            updatePosReadyScheduleUI('#POS_delivery_date', '#POS_delivery_time', '#btn_auto_ready_schedule', $('#POS_order_date').val(), false);
+         } else if (!isDel && !window.isPosPickupScheduleManual) {
+            updatePosReadyScheduleUI('#POS_pickup_date', '#POS_pickup_time', '#btn_auto_pickup_schedule', $('#POS_order_date').val(), false);
+         }
       }
    })
 
@@ -1477,7 +1483,11 @@
    }
 
    function updatePosReadyScheduleUI(targetDateInput, targetTimeInput, autoBtn, orderDateVal, isManualReset) {
-      if (window.isPosDeliveryScheduleManual && !isManualReset) {
+      const isDel = String(targetDateInput).includes('delivery');
+      if (isDel && window.isPosDeliveryScheduleManual && !isManualReset) {
+         return;
+      }
+      if (!isDel && window.isPosPickupScheduleManual && !isManualReset) {
          return;
       }
 
@@ -1488,9 +1498,15 @@
       let localCalc = calculateClientReadySchedule(orderDateVal, window.POS_READY_SCHEDULE);
       $(targetDateInput).val(localCalc.readyDate);
       $(targetTimeInput).val(localCalc.readyTime);
-      $('input[name=deliverydate]').val(localCalc.readyDate);
-      $('input[name=deliverytime]').val(localCalc.readyTime);
-      $('#deliverydate_hidden').val(localCalc.readyDate);
+      if (isDel) {
+         $('input[name=deliverydate]').val(localCalc.readyDate);
+         $('input[name=deliverytime]').val(localCalc.readyTime);
+         $('#deliverydate_hidden').val(localCalc.readyDate);
+      } else {
+         $('input[name=pickupdate]').val(localCalc.readyDate);
+         $('input[name=pickuptime]').val(localCalc.readyTime);
+         $('#pickupdate_hidden').val(localCalc.readyDate);
+      }
 
       // 2. Fetch authoritative calculation from backend
       $.ajax({
@@ -1503,28 +1519,133 @@
                if (res.schedule) window.POS_READY_SCHEDULE = res.schedule;
                $(targetDateInput).val(res.result.readyDate);
                $(targetTimeInput).val(res.result.readyTime);
-               $('input[name=deliverydate]').val(res.result.readyDate);
-               $('input[name=deliverytime]').val(res.result.readyTime);
-               $('#deliverydate_hidden').val(res.result.readyDate);
+               if (isDel) {
+                  $('input[name=deliverydate]').val(res.result.readyDate);
+                  $('input[name=deliverytime]').val(res.result.readyTime);
+                  $('#deliverydate_hidden').val(res.result.readyDate);
+               } else {
+                  $('input[name=pickupdate]').val(res.result.readyDate);
+                  $('input[name=pickuptime]').val(res.result.readyTime);
+                  $('#pickupdate_hidden').val(res.result.readyDate);
+               }
             }
          }
       });
    }
 
+   // Handle POS Order Type Dropdown Change
+   $(document).on("change", "#pos_order_type", function () {
+      let orderType = $(this).val();
+      let isDelivery = (orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
+
+      if (isDelivery) {
+         $('#pos_pickup_date_group').hide();
+         $('#pos_delivery_date_group').show();
+         $('#modal_pickup_group').hide();
+         $('#modal_delivery_group').show();
+         $('#modal_pos_order_type').val(orderType);
+
+         let orderDate = $('#POS_order_date').val() || new Date().toISOString().slice(0, 10);
+         if (!window.isPosDeliveryScheduleManual) {
+            updatePosReadyScheduleUI('#POS_delivery_date', '#POS_delivery_time', '#btn_auto_ready_schedule', orderDate, false);
+         }
+      } else {
+         $('#pos_delivery_date_group').hide();
+         $('#pos_pickup_date_group').show();
+         $('#modal_delivery_group').hide();
+         $('#modal_pickup_group').show();
+         $('#modal_pos_order_type').val(orderType);
+
+         let orderDate = $('#POS_order_date').val() || new Date().toISOString().slice(0, 10);
+         if (!window.isPosPickupScheduleManual) {
+            updatePosReadyScheduleUI('#POS_pickup_date', '#POS_pickup_time', '#btn_auto_pickup_schedule', orderDate, false);
+         }
+      }
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/pos_order_type",
+         data: { order_type: orderType },
+         dataType: 'json',
+         success: function (res) {
+         }
+      });
+   });
+
+   // Handle Edit POS Order Type Dropdown Change
+   $(document).on("change", "#edit_pos_order_type", function () {
+      let orderType = $(this).val();
+      let order_id = $('#order_id').val();
+      let isDelivery = (orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
+
+      if (isDelivery) {
+         $('#edit_pos_pickup_date_group').hide();
+         $('#edit_pos_delivery_date_group').show();
+         $('#edit_modal_pickup_group').hide();
+         $('#edit_modal_delivery_group').show();
+         $('#edit_modal_pos_order_type').val(orderType);
+
+         let orderDate = $('#edit_POS_order_date').val() || new Date().toISOString().slice(0, 10);
+         if (!window.isPosDeliveryScheduleManual) {
+            updatePosReadyScheduleUI('#edit_POS_delivery_date', '#edit_POS_delivery_time', '#btn_auto_edit_ready_schedule', orderDate, false);
+         }
+      } else {
+         $('#edit_pos_delivery_date_group').hide();
+         $('#edit_pos_pickup_date_group').show();
+         $('#edit_modal_delivery_group').hide();
+         $('#edit_modal_pickup_group').show();
+         $('#edit_modal_pos_order_type').val(orderType);
+
+         let orderDate = $('#edit_POS_order_date').val() || new Date().toISOString().slice(0, 10);
+         if (!window.isPosPickupScheduleManual) {
+            updatePosReadyScheduleUI('#edit_POS_pickup_date', '#edit_POS_pickup_time', '#btn_auto_edit_pickup_schedule', orderDate, false);
+         }
+      }
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/edit_pos_order_type",
+         data: { order_type: orderType, order_id: order_id },
+         dataType: 'json',
+         success: function (res) {
+         }
+      });
+   });
+
    $(document).on("change", "#POS_order_date", function () {
       let date = $(this).val();
       $('#POS_delivery_date').attr('min', date);
+      $('#POS_pickup_date').attr('min', date);
 
-      if (!window.isPosDeliveryScheduleManual) {
-         updatePosReadyScheduleUI('#POS_delivery_date', '#POS_delivery_time', '#btn_auto_ready_schedule', date, false);
-      } else {
-         let currentDel = $('#POS_delivery_date').val();
-         if (!currentDel || currentDel < date) {
-            $('#POS_delivery_date').val(date);
-            currentDel = date;
+      let orderType = $('#pos_order_type').val() || '';
+      let isDelivery = (orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
+
+      if (isDelivery) {
+         if (!window.isPosDeliveryScheduleManual) {
+            updatePosReadyScheduleUI('#POS_delivery_date', '#POS_delivery_time', '#btn_auto_ready_schedule', date, false);
+         } else {
+            let currentDel = $('#POS_delivery_date').val();
+            if (!currentDel || currentDel < date) {
+               $('#POS_delivery_date').val(date);
+               currentDel = date;
+            }
+            $('input[name=deliverydate]').val(currentDel).attr('min', date);
+            $('#deliverydate_hidden').val(currentDel);
          }
-         $('input[name=deliverydate]').val(currentDel).attr('min', date);
-         $('#deliverydate_hidden').val(currentDel);
+      } else {
+         if (!window.isPosPickupScheduleManual) {
+            updatePosReadyScheduleUI('#POS_pickup_date', '#POS_pickup_time', '#btn_auto_pickup_schedule', date, false);
+         } else {
+            let currentPick = $('#POS_pickup_date').val();
+            if (!currentPick || currentPick < date) {
+               $('#POS_pickup_date').val(date);
+               currentPick = date;
+            }
+            $('input[name=pickupdate]').val(currentPick).attr('min', date);
+            $('#pickupdate_hidden').val(currentPick);
+         }
       }
 
       var baseUrl = window.location.origin;
@@ -1586,21 +1707,85 @@
       });
    });
 
+   $(document).on("change", "#POS_pickup_date, #POS_pickup_time", function () {
+      window.isPosPickupScheduleManual = true;
+      $('#btn_auto_pickup_schedule').removeClass('btn-outline-primary').addClass('btn-warning text-dark').attr('title', 'Manual schedule locked - Click to reset to auto');
+
+      let pickup_date = $('#POS_pickup_date').val();
+      let pickup_time = $('#POS_pickup_time').val() || '16:00';
+      let order_date = $('#POS_order_date').val();
+      if (order_date && pickup_date < order_date) {
+         pickup_date = order_date;
+         $('#POS_pickup_date').val(pickup_date);
+      }
+      $('input[name=pickupdate]').val(pickup_date);
+      $('input[name=pickuptime]').val(pickup_time);
+      $('#pickupdate_hidden').val(pickup_date);
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/pickup_date",
+         data: { pickup_date, pickup_time },
+         dataType: 'json',
+         success: function (res) {
+         }
+      });
+   });
+
+   $(document).on("click", "#btn_auto_pickup_schedule", function (e) {
+      e.preventDefault();
+      window.isPosPickupScheduleManual = false;
+      $(this).removeClass('btn-warning text-dark').addClass('btn-outline-primary').attr('title', 'Reset to automated ready schedule');
+      let orderDate = $('#POS_order_date').val() || new Date().toISOString().slice(0, 10);
+      updatePosReadyScheduleUI('#POS_pickup_date', '#POS_pickup_time', this, orderDate, true);
+      let pickup_date = $('#POS_pickup_date').val();
+      let pickup_time = $('#POS_pickup_time').val() || '16:00';
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/pickup_date",
+         data: { pickup_date, pickup_time },
+         dataType: 'json',
+         success: function (res) {
+            toastr.info('Ready schedule recalculated automatically');
+         }
+      });
+   });
+
    $(document).on("change", "#edit_POS_order_date", function () {
       var order_id = $('#order_id').val();
       let date = $(this).val();
       $('#edit_POS_delivery_date').attr('min', date);
+      $('#edit_POS_pickup_date').attr('min', date);
 
-      if (!window.isPosDeliveryScheduleManual) {
-         updatePosReadyScheduleUI('#edit_POS_delivery_date', '#edit_POS_delivery_time', '#btn_auto_edit_ready_schedule', date, false);
-      } else {
-         let currentDel = $('#edit_POS_delivery_date').val();
-         if (!currentDel || currentDel < date) {
-            $('#edit_POS_delivery_date').val(date);
-            currentDel = date;
+      let orderType = $('#edit_pos_order_type').val() || '';
+      let isDelivery = (orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
+
+      if (isDelivery) {
+         if (!window.isPosDeliveryScheduleManual) {
+            updatePosReadyScheduleUI('#edit_POS_delivery_date', '#edit_POS_delivery_time', '#btn_auto_edit_ready_schedule', date, false);
+         } else {
+            let currentDel = $('#edit_POS_delivery_date').val();
+            if (!currentDel || currentDel < date) {
+               $('#edit_POS_delivery_date').val(date);
+               currentDel = date;
+            }
+            $('input[name=deliverydate]').val(currentDel).attr('min', date);
+            $('#deliverydate_hidden').val(currentDel);
          }
-         $('input[name=deliverydate]').val(currentDel).attr('min', date);
-         $('#deliverydate_hidden').val(currentDel);
+      } else {
+         if (!window.isPosPickupScheduleManual) {
+            updatePosReadyScheduleUI('#edit_POS_pickup_date', '#edit_POS_pickup_time', '#btn_auto_edit_pickup_schedule', date, false);
+         } else {
+            let currentPick = $('#edit_POS_pickup_date').val();
+            if (!currentPick || currentPick < date) {
+               $('#edit_POS_pickup_date').val(date);
+               currentPick = date;
+            }
+            $('input[name=pickupdate]').val(currentPick).attr('min', date);
+            $('#pickupdate_hidden').val(currentPick);
+         }
       }
 
       var baseUrl = window.location.origin;
@@ -1664,6 +1849,54 @@
       });
    });
 
+   $(document).on("change", "#edit_POS_pickup_date, #edit_POS_pickup_time", function () {
+      window.isPosPickupScheduleManual = true;
+      $('#btn_auto_edit_pickup_schedule').removeClass('btn-outline-primary').addClass('btn-warning text-dark').attr('title', 'Manual schedule locked - Click to reset to auto');
+
+      var order_id = $('#order_id').val();
+      let pickup_date = $('#edit_POS_pickup_date').val();
+      let pickup_time = $('#edit_POS_pickup_time').val() || '16:00';
+      let order_date = $('#edit_POS_order_date').val();
+      if (order_date && pickup_date < order_date) {
+         pickup_date = order_date;
+         $('#edit_POS_pickup_date').val(pickup_date);
+      }
+      $('input[name=pickupdate]').val(pickup_date);
+      $('input[name=pickuptime]').val(pickup_time);
+      $('#pickupdate_hidden').val(pickup_date);
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/edit_pickup_date",
+         data: { pickup_date, pickup_time, order_id },
+         dataType: 'json',
+         success: function (res) {
+         }
+      });
+   });
+
+   $(document).on("click", "#btn_auto_edit_pickup_schedule", function (e) {
+      e.preventDefault();
+      window.isPosPickupScheduleManual = false;
+      $(this).removeClass('btn-warning text-dark').addClass('btn-outline-primary').attr('title', 'Reset to automated ready schedule');
+      var order_id = $('#order_id').val();
+      let orderDate = $('#edit_POS_order_date').val() || new Date().toISOString().slice(0, 10);
+      updatePosReadyScheduleUI('#edit_POS_pickup_date', '#edit_POS_pickup_time', this, orderDate, true);
+      let pickup_date = $('#edit_POS_pickup_date').val();
+      let pickup_time = $('#edit_POS_pickup_time').val() || '16:00';
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/edit_pickup_date",
+         data: { pickup_date, pickup_time, order_id },
+         dataType: 'json',
+         success: function (res) {
+            toastr.info('Ready schedule recalculated automatically');
+         }
+      });
+   });
+
    $(document).on("change", "input[name=deliverydate]", function () {
       let val = $(this).val();
       if ($('#POS_delivery_date').length) {
@@ -1681,6 +1914,26 @@
       }
       if ($('#edit_POS_delivery_time').length) {
          $('#edit_POS_delivery_time').val(val).trigger('change');
+      }
+   });
+
+   $(document).on("change", "input[name=pickupdate]", function () {
+      let val = $(this).val();
+      if ($('#POS_pickup_date').length) {
+         $('#POS_pickup_date').val(val).trigger('change');
+      }
+      if ($('#edit_POS_pickup_date').length) {
+         $('#edit_POS_pickup_date').val(val).trigger('change');
+      }
+   });
+
+   $(document).on("change", "input[name=pickuptime]", function () {
+      let val = $(this).val();
+      if ($('#POS_pickup_time').length) {
+         $('#POS_pickup_time').val(val).trigger('change');
+      }
+      if ($('#edit_POS_pickup_time').length) {
+         $('#edit_POS_pickup_time').val(val).trigger('change');
       }
    });
 
@@ -1703,6 +1956,14 @@
             $('#POS_tax_total').html(res.cart.tax_amount.toFixed(2))
             $('#POS_service_added_list').html(' ')
             $('input[name=addon]').prop('checked', false)
+            if ($('#pos_order_type').length) {
+               $('#pos_order_type').val('Customer drop-off & Customer pick-up');
+               $('#pos_pickup_date_group').show();
+               $('#pos_delivery_date_group').hide();
+               $('#modal_pickup_group').show();
+               $('#modal_delivery_group').hide();
+               $('#modal_pos_order_type').val('Customer drop-off & Customer pick-up');
+            }
             poscurrency()
          }
       })
@@ -2289,10 +2550,29 @@
                let orderDateMin = $('#POS_order_date').val() || new Date(res.cart.order_date).toLocaleDateString('en-CA');
                let chosenDel = $('#POS_delivery_date').val() || new Date(res.cart.delivery_date).toLocaleDateString('en-CA');
                let chosenDelTime = $('#POS_delivery_time').val() || '16:00';
+               let chosenPick = $('#POS_pickup_date').val() || (res.cart.pickup_date ? new Date(res.cart.pickup_date).toLocaleDateString('en-CA') : chosenDel);
+               let chosenPickTime = $('#POS_pickup_time').val() || '16:00';
+               let currentOrderType = $('#pos_order_type').val() || res.cart.order_type || 'Customer drop-off & Customer pick-up';
+               let isDel = (currentOrderType === 'Customer drop-off & Store delivery' || currentOrderType === 'Store collection & Store delivery');
+
+               $('#modal_pos_order_type').val(currentOrderType);
+               if (isDel) {
+                  $('#modal_pickup_group').hide();
+                  $('#modal_delivery_group').show();
+               } else {
+                  $('#modal_delivery_group').hide();
+                  $('#modal_pickup_group').show();
+               }
+
                $('input[name=deliverydate]').val(chosenDel);
                $('input[name=deliverydate]').attr('min', orderDateMin);
                $('input[name=deliverytime]').val(chosenDelTime);
                $('#deliverydate_hidden').val(chosenDel);
+
+               $('input[name=pickupdate]').val(chosenPick);
+               $('input[name=pickupdate]').attr('min', orderDateMin);
+               $('input[name=pickuptime]').val(chosenPickTime);
+               $('#pickupdate_hidden').val(chosenPick);
                  $('#pos_disc_type_fixed').prop('checked', true);
                  $('#pos_disc_btn_fixed').addClass('active');
                  $('#pos_disc_btn_percent').removeClass('active');
@@ -2354,10 +2634,29 @@
                let editOrderDateMin = $('#edit_POS_order_date').val() || new Date(res.order_date.order_date).toLocaleDateString('en-CA');
                let editChosenDel = $('#edit_POS_delivery_date').val() || new Date(res.order_date.delivery_date).toLocaleDateString('en-CA');
                let editChosenDelTime = $('#edit_POS_delivery_time').val() || '16:00';
+               let editChosenPick = $('#edit_POS_pickup_date').val() || (res.order_date.pickup_date ? new Date(res.order_date.pickup_date).toLocaleDateString('en-CA') : editChosenDel);
+               let editChosenPickTime = $('#edit_POS_pickup_time').val() || '16:00';
+               let editCurrentOrderType = $('#edit_pos_order_type').val() || res.order_date.order_type || 'Customer drop-off & Customer pick-up';
+               let editIsDel = (editCurrentOrderType === 'Customer drop-off & Store delivery' || editCurrentOrderType === 'Store collection & Store delivery');
+
+               $('#edit_modal_pos_order_type').val(editCurrentOrderType);
+               if (editIsDel) {
+                  $('#edit_modal_pickup_group').hide();
+                  $('#edit_modal_delivery_group').show();
+               } else {
+                  $('#edit_modal_delivery_group').hide();
+                  $('#edit_modal_pickup_group').show();
+               }
+
                $('input[name=deliverydate]').val(editChosenDel);
                $('input[name=deliverydate]').attr('min', editOrderDateMin);
                $('input[name=deliverytime]').val(editChosenDelTime);
                $('#deliverydate_hidden').val(editChosenDel);
+
+               $('input[name=pickupdate]').val(editChosenPick);
+               $('input[name=pickupdate]').attr('min', editOrderDateMin);
+               $('input[name=pickuptime]').val(editChosenPickTime);
+               $('#pickupdate_hidden').val(editChosenPick);
                  $('#edit_pos_disc_type_fixed').prop('checked', true);
                  $('#edit_pos_disc_btn_fixed').addClass('active');
                  $('#edit_pos_disc_btn_percent').removeClass('active');
@@ -2778,10 +3077,12 @@
       $('#POS_order_date').attr('min', todayStr);
       let orderVal = $('#POS_order_date').val() || todayStr;
       $('#POS_delivery_date').attr('min', orderVal);
+      $('#POS_pickup_date').attr('min', orderVal);
 
       if ($('#edit_POS_order_date').length) {
          let editOrderVal = $('#edit_POS_order_date').val() || todayStr;
          $('#edit_POS_delivery_date').attr('min', editOrderVal);
+         $('#edit_POS_pickup_date').attr('min', editOrderVal);
       }
 
       $('#invoice').modal({
