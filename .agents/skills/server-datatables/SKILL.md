@@ -165,5 +165,5 @@ All order lists (including `/order/list`, `views/index.ejs`, and `views/staff_da
 3. **Backend Row Enrichment (`enrichRecentOrders`)**:
    Compute `formattedOrderDate`, `formattedDeliveryDate`, `formattedPickupDate`, `order_type`, `statusClass`, `canDelete`, `canEdit`, and `balance_amount` before rendering.
 
-
-
+4. **Order Type & Dynamic Date Scheduling Invariants**:
+   - Strictly follow .agents/AGENTS.md Section S and Section U: dynamic date labeling (Delivery Date for options 2 & 3 vs Pick-up Date for options 1 & 4) and compound backwards-compatible checks.

@@ -256,4 +256,18 @@ This document establishes the universal rules and constraints for the **iCleaner
 4. **Backend Row Enrichment**:
    * Routes querying orders for dashboard tables must pass rows through `enrichRecentOrders()` to compute `formattedOrderDate`, `formattedDeliveryDate`, `formattedPickupDate`, `order_type`, `statusClass`, `canDelete`, `canEdit`, and `balance_amount`.
 
-
+### U. String Enum Refactoring & Dual-State Backwards Compatibility Invariant
+1. **Never Break Historical Records on Enum Renaming**:
+   * When renaming database-persisted business strings (such as `order_type`, `order_status`, or payment methods), never assume 100% of historical records can or will be migrated instantly.
+2. **Compound Boolean Condition Rule**:
+   * All client-side UI handlers, template display conditions, and backend logic must check both the new canonical values AND legacy values:
+     ```javascript
+     const isDelivery = (
+       type === 'Counter & Delivery' || 
+       type === 'Pick-up & Delivery' || 
+       type === 'Customer drop-off & Store delivery' || 
+       type === 'Store collection & Store delivery'
+     );
+     ```
+3. **Default Assignment**:
+   * Always default new carts, intake forms, and fallback assignments strictly to the new canonical value (e.g. `'Counter & Counter'`).
