@@ -275,13 +275,13 @@ To modify or extend production MySQL tables without downtime or data loss:
 ## 19. POS Order Types & Scheduling Semantic Conventions
 
 * **Four Canonical Types**:
-  1. `Customer drop-off & Customer pick-up` (triggers `#pickup_date` and `#pickup_time`)
-  2. `Customer drop-off & Store delivery` (triggers `#delivery_date` and `#delivery_time`)
-  3. `Store collection & Customer pick-up` (triggers `#pickup_date` and `#pickup_time`)
-  4. `Store collection & Store delivery` (triggers `#delivery_date` and `#delivery_time`)
+  1. `Counter & Counter` (triggers `#pickup_date` and `#pickup_time`, dynamic label "Pick-up Date:")
+  2. `Counter & Delivery` (triggers `#delivery_date` and `#delivery_time`, dynamic label "Delivery Date:")
+  3. `Pick-up & Delivery` (triggers `#delivery_date` and `#delivery_time`, dynamic label "Delivery Date:")
+  4. `Pick-up & Counter` (triggers `#pickup_date` and `#pickup_time`, dynamic label "Pick-up Date:")
 * **Dynamic Date Labeling**:
-  - Store delivery (options 2 and 4): Strictly display **"Delivery Date:"** across catalog cards, order details, order list, recent orders, POS thermal invoices, and garment cloth tags.
-  - Customer pick-up (options 1 and 3): Strictly display **"Pick-up Date:"** across all order views, receipts, and wash tags.
+  - Store delivery (options 2 and 3: `Counter & Delivery`, `Pick-up & Delivery`): Strictly display **"Delivery Date:"** across catalog cards, order details, order list, recent orders, POS thermal invoices, and garment cloth tags.
+  - Counter pick-up (options 1 and 4: `Counter & Counter`, `Pick-up & Counter`): Strictly display **"Pick-up Date:"** across all order views, receipts, and wash tags.
 * **Database Columns**:
   - `tbl_order.order_type` (`VARCHAR(100)`), `tbl_order.pickup_date` (`TIMESTAMP NULL`), `tbl_order.delivery_date` (`TIMESTAMP NULL`).
   - `tbl_cart.order_type` (`VARCHAR(100)`), `tbl_cart.pickup_date` (`TIMESTAMP NULL`), `tbl_cart.delivery_date` (`TIMESTAMP NULL`).

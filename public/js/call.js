@@ -1099,8 +1099,8 @@
       })
 
       if (typeof updatePosReadyScheduleUI === 'function') {
-         let currentOrderType = $('#pos_order_type').val() || 'Customer drop-off & Customer pick-up';
-         let isDel = (currentOrderType === 'Customer drop-off & Store delivery' || currentOrderType === 'Store collection & Store delivery');
+         let currentOrderType = $('#pos_order_type').val() || 'Counter & Counter';
+         let isDel = (currentOrderType === 'Counter & Delivery' || currentOrderType === 'Pick-up & Delivery' || currentOrderType === 'Customer drop-off & Store delivery' || currentOrderType === 'Store collection & Store delivery');
          if (isDel && !window.isPosDeliveryScheduleManual) {
             updatePosReadyScheduleUI('#POS_delivery_date', '#POS_delivery_time', '#btn_auto_ready_schedule', $('#POS_order_date').val(), false);
          } else if (!isDel && !window.isPosPickupScheduleManual) {
@@ -1536,7 +1536,7 @@
    // Handle POS Order Type Dropdown Change
    $(document).on("change", "#pos_order_type", function () {
       let orderType = $(this).val();
-      let isDelivery = (orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
+      let isDelivery = (orderType === 'Counter & Delivery' || orderType === 'Pick-up & Delivery' || orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
 
       if (isDelivery) {
          $('#pos_pickup_date_group').hide();
@@ -1577,7 +1577,7 @@
    $(document).on("change", "#edit_pos_order_type", function () {
       let orderType = $(this).val();
       let order_id = $('#order_id').val();
-      let isDelivery = (orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
+      let isDelivery = (orderType === 'Counter & Delivery' || orderType === 'Pick-up & Delivery' || orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
 
       if (isDelivery) {
          $('#edit_pos_pickup_date_group').hide();
@@ -1620,7 +1620,7 @@
       $('#POS_pickup_date').attr('min', date);
 
       let orderType = $('#pos_order_type').val() || '';
-      let isDelivery = (orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
+      let isDelivery = (orderType === 'Counter & Delivery' || orderType === 'Pick-up & Delivery' || orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
 
       if (isDelivery) {
          if (!window.isPosDeliveryScheduleManual) {
@@ -1760,7 +1760,7 @@
       $('#edit_POS_pickup_date').attr('min', date);
 
       let orderType = $('#edit_pos_order_type').val() || '';
-      let isDelivery = (orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
+      let isDelivery = (orderType === 'Counter & Delivery' || orderType === 'Pick-up & Delivery' || orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
 
       if (isDelivery) {
          if (!window.isPosDeliveryScheduleManual) {
@@ -1957,12 +1957,12 @@
             $('#POS_service_added_list').html(' ')
             $('input[name=addon]').prop('checked', false)
             if ($('#pos_order_type').length) {
-               $('#pos_order_type').val('Customer drop-off & Customer pick-up');
+               $('#pos_order_type').val('Counter & Counter');
                $('#pos_pickup_date_group').show();
                $('#pos_delivery_date_group').hide();
                $('#modal_pickup_group').show();
                $('#modal_delivery_group').hide();
-               $('#modal_pos_order_type').val('Customer drop-off & Customer pick-up');
+               $('#modal_pos_order_type').val('Counter & Counter');
             }
             poscurrency()
          }
@@ -2552,8 +2552,8 @@
                let chosenDelTime = $('#POS_delivery_time').val() || '16:00';
                let chosenPick = $('#POS_pickup_date').val() || (res.cart.pickup_date ? new Date(res.cart.pickup_date).toLocaleDateString('en-CA') : chosenDel);
                let chosenPickTime = $('#POS_pickup_time').val() || '16:00';
-               let currentOrderType = $('#pos_order_type').val() || res.cart.order_type || 'Customer drop-off & Customer pick-up';
-               let isDel = (currentOrderType === 'Customer drop-off & Store delivery' || currentOrderType === 'Store collection & Store delivery');
+               let currentOrderType = $('#pos_order_type').val() || res.cart.order_type || 'Counter & Counter';
+               let isDel = (currentOrderType === 'Counter & Delivery' || currentOrderType === 'Pick-up & Delivery' || currentOrderType === 'Customer drop-off & Store delivery' || currentOrderType === 'Store collection & Store delivery');
 
                $('#modal_pos_order_type').val(currentOrderType);
                if (isDel) {
@@ -2636,8 +2636,8 @@
                let editChosenDelTime = $('#edit_POS_delivery_time').val() || '16:00';
                let editChosenPick = $('#edit_POS_pickup_date').val() || (res.order_date.pickup_date ? new Date(res.order_date.pickup_date).toLocaleDateString('en-CA') : editChosenDel);
                let editChosenPickTime = $('#edit_POS_pickup_time').val() || '16:00';
-               let editCurrentOrderType = $('#edit_pos_order_type').val() || res.order_date.order_type || 'Customer drop-off & Customer pick-up';
-               let editIsDel = (editCurrentOrderType === 'Customer drop-off & Store delivery' || editCurrentOrderType === 'Store collection & Store delivery');
+               let editCurrentOrderType = $('#edit_pos_order_type').val() || res.order_date.order_type || 'Counter & Counter';
+               let editIsDel = (editCurrentOrderType === 'Counter & Delivery' || editCurrentOrderType === 'Pick-up & Delivery' || editCurrentOrderType === 'Customer drop-off & Store delivery' || editCurrentOrderType === 'Store collection & Store delivery');
 
                $('#edit_modal_pos_order_type').val(editCurrentOrderType);
                if (editIsDel) {

@@ -219,16 +219,16 @@ This document establishes the universal rules and constraints for the **iCleaner
 ### S. POS Order Types & Dynamic Pick-up vs. Delivery Scheduling Invariant
 1. **Four Canonical Order Types**:
    * The application strictly recognizes four customer order types:
-     1. `Customer drop-off & Customer pick-up` (triggers `#pickup_date` and `#pickup_time`)
-     2. `Customer drop-off & Store delivery` (triggers `#delivery_date` and `#delivery_time`)
-     3. `Store collection & Customer pick-up` (triggers `#pickup_date` and `#pickup_time`)
-     4. `Store collection & Store delivery` (triggers `#delivery_date` and `#delivery_time`)
+     1. `Counter & Counter` (triggers `#pickup_date` and `#pickup_time`, dynamic label "Pick-up Date:")
+     2. `Counter & Delivery` (triggers `#delivery_date` and `#delivery_time`, dynamic label "Delivery Date:")
+     3. `Pick-up & Delivery` (triggers `#delivery_date` and `#delivery_time`, dynamic label "Delivery Date:")
+     4. `Pick-up & Counter` (triggers `#pickup_date` and `#pickup_time`, dynamic label "Pick-up Date:")
 2. **Conditional POS Input Display**:
-   * When option 1 or 3 is selected: display `#pickup_date` and `#pickup_time` wrappers; hide delivery date/time wrappers.
-   * When option 2 or 4 is selected: display `#delivery_date` and `#delivery_time` wrappers; hide pickup date/time wrappers.
+   * When option 1 or 4 is selected: display `#pickup_date` and `#pickup_time` wrappers; hide delivery date/time wrappers.
+   * When option 2 or 3 is selected: display `#delivery_date` and `#delivery_time` wrappers; hide pickup date/time wrappers.
 3. **Dynamic Pick-up vs. Delivery Date Labeling Invariant**:
-   * Orders with Store delivery (options 2 and 4) must strictly display **"Delivery Date:"** across catalog cards, order details, order list, recent orders, POS thermal invoices, and garment cloth tags.
-   * Orders with Customer pick-up (options 1 and 3) must strictly display **"Pick-up Date:"** across all of the aforementioned views.
+   * Orders with Store delivery (options 2 and 3: `Counter & Delivery`, `Pick-up & Delivery`) must strictly display **"Delivery Date:"** across catalog cards, order details, order list, recent orders, POS thermal invoices, and garment cloth tags.
+   * Orders with Counter pick-up (options 1 and 4: `Counter & Counter`, `Pick-up & Counter`) must strictly display **"Pick-up Date:"** across all of the aforementioned views.
 4. **Database Persistence**:
    * Persist `order_type` (`VARCHAR(100)`), `pickup_date` (`TIMESTAMP NULL`), and `delivery_date` (`TIMESTAMP NULL`) across both `tbl_cart` and `tbl_order`.
 

@@ -379,7 +379,7 @@ router.get("/list/data", auth, async (req, res) => {
             formattedOrderDate,
             formattedDeliveryDate,
             formattedPickupDate,
-            order_type: order.order_type || 'Customer drop-off & Customer pick-up',
+            order_type: order.order_type || 'Counter & Counter',
             statusClass,
             canDelete,
             canEdit,

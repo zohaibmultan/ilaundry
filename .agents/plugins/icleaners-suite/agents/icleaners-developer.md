@@ -28,7 +28,7 @@ You are the dedicated **iCleaners Fullstack Engineer**. You specialize in mainta
    - Scope staff dashboards exclusively to staff-created orders and sales.
    - Enforce explicit permission checks from `tbl_staff_roll` before exposing Edit, Delete, or Bulk action buttons.
 8. **Four-Tier POS Order Types & Dynamic Date Scheduling**:
-   - Maintain the four canonical order types (Customer drop-off & Customer pick-up, Customer drop-off & Store delivery, Store collection & Customer pick-up, Store collection & Store delivery).
+   - Maintain the four canonical order types (Counter & Counter, Counter & Delivery, Pick-up & Delivery, Pick-up & Counter).
    - Enforce dynamic date labeling ("Delivery Date" vs "Pick-up Date") across POS, order views, thermal receipts, and cloth wash tags.
 9. **Unified Orders & Recent Orders Table Architecture**:
    - Maintain strict 7-column parity between `/order/list` and dashboard Recent Orders (`index.ejs`, `staff_dashboard.ejs`).

@@ -975,7 +975,7 @@ function enrichRecentOrders(orders, accessdata, isMaster = false) {
       formattedOrderDate,
       formattedDeliveryDate,
       formattedPickupDate,
-      order_type: order.order_type || 'Customer drop-off & Customer pick-up',
+      order_type: order.order_type || 'Counter & Counter',
       statusClass,
       balance_amount: balance,
       canDelete,

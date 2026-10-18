@@ -56,10 +56,10 @@
                                     <div class="col-6 col-sm-6 col-md-3 col-lg-2">
                                         <select class="form-select" id="order_type_filter">
                                             <option value="" selected><%= language.All_Order_Types || 'All Order Types' %></option>
-                                            <option value="Customer drop-off & Customer pick-up">Drop-off &amp; Pick-up</option>
-                                            <option value="Customer drop-off & Store delivery">Drop-off &amp; Delivery</option>
-                                            <option value="Store collection & Customer pick-up">Collection &amp; Pick-up</option>
-                                            <option value="Store collection & Store delivery">Collection &amp; Delivery</option>
+                                            <option value="Counter & Counter">1. Counter &amp; Counter</option>
+                                            <option value="Counter & Delivery">2. Counter &amp; Delivery</option>
+                                            <option value="Pick-up & Delivery">3. Pick-up &amp; Delivery</option>
+                                            <option value="Pick-up & Counter">4. Pick-up &amp; Counter</option>
                                         </select>
                                     </div>
                                     <% if (login==='master' && typeof storeList !=='undefined' && storeList.length > 0) { %>
@@ -345,7 +345,7 @@
                                 {
                                     data: 'order_id',
                                     render: function (data, type, row) {
-                                        var isDel = (row.order_type === 'Customer drop-off & Store delivery' || row.order_type === 'Store collection & Store delivery');
+                                        var isDel = (row.order_type === 'Counter & Delivery' || row.order_type === 'Pick-up & Delivery' || row.order_type === 'Customer drop-off & Store delivery' || row.order_type === 'Store collection & Store delivery');
                                         var dateLabel = isDel ? '<%= language.Delivery_Date || "Delivery Date" %>' : '<%= language.Pickup_Date || "Pick-up Date" %>';
                                         var dateValue = isDel ? (row.formattedDeliveryDate || '') : (row.formattedPickupDate || row.formattedDeliveryDate || '');
                                         var orderTypeBadge = row.order_type ? '<span class="badge bg-light text-dark border py-1 px-2 text-wrap d-inline-block mt-1" style="font-size: 0.72rem; line-height: 1.1;">' + row.order_type + '</span>' : '';

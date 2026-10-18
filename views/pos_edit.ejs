@@ -122,10 +122,10 @@
                                         <div class="pos-date-group">
                                             <label class="pos-field-label mb-0" for="edit_pos_order_type"><%= language.Order_Type || 'Order Type' %></label>
                                             <select class="form-select form-select-sm pos-input-sm w-100" id="edit_pos_order_type" name="edit_pos_order_type">
-                                                <option value="Customer drop-off & Customer pick-up" <%= (!order_date[0].order_type || order_date[0].order_type === 'Customer drop-off & Customer pick-up') ? 'selected' : '' %>>1. Customer drop-off & Customer pick-up</option>
-                                                <option value="Customer drop-off & Store delivery" <%= (order_date[0].order_type === 'Customer drop-off & Store delivery') ? 'selected' : '' %>>2. Customer drop-off & Store delivery</option>
-                                                <option value="Store collection & Customer pick-up" <%= (order_date[0].order_type === 'Store collection & Customer pick-up') ? 'selected' : '' %>>3. Store collection & Customer pick-up</option>
-                                                <option value="Store collection & Store delivery" <%= (order_date[0].order_type === 'Store collection & Store delivery') ? 'selected' : '' %>>4. Store collection & Store delivery</option>
+                                                <option value="Counter & Counter" <%= (!order_date[0].order_type || order_date[0].order_type === 'Counter & Counter' || order_date[0].order_type === 'Customer drop-off & Customer pick-up') ? 'selected' : '' %>>1. Counter & Counter</option>
+                                                <option value="Counter & Delivery" <%= (order_date[0].order_type === 'Counter & Delivery' || order_date[0].order_type === 'Customer drop-off & Store delivery') ? 'selected' : '' %>>2. Counter & Delivery</option>
+                                                <option value="Pick-up & Delivery" <%= (order_date[0].order_type === 'Pick-up & Delivery' || order_date[0].order_type === 'Store collection & Store delivery') ? 'selected' : '' %>>3. Pick-up & Delivery</option>
+                                                <option value="Pick-up & Counter" <%= (order_date[0].order_type === 'Pick-up & Counter' || order_date[0].order_type === 'Store collection & Customer pick-up') ? 'selected' : '' %>>4. Pick-up & Counter</option>
                                             </select>
                                         </div>
                                     </div>
@@ -155,8 +155,8 @@
                                     </div>
 
                                     <% 
-                                        let editOrderType = order_date[0].order_type || 'Customer drop-off & Customer pick-up';
-                                        let editIsDelivery = editOrderType === 'Customer drop-off & Store delivery' || editOrderType === 'Store collection & Store delivery';
+                                        let editOrderType = order_date[0].order_type || 'Counter & Counter';
+                                        let editIsDelivery = editOrderType === 'Counter & Delivery' || editOrderType === 'Pick-up & Delivery' || editOrderType === 'Customer drop-off & Store delivery' || editOrderType === 'Store collection & Store delivery';
 
                                         let pick_raw = order_date[0].pickup_date || order_date[0].delivery_date || order_date[0].order_date;
                                         let pick_date = new Date(pick_raw);
@@ -526,7 +526,7 @@
                                     <!-- Left Column: Inputs -->
                                     <div class="col-12 col-lg-7">
                                         <div class="row g-3 align-items-start mb-3">
-                                            <input type="hidden" name="order_type" id="edit_modal_order_type" value="<%= order_date[0].order_type || 'Customer drop-off & Customer pick-up' %>">
+                                            <input type="hidden" name="order_type" id="edit_modal_order_type" value="<%= order_date[0].order_type || 'Counter & Counter' %>">
 
                                             <!-- Pick-up Date & Time in Edit Payment Modal -->
                                             <div class="col-12 col-sm-6" id="edit_modal_pickup_group" style="<%= editIsDelivery ? 'display: none;' : '' %>">

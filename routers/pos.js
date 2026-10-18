@@ -1858,7 +1858,7 @@ router.get("/clearcart", auth, async (req, res) => {
     addon_price = 0,
     delivery_date = CURRENT_TIMESTAMP,
     pickup_date = CURRENT_TIMESTAMP,
-    order_type = 'Customer drop-off & Customer pick-up',
+    order_type = 'Counter & Counter',
     extra_discount = 0,
     coupon_id = 0,
     coupon_discount = 0,
@@ -3279,7 +3279,7 @@ router.post("/edit_order", auth, async (req, res) => {
       );
     }
 
-    let editOrderType = req.body.order_type || order.order_type || "Customer drop-off & Customer pick-up";
+    let editOrderType = req.body.order_type || order.order_type || "Counter & Counter";
 
     const orderNotes = note !== undefined ? note : order.note;
     const refNum =
@@ -3514,7 +3514,8 @@ router.post("/order", auth, async (req, res) => {
       (order_date.getMonth() + 1 < 10 ? "0" : "") + (order_date.getMonth() + 1);
     let order_year = order_date.getFullYear();
     let order_fullDate = `${order_year}-${order_month}-${order_day}`;
-    let order_type = req.body.order_type || cart[0].order_type || "Customer drop-off & Customer pick-up";
+    let order_type = req.body.order_type || cart[0].order_type || "Counter & Counter";
+    let isDelivery = (order_type === 'Counter & Delivery' || order_type === 'Pick-up & Delivery' || order_type === 'Customer drop-off & Store delivery' || order_type === 'Store collection & Store delivery');
     let finalDeliveryDate = deliverydate
       ? formatMySQLDateTime(deliverydate, deliverytime || "16:00:00")
       : cart[0].delivery_date
@@ -3524,7 +3525,7 @@ router.post("/order", auth, async (req, res) => {
       ? formatMySQLDateTime(req.body.pickupdate, req.body.pickuptime || "16:00:00")
       : cart[0].pickup_date
         ? formatMySQLDateTime(cart[0].pickup_date)
-        : (order_type.includes("pick-up") ? finalDeliveryDate : null);
+        : (!isDelivery ? finalDeliveryDate : null);
 
     const order = await DataInsert(
       `tbl_order`,
@@ -3690,7 +3691,7 @@ router.post("/order", auth, async (req, res) => {
    addon_price = 0,
    delivery_date = CURRENT_TIMESTAMP,
    pickup_date = CURRENT_TIMESTAMP,
-   order_type = 'Customer drop-off & Customer pick-up',
+   order_type = 'Counter & Counter',
    extra_discount = 0,
    coupon_id = 0,
    coupon_discount = 0,
@@ -4000,7 +4001,8 @@ router.post("/save_order", auth, async (req, res) => {
       (order_date.getMonth() + 1 < 10 ? "0" : "") + (order_date.getMonth() + 1);
     let order_year = order_date.getFullYear();
     let order_fullDate = `${order_year}-${order_month}-${order_day}`;
-    let order_type = req.body.order_type || cart[0].order_type || "Customer drop-off & Customer pick-up";
+    let order_type = req.body.order_type || cart[0].order_type || "Counter & Counter";
+    let isDelivery = (order_type === 'Counter & Delivery' || order_type === 'Pick-up & Delivery' || order_type === 'Customer drop-off & Store delivery' || order_type === 'Store collection & Store delivery');
     let finalDeliveryDate = deliverydate
       ? formatMySQLDateTime(deliverydate, deliverytime || "16:00:00")
       : cart[0].delivery_date
@@ -4010,7 +4012,7 @@ router.post("/save_order", auth, async (req, res) => {
       ? formatMySQLDateTime(req.body.pickupdate, req.body.pickuptime || "16:00:00")
       : cart[0].pickup_date
         ? formatMySQLDateTime(cart[0].pickup_date)
-        : (order_type.includes("pick-up") ? finalDeliveryDate : null);
+        : (!isDelivery ? finalDeliveryDate : null);
 
     const order = await DataInsert(
       `tbl_order`,
@@ -4124,7 +4126,7 @@ router.post("/save_order", auth, async (req, res) => {
    addon_price = 0,
    delivery_date = CURRENT_TIMESTAMP,
    pickup_date = CURRENT_TIMESTAMP,
-   order_type = 'Customer drop-off & Customer pick-up',
+   order_type = 'Counter & Counter',
    extra_discount = 0,
    coupon_id = 0,
    coupon_discount = 0,
