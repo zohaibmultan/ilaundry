@@ -272,17 +272,29 @@ To modify or extend production MySQL tables without downtime or data loss:
   - When enabled, POS automatically selects the store's designated walk-in customer upon opening an empty cart.
   - When disabled, POS leaves customer selection unassigned, prompting cashiers to select or register a customer manually before checkout.
 
-## 19. POS Order Types & Scheduling Semantic Conventions
+## 19. POS Order Types & Three-Tier Route & Ready Scheduling
 
 * **Four Canonical Types**:
-  1. `Counter & Counter` (triggers `#pickup_date` and `#pickup_time`, dynamic label "Pick-up Date:")
-  2. `Counter & Delivery` (triggers `#delivery_date` and `#delivery_time`, dynamic label "Delivery Date:")
-  3. `Pick-up & Delivery` (triggers `#delivery_date` and `#delivery_time`, dynamic label "Delivery Date:")
-  4. `Pick-up & Counter` (triggers `#pickup_date` and `#pickup_time`, dynamic label "Pick-up Date:")
-* **Dynamic Date Labeling**:
-  - Store delivery (options 2 and 3: `Counter & Delivery`, `Pick-up & Delivery`): Strictly display **"Delivery Date:"** across catalog cards, order details, order list, recent orders, POS thermal invoices, and garment cloth tags.
-  - Counter pick-up (options 1 and 4: `Counter & Counter`, `Pick-up & Counter`): Strictly display **"Pick-up Date:"** across all order views, receipts, and wash tags.
+  1. `Counter & Counter` (`C & C`): Only Ready Schedule visible and required. Driver pickup and delivery schedules hidden.
+  2. `Counter & Delivery` (`C & R`): Ready Schedule + Route Delivery Schedule visible and required.
+  3. `Pick-up & Delivery` (`R & R`): Route Pick-up Schedule + Ready Schedule + Route Delivery Schedule visible and required.
+  4. `Pick-up & Counter` (`R & C`): Route Pick-up Schedule + Ready Schedule visible and required.
+* **Three Scheduling Tiers**:
+  - `ready_date` (Factory/Store Cleaning Target): Always required and calculated via `calculateReadyDateTime()` in `middelwer/readyScheduleHelper.js`.
+  - `pickup_date` (Route Pick-up Schedule): Driver pickup appointment.
+  - `delivery_date` (Route Delivery Schedule): Driver delivery appointment. For counter delivery (`C & C`, `R & C`), synchronized with `ready_date` in database for reporting compatibility.
 * **Database Columns**:
-  - `tbl_order.order_type` (`VARCHAR(100)`), `tbl_order.pickup_date` (`TIMESTAMP NULL`), `tbl_order.delivery_date` (`TIMESTAMP NULL`).
-  - `tbl_cart.order_type` (`VARCHAR(100)`), `tbl_cart.pickup_date` (`TIMESTAMP NULL`), `tbl_cart.delivery_date` (`TIMESTAMP NULL`).
+  - `tbl_order.order_type` (`VARCHAR(100)`), `tbl_order.ready_date` (`TIMESTAMP NULL`), `tbl_order.pickup_date` (`TIMESTAMP NULL`), `tbl_order.delivery_date` (`TIMESTAMP NULL`).
+  - `tbl_cart.order_type` (`VARCHAR(100)`), `tbl_cart.ready_date` (`TIMESTAMP NULL`), `tbl_cart.pickup_date` (`TIMESTAMP NULL`), `tbl_cart.delivery_date` (`TIMESTAMP NULL`).
+
+## 20. Customer Address Field Partitioning Architecture
+
+* **Database Fields (`tbl_customer`)**:
+  - `address` (`VARCHAR(255)`): Street address (Required).
+  - `city` (`VARCHAR(100)`): City name (Required).
+  - `state` (`VARCHAR(100)`): State or Province (Required).
+  - `zip_code` (`VARCHAR(20)`): Zip / Postal code (Optional).
+* **Universal Form Implementation**:
+  - All customer creation/edit forms (`views/coustomer_create.ejs`, `views/customer_register.ejs`, `views/coustomer_edit.ejs`, and POS Quick-Add modals in `views/pos.ejs` and `views/pos_edit.ejs`) must collect and validate these partitioned fields individually.
+
 

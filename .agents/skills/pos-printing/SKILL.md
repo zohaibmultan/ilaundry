@@ -83,6 +83,13 @@ cartServices.forEach(item => {
 // Generates qty * pieces tags, numbered Piece 1/totalPieces ... Piece N/totalPieces
 ```
 
+## Zero-Item Route Pick-up Manifest Printing Workflow
+
+When an order has Route Pick-up scheduled with 0 services / $0.00 gross (`views/posprint.ejs`):
+1. **Invoice Output**: Renders as a driver ticket with a centered **"ROUTE PICK-UP MANIFEST"** banner and explanation note: `"Garments will be counted, tagged, and priced upon store intake."`
+2. **Wash Tag Generation**: Cloth tags are skipped entirely (`cart_services.length === 0`). The auto-cutter only cuts after the manifest ticket.
+3. **Receipt Totals**: Gross total, paid, and balance display as `0.00` with clean spacing.
+
 ## Helper Scripts
 - Check print server status:
   `node .agents/skills/pos-printing/scripts/check-print-server.js`

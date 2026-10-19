@@ -163,7 +163,10 @@ All order lists (including `/order/list`, `views/index.ejs`, and `views/staff_da
    - `#deleteOrderModal`: Delete confirmation modal.
 
 3. **Backend Row Enrichment (`enrichRecentOrders`)**:
-   Compute `formattedOrderDate`, `formattedDeliveryDate`, `formattedPickupDate`, `order_type`, `statusClass`, `canDelete`, `canEdit`, and `balance_amount` before rendering.
+   Compute `formattedOrderDate`, `formattedDeliveryDate`, `formattedPickupDate`, `formattedReadyDate`, `order_type`, `statusClass`, `canDelete`, `canEdit`, and `balance_amount` before rendering. If `services.length === 0`, render `<span class="badge bg-warning-subtle text-dark border border-warning">0 Items (Pending Intake)</span>`.
 
-4. **Order Type & Dynamic Date Scheduling Invariants**:
-   - Strictly follow .agents/AGENTS.md Section S and Section U: dynamic date labeling (Delivery Date for options 2 & 3 vs Pick-up Date for options 1 & 4) and compound backwards-compatible checks.
+4. **Order Type & Three-Tier Route Scheduling Invariants**:
+   - Strictly follow `.agents/AGENTS.md` Section S, Section U, and Section V: Three-Tier route scheduling (`ready_date`, `pickup_date`, `delivery_date`), dynamic date labeling, and compound backwards-compatible checks.
+
+5. **Reverse Chronological Sorting Standard**:
+   - Order list DataTables and recent order queries must default to `ORDER BY tbl_order.order_date DESC, tbl_order.id DESC` to ensure newly intake orders appear at row 1 immediately.

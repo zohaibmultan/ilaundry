@@ -216,21 +216,16 @@ This document establishes the universal rules and constraints for the **iCleaner
 3. **Automatic Sequence Pre-calculation**:
    * Creation modals and forms must pre-calculate the next available sequence index per store (`(MAX(sequence_no) + 1)` with fallback to `1`) to streamline intake.
 
-### S. POS Order Types & Dynamic Pick-up vs. Delivery Scheduling Invariant
-1. **Four Canonical Order Types**:
-   * The application strictly recognizes four customer order types:
-     1. `Counter & Counter` (triggers `#pickup_date` and `#pickup_time`, dynamic label "Pick-up Date:")
-     2. `Counter & Delivery` (triggers `#delivery_date` and `#delivery_time`, dynamic label "Delivery Date:")
-     3. `Pick-up & Delivery` (triggers `#delivery_date` and `#delivery_time`, dynamic label "Delivery Date:")
-     4. `Pick-up & Counter` (triggers `#pickup_date` and `#pickup_time`, dynamic label "Pick-up Date:")
-2. **Conditional POS Input Display**:
-   * When option 1 or 4 is selected: display `#pickup_date` and `#pickup_time` wrappers; hide delivery date/time wrappers.
-   * When option 2 or 3 is selected: display `#delivery_date` and `#delivery_time` wrappers; hide pickup date/time wrappers.
-3. **Dynamic Pick-up vs. Delivery Date Labeling Invariant**:
-   * Orders with Store delivery (options 2 and 3: `Counter & Delivery`, `Pick-up & Delivery`) must strictly display **"Delivery Date:"** across catalog cards, order details, order list, recent orders, POS thermal invoices, and garment cloth tags.
-   * Orders with Counter pick-up (options 1 and 4: `Counter & Counter`, `Pick-up & Counter`) must strictly display **"Pick-up Date:"** across all of the aforementioned views.
-4. **Database Persistence**:
-   * Persist `order_type` (`VARCHAR(100)`), `pickup_date` (`TIMESTAMP NULL`), and `delivery_date` (`TIMESTAMP NULL`) across both `tbl_cart` and `tbl_order`.
+### S. Three-Tier Route & Ready Scheduling Invariant
+1. **Three Distinct Schedules**:
+   - **Route Pick-up Schedule (`pickup_date`)**: Driver trip to pick up garments from the customer. Visible and required only when intake is Route (`R & R`, `R & C`, `Pick-up & Delivery`, `Pick-up & Counter`).
+   - **Ready Schedule (`ready_date`)**: Factory/Store cleaning completion target. **Always visible and required across all 4 customer types**. Governed by the automated working days/cutoff schedule with manual override.
+   - **Route Delivery Schedule (`delivery_date`)**: Driver trip to deliver clean garments to the customer. Visible and required only when dispatch is Route (`R & R`, `C & R`, `Pick-up & Delivery`, `Counter & Delivery`).
+2. **Counter & Counter (`C & C`) Clean View Rule**:
+   - For `Counter & Counter`: ONLY the **Ready Schedule** is visible and required in the POS header and payment modal. Driver pickup and delivery schedule groups must be strictly hidden.
+3. **Database Persistence & Backwards Compatibility**:
+   - Persist `ready_date` (`TIMESTAMP NULL`), `pickup_date` (`TIMESTAMP NULL`), and `delivery_date` (`TIMESTAMP NULL`) across both `tbl_cart` and `tbl_order`.
+   - For orders with Counter delivery (`C & C`, `R & C`), always keep `delivery_date` synchronized with `ready_date` in database records to preserve compatibility with existing legacy reports.
 
 ### T. Unified Orders & Recent Orders Table Architecture Invariant
 1. **Parity Between Orders Page & Dashboard Tables**:
@@ -271,3 +266,40 @@ This document establishes the universal rules and constraints for the **iCleaner
      ```
 3. **Default Assignment**:
    * Always default new carts, intake forms, and fallback assignments strictly to the new canonical value (e.g. `'Counter & Counter'`).
+
+### V. Zero-Item Route Order Intake & Manifest Invariant
+1. **0-Item Route Order Creation**:
+   - The application strictly permits generating an order with 0 service items ($0.00 gross, $0.00 paid, $0.00 balance) whenever an order type with Route Pick-up is selected (`Route & Route`, `Route & Counter`).
+   - This provides drivers with an official Route Pick-up Manifest / Driver Ticket before clothes are counted in the store.
+2. **Dynamic POS Action Button**:
+   - When `serviselength < 1` and order type has Route Pick-up:
+     - Button switches to `.btn-primary` with text `"Schedule Route Pick-up"` and icon `fa-truck-pickup`.
+   - When service items exist or order type is Counter intake:
+     - Button remains `.btn-success` with text `"Payment"` and icon `fa-arrow-right`.
+3. **Thermal Receipt Driver Manifest**:
+   - When printing an order with 0 services (`views/posprint.ejs`):
+     - Items table renders a centered **"ROUTE PICK-UP MANIFEST"** banner explaining that garments will be counted and priced at store intake.
+     - Cloth garment wash tags are skipped entirely until items are added.
+4. **Subsequent Staff Intake Editing**:
+   - Once garments arrive at the store, staff opens `/admin/edit/:id` to add counted garment items and process payment.
+   - Orders list and dashboard tables must render a warning badge `<span class="badge bg-warning-subtle text-dark border border-warning">0 Items (Pending Intake)</span>` to highlight pending manifests.
+
+### W. Customer Address Field Partitioning Invariant
+1. **Four Partitioned Database Fields**:
+   - In `tbl_customer`, customer address is strictly partitioned into:
+     - `address` (`VARCHAR(255)` - Street address, Required)
+     - `city` (`VARCHAR(100)` - City, Required)
+     - `state` (`VARCHAR(100)` - State / Province, Required)
+     - `zip_code` (`VARCHAR(20)` - Zip / Postal Code, Optional)
+2. **Universal Form Parity**:
+   - All customer creation and edit forms—including Admin Customer Create (`coustomer_create.ejs`), Public Customer Registration (`customer_register.ejs`), Customer Edit (`coustomer_edit.ejs`), and POS Quick Add Modal (`pos.ejs`, `pos_edit.ejs`)—must collect and validate these partitioned fields individually.
+
+### X. Reverse Chronological Order Sorting Invariant
+1. **Default Ordering Protocol**:
+   - All order tables—including Server-Side DataTables (`/order/list`, `/order/list/data`), Dashboard Recent Orders (`views/index.ejs`, `views/staff_dashboard.ejs`), and Customer Portal order views—must sort with the most recent orders on top by default:
+     ```sql
+     ORDER BY tbl_order.order_date DESC, tbl_order.id DESC
+     ```
+2. **Consistent User Experience**:
+   - Never sort order lists in ascending order by default, as cashiers and store managers expect newly created orders to appear immediately at row 1.
+
