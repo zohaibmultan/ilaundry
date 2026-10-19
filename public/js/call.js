@@ -993,7 +993,7 @@
                var extra = (value.username === '' || value.username === null ? (value.store_name || '') : (value.number || ''));
                var extraText = extra ? ' (' + extra + ')' : '';
                $('#single-select').append(
-                  '<option value="' + value.id + '" data-customer-type="' + (value.customer_type || 'Counter & Counter') + '" ' + (isDefault ? 'selected' : '') + '>' +
+                  '<option value="' + value.id + '" data-customer-type="' + (value.customer_type || 'Counter & Counter') + '" data-address="' + (value.address || '') + '" data-city="' + (value.city || '') + '" data-state="' + (value.state || '') + '" data-zipcode="' + (value.zipcode || '') + '" ' + (isDefault ? 'selected' : '') + '>' +
                   value.name + extraText +
                   '</option>'
                );
@@ -3070,7 +3070,8 @@
                $('#invoice_Name_customer').html(res.customer.name);
                $('#invoice_Number_customer').html(res.customer.number);
                $('#invoice_Email_customer').html(res.customer.email);
-               $('#invoice_Address_customer').html(res.customer.address);
+               const custAddrParts = [res.customer.address, res.customer.city, res.customer.state, res.customer.zipcode].filter(Boolean);
+               $('#invoice_Address_customer').html(custAddrParts.length > 0 ? custAddrParts.join(', ') : (res.customer.address || ''));
                $('#invoice_Tax_customer').html(res.customer.taxnumber);
 
 

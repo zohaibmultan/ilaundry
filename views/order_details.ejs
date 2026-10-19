@@ -243,7 +243,7 @@
                                             </p>
                                             <p class="mb-0 text-break w-100">
                                                 <%= language.Address %> : <span>
-                                                        <%= customer.address || '' %>
+                                                        <%= [customer.address, customer.city, customer.state, customer.zipcode].filter(Boolean).join(', ') %>
                                                     </span>
                                             </p>
                                             <p class="mb-0">
@@ -827,7 +827,7 @@
                                                             <%= language.Address %> :
                                                         </td>
                                                         <td class="py-0 text-end">
-                                                            <%= customer.address || '' %>
+                                                            <%= [customer.address, customer.city, customer.state, customer.zipcode].filter(Boolean).join(', ') %>
                                                         </td>
                                                     </tr>
                                                     <tr>

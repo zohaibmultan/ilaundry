@@ -102,6 +102,10 @@ async function getStoreScopedCustomers(storeId, includeWalkIn = true) {
       tbl_customer.email, 
       tbl_customer.username, 
       tbl_customer.customer_type, 
+      tbl_customer.address, 
+      tbl_customer.city, 
+      tbl_customer.state, 
+      tbl_customer.zipcode, 
       tbl_store.name AS store_name
     FROM 
       tbl_customer
@@ -1424,7 +1428,7 @@ router.get("/newcustomerid/:id", auth, async (req, res) => {
 
     let custType = "Counter & Counter";
     if (cleanCustomerId && cleanCustomerId !== "0" && cleanCustomerId !== "null" && cleanCustomerId !== "undefined") {
-      const custData = await DataFind(`SELECT id, name, memo, customer_type FROM tbl_customer WHERE id='${cleanCustomerId}' LIMIT 1`);
+      const custData = await DataFind(`SELECT id, name, memo, customer_type, address, city, state, zipcode FROM tbl_customer WHERE id='${cleanCustomerId}' LIMIT 1`);
       if (custData && custData.length > 0) {
         stats.memo = custData[0].memo || "";
         if (custData[0].customer_type) {

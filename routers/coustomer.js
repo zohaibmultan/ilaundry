@@ -175,6 +175,9 @@ router.get("/list/data", auth, async (req, res) => {
         'tbl_customer.number',
         'tbl_customer.email',
         'tbl_customer.address',
+        'tbl_customer.city',
+        'tbl_customer.state',
+        'tbl_customer.zipcode',
         'tbl_customer.taxnumber',
         'tbl_store.name'
       ],
@@ -205,6 +208,9 @@ router.get("/list/data", auth, async (req, res) => {
             number: cust.number || '',
             email: cust.email || '',
             address: cust.address || '',
+            city: cust.city || '',
+            state: cust.state || '',
+            zipcode: cust.zipcode || '',
             store: cust.store || '',
             taxnumber: cust.taxnumber || '',
             roll_id: cust.roll_id || '',
@@ -232,7 +238,7 @@ router.post("/update/:id", async (req, res) => {
   try {
     const id = req.params.id;
 
-    const { first_name, last_name, name, number, email, tax, address, memo, customer_type } = req.body;
+    const { first_name, last_name, name, number, email, tax, address, city, state, zipcode, memo, customer_type } = req.body;
 
     var approved;
     req.body.approved == 1 ? (approved = 1) : (approved = 0);
@@ -260,6 +266,9 @@ router.post("/update/:id", async (req, res) => {
     const safeNumber = (number || '').trim().replace(/'/g, "\\'");
     const safeEmail = (email || '').trim().replace(/'/g, "\\'");
     const safeAddress = (address || '').trim().replace(/'/g, "\\'");
+    const safeCity = (city || '').trim().replace(/'/g, "\\'");
+    const safeState = (state || '').trim().replace(/'/g, "\\'");
+    const safeZipcode = (zipcode || req.body.zip_code || '').trim().replace(/'/g, "\\'");
     const safeTax = (tax || '').trim().replace(/'/g, "\\'");
     const safeMemo = (memo || '').trim().replace(/'/g, "\\'");
     const safeCustomerType = (customer_type || '').trim().replace(/'/g, "\\'");
@@ -270,6 +279,9 @@ router.post("/update/:id", async (req, res) => {
        number='${safeNumber}',
        email='${safeEmail}',
        address='${safeAddress}',
+       city='${safeCity}',
+       state='${safeState}',
+       zipcode='${safeZipcode}',
        memo='${safeMemo}',
        taxnumber='${safeTax}',
        approved='${approved}'`;
@@ -331,7 +343,7 @@ router.post("/register", auth, async (req, res) => {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     } else {
-      const { first_name, last_name, name, number, email, customer_type, taxnumber, address, memo, username, password } =
+      const { first_name, last_name, name, number, email, customer_type, taxnumber, address, city, state, zipcode, memo, username, password } =
         req.body;
       const verfiyStore = await DataFind(`SELECT * FROM tbl_admin WHERE id=${id}`);
       const isStaff = verfiyStore.length > 0 && verfiyStore[0].is_staff != 0;
@@ -443,6 +455,9 @@ router.post("/register", auth, async (req, res) => {
       const safeNumber = rawNumber.replace(/'/g, "\\'");
       const safeEmail = (email || '').trim().replace(/'/g, "\\'");
       const safeAddress = (address || '').trim().replace(/'/g, "\\'");
+      const safeCity = (city || '').trim().replace(/'/g, "\\'");
+      const safeState = (state || '').trim().replace(/'/g, "\\'");
+      const safeZipcode = (zipcode || req.body.zip_code || '').trim().replace(/'/g, "\\'");
       const safeTaxNumber = (taxnumber || '').trim().replace(/'/g, "\\'");
       const safeCustomerType = (customer_type || 'Counter & Counter').trim().replace(/'/g, "\\'");
       const safeMemo = (memo || '').trim().replace(/'/g, "\\'");
@@ -450,8 +465,8 @@ router.post("/register", auth, async (req, res) => {
 
       const data = await DataInsert(
         `tbl_customer`,
-        `name,first_name,last_name,number,email,address,customer_type,memo,taxnumber,username,password,store_ID,reffstore,main_roll_id,approved`,
-        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeCustomerType}','${safeMemo}','${safeTaxNumber}','${safeUsername}','${hashpass}','${storeid}','${storeid}',${main_roll[0].id},1`,
+        `name,first_name,last_name,number,email,address,city,state,zipcode,customer_type,memo,taxnumber,username,password,store_ID,reffstore,main_roll_id,approved`,
+        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeCity}','${safeState}','${safeZipcode}','${safeCustomerType}','${safeMemo}','${safeTaxNumber}','${safeUsername}','${hashpass}','${storeid}','${storeid}',${main_roll[0].id},1`,
         req.hostname,
         req.protocol
       );

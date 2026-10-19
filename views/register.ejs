@@ -193,12 +193,31 @@
                             </select>
                         </div>
 
-                        <!-- Address -->
-                        <div class="<%= (multiy === false && store && store.length > 0) ? 'col-md-6' : 'col-md-12' %>">
-                            <label class="form-label mb-1"><strong>Physical Address</strong> <span
+                        <!-- Address Fields -->
+                        <div class="col-md-12">
+                            <label class="form-label mb-1"><strong>Address</strong> <span
                                     class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="address" placeholder="Street, Suite, City"
+                            <input type="text" class="form-control" name="address" placeholder="Street address or P.O. Box"
                                 required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label mb-1"><strong>City</strong> <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="city" placeholder="City"
+                                required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label mb-1"><strong>State</strong> <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="state" placeholder="State / Province"
+                                required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label mb-1"><strong>Zip Code</strong></label>
+                            <input type="text" class="form-control" name="zipcode" placeholder="Postal / Zip code">
                         </div>
 
                         <!-- Store Selector (if multi-store mode enabled) -->

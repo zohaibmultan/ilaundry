@@ -617,6 +617,9 @@ router.post("/register", async (req, res) => {
       customer_type,
       taxnumber,
       address,
+      city,
+      state,
+      zipcode,
       username,
       password,
       store,
@@ -644,6 +647,9 @@ router.post("/register", async (req, res) => {
     const safeNumber = (number || '').trim().replace(/'/g, "\\'");
     const safeEmail = (email || '').trim().replace(/'/g, "\\'");
     const safeAddress = (address || '').trim().replace(/'/g, "\\'");
+    const safeCity = (city || '').trim().replace(/'/g, "\\'");
+    const safeState = (state || '').trim().replace(/'/g, "\\'");
+    const safeZipcode = (zipcode || req.body.zip_code || '').trim().replace(/'/g, "\\'");
     const safeTaxNumber = (taxnumber || '').trim().replace(/'/g, "\\'");
     const safeCustomerType = (customer_type || 'Counter & Counter').trim().replace(/'/g, "\\'");
     const safeUsername = (username || '').trim().replace(/'/g, "\\'");
@@ -686,8 +692,8 @@ router.post("/register", async (req, res) => {
     if (store) {
       const customerInsert = await DataInsert(
         `tbl_customer`,
-        `name,first_name,last_name,number,email,address,customer_type,taxnumber,username,password,main_roll_id,approved,store_ID`,
-        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeCustomerType}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved},'${store}'`,
+        `name,first_name,last_name,number,email,address,city,state,zipcode,customer_type,taxnumber,username,password,main_roll_id,approved,store_ID`,
+        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeCity}','${safeState}','${safeZipcode}','${safeCustomerType}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved},'${store}'`,
         req.hostname,
         req.protocol,
       );
@@ -702,8 +708,8 @@ router.post("/register", async (req, res) => {
     } else {
       const customerInsert = await DataInsert(
         `tbl_customer`,
-        `name,first_name,last_name,number,email,address,customer_type,taxnumber,username,password,main_roll_id,approved`,
-        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeCustomerType}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved}`,
+        `name,first_name,last_name,number,email,address,city,state,zipcode,customer_type,taxnumber,username,password,main_roll_id,approved`,
+        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeCity}','${safeState}','${safeZipcode}','${safeCustomerType}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved}`,
         req.hostname,
         req.protocol,
       );

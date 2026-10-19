@@ -176,9 +176,30 @@
 
                   <div class="col-12">
                     <label class="form-label fw-bold">
-                      <%= language.Address %>
+                      <%= language.Address || 'Address' %> <span class="text-danger">*</span>
                     </label>
-                    <input type="text" class="form-control" name="address" id="address" placeholder="Enter address">
+                    <input type="text" class="form-control" name="address" id="address" placeholder="Enter street address" required>
+                  </div>
+
+                  <div class="col-md-4">
+                    <label class="form-label fw-bold">
+                      <%= language.City || 'City' %> <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" name="city" id="city" placeholder="Enter city" required>
+                  </div>
+
+                  <div class="col-md-4">
+                    <label class="form-label fw-bold">
+                      <%= language.State || 'State' %> <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" name="state" id="state" placeholder="Enter state" required>
+                  </div>
+
+                  <div class="col-md-4">
+                    <label class="form-label fw-bold">
+                      <%= language.Zip_Code || 'Zip Code' %>
+                    </label>
+                    <input type="text" class="form-control" name="zipcode" id="zipcode" placeholder="Enter zip code">
                   </div>
 
                   <div class="col-12">
@@ -290,9 +311,30 @@
 
                   <div class="col-12">
                     <label class="form-label fw-bold">
-                      <%= language.Address %>
+                      <%= language.Address || 'Address' %> <span class="text-danger">*</span>
                     </label>
-                    <input type="text" class="form-control" name="address" placeholder="Enter address">
+                    <input type="text" class="form-control" name="address" placeholder="Enter street address" required>
+                  </div>
+
+                  <div class="col-md-4">
+                    <label class="form-label fw-bold">
+                      <%= language.City || 'City' %> <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" name="city" placeholder="Enter city" required>
+                  </div>
+
+                  <div class="col-md-4">
+                    <label class="form-label fw-bold">
+                      <%= language.State || 'State' %> <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" name="state" placeholder="Enter state" required>
+                  </div>
+
+                  <div class="col-md-4">
+                    <label class="form-label fw-bold">
+                      <%= language.Zip_Code || 'Zip Code' %>
+                    </label>
+                    <input type="text" class="form-control" name="zipcode" placeholder="Enter zip code">
                   </div>
 
                   <div class="col-12">
@@ -400,8 +442,10 @@
       },
       {
         data: 'address',
-        render: function (data) {
-          return `<span class="text-sm text-secondary">${escapeHtml(data) || '—'}</span>`;
+        render: function (data, type, row) {
+          const parts = [row.address, row.city, row.state, row.zipcode].filter(Boolean);
+          const fullAddr = parts.length > 0 ? parts.join(', ') : (data || '—');
+          return `<span class="text-sm text-secondary">${escapeHtml(fullAddr)}</span>`;
         }
       }
     ];
@@ -442,7 +486,11 @@
                data-last-name="${escapeHtml(row.last_name || '')}"
         data-number="${escapeHtml(row.number)}" 
         data-email="${escapeHtml(row.email)}" 
-        data-addresh="${escapeHtml(row.address)}"
+        data-address="${escapeHtml(row.address || '')}"
+        data-city="${escapeHtml(row.city || '')}"
+        data-state="${escapeHtml(row.state || '')}"
+        data-zipcode="${escapeHtml(row.zipcode || '')}"
+        data-addresh="${escapeHtml(row.address || '')}"
         data-memo="${escapeHtml(row.memo || '')}"
         data-customer-type="${escapeHtml(row.customer_type || 'Counter & Counter')}"
         data-tax="${escapeHtml(row.taxnumber)}" 
@@ -557,7 +605,10 @@
             $('#last_name').val(lastName);
     $('#number').val($(this).attr('data-number'));
     $('#email').val($(this).attr('data-email'));
-    $('#address').val($(this).attr('data-addresh'));
+    $('#address').val($(this).attr('data-address') || $(this).attr('data-addresh') || '');
+    $('#city').val($(this).attr('data-city') || '');
+    $('#state').val($(this).attr('data-state') || '');
+    $('#zipcode').val($(this).attr('data-zipcode') || '');
     $('#memo').val($(this).attr('data-memo') || '');
     $('#edit_customer_type').val($(this).attr('data-customer-type') || 'Counter & Counter');
     $('#tax').val($(this).attr('data-tax'));
