@@ -366,6 +366,18 @@ router.get("/list/data", auth, async (req, res) => {
             formattedPickupDate = `${pYear}-${pMonth}-${pDay}`;
           }
 
+          const rDate = order.ready_date ? new Date(order.ready_date) : (order.delivery_date ? new Date(order.delivery_date) : null);
+          let formattedReadyDate = "";
+          if (rDate && !isNaN(rDate.getTime())) {
+            const rDay = (rDate.getDate() < 10 ? "0" : "") + rDate.getDate();
+            const rMonth =
+              (rDate.getMonth() + 1 < 10 ? "0" : "") + (rDate.getMonth() + 1);
+            const rYear = rDate.getFullYear();
+            formattedReadyDate = `${rYear}-${rMonth}-${rDay}`;
+          }
+
+          const isZeroItemOrder = !order.service_list || order.service_list === '' || order.service_list === '0' || order.service_list === 'null';
+
           let statusClass = "status-processing";
           if (order.order_status == 1) statusClass = "status-pending";
           else if (order.order_status == 2) statusClass = "status-processing";
@@ -379,12 +391,15 @@ router.get("/list/data", auth, async (req, res) => {
             formattedOrderDate,
             formattedDeliveryDate,
             formattedPickupDate,
+            formattedReadyDate,
+            isZeroItemOrder,
             order_type: order.order_type || 'Counter & Counter',
             statusClass,
             canDelete,
             canEdit,
             isMaster: login === "master",
           };
+
         });
       },
     });
@@ -1364,6 +1379,9 @@ const renderOrderPrint = async (req, res) => {
     let pdate = orderdata[0].pickup_date
       ? new Date(orderdata[0].pickup_date).toLocaleDateString("en-CA")
       : ddate;
+    let rdate = orderdata[0].ready_date
+      ? new Date(orderdata[0].ready_date).toLocaleDateString("en-CA")
+      : ddate;
 
     res.render("orderprint", {
       cartservice: orderServiceList,
@@ -1378,8 +1396,10 @@ const renderOrderPrint = async (req, res) => {
       oate,
       ddate,
       pdate,
+      rdate,
       accessdata,
     });
+
   } catch (error) {
     console.error("Error in renderOrderPrint:", error);
     res.redirect("/order/list");

@@ -865,7 +865,16 @@
               </td>
             </tr>
           <% }) %>
+        <% } else { %>
+          <tr>
+            <td colspan="4" class="text-center py-2" style="font-size: 11px; padding: 12px 4px;">
+              <div style="font-weight: 700; font-size: 13px; margin-bottom: 2px;">ROUTE PICK-UP MANIFEST</div>
+              <div style="font-size: 10px; color: #475569;">[0 Items Recorded - Driver Pick-up Intake]</div>
+              <div style="font-size: 9px; color: #64748b; margin-top: 4px;">Garments will be counted and priced at store intake</div>
+            </td>
+          </tr>
         <% } %>
+
 
                 <% if (addonslist && addonslist.length> 0) { %>
                   <tr>
@@ -1029,7 +1038,10 @@
                         </tr>
                         <% } %>
 
-                        <% const isDelPos = (order.order_type === 'Counter & Route' || order.order_type === 'Route & Route' || order.order_type === 'C & R' || order.order_type === 'R & R' || order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery'); %>
+                        <% 
+                          const hasRoutePickup = (order.order_type === 'Route & Counter' || order.order_type === 'Route & Route' || order.order_type === 'R & C' || order.order_type === 'R & R' || order.order_type === 'Pick-up & Counter' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Store collection & Store delivery' || order.order_type === 'Store collection & Customer pick-up');
+                          const hasRouteDelivery = (order.order_type === 'Counter & Route' || order.order_type === 'Route & Route' || order.order_type === 'C & R' || order.order_type === 'R & R' || order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery');
+                        %>
                         <% if (order.order_type) { %>
                         <tr>
                           <td class="text-start" style="font-size: 11px;">Type:</td>
@@ -1038,12 +1050,29 @@
                           </td>
                         </tr>
                         <% } %>
+                        <% if (hasRoutePickup) { %>
                         <tr>
-                          <td class="text-start" style="font-size: 12px;"><%= isDelPos ? 'Delivery:' : 'Pick-up:' %></td>
-                          <td class="text-end" style="font-size: 12px;">
-                            <%= isDelPos ? ddate : (pdate || ddate) %>
+                          <td class="text-start" style="font-size: 11px;">Pick-up:</td>
+                          <td class="text-end" style="font-size: 11px;">
+                            <%= pdate %>
                           </td>
                         </tr>
+                        <% } %>
+                        <tr>
+                          <td class="text-start" style="font-size: 12px; font-weight: 700;">Ready:</td>
+                          <td class="text-end" style="font-size: 12px; font-weight: 700;">
+                            <%= (typeof rdate !== 'undefined' && rdate) ? rdate : ddate %>
+                          </td>
+                        </tr>
+                        <% if (hasRouteDelivery) { %>
+                        <tr>
+                          <td class="text-start" style="font-size: 11px;">Delivery:</td>
+                          <td class="text-end" style="font-size: 11px;">
+                            <%= ddate %>
+                          </td>
+                        </tr>
+                        <% } %>
+
 
                           <% if (order.reference_number && order.reference_number.trim()) { %>
                             <tr>
@@ -1109,7 +1138,8 @@
     const storeName = "<%= (shope && shope.name) ? shope.name : (accessdata && accessdata.masterstore ? accessdata.masterstore.app_name : '') %>";
     const orderType = "<%= (order && order.order_type) ? order.order_type : 'Counter & Counter' %>";
     const isDelivery = "<%= (order && (order.order_type === 'Counter & Route' || order.order_type === 'Route & Route' || order.order_type === 'C & R' || order.order_type === 'R & R' || order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery')) ? '1' : '0' %>" === "1";
-    const readyDate = isDelivery ? "<%= ddate %>" : "<%= pdate || ddate %>";
+    const readyDate = "<%= (typeof rdate !== 'undefined' && rdate) ? rdate : (isDelivery ? ddate : (pdate || ddate)) %>";
+
     const tagDateSuffix = isDelivery ? " [Del]" : " [Pick]";
 
     const posClient = new POSPrintClient({ baseUrl: serverUrl, timeout: 4000 });

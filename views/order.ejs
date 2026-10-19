@@ -346,24 +346,34 @@
                                 {
                                     data: 'order_id',
                                     render: function (data, type, row) {
-                                        var isDel = (row.order_type === 'Counter & Route' || row.order_type === 'Route & Route' || row.order_type === 'C & R' || row.order_type === 'R & R' || row.order_type === 'Counter & Delivery' || row.order_type === 'Pick-up & Delivery' || row.order_type === 'Customer drop-off & Store delivery' || row.order_type === 'Store collection & Store delivery');
-                                        var dateLabel = isDel ? '<%= language.Delivery_Date || "Delivery Date" %>' : '<%= language.Pickup_Date || "Pick-up Date" %>';
-                                        var dateValue = isDel ? (row.formattedDeliveryDate || '') : (row.formattedPickupDate || row.formattedDeliveryDate || '');
+                                        var hasPickup = (row.order_type === 'Route & Counter' || row.order_type === 'Route & Route' || row.order_type === 'R & C' || row.order_type === 'R & R' || row.order_type === 'Pick-up & Counter' || row.order_type === 'Pick-up & Delivery' || row.order_type === 'Store collection & Store delivery' || row.order_type === 'Store collection & Customer pick-up');
+                                        var hasDelivery = (row.order_type === 'Counter & Route' || row.order_type === 'Route & Route' || row.order_type === 'C & R' || row.order_type === 'R & R' || row.order_type === 'Counter & Delivery' || row.order_type === 'Pick-up & Delivery' || row.order_type === 'Customer drop-off & Store delivery' || row.order_type === 'Store collection & Store delivery');
+
+                                        var readyDateVal = row.formattedReadyDate || row.formattedDeliveryDate || '';
                                         var orderTypeBadge = row.order_type ? '<span class="badge bg-light text-dark border py-1 px-2 text-wrap d-inline-block mt-1" style="font-size: 0.72rem; line-height: 1.1;">' + row.order_type + '</span>' : '';
+                                        var zeroItemBadge = row.isZeroItemOrder ? '<span class="badge bg-warning-subtle text-dark border border-warning py-0 px-1 text-wrap d-inline-block mt-1" style="font-size: 0.68rem; line-height: 1.1;">0 Items (Pending Intake)</span>' : '';
+
+                                        var scheduleRows = '';
+                                        if (hasPickup && row.formattedPickupDate) {
+                                            scheduleRows += '<div class="server-dt-secondary-text mb-0"><span class="me-1 opacity-75"><%= language.Pickup_Date || "Pick-up" %>:</span><span>' + row.formattedPickupDate + '</span></div>';
+                                        }
+                                        scheduleRows += '<div class="server-dt-secondary-text mb-0"><span class="me-1 opacity-75 fw-semibold text-success"><%= language.Ready_Schedule || "Ready" %>:</span><span class="fw-semibold">' + readyDateVal + '</span></div>';
+                                        if (hasDelivery && row.formattedDeliveryDate) {
+                                            scheduleRows += '<div class="server-dt-secondary-text mb-0"><span class="me-1 opacity-75"><%= language.Delivery_Date || "Delivery" %>:</span><span>' + row.formattedDeliveryDate + '</span></div>';
+                                        }
 
                                         return '<div class="server-dt-primary-text mb-1">' +
                                             '<span class="me-1 fw-bold text-primary">' + (data || '') + '</span>' +
                                             '</div>' +
                                             (orderTypeBadge ? '<div class="mb-1">' + orderTypeBadge + '</div>' : '') +
+                                            (zeroItemBadge ? '<div class="mb-1">' + zeroItemBadge + '</div>' : '') +
                                             '<div class="server-dt-secondary-text mb-0">' +
                                             '<span class="me-1 opacity-75"><%= language.Order_Date || "Order Date" %>:</span>' +
                                             '<span>' + (row.formattedOrderDate || '') + '</span>' +
                                             '</div>' +
-                                            '<div class="server-dt-secondary-text mb-0">' +
-                                            '<span class="me-1 opacity-75">' + dateLabel + ':</span>' +
-                                            '<span>' + dateValue + '</span>' +
-                                            '</div>';
+                                            scheduleRows;
                                     }
+
                                 },
                                 {
                                     data: 'customer_name',

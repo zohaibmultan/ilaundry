@@ -1172,7 +1172,23 @@
    }
    window.applyCustomerTypeToPos = applyCustomerTypeToPos;
 
-   function isPosDeliveryOrderType(orderType) {
+   function isPosRoutePickup(orderType) {
+      if (!orderType) return false;
+      var t = String(orderType).trim();
+      return (
+         t === 'Route & Counter' ||
+         t === 'Route & Route' ||
+         t === 'R & C' ||
+         t === 'R & R' ||
+         t === 'Pick-up & Counter' ||
+         t === 'Pick-up & Delivery' ||
+         t === 'Store collection & Store delivery' ||
+         t === 'Store collection & Customer pick-up'
+      );
+   }
+   window.isPosRoutePickup = isPosRoutePickup;
+
+   function isPosRouteDelivery(orderType) {
       if (!orderType) return false;
       var t = String(orderType).trim();
       return (
@@ -1186,7 +1202,13 @@
          t === 'Store collection & Store delivery'
       );
    }
+   window.isPosRouteDelivery = isPosRouteDelivery;
+
+   function isPosDeliveryOrderType(orderType) {
+      return isPosRouteDelivery(orderType);
+   }
    window.isPosDeliveryOrderType = isPosDeliveryOrderType;
+
 
    $('body').on("change", "#single-select", async function () {
       var id = this.value;
@@ -1517,6 +1539,60 @@
    // POS Ready Schedule Automated Engine
    // ==========================================
    window.isPosDeliveryScheduleManual = false;
+   window.isPosPickupScheduleManual = false;
+   window.isPosReadyScheduleManual = false;
+   window.isPosEditReadyScheduleManual = false;
+
+   function updatePosScheduleGroupsVisibility(orderType, isEdit) {
+      const prefix = isEdit ? '#edit_' : '#';
+      const hasPickup = isPosRoutePickup(orderType);
+      const hasDelivery = isPosRouteDelivery(orderType);
+
+      if (hasPickup) {
+         $(prefix + 'pos_pickup_date_group').show();
+         $(prefix + 'modal_pickup_group').show();
+      } else {
+         $(prefix + 'pos_pickup_date_group').hide();
+         $(prefix + 'modal_pickup_group').hide();
+      }
+
+      // Ready schedule is ALWAYS visible across all 4 customer types
+      $(prefix + 'pos_ready_date_group').show();
+      $(prefix + 'modal_ready_group').show();
+
+      if (hasDelivery) {
+         $(prefix + 'pos_delivery_date_group').show();
+         $(prefix + 'modal_delivery_group').show();
+      } else {
+         $(prefix + 'pos_delivery_date_group').hide();
+         $(prefix + 'modal_delivery_group').hide();
+      }
+
+      $(prefix + 'modal_pos_order_type').val(orderType);
+      if (!isEdit) {
+         $('#modal_order_type').val(orderType);
+      }
+   }
+   window.updatePosScheduleGroupsVisibility = updatePosScheduleGroupsVisibility;
+
+   function updatePosCheckoutBtnState() {
+      var serviselength = $('#POS_service_added_list tr').length;
+      var orderType = $('#pos_order_type').val() || 'Counter & Counter';
+      var isRoutePickup = isPosRoutePickup(orderType);
+      var $btn = $('#POS_payment_model_show');
+      if ($btn.length === 0) return;
+
+      if (serviselength < 1 && isRoutePickup) {
+         $btn.removeClass('btn-success').addClass('btn-primary');
+         $btn.find('span').text('Schedule Route Pick-up');
+         $btn.find('i').removeClass('fa-arrow-right').addClass('fa-truck-pickup');
+      } else {
+         $btn.removeClass('btn-primary').addClass('btn-success');
+         $btn.find('span').text('Payment');
+         $btn.find('i').removeClass('fa-truck-pickup').addClass('fa-arrow-right');
+      }
+   }
+   window.updatePosCheckoutBtnState = updatePosCheckoutBtnState;
 
    function calculateClientReadySchedule(intakeStr, schedule) {
       const sched = schedule || window.POS_READY_SCHEDULE || {
@@ -1573,22 +1649,38 @@
    }
 
    function updatePosReadyScheduleUI(targetDateInput, targetTimeInput, autoBtn, orderDateVal, isManualReset) {
+      const isReady = String(targetDateInput).includes('ready');
       const isDel = String(targetDateInput).includes('delivery');
+      const isEdit = String(targetDateInput).includes('edit');
+
+      if (isReady && (isEdit ? window.isPosEditReadyScheduleManual : window.isPosReadyScheduleManual) && !isManualReset) {
+         return;
+      }
       if (isDel && window.isPosDeliveryScheduleManual && !isManualReset) {
          return;
       }
-      if (!isDel && window.isPosPickupScheduleManual && !isManualReset) {
+      if (!isDel && !isReady && window.isPosPickupScheduleManual && !isManualReset) {
          return;
       }
 
-      let storeId = $('#pos_store_id').val() || '';
+      let storeId = $('#pos_store_id').val() || $('#pos_staff_store_id').val() || '';
       let baseUrl = window.location.origin;
 
       // 1. Instantaneous local calculation for 0ms visual feedback
       let localCalc = calculateClientReadySchedule(orderDateVal, window.POS_READY_SCHEDULE);
       $(targetDateInput).val(localCalc.readyDate);
       $(targetTimeInput).val(localCalc.readyTime);
-      if (isDel) {
+
+      if (isReady) {
+         $('input[name=readydate]').val(localCalc.readyDate);
+         $('input[name=readytime]').val(localCalc.readyTime);
+         let currentOrderType = (isEdit ? $('#edit_pos_order_type').val() : $('#pos_order_type').val()) || 'Counter & Counter';
+         if (!isPosRouteDelivery(currentOrderType)) {
+            $('input[name=deliverydate]').val(localCalc.readyDate);
+            $('input[name=deliverytime]').val(localCalc.readyTime);
+            $('#deliverydate_hidden').val(localCalc.readyDate);
+         }
+      } else if (isDel) {
          $('input[name=deliverydate]').val(localCalc.readyDate);
          $('input[name=deliverytime]').val(localCalc.readyTime);
          $('#deliverydate_hidden').val(localCalc.readyDate);
@@ -1609,7 +1701,16 @@
                if (res.schedule) window.POS_READY_SCHEDULE = res.schedule;
                $(targetDateInput).val(res.result.readyDate);
                $(targetTimeInput).val(res.result.readyTime);
-               if (isDel) {
+               if (isReady) {
+                  $('input[name=readydate]').val(res.result.readyDate);
+                  $('input[name=readytime]').val(res.result.readyTime);
+                  let currentOrderType = (isEdit ? $('#edit_pos_order_type').val() : $('#pos_order_type').val()) || 'Counter & Counter';
+                  if (!isPosRouteDelivery(currentOrderType)) {
+                     $('input[name=deliverydate]').val(res.result.readyDate);
+                     $('input[name=deliverytime]').val(res.result.readyTime);
+                     $('#deliverydate_hidden').val(res.result.readyDate);
+                  }
+               } else if (isDel) {
                   $('input[name=deliverydate]').val(res.result.readyDate);
                   $('input[name=deliverytime]').val(res.result.readyTime);
                   $('#deliverydate_hidden').val(res.result.readyDate);
@@ -1626,40 +1727,29 @@
    // Handle POS Order Type Dropdown Change
    $(document).on("change", "#pos_order_type", function () {
       let orderType = $(this).val();
-      let isDelivery = isPosDeliveryOrderType(orderType);
+      updatePosScheduleGroupsVisibility(orderType, false);
+      updatePosCheckoutBtnState();
 
-      if (isDelivery) {
-         $('#pos_pickup_date_group').hide();
-         $('#pos_delivery_date_group').show();
-         $('#modal_pickup_group').hide();
-         $('#modal_delivery_group').show();
-         $('#modal_pos_order_type').val(orderType);
-
-         let orderDate = $('#POS_order_date').val() || new Date().toISOString().slice(0, 10);
-         if (!window.isPosDeliveryScheduleManual) {
-            updatePosReadyScheduleUI('#POS_delivery_date', '#POS_delivery_time', '#btn_auto_ready_schedule', orderDate, false);
-         }
-      } else {
-         $('#pos_delivery_date_group').hide();
-         $('#pos_pickup_date_group').show();
-         $('#modal_delivery_group').hide();
-         $('#modal_pickup_group').show();
-         $('#modal_pos_order_type').val(orderType);
-
-         let orderDate = $('#POS_order_date').val() || new Date().toISOString().slice(0, 10);
-         if (!window.isPosPickupScheduleManual) {
-            updatePosReadyScheduleUI('#POS_pickup_date', '#POS_pickup_time', '#btn_auto_pickup_schedule', orderDate, false);
-         }
+      let orderDate = $('#POS_order_date').val() || new Date().toISOString().slice(0, 10);
+      if (!window.isPosReadyScheduleManual) {
+         updatePosReadyScheduleUI('#POS_ready_date', '#POS_ready_time', '#btn_auto_ready_schedule', orderDate, false);
       }
 
       var baseUrl = window.location.origin;
       $.ajax({
          type: 'post',
          url: baseUrl + "/admin/pos_order_type",
-         data: { order_type: orderType },
+         data: {
+            order_type: orderType,
+            ready_date: $('#POS_ready_date').val(),
+            ready_time: $('#POS_ready_time').val(),
+            delivery_date: $('#POS_delivery_date').val(),
+            delivery_time: $('#POS_delivery_time').val(),
+            pickup_date: $('#POS_pickup_date').val(),
+            pickup_time: $('#POS_pickup_time').val()
+         },
          dataType: 'json',
-         success: function (res) {
-         }
+         success: function (res) {}
       });
    });
 
@@ -1667,94 +1757,115 @@
    $(document).on("change", "#edit_pos_order_type", function () {
       let orderType = $(this).val();
       let order_id = $('#order_id').val();
-      let isDelivery = isPosDeliveryOrderType(orderType);
+      updatePosScheduleGroupsVisibility(orderType, true);
 
-      if (isDelivery) {
-         $('#edit_pos_pickup_date_group').hide();
-         $('#edit_pos_delivery_date_group').show();
-         $('#edit_modal_pickup_group').hide();
-         $('#edit_modal_delivery_group').show();
-         $('#edit_modal_pos_order_type').val(orderType);
-
-         let orderDate = $('#edit_POS_order_date').val() || new Date().toISOString().slice(0, 10);
-         if (!window.isPosDeliveryScheduleManual) {
-            updatePosReadyScheduleUI('#edit_POS_delivery_date', '#edit_POS_delivery_time', '#btn_auto_edit_ready_schedule', orderDate, false);
-         }
-      } else {
-         $('#edit_pos_delivery_date_group').hide();
-         $('#edit_pos_pickup_date_group').show();
-         $('#edit_modal_delivery_group').hide();
-         $('#edit_modal_pickup_group').show();
-         $('#edit_modal_pos_order_type').val(orderType);
-
-         let orderDate = $('#edit_POS_order_date').val() || new Date().toISOString().slice(0, 10);
-         if (!window.isPosPickupScheduleManual) {
-            updatePosReadyScheduleUI('#edit_POS_pickup_date', '#edit_POS_pickup_time', '#btn_auto_edit_pickup_schedule', orderDate, false);
-         }
+      let orderDate = $('#edit_POS_order_date').val() || new Date().toISOString().slice(0, 10);
+      if (!window.isPosEditReadyScheduleManual) {
+         updatePosReadyScheduleUI('#edit_POS_ready_date', '#edit_POS_ready_time', '#btn_auto_edit_ready_schedule', orderDate, false);
       }
 
       var baseUrl = window.location.origin;
       $.ajax({
          type: 'post',
          url: baseUrl + "/admin/edit_pos_order_type",
-         data: { order_type: orderType, order_id: order_id },
+         data: {
+            order_type: orderType,
+            order_id: order_id,
+            ready_date: $('#edit_POS_ready_date').val(),
+            ready_time: $('#edit_POS_ready_time').val(),
+            delivery_date: $('#edit_POS_delivery_date').val(),
+            delivery_time: $('#edit_POS_delivery_time').val(),
+            pickup_date: $('#edit_POS_pickup_date').val(),
+            pickup_time: $('#edit_POS_pickup_time').val()
+         },
          dataType: 'json',
-         success: function (res) {
-         }
+         success: function (res) {}
       });
    });
 
+   // POS Intake Order Date Change
    $(document).on("change", "#POS_order_date", function () {
       let date = $(this).val();
+      $('#POS_ready_date').attr('min', date);
       $('#POS_delivery_date').attr('min', date);
       $('#POS_pickup_date').attr('min', date);
 
-      let orderType = $('#pos_order_type').val() || '';
-      let isDelivery = isPosDeliveryOrderType(orderType);
-
-      if (isDelivery) {
-         if (!window.isPosDeliveryScheduleManual) {
-            updatePosReadyScheduleUI('#POS_delivery_date', '#POS_delivery_time', '#btn_auto_ready_schedule', date, false);
-         } else {
-            let currentDel = $('#POS_delivery_date').val();
-            if (!currentDel || currentDel < date) {
-               $('#POS_delivery_date').val(date);
-               currentDel = date;
-            }
-            $('input[name=deliverydate]').val(currentDel).attr('min', date);
-            $('#deliverydate_hidden').val(currentDel);
-         }
+      if (!window.isPosReadyScheduleManual) {
+         updatePosReadyScheduleUI('#POS_ready_date', '#POS_ready_time', '#btn_auto_ready_schedule', date, false);
       } else {
-         if (!window.isPosPickupScheduleManual) {
-            updatePosReadyScheduleUI('#POS_pickup_date', '#POS_pickup_time', '#btn_auto_pickup_schedule', date, false);
-         } else {
-            let currentPick = $('#POS_pickup_date').val();
-            if (!currentPick || currentPick < date) {
-               $('#POS_pickup_date').val(date);
-               currentPick = date;
-            }
-            $('input[name=pickupdate]').val(currentPick).attr('min', date);
-            $('#pickupdate_hidden').val(currentPick);
+         let currentReady = $('#POS_ready_date').val();
+         if (!currentReady || currentReady < date) {
+            $('#POS_ready_date').val(date);
+            currentReady = date;
          }
+         $('input[name=readydate]').val(currentReady).attr('min', date);
       }
 
       var baseUrl = window.location.origin;
+      var ready_date = $('#POS_ready_date').val();
+      var ready_time = $('#POS_ready_time').val() || '16:00';
       var delivery_date = $('#POS_delivery_date').val();
       var delivery_time = $('#POS_delivery_time').val() || '16:00';
+      var pickup_date = $('#POS_pickup_date').val();
+      var pickup_time = $('#POS_pickup_time').val() || '16:00';
       $.ajax({
          type: 'post',
          url: baseUrl + "/admin/date",
-         data: { date, delivery_date, delivery_time },
+         data: { date, delivery_date, delivery_time, ready_date, ready_time, pickup_date, pickup_time },
+         dataType: 'json',
+         success: function (res) {}
+      });
+   });
+
+   // POS Ready Date Manual Change
+   $(document).on("change", "#POS_ready_date, #POS_ready_time", function () {
+      window.isPosReadyScheduleManual = true;
+      $('#btn_auto_ready_schedule').removeClass('btn-outline-primary').addClass('btn-warning text-dark').attr('title', 'Manual ready schedule locked - Click to reset to auto');
+
+      let ready_date = $('#POS_ready_date').val();
+      let ready_time = $('#POS_ready_time').val() || '16:00';
+      let order_date = $('#POS_order_date').val();
+      if (order_date && ready_date < order_date) {
+         ready_date = order_date;
+         $('#POS_ready_date').val(ready_date);
+      }
+      $('input[name=readydate]').val(ready_date);
+      $('input[name=readytime]').val(ready_time);
+
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/ready_date",
+         data: { ready_date, ready_time },
+         dataType: 'json',
+         success: function (res) {}
+      });
+   });
+
+   // POS Reset Ready Schedule to Auto
+   $(document).on("click", "#btn_auto_ready_schedule", function (e) {
+      e.preventDefault();
+      window.isPosReadyScheduleManual = false;
+      $(this).removeClass('btn-warning text-dark').addClass('btn-outline-primary').attr('title', 'Reset to automated ready schedule');
+      let orderDate = $('#POS_order_date').val() || new Date().toISOString().slice(0, 10);
+      updatePosReadyScheduleUI('#POS_ready_date', '#POS_ready_time', this, orderDate, true);
+      let ready_date = $('#POS_ready_date').val();
+      let ready_time = $('#POS_ready_time').val() || '16:00';
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/ready_date",
+         data: { ready_date, ready_time },
          dataType: 'json',
          success: function (res) {
+            toastr.info('Ready schedule recalculated automatically');
          }
       });
    });
 
+   // POS Delivery Date Manual Change
    $(document).on("change", "#POS_delivery_date, #POS_delivery_time", function () {
       window.isPosDeliveryScheduleManual = true;
-      $('#btn_auto_ready_schedule').removeClass('btn-outline-primary').addClass('btn-warning text-dark').attr('title', 'Manual schedule locked - Click to reset to auto');
-
       let delivery_date = $('#POS_delivery_date').val();
       let delivery_time = $('#POS_delivery_time').val() || '16:00';
       let order_date = $('#POS_order_date').val();
@@ -1772,35 +1883,13 @@
          url: baseUrl + "/admin/delivery_date",
          data: { delivery_date, delivery_time },
          dataType: 'json',
-         success: function (res) {
-         }
+         success: function (res) {}
       });
    });
 
-   $(document).on("click", "#btn_auto_ready_schedule", function (e) {
-      e.preventDefault();
-      window.isPosDeliveryScheduleManual = false;
-      $(this).removeClass('btn-warning text-dark').addClass('btn-outline-primary').attr('title', 'Reset to automated ready schedule');
-      let orderDate = $('#POS_order_date').val() || new Date().toISOString().slice(0, 10);
-      updatePosReadyScheduleUI('#POS_delivery_date', '#POS_delivery_time', this, orderDate, true);
-      let delivery_date = $('#POS_delivery_date').val();
-      let delivery_time = $('#POS_delivery_time').val() || '16:00';
-      var baseUrl = window.location.origin;
-      $.ajax({
-         type: 'post',
-         url: baseUrl + "/admin/delivery_date",
-         data: { delivery_date, delivery_time },
-         dataType: 'json',
-         success: function (res) {
-            toastr.info('Ready schedule recalculated automatically');
-         }
-      });
-   });
-
+   // POS Pickup Date Manual Change
    $(document).on("change", "#POS_pickup_date, #POS_pickup_time", function () {
       window.isPosPickupScheduleManual = true;
-      $('#btn_auto_pickup_schedule').removeClass('btn-outline-primary').addClass('btn-warning text-dark').attr('title', 'Manual schedule locked - Click to reset to auto');
-
       let pickup_date = $('#POS_pickup_date').val();
       let pickup_time = $('#POS_pickup_time').val() || '16:00';
       let order_date = $('#POS_order_date').val();
@@ -1818,24 +1907,86 @@
          url: baseUrl + "/admin/pickup_date",
          data: { pickup_date, pickup_time },
          dataType: 'json',
-         success: function (res) {
-         }
+         success: function (res) {}
       });
    });
 
-   $(document).on("click", "#btn_auto_pickup_schedule", function (e) {
-      e.preventDefault();
-      window.isPosPickupScheduleManual = false;
-      $(this).removeClass('btn-warning text-dark').addClass('btn-outline-primary').attr('title', 'Reset to automated ready schedule');
-      let orderDate = $('#POS_order_date').val() || new Date().toISOString().slice(0, 10);
-      updatePosReadyScheduleUI('#POS_pickup_date', '#POS_pickup_time', this, orderDate, true);
-      let pickup_date = $('#POS_pickup_date').val();
-      let pickup_time = $('#POS_pickup_time').val() || '16:00';
+   // Edit POS Intake Order Date Change
+   $(document).on("change", "#edit_POS_order_date", function () {
+      var order_id = $('#order_id').val();
+      let date = $(this).val();
+      $('#edit_POS_ready_date').attr('min', date);
+      $('#edit_POS_delivery_date').attr('min', date);
+      $('#edit_POS_pickup_date').attr('min', date);
+
+      if (!window.isPosEditReadyScheduleManual) {
+         updatePosReadyScheduleUI('#edit_POS_ready_date', '#edit_POS_ready_time', '#btn_auto_edit_ready_schedule', date, false);
+      } else {
+         let currentReady = $('#edit_POS_ready_date').val();
+         if (!currentReady || currentReady < date) {
+            $('#edit_POS_ready_date').val(date);
+            currentReady = date;
+         }
+         $('input[name=readydate]').val(currentReady).attr('min', date);
+      }
+
+      var baseUrl = window.location.origin;
+      var ready_date = $('#edit_POS_ready_date').val();
+      var ready_time = $('#edit_POS_ready_time').val() || '16:00';
+      var delivery_date = $('#edit_POS_delivery_date').val();
+      var delivery_time = $('#edit_POS_delivery_time').val() || '16:00';
+      var pickup_date = $('#edit_POS_pickup_date').val();
+      var pickup_time = $('#edit_POS_pickup_time').val() || '16:00';
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/edit_date",
+         data: { date, delivery_date, delivery_time, ready_date, ready_time, pickup_date, pickup_time, order_id },
+         dataType: 'json',
+         success: function (res) {}
+      });
+   });
+
+   // Edit POS Ready Date Manual Change
+   $(document).on("change", "#edit_POS_ready_date, #edit_POS_ready_time", function () {
+      window.isPosEditReadyScheduleManual = true;
+      $('#btn_auto_edit_ready_schedule').removeClass('btn-outline-primary').addClass('btn-warning text-dark').attr('title', 'Manual ready schedule locked - Click to reset to auto');
+
+      var order_id = $('#order_id').val();
+      let ready_date = $('#edit_POS_ready_date').val();
+      let ready_time = $('#edit_POS_ready_time').val() || '16:00';
+      let order_date = $('#edit_POS_order_date').val();
+      if (order_date && ready_date < order_date) {
+         ready_date = order_date;
+         $('#edit_POS_ready_date').val(ready_date);
+      }
+      $('input[name=readydate]').val(ready_date);
+      $('input[name=readytime]').val(ready_time);
+
       var baseUrl = window.location.origin;
       $.ajax({
          type: 'post',
-         url: baseUrl + "/admin/pickup_date",
-         data: { pickup_date, pickup_time },
+         url: baseUrl + "/admin/edit_ready_date",
+         data: { ready_date, ready_time, order_id },
+         dataType: 'json',
+         success: function (res) {}
+      });
+   });
+
+   // Edit POS Reset Ready Schedule to Auto
+   $(document).on("click", "#btn_auto_edit_ready_schedule", function (e) {
+      e.preventDefault();
+      window.isPosEditReadyScheduleManual = false;
+      $(this).removeClass('btn-warning text-dark').addClass('btn-outline-primary').attr('title', 'Reset to automated ready schedule');
+      var order_id = $('#order_id').val();
+      let orderDate = $('#edit_POS_order_date').val() || new Date().toISOString().slice(0, 10);
+      updatePosReadyScheduleUI('#edit_POS_ready_date', '#edit_POS_ready_time', this, orderDate, true);
+      let ready_date = $('#edit_POS_ready_date').val();
+      let ready_time = $('#edit_POS_ready_time').val() || '16:00';
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/edit_ready_date",
+         data: { ready_date, ready_time, order_id },
          dataType: 'json',
          success: function (res) {
             toastr.info('Ready schedule recalculated automatically');
@@ -1843,58 +1994,8 @@
       });
    });
 
-   $(document).on("change", "#edit_POS_order_date", function () {
-      var order_id = $('#order_id').val();
-      let date = $(this).val();
-      $('#edit_POS_delivery_date').attr('min', date);
-      $('#edit_POS_pickup_date').attr('min', date);
-
-      let orderType = $('#edit_pos_order_type').val() || '';
-      let isDelivery = isPosDeliveryOrderType(orderType);
-
-      if (isDelivery) {
-         if (!window.isPosDeliveryScheduleManual) {
-            updatePosReadyScheduleUI('#edit_POS_delivery_date', '#edit_POS_delivery_time', '#btn_auto_edit_ready_schedule', date, false);
-         } else {
-            let currentDel = $('#edit_POS_delivery_date').val();
-            if (!currentDel || currentDel < date) {
-               $('#edit_POS_delivery_date').val(date);
-               currentDel = date;
-            }
-            $('input[name=deliverydate]').val(currentDel).attr('min', date);
-            $('#deliverydate_hidden').val(currentDel);
-         }
-      } else {
-         if (!window.isPosPickupScheduleManual) {
-            updatePosReadyScheduleUI('#edit_POS_pickup_date', '#edit_POS_pickup_time', '#btn_auto_edit_pickup_schedule', date, false);
-         } else {
-            let currentPick = $('#edit_POS_pickup_date').val();
-            if (!currentPick || currentPick < date) {
-               $('#edit_POS_pickup_date').val(date);
-               currentPick = date;
-            }
-            $('input[name=pickupdate]').val(currentPick).attr('min', date);
-            $('#pickupdate_hidden').val(currentPick);
-         }
-      }
-
-      var baseUrl = window.location.origin;
-      var delivery_date = $('#edit_POS_delivery_date').val();
-      var delivery_time = $('#edit_POS_delivery_time').val() || '16:00';
-      $.ajax({
-         type: 'post',
-         url: baseUrl + "/admin/edit_date",
-         data: { date, delivery_date, delivery_time, order_id },
-         dataType: 'json',
-         success: function (res) {
-         }
-      });
-   });
-
+   // Edit POS Delivery Date Manual Change
    $(document).on("change", "#edit_POS_delivery_date, #edit_POS_delivery_time", function () {
-      window.isPosDeliveryScheduleManual = true;
-      $('#btn_auto_edit_ready_schedule').removeClass('btn-outline-primary').addClass('btn-warning text-dark').attr('title', 'Manual schedule locked - Click to reset to auto');
-
       var order_id = $('#order_id').val();
       let delivery_date = $('#edit_POS_delivery_date').val();
       let delivery_time = $('#edit_POS_delivery_time').val() || '16:00';
@@ -1913,36 +2014,12 @@
          url: baseUrl + "/admin/edit_delivery_date",
          data: { delivery_date, delivery_time, order_id },
          dataType: 'json',
-         success: function (res) {
-         }
+         success: function (res) {}
       });
    });
 
-   $(document).on("click", "#btn_auto_edit_ready_schedule", function (e) {
-      e.preventDefault();
-      window.isPosDeliveryScheduleManual = false;
-      $(this).removeClass('btn-warning text-dark').addClass('btn-outline-primary').attr('title', 'Reset to automated ready schedule');
-      var order_id = $('#order_id').val();
-      let orderDate = $('#edit_POS_order_date').val() || new Date().toISOString().slice(0, 10);
-      updatePosReadyScheduleUI('#edit_POS_delivery_date', '#edit_POS_delivery_time', this, orderDate, true);
-      let delivery_date = $('#edit_POS_delivery_date').val();
-      let delivery_time = $('#edit_POS_delivery_time').val() || '16:00';
-      var baseUrl = window.location.origin;
-      $.ajax({
-         type: 'post',
-         url: baseUrl + "/admin/edit_delivery_date",
-         data: { delivery_date, delivery_time, order_id },
-         dataType: 'json',
-         success: function (res) {
-            toastr.info('Ready schedule recalculated automatically');
-         }
-      });
-   });
-
+   // Edit POS Pickup Date Manual Change
    $(document).on("change", "#edit_POS_pickup_date, #edit_POS_pickup_time", function () {
-      window.isPosPickupScheduleManual = true;
-      $('#btn_auto_edit_pickup_schedule').removeClass('btn-outline-primary').addClass('btn-warning text-dark').attr('title', 'Manual schedule locked - Click to reset to auto');
-
       var order_id = $('#order_id').val();
       let pickup_date = $('#edit_POS_pickup_date').val();
       let pickup_time = $('#edit_POS_pickup_time').val() || '16:00';
@@ -1961,30 +2038,29 @@
          url: baseUrl + "/admin/edit_pickup_date",
          data: { pickup_date, pickup_time, order_id },
          dataType: 'json',
-         success: function (res) {
-         }
+         success: function (res) {}
       });
    });
 
-   $(document).on("click", "#btn_auto_edit_pickup_schedule", function (e) {
-      e.preventDefault();
-      window.isPosPickupScheduleManual = false;
-      $(this).removeClass('btn-warning text-dark').addClass('btn-outline-primary').attr('title', 'Reset to automated ready schedule');
-      var order_id = $('#order_id').val();
-      let orderDate = $('#edit_POS_order_date').val() || new Date().toISOString().slice(0, 10);
-      updatePosReadyScheduleUI('#edit_POS_pickup_date', '#edit_POS_pickup_time', this, orderDate, true);
-      let pickup_date = $('#edit_POS_pickup_date').val();
-      let pickup_time = $('#edit_POS_pickup_time').val() || '16:00';
-      var baseUrl = window.location.origin;
-      $.ajax({
-         type: 'post',
-         url: baseUrl + "/admin/edit_pickup_date",
-         data: { pickup_date, pickup_time, order_id },
-         dataType: 'json',
-         success: function (res) {
-            toastr.info('Ready schedule recalculated automatically');
-         }
-      });
+   // Two-Way Sync from Modal Inputs to POS Inputs
+   $(document).on("change", "input[name=readydate]", function () {
+      let val = $(this).val();
+      if ($('#POS_ready_date').length) {
+         $('#POS_ready_date').val(val).trigger('change');
+      }
+      if ($('#edit_POS_ready_date').length) {
+         $('#edit_POS_ready_date').val(val).trigger('change');
+      }
+   });
+
+   $(document).on("change", "input[name=readytime]", function () {
+      let val = $(this).val();
+      if ($('#POS_ready_time').length) {
+         $('#POS_ready_time').val(val).trigger('change');
+      }
+      if ($('#edit_POS_ready_time').length) {
+         $('#edit_POS_ready_time').val(val).trigger('change');
+      }
    });
 
    $(document).on("change", "input[name=deliverydate]", function () {
@@ -2016,6 +2092,17 @@
          $('#edit_POS_pickup_date').val(val).trigger('change');
       }
    });
+
+   $(document).on("change", "input[name=pickuptime]", function () {
+      let val = $(this).val();
+      if ($('#POS_pickup_time').length) {
+         $('#POS_pickup_time').val(val).trigger('change');
+      }
+      if ($('#edit_POS_pickup_time').length) {
+         $('#edit_POS_pickup_time').val(val).trigger('change');
+      }
+   });
+
 
    $(document).on("change", "input[name=pickuptime]", function () {
       let val = $(this).val();
@@ -2613,7 +2700,10 @@
       var store = $('#pos_store_id').val() || $('#pos_staff_store_id').val();
       var customer = $('#single-select').val();
       var serviselength = $('#POS_service_added_list tr').length;
+      var currentOrderType = $('#pos_order_type').val() || 'Counter & Counter';
+      var isRoutePickup = isPosRoutePickup(currentOrderType);
       var baseUrl = window.location.origin;
+
       if (!store || store === '0') {
          toastr.warning('Please Select Store');
          return;
@@ -2622,7 +2712,7 @@
          toastr.warning('Please Select Customer');
          return;
       }
-      if (serviselength < 1) {
+      if (serviselength < 1 && !isRoutePickup) {
          toastr.warning('Min One Service Required');
          return;
       }
@@ -2638,21 +2728,18 @@
                $("#POS_payment_type_list").prop('required', false);
                $('.default-select').selectpicker('refresh');
                let orderDateMin = $('#POS_order_date').val() || new Date(res.cart.order_date).toLocaleDateString('en-CA');
+               let chosenReady = $('#POS_ready_date').val() || (res.cart.ready_date ? new Date(res.cart.ready_date).toLocaleDateString('en-CA') : new Date(res.cart.delivery_date).toLocaleDateString('en-CA'));
+               let chosenReadyTime = $('#POS_ready_time').val() || '16:00';
                let chosenDel = $('#POS_delivery_date').val() || new Date(res.cart.delivery_date).toLocaleDateString('en-CA');
                let chosenDelTime = $('#POS_delivery_time').val() || '16:00';
                let chosenPick = $('#POS_pickup_date').val() || (res.cart.pickup_date ? new Date(res.cart.pickup_date).toLocaleDateString('en-CA') : chosenDel);
                let chosenPickTime = $('#POS_pickup_time').val() || '16:00';
-               let currentOrderType = $('#pos_order_type').val() || res.cart.order_type || 'Counter & Counter';
-               let isDel = isPosDeliveryOrderType(currentOrderType);
 
-               $('#modal_pos_order_type').val(currentOrderType);
-               if (isDel) {
-                  $('#modal_pickup_group').hide();
-                  $('#modal_delivery_group').show();
-               } else {
-                  $('#modal_delivery_group').hide();
-                  $('#modal_pickup_group').show();
-               }
+               updatePosScheduleGroupsVisibility(currentOrderType, false);
+
+               $('input[name=readydate]').val(chosenReady);
+               $('input[name=readydate]').attr('min', orderDateMin);
+               $('input[name=readytime]').val(chosenReadyTime);
 
                $('input[name=deliverydate]').val(chosenDel);
                $('input[name=deliverydate]').attr('min', orderDateMin);
@@ -2669,44 +2756,51 @@
                  var initSym = $('input[name=sym]').val() || '$';
                  $('#pos_discount_prefix').text(initSym);
                  $('#payment_extradiscount_percent_info').text('');
-                 var initDisc = Number(res.cart.extra_discount) || 0;
+
+                 var cartGross = (serviselength < 1) ? 0 : ((res.cart && typeof res.cart.gross_total === 'number') ? res.cart.gross_total : 0);
+                 var cartSub = (serviselength < 1) ? 0 : ((res.cart && typeof res.cart.sub_total === 'number') ? res.cart.sub_total : 0);
+                 var cartAddon = (serviselength < 1) ? 0 : ((res.cart && typeof res.cart.addon_price === 'number') ? res.cart.addon_price : 0);
+                 var cartCoupon = (serviselength < 1) ? 0 : ((res.cart && typeof res.cart.coupon_discount === 'number') ? res.cart.coupon_discount : 0);
+                 var cartTax = (serviselength < 1) ? 0 : ((res.cart && typeof res.cart.tax_amount === 'number') ? res.cart.tax_amount : 0);
+                 var cartTaxPct = (res.cart && res.cart.tax !== undefined) ? res.cart.tax : 0;
+                 var cartPaid = (serviselength < 1) ? 0 : ((res.cart && typeof res.cart.paid_amount === 'number') ? res.cart.paid_amount : 0);
+                 var initDisc = (serviselength < 1) ? 0 : ((res.cart && Number(res.cart.extra_discount)) ? Number(res.cart.extra_discount) : 0);
+
                  $('input[name=extradiscount]').val(initDisc);
                  $('#POS_extra_discount_order').val(initDisc > 0 ? initDisc : '');
-                $('input[name=paid_amount]').val(res.cart.paid_amount)
-                $('input[name=note]').val(res.cart.notes)
+                $('input[name=paid_amount]').val(cartPaid)
+                $('input[name=note]').val((res.cart && res.cart.notes) || '')
                 $('input[name=reference_number]').val('')
 
+               $('#payment_grosstotal').html(cartGross.toFixed(2))
+               $('#POS_gross_order').val(cartGross.toFixed(2))
+               $('#POS_subtotal_order').val(cartSub.toFixed(2))
+               $('#payment_subtotal').html(cartSub.toFixed(2))
+               $('#payment_addons').html(cartAddon.toFixed(2))
+               $('#payment_coupondiscount').html(cartCoupon.toFixed(2))
+               $('#payment_text_amount').html(cartTax.toFixed(2))
+               $('#payment_extradiscount').html(initDisc.toFixed(2))
+               $('#payment_text_perdent').html(' (' + cartTaxPct + ' %)')
+               $('#POS_total_balance').html((cartGross - cartPaid).toFixed(2))
 
-               $('#payment_grosstotal').html(res.cart.gross_total.toFixed(2))
-               $('#POS_gross_order').val(res.cart.gross_total.toFixed(2))
-               $('#POS_subtotal_order').val(res.cart.sub_total.toFixed(2))
-               $('#payment_subtotal').html(res.cart.sub_total.toFixed(2))
-               $('#payment_addons').html(res.cart.addon_price.toFixed(2))
-               $('#payment_coupondiscount').html(res.cart.coupon_discount.toFixed(2))
-               $('#payment_text_amount').html(res.cart.tax_amount.toFixed(2))
-               $('#payment_extradiscount').html(res.cart.extra_discount.toFixed(2))
-               $('#payment_text_perdent').html(' (' + res.cart.tax + ' %)')
-               $('#POS_total_balance').html('00')
-
-               $('#paid_amount').attr('max', (res.cart.gross_total))
+               $('#paid_amount').attr('max', cartGross)
                paymentcurrency();
                $('#POS_payment_model').modal('show');
             }
          })
    })
 
-
-
-
    $(document).on("click", '#edit_POS_payment_model_show', function () {
       var customer = $('#customer_id').val()
       var order_id = $('#order_id').val()
       var serviselength = $('#POS_service_added_list tr').length
+      var editCurrentOrderType = $('#edit_pos_order_type').val() || 'Counter & Counter';
+      var isRoutePickup = isPosRoutePickup(editCurrentOrderType);
 
       var baseUrl = window.location.origin;
       if (!customer) {
          toastr.warning('Please Select Coustomer')
-      } else if (serviselength < 1) {
+      } else if (serviselength < 1 && !isRoutePickup) {
          toastr.warning('Min One Service Required')
       } else {
          $.ajax({
@@ -2722,21 +2816,19 @@
                $("#POS_payment_type_list").prop('required', true);
                $('.default-select').selectpicker('refresh');
                let editOrderDateMin = $('#edit_POS_order_date').val() || new Date(res.order_date.order_date).toLocaleDateString('en-CA');
+               let editChosenReady = $('#edit_POS_ready_date').val() || (res.order_date.ready_date ? new Date(res.order_date.ready_date).toLocaleDateString('en-CA') : new Date(res.order_date.delivery_date).toLocaleDateString('en-CA'));
+               let editChosenReadyTime = $('#edit_POS_ready_time').val() || '16:00';
                let editChosenDel = $('#edit_POS_delivery_date').val() || new Date(res.order_date.delivery_date).toLocaleDateString('en-CA');
                let editChosenDelTime = $('#edit_POS_delivery_time').val() || '16:00';
                let editChosenPick = $('#edit_POS_pickup_date').val() || (res.order_date.pickup_date ? new Date(res.order_date.pickup_date).toLocaleDateString('en-CA') : editChosenDel);
                let editChosenPickTime = $('#edit_POS_pickup_time').val() || '16:00';
-               let editCurrentOrderType = $('#edit_pos_order_type').val() || res.order_date.order_type || 'Counter & Counter';
-               let editIsDel = isPosDeliveryOrderType(editCurrentOrderType);
+               editCurrentOrderType = $('#edit_pos_order_type').val() || res.order_date.order_type || 'Counter & Counter';
 
-               $('#edit_modal_pos_order_type').val(editCurrentOrderType);
-               if (editIsDel) {
-                  $('#edit_modal_pickup_group').hide();
-                  $('#edit_modal_delivery_group').show();
-               } else {
-                  $('#edit_modal_delivery_group').hide();
-                  $('#edit_modal_pickup_group').show();
-               }
+               updatePosScheduleGroupsVisibility(editCurrentOrderType, true);
+
+               $('input[name=readydate]').val(editChosenReady);
+               $('input[name=readydate]').attr('min', editOrderDateMin);
+               $('input[name=readytime]').val(editChosenReadyTime);
 
                $('input[name=deliverydate]').val(editChosenDel);
                $('input[name=deliverydate]').attr('min', editOrderDateMin);
@@ -4158,7 +4250,11 @@
          }
       }
 
+      if (typeof updatePosCheckoutBtnState === 'function') {
+         updatePosCheckoutBtnState();
+      }
    }
+
 
    function invocurrency() {
       var sym = $('input[name=sym]').val()

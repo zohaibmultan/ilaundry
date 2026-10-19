@@ -966,6 +966,17 @@ function enrichRecentOrders(orders, accessdata, isMaster = false) {
       formattedPickupDate = `${pYear}-${pMonth}-${pDay}`;
     }
 
+    const rDate = order.ready_date ? new Date(order.ready_date) : (order.delivery_date ? new Date(order.delivery_date) : null);
+    let formattedReadyDate = "";
+    if (rDate && !isNaN(rDate.getTime())) {
+      const rDay = (rDate.getDate() < 10 ? "0" : "") + rDate.getDate();
+      const rMonth = (rDate.getMonth() + 1 < 10 ? "0" : "") + (rDate.getMonth() + 1);
+      const rYear = rDate.getFullYear();
+      formattedReadyDate = `${rYear}-${rMonth}-${rDay}`;
+    }
+
+    const isZeroItemOrder = !order.service_list || order.service_list === '' || order.service_list === '0' || order.service_list === 'null';
+
     let statusClass = "status-processing";
     if (order.order_status == 1) statusClass = "status-pending";
     else if (order.order_status == 2) statusClass = "status-processing";
@@ -989,6 +1000,8 @@ function enrichRecentOrders(orders, accessdata, isMaster = false) {
       formattedOrderDate,
       formattedDeliveryDate,
       formattedPickupDate,
+      formattedReadyDate,
+      isZeroItemOrder,
       order_type: order.order_type || 'Counter & Counter',
       statusClass,
       balance_amount: balance,
@@ -996,6 +1009,7 @@ function enrichRecentOrders(orders, accessdata, isMaster = false) {
       canEdit,
       isMaster,
     };
+
   });
 }
 

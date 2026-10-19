@@ -275,20 +275,40 @@
                                                                             </span>
                                                                         </div>
                                                                     <% } %>
+                                                                    <% if (data.isZeroItemOrder) { %>
+                                                                        <div class="mb-1">
+                                                                            <span class="badge bg-warning-subtle text-dark border border-warning py-0 px-1 text-wrap d-inline-block mt-1" style="font-size: 0.68rem; line-height: 1.1;">
+                                                                                0 Items (Pending Intake)
+                                                                            </span>
+                                                                        </div>
+                                                                    <% } %>
                                                                     <div class="server-dt-secondary-text mb-0">
                                                                         <span class="me-1 opacity-75"><%= language.Order_Date || 'Order Date' %>:</span>
                                                                         <span><%= data.formattedOrderDate || '' %></span>
                                                                     </div>
+                                                                    <% 
+                                                                        var hasPickup = (data.order_type === 'Route & Counter' || data.order_type === 'Route & Route' || data.order_type === 'R & C' || data.order_type === 'R & R' || data.order_type === 'Pick-up & Counter' || data.order_type === 'Pick-up & Delivery' || data.order_type === 'Store collection & Store delivery' || data.order_type === 'Store collection & Customer pick-up');
+                                                                        var hasDelivery = (data.order_type === 'Counter & Route' || data.order_type === 'Route & Route' || data.order_type === 'C & R' || data.order_type === 'R & R' || data.order_type === 'Counter & Delivery' || data.order_type === 'Pick-up & Delivery' || data.order_type === 'Customer drop-off & Store delivery' || data.order_type === 'Store collection & Store delivery');
+                                                                        var readyDateVal = data.formattedReadyDate || data.formattedDeliveryDate || '';
+                                                                    %>
+                                                                    <% if (hasPickup && data.formattedPickupDate) { %>
+                                                                        <div class="server-dt-secondary-text mb-0">
+                                                                            <span class="me-1 opacity-75"><%= language.Pickup_Date || 'Pick-up' %>:</span>
+                                                                            <span><%= data.formattedPickupDate %></span>
+                                                                        </div>
+                                                                    <% } %>
                                                                     <div class="server-dt-secondary-text mb-0">
-                                                                        <% 
-                                                                            var isDel = (data.order_type === 'Counter & Route' || data.order_type === 'Route & Route' || data.order_type === 'C & R' || data.order_type === 'R & R' || data.order_type === 'Counter & Delivery' || data.order_type === 'Pick-up & Delivery' || data.order_type === 'Customer drop-off & Store delivery' || data.order_type === 'Store collection & Store delivery');
-                                                                            var dateLabel = isDel ? (language.Delivery_Date || 'Delivery Date') : (language.Pickup_Date || 'Pick-up Date');
-                                                                            var dateValue = isDel ? (data.formattedDeliveryDate || '') : (data.formattedPickupDate || data.formattedDeliveryDate || '');
-                                                                        %>
-                                                                        <span class="me-1 opacity-75"><%= dateLabel %>:</span>
-                                                                        <span><%= dateValue %></span>
+                                                                        <span class="me-1 opacity-75 fw-semibold text-success"><%= language.Ready_Schedule || 'Ready' %>:</span>
+                                                                        <span class="fw-semibold"><%= readyDateVal %></span>
                                                                     </div>
+                                                                    <% if (hasDelivery && data.formattedDeliveryDate) { %>
+                                                                        <div class="server-dt-secondary-text mb-0">
+                                                                            <span class="me-1 opacity-75"><%= language.Delivery_Date || 'Delivery' %>:</span>
+                                                                            <span><%= data.formattedDeliveryDate %></span>
+                                                                        </div>
+                                                                    <% } %>
                                                                 </td>
+
                                                                 <td>
                                                                     <div class="server-dt-primary-text"><%= data.customer_name || data.customer || 'Walk In Customer' %></div>
                                                                     <% if (data.customer_number) { %>

@@ -192,20 +192,40 @@
                                                                     </span>
                                                                 </div>
                                                             <% } %>
+                                                            <% if (order.isZeroItemOrder) { %>
+                                                                <div class="mb-1">
+                                                                    <span class="badge bg-warning-subtle text-dark border border-warning py-0 px-1 text-wrap d-inline-block mt-1" style="font-size: 0.68rem; line-height: 1.1;">
+                                                                        0 Items (Pending Intake)
+                                                                    </span>
+                                                                </div>
+                                                            <% } %>
                                                             <div class="server-dt-secondary-text mb-0">
                                                                 <span class="me-1 opacity-75"><%= language.Order_Date || 'Order Date' %>:</span>
                                                                 <span><%= order.formattedOrderDate || '' %></span>
                                                             </div>
+                                                            <% 
+                                                                var hasPickup = (order.order_type === 'Route & Counter' || order.order_type === 'Route & Route' || order.order_type === 'R & C' || order.order_type === 'R & R' || order.order_type === 'Pick-up & Counter' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Store collection & Store delivery' || order.order_type === 'Store collection & Customer pick-up');
+                                                                var hasDelivery = (order.order_type === 'Counter & Route' || order.order_type === 'Route & Route' || order.order_type === 'C & R' || order.order_type === 'R & R' || order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery');
+                                                                var readyDateVal = order.formattedReadyDate || order.formattedDeliveryDate || '';
+                                                            %>
+                                                            <% if (hasPickup && order.formattedPickupDate) { %>
+                                                                <div class="server-dt-secondary-text mb-0">
+                                                                    <span class="me-1 opacity-75"><%= language.Pickup_Date || 'Pick-up' %>:</span>
+                                                                    <span><%= order.formattedPickupDate %></span>
+                                                                </div>
+                                                            <% } %>
                                                             <div class="server-dt-secondary-text mb-0">
-                                                                <% 
-                                                                    var isDel = (order.order_type === 'Counter & Route' || order.order_type === 'Route & Route' || order.order_type === 'C & R' || order.order_type === 'R & R' || order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery');
-                                                                    var dateLabel = isDel ? (language.Delivery_Date || 'Delivery Date') : (language.Pickup_Date || 'Pick-up Date');
-                                                                    var dateValue = isDel ? (order.formattedDeliveryDate || '') : (order.formattedPickupDate || order.formattedDeliveryDate || '');
-                                                                %>
-                                                                <span class="me-1 opacity-75"><%= dateLabel %>:</span>
-                                                                <span><%= dateValue %></span>
+                                                                <span class="me-1 opacity-75 fw-semibold text-success"><%= language.Ready_Schedule || 'Ready' %>:</span>
+                                                                <span class="fw-semibold"><%= readyDateVal %></span>
                                                             </div>
+                                                            <% if (hasDelivery && order.formattedDeliveryDate) { %>
+                                                                <div class="server-dt-secondary-text mb-0">
+                                                                    <span class="me-1 opacity-75"><%= language.Delivery_Date || 'Delivery' %>:</span>
+                                                                    <span><%= order.formattedDeliveryDate %></span>
+                                                                </div>
+                                                            <% } %>
                                                         </td>
+
                                                         <td>
                                                             <div class="server-dt-primary-text"><%= order.customer_name || order.customer || 'Walk In Customer' %></div>
                                                             <% if (order.customer_number) { %>
