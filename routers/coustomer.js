@@ -145,6 +145,12 @@ router.get("/list/data", auth, async (req, res) => {
       filterConditions.push(`tbl_customer.approved = ${cleanApproved}`);
     }
 
+    const typeParam = req.query.customer_type || req.query.type_filter;
+    if (typeParam && !["all", "ALL", ""].includes(String(typeParam).trim())) {
+      const cleanType = String(typeParam).trim().replace(/'/g, "\\'");
+      filterConditions.push(`(tbl_customer.customer_type = '${cleanType}' OR tbl_customer_type.code = '${cleanType}')`);
+    }
+
     const storeParam = req.query.store_filter || req.query.store_id;
     if (storeParam && login === "master" && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
       const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
@@ -162,16 +168,22 @@ router.get("/list/data", auth, async (req, res) => {
     const result = await paginateDataTable(req, {
       select: `tbl_customer.*, 
                COALESCE(tbl_store.name, '') AS store,
+               COALESCE(tbl_customer_type.code, '') AS customer_type_code,
+               COALESCE(tbl_customer_type.description, '') AS customer_type_description,
                (
                  SELECT COUNT(*) 
                  FROM tbl_transections 
                  WHERE tbl_transections.customer_id = tbl_customer.id
                ) AS transiction`,
-      from: `tbl_customer LEFT JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id`,
+      from: `tbl_customer 
+             LEFT JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id
+             LEFT JOIN tbl_customer_type ON (tbl_customer.customer_type = tbl_customer_type.name OR tbl_customer.customer_type = tbl_customer_type.code)`,
       searchColumns: [
         'tbl_customer.name',
         'tbl_customer.first_name',
         'tbl_customer.last_name',
+        'tbl_customer.customer_type',
+        'tbl_customer_type.code',
         'tbl_customer.number',
         'tbl_customer.email',
         'tbl_customer.address',
@@ -187,10 +199,11 @@ router.get("/list/data", auth, async (req, res) => {
       columnMap: {
         0: 'tbl_customer.id',
         1: 'tbl_customer.last_name',
-        2: 'tbl_customer.number',
-        3: 'tbl_customer.address',
-        4: 'tbl_store.name',
-        5: 'tbl_customer.approved'
+        2: 'tbl_customer.customer_type',
+        3: 'tbl_customer.number',
+        4: 'tbl_customer.address',
+        5: 'tbl_store.name',
+        6: 'tbl_customer.approved'
       },
       postProcess: async (rows) => {
         return rows.map((cust) => {
@@ -199,6 +212,31 @@ router.get("/list/data", auth, async (req, res) => {
           const displayName = (lName && fName)
             ? `${lName}, ${fName}`
             : (cust.name || fName || lName || '');
+
+          let typeName = cust.customer_type || 'Counter & Counter';
+          let typeCode = cust.customer_type_code || '';
+          let typeDesc = cust.customer_type_description || '';
+
+          if (!typeCode) {
+            if (typeName === 'Counter & Counter') {
+              typeCode = 'C & C';
+              typeDesc = typeDesc || 'Customer will drop-off and customer will pickup';
+            } else if (typeName === 'Counter & Route' || typeName === 'Counter & Delivery' || typeName === 'Customer drop-off & Store delivery') {
+              typeCode = 'C & R';
+              typeName = 'Counter & Route';
+              typeDesc = typeDesc || 'Customer will drop-off and store will deliver';
+            } else if (typeName === 'Route & Route' || typeName === 'Pick-up & Delivery' || typeName === 'Store collection & Store delivery') {
+              typeCode = 'R & R';
+              typeName = 'Route & Route';
+              typeDesc = typeDesc || 'Store will pickup and store will deliver';
+            } else if (typeName === 'Route & Counter' || typeName === 'Pick-up & Counter') {
+              typeCode = 'R & C';
+              typeName = 'Route & Counter';
+              typeDesc = typeDesc || 'Store will pickup and customer will pickup';
+            } else {
+              typeCode = 'C & C';
+            }
+          }
 
           return {
             id: cust.id,
@@ -217,7 +255,9 @@ router.get("/list/data", auth, async (req, res) => {
             approved: cust.approved === 1 ? 1 : 0,
             delet_flage: cust.delet_flage,
             transiction: parseInt(cust.transiction) || 0,
-            customer_type: cust.customer_type || 'Counter & Counter',
+            customer_type: typeName,
+            customer_type_code: typeCode,
+            customer_type_description: typeDesc,
             canEdit,
             canDelete,
             login

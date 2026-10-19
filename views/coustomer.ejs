@@ -37,14 +37,24 @@
                 <!-- Server-side DataTable Toolbar -->
 
                 <div class="row g-2 mb-3">
-                  <div class="<%= (ismulty && login==='master') ? 'col-12 col-md-4 col-lg-4' : 'col-12 col-md-6 col-lg-6' %>">
+                  <div class="<%= (ismulty && login==='master') ? 'col-12 col-md-3 col-lg-3' : 'col-12 col-md-4 col-lg-4' %>">
                     <div class="input-group">
                       <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
                       <input class="form-control" type="search" id="dtCustomerSearch"
                         placeholder="<%= language.Search || 'Search customers by name, phone, email, address...' %>">
                     </div>
                   </div>
-                  <div class="<%= (ismulty && login==='master') ? 'col-6 col-sm-4 col-md-3 col-lg-3' : 'col-6 col-sm-6 col-md-3 col-lg-3' %>">
+                  <div class="<%= (ismulty && login==='master') ? 'col-6 col-sm-3 col-md-3 col-lg-3' : 'col-6 col-sm-4 col-md-3 col-lg-3' %>">
+                    <select class="form-select" id="dtCustomerType">
+                      <option value="all"><%= language.All_Customer_Types || 'All Customer Types' %></option>
+                      <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
+                        <% customer_types.forEach(function(ct) { %>
+                          <option value="<%= ct.name %>"><%= ct.code ? '[' + ct.code + '] ' : '' %><%= ct.name %></option>
+                        <% }) %>
+                      <% } %>
+                    </select>
+                  </div>
+                  <div class="<%= (ismulty && login==='master') ? 'col-6 col-sm-3 col-md-2 col-lg-2' : 'col-6 col-sm-4 col-md-3 col-lg-3' %>">
                     <select class="form-select" id="dtCustomerStatus">
                       <option value="all"><%= language.All_Status || 'All Status' %></option>
                       <option value="1"><%= language.Approved || 'Approved' %></option>
@@ -53,7 +63,7 @@
                   </div>
 
                   <% if (ismulty && login==="master" ) { %>
-                    <div class="col-6 col-sm-4 col-md-3 col-lg-3">
+                    <div class="col-6 col-sm-3 col-md-2 col-lg-2">
                       <select class="form-select" id="dtCustomerStore">
                         <option value="all"><%= language.All_Store || 'All Stores' %></option>
                         <% storeList.forEach(function(st) { %>
@@ -63,7 +73,7 @@
                     </div>
                   <% } %>
                   
-                  <div class="<%= (ismulty && login==='master') ? 'col-12 col-sm-4 col-md-2 col-lg-2' : 'col-12 col-sm-6 col-md-3 col-lg-3' %>">
+                  <div class="<%= (ismulty && login==='master') ? 'col-6 col-sm-3 col-md-2 col-lg-2' : 'col-12 col-sm-4 col-md-2 col-lg-2' %>">
                     <select class="form-select" id="dtCustomerPageLength">
                       <option value="10">10 <%= language.Entries || 'entries' %></option>
                       <option value="25">25 <%= language.Entries || 'entries' %></option>
@@ -81,6 +91,9 @@
                         <th style="width: 50px;">#</th>
                         <th>
                           <%= language.Customer_Name %>
+                        </th>
+                        <th>
+                          <%= language.Customer_Type || 'Customer Type' %>
                         </th>
                         <th>
                           <%= language.Contect %>
@@ -432,6 +445,24 @@
         }
       },
       {
+        data: 'customer_type',
+        render: function (data, type, row) {
+          const typeName = escapeHtml(row.customer_type || data || 'Counter & Counter');
+          const code = escapeHtml(row.customer_type_code || 'C & C');
+          const desc = escapeHtml(row.customer_type_description || '');
+
+          return `
+            <div class="d-flex flex-column gap-1">
+              <div class="d-flex align-items-center gap-1 flex-wrap">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold px-2 py-1">${code}</span>
+                <span class="fw-semibold text-dark">${typeName}</span>
+              </div>
+              ${desc ? `<div class="text-xs text-muted text-truncate" style="max-width: 220px;" title="${desc}">${desc}</div>` : ''}
+            </div>
+          `;
+        }
+      },
+      {
         data: 'number',
         render: function (data, type, row) {
           return `
@@ -447,27 +478,24 @@
           const fullAddr = parts.length > 0 ? parts.join(', ') : (data || '—');
           return `<span class="text-sm text-secondary">${escapeHtml(fullAddr)}</span>`;
         }
-      }
-    ];
-
-    if (isMasterMultistore) {
-      dtColumns.push({
+      },
+      {
         data: 'store',
+        visible: isMasterMultistore,
         render: function (data) {
           return `<span class="badge bg-light text-dark px-2 py-1">${escapeHtml(data) || '—'}</span>`;
         }
-      });
-    }
-
-    dtColumns.push({
-      data: 'approved',
-      render: function (data) {
-        if (data === 1) {
-          return '<span class="badge-status-pill badge-pill-completed"><i class="fa fa-check-circle"></i> <%= language.Approved || "Approved" %></span>';
+      },
+      {
+        data: 'approved',
+        render: function (data) {
+          if (data === 1) {
+            return '<span class="badge-status-pill badge-pill-completed"><i class="fa fa-check-circle"></i> <%= language.Approved || "Approved" %></span>';
+          }
+          return '<span class="badge-status-pill badge-pill-pending"><i class="fa fa-clock"></i> <%= language.Pending || "Pending" %></span>';
         }
-        return '<span class="badge-status-pill badge-pill-pending"><i class="fa fa-clock"></i> <%= language.Pending || "Pending" %></span>';
       }
-    });
+    ];
 
     dtColumns.push({
       data: null,
@@ -534,6 +562,7 @@
       searchInput: '#dtCustomerSearch',
       pageLengthSelect: '#dtCustomerPageLength',
       filterElements: {
+        customer_type: '#dtCustomerType',
         status_filter: '#dtCustomerStatus',
         store_filter: '#dtCustomerStore'
       }
