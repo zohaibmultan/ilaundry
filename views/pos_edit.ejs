@@ -124,13 +124,13 @@
                                             <select class="form-select form-select-sm pos-input-sm w-100" id="edit_pos_order_type" name="edit_pos_order_type">
                                                 <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
                                                     <% customer_types.forEach(function(ct, idx) { %>
-                                                        <option value="<%= ct.name %>" <%= (order_date[0].order_type === ct.name || (!order_date[0].order_type && (ct.name === 'Counter & Counter' || idx === 0))) ? 'selected' : '' %>><%= (idx + 1) %>. <%= ct.name %></option>
+                                                        <option value="<%= ct.name %>" data-code="<%= ct.code || '' %>" title="<%= ct.name %><%= ct.description ? ' - ' + ct.description : '' %>" <%= (order_date[0].order_type === ct.name || order_date[0].order_type === ct.code || (!order_date[0].order_type && (ct.name === 'Counter & Counter' || ct.code === 'C & C' || idx === 0))) ? 'selected' : '' %>><%= ct.code || ct.name %></option>
                                                     <% }); %>
                                                 <% } else { %>
-                                                    <option value="Counter & Counter" <%= (!order_date[0].order_type || order_date[0].order_type === 'Counter & Counter' || order_date[0].order_type === 'Customer drop-off & Customer pick-up') ? 'selected' : '' %>>1. Counter & Counter</option>
-                                                    <option value="Counter & Delivery" <%= (order_date[0].order_type === 'Counter & Delivery' || order_date[0].order_type === 'Customer drop-off & Store delivery') ? 'selected' : '' %>>2. Counter & Delivery</option>
-                                                    <option value="Pick-up & Delivery" <%= (order_date[0].order_type === 'Pick-up & Delivery' || order_date[0].order_type === 'Store collection & Store delivery') ? 'selected' : '' %>>3. Pick-up & Delivery</option>
-                                                    <option value="Pick-up & Counter" <%= (order_date[0].order_type === 'Pick-up & Counter' || order_date[0].order_type === 'Store collection & Customer pick-up') ? 'selected' : '' %>>4. Pick-up & Counter</option>
+                                                    <option value="Counter & Counter" data-code="C & C" title="Counter & Counter - Customer will drop-off and customer will pickup" <%= (!order_date[0].order_type || order_date[0].order_type === 'Counter & Counter' || order_date[0].order_type === 'C & C' || order_date[0].order_type === 'Customer drop-off & Customer pick-up') ? 'selected' : '' %>>C & C</option>
+                                                    <option value="Counter & Route" data-code="C & R" title="Counter & Route - Customer will drop-off and store will deliver" <%= (order_date[0].order_type === 'Counter & Route' || order_date[0].order_type === 'C & R' || order_date[0].order_type === 'Counter & Delivery' || order_date[0].order_type === 'Customer drop-off & Store delivery') ? 'selected' : '' %>>C & R</option>
+                                                    <option value="Route & Route" data-code="R & R" title="Route & Route - Store will pickup and store will deliver" <%= (order_date[0].order_type === 'Route & Route' || order_date[0].order_type === 'R & R' || order_date[0].order_type === 'Pick-up & Delivery' || order_date[0].order_type === 'Store collection & Store delivery') ? 'selected' : '' %>>R & R</option>
+                                                    <option value="Route & Counter" data-code="R & C" title="Route & Counter - Store will pickup and customer will pickup" <%= (order_date[0].order_type === 'Route & Counter' || order_date[0].order_type === 'R & C' || order_date[0].order_type === 'Pick-up & Counter' || order_date[0].order_type === 'Store collection & Customer pick-up') ? 'selected' : '' %>>R & C</option>
                                                 <% } %>
                                             </select>
                                         </div>
@@ -162,7 +162,7 @@
 
                                     <% 
                                         let editOrderType = order_date[0].order_type || 'Counter & Counter';
-                                        let editIsDelivery = editOrderType === 'Counter & Delivery' || editOrderType === 'Pick-up & Delivery' || editOrderType === 'Customer drop-off & Store delivery' || editOrderType === 'Store collection & Store delivery';
+                                        let editIsDelivery = editOrderType === 'Counter & Route' || editOrderType === 'Route & Route' || editOrderType === 'C & R' || editOrderType === 'R & R' || editOrderType === 'Counter & Delivery' || editOrderType === 'Pick-up & Delivery' || editOrderType === 'Customer drop-off & Store delivery' || editOrderType === 'Store collection & Store delivery';
 
                                         let pick_raw = order_date[0].pickup_date || order_date[0].delivery_date || order_date[0].order_date;
                                         let pick_date = new Date(pick_raw);

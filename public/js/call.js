@@ -993,13 +993,13 @@
                var extra = (value.username === '' || value.username === null ? (value.store_name || '') : (value.number || ''));
                var extraText = extra ? ' (' + extra + ')' : '';
                $('#single-select').append(
-                  '<option value="' + value.id + '" ' + (isDefault ? 'selected' : '') + '>' +
+                  '<option value="' + value.id + '" data-customer-type="' + (value.customer_type || 'Counter & Counter') + '" ' + (isDefault ? 'selected' : '') + '>' +
                   value.name + extraText +
                   '</option>'
                );
             });
             if (res.defaultCustomerId) {
-               $('#single-select').val(res.defaultCustomerId);
+               $('#single-select').val(res.defaultCustomerId).trigger('change');
             } else {
                $('#single-select').val('0');
             }
@@ -1100,7 +1100,7 @@
 
       if (typeof updatePosReadyScheduleUI === 'function') {
          let currentOrderType = $('#pos_order_type').val() || 'Counter & Counter';
-         let isDel = (currentOrderType === 'Counter & Delivery' || currentOrderType === 'Pick-up & Delivery' || currentOrderType === 'Customer drop-off & Store delivery' || currentOrderType === 'Store collection & Store delivery');
+         let isDel = isPosDeliveryOrderType(currentOrderType);
          if (isDel && !window.isPosDeliveryScheduleManual) {
             updatePosReadyScheduleUI('#POS_delivery_date', '#POS_delivery_time', '#btn_auto_ready_schedule', $('#POS_order_date').val(), false);
          } else if (!isDel && !window.isPosPickupScheduleManual) {
@@ -1108,6 +1108,85 @@
          }
       }
    })
+
+   function applyCustomerTypeToPos(rawType) {
+      if (!rawType || !$('#pos_order_type').length) return;
+      var clean = String(rawType).trim();
+      var $select = $('#pos_order_type');
+      var matchedVal = null;
+
+      // 1. Exact value match
+      $select.find('option').each(function () {
+         if ($(this).val().toLowerCase() === clean.toLowerCase()) {
+            matchedVal = $(this).val();
+            return false;
+         }
+      });
+
+      // 2. data-code match or option text match
+      if (!matchedVal) {
+         $select.find('option').each(function () {
+            var code = $(this).attr('data-code');
+            var text = $(this).text().trim();
+            if ((code && code.toLowerCase() === clean.toLowerCase()) || text.toLowerCase() === clean.toLowerCase()) {
+               matchedVal = $(this).val();
+               return false;
+            }
+         });
+      }
+
+      // 3. Synonym/Canonical mapping
+      if (!matchedVal) {
+         var lower = clean.toLowerCase();
+         var targetKey = '';
+         if (lower === 'c & c' || lower === 'counter & counter' || lower === 'customer drop-off & customer pick-up') {
+            targetKey = 'counter & counter';
+         } else if (lower === 'c & r' || lower === 'counter & route' || lower === 'counter & delivery' || lower === 'customer drop-off & store delivery') {
+            targetKey = 'counter & route';
+         } else if (lower === 'r & r' || lower === 'route & route' || lower === 'pick-up & delivery' || lower === 'store collection & store delivery') {
+            targetKey = 'route & route';
+         } else if (lower === 'r & c' || lower === 'route & counter' || lower === 'pick-up & counter' || lower === 'store collection & customer pick-up') {
+            targetKey = 'route & counter';
+         }
+
+         if (targetKey) {
+            $select.find('option').each(function () {
+               var val = ($(this).val() || '').toLowerCase();
+               var code = ($(this).attr('data-code') || '').toLowerCase();
+               var text = $(this).text().trim().toLowerCase();
+               if (val.includes(targetKey) || code.includes(targetKey) || text.includes(targetKey) ||
+                   (targetKey === 'counter & route' && (val.includes('delivery') || code === 'c & r')) ||
+                   (targetKey === 'route & route' && (val.includes('delivery') || code === 'r & r')) ||
+                   (targetKey === 'route & counter' && (val.includes('counter') || code === 'r & c')) ||
+                   (targetKey === 'counter & counter' && (val.includes('counter') || code === 'c & c'))) {
+                  matchedVal = $(this).val();
+                  return false;
+               }
+            });
+         }
+      }
+
+      if (matchedVal && $select.val() !== matchedVal) {
+         $select.val(matchedVal).trigger('change');
+      }
+   }
+   window.applyCustomerTypeToPos = applyCustomerTypeToPos;
+
+   function isPosDeliveryOrderType(orderType) {
+      if (!orderType) return false;
+      var t = String(orderType).trim();
+      return (
+         t === 'Counter & Route' ||
+         t === 'Route & Route' ||
+         t === 'C & R' ||
+         t === 'R & R' ||
+         t === 'Counter & Delivery' ||
+         t === 'Pick-up & Delivery' ||
+         t === 'Customer drop-off & Store delivery' ||
+         t === 'Store collection & Store delivery'
+      );
+   }
+   window.isPosDeliveryOrderType = isPosDeliveryOrderType;
 
    $('body').on("change", "#single-select", async function () {
       var id = this.value;
@@ -1121,10 +1200,8 @@
       // Fast-path: read data-customer-type directly from the selected option for instant zero-latency UI update
       var selectedOption = $(this).find('option:selected');
       var fastCustomerType = selectedOption.attr('data-customer-type');
-      if (fastCustomerType && $('#pos_order_type').length) {
-         if ($('#pos_order_type').val() !== fastCustomerType) {
-            $('#pos_order_type').val(fastCustomerType).trigger('change');
-         }
+      if (fastCustomerType) {
+         applyCustomerTypeToPos(fastCustomerType);
       }
 
       var baseUrl = window.location.origin;
@@ -1136,10 +1213,8 @@
             if (res && res.stats && typeof window.updatePosCustomerIntelligence === 'function') {
                window.updatePosCustomerIntelligence(res.stats);
             }
-            if (res && res.customer_type && $('#pos_order_type').length) {
-               if ($('#pos_order_type').val() !== res.customer_type) {
-                  $('#pos_order_type').val(res.customer_type).trigger('change');
-               }
+            if (res && res.customer_type) {
+               applyCustomerTypeToPos(res.customer_type);
             }
          }
       });
@@ -1551,7 +1626,7 @@
    // Handle POS Order Type Dropdown Change
    $(document).on("change", "#pos_order_type", function () {
       let orderType = $(this).val();
-      let isDelivery = (orderType === 'Counter & Delivery' || orderType === 'Pick-up & Delivery' || orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
+      let isDelivery = isPosDeliveryOrderType(orderType);
 
       if (isDelivery) {
          $('#pos_pickup_date_group').hide();
@@ -1592,7 +1667,7 @@
    $(document).on("change", "#edit_pos_order_type", function () {
       let orderType = $(this).val();
       let order_id = $('#order_id').val();
-      let isDelivery = (orderType === 'Counter & Delivery' || orderType === 'Pick-up & Delivery' || orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
+      let isDelivery = isPosDeliveryOrderType(orderType);
 
       if (isDelivery) {
          $('#edit_pos_pickup_date_group').hide();
@@ -1635,7 +1710,7 @@
       $('#POS_pickup_date').attr('min', date);
 
       let orderType = $('#pos_order_type').val() || '';
-      let isDelivery = (orderType === 'Counter & Delivery' || orderType === 'Pick-up & Delivery' || orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
+      let isDelivery = isPosDeliveryOrderType(orderType);
 
       if (isDelivery) {
          if (!window.isPosDeliveryScheduleManual) {
@@ -1775,7 +1850,7 @@
       $('#edit_POS_pickup_date').attr('min', date);
 
       let orderType = $('#edit_pos_order_type').val() || '';
-      let isDelivery = (orderType === 'Counter & Delivery' || orderType === 'Pick-up & Delivery' || orderType === 'Customer drop-off & Store delivery' || orderType === 'Store collection & Store delivery');
+      let isDelivery = isPosDeliveryOrderType(orderType);
 
       if (isDelivery) {
          if (!window.isPosDeliveryScheduleManual) {
@@ -2568,7 +2643,7 @@
                let chosenPick = $('#POS_pickup_date').val() || (res.cart.pickup_date ? new Date(res.cart.pickup_date).toLocaleDateString('en-CA') : chosenDel);
                let chosenPickTime = $('#POS_pickup_time').val() || '16:00';
                let currentOrderType = $('#pos_order_type').val() || res.cart.order_type || 'Counter & Counter';
-               let isDel = (currentOrderType === 'Counter & Delivery' || currentOrderType === 'Pick-up & Delivery' || currentOrderType === 'Customer drop-off & Store delivery' || currentOrderType === 'Store collection & Store delivery');
+               let isDel = isPosDeliveryOrderType(currentOrderType);
 
                $('#modal_pos_order_type').val(currentOrderType);
                if (isDel) {
@@ -2652,7 +2727,7 @@
                let editChosenPick = $('#edit_POS_pickup_date').val() || (res.order_date.pickup_date ? new Date(res.order_date.pickup_date).toLocaleDateString('en-CA') : editChosenDel);
                let editChosenPickTime = $('#edit_POS_pickup_time').val() || '16:00';
                let editCurrentOrderType = $('#edit_pos_order_type').val() || res.order_date.order_type || 'Counter & Counter';
-               let editIsDel = (editCurrentOrderType === 'Counter & Delivery' || editCurrentOrderType === 'Pick-up & Delivery' || editCurrentOrderType === 'Customer drop-off & Store delivery' || editCurrentOrderType === 'Store collection & Store delivery');
+               let editIsDel = isPosDeliveryOrderType(editCurrentOrderType);
 
                $('#edit_modal_pos_order_type').val(editCurrentOrderType);
                if (editIsDel) {

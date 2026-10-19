@@ -151,6 +151,24 @@
 
                   <div class="col-md-6">
                     <label class="form-label fw-bold">
+                      <%= language.Customer_Type || 'Customer Type' %>
+                    </label>
+                    <select class="form-control form-select" name="customer_type" id="edit_customer_type">
+                      <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
+                        <% customer_types.forEach(function(ct){ %>
+                          <option value="<%= ct.name %>"><%= ct.name %><% if (ct.description) { %> - <%= ct.description %><% } %></option>
+                        <% }); %>
+                      <% } else { %>
+                        <option value="Counter & Counter">Counter & Counter - Customer will drop-off and customer will pickup</option>
+                        <option value="Counter & Route">Counter & Route - Customer will drop-off and store will deliver</option>
+                        <option value="Route & Route">Route & Route - Store will pickup and store will deliver</option>
+                        <option value="Route & Counter">Route & Counter - Store will pickup and customer will pickup</option>
+                      <% } %>
+                    </select>
+                  </div>
+
+                  <div class="col-md-6" style="display: none;">
+                    <label class="form-label fw-bold">
                       <%= language.Tax_Number %>
                     </label>
                     <input type="text" class="form-control" name="tax" id="tax" placeholder="Enter tax number">
@@ -236,11 +254,24 @@
                     <input type="email" class="form-control" name="email" placeholder="Enter email address" required>
                   </div>
 
-                  <div class="col-md-6" style="display: none;">
+                  <div class="col-md-6">
                     <label class="form-label fw-bold">
-                      <%= language.Tax_Number %>
+                      <%= language.Customer_Type || 'Customer Type' %>
                     </label>
-                    <input type="text" class="form-control" name="taxnumber" placeholder="Enter tax number">
+                    <select class="form-control form-select" name="customer_type">
+                      <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
+                        <% customer_types.forEach(function(ct, idx){ %>
+                          <option value="<%= ct.name %>" <%= idx === 0 ? 'selected' : '' %>>
+                            <%= ct.name %><% if (ct.description) { %> - <%= ct.description %><% } %>
+                          </option>
+                        <% }); %>
+                      <% } else { %>
+                        <option value="Counter & Counter" selected>Counter & Counter - Customer will drop-off and customer will pickup</option>
+                        <option value="Counter & Route">Counter & Route - Customer will drop-off and store will deliver</option>
+                        <option value="Route & Route">Route & Route - Store will pickup and store will deliver</option>
+                        <option value="Route & Counter">Route & Counter - Store will pickup and customer will pickup</option>
+                      <% } %>
+                    </select>
                   </div>
 
                   <div class="col-md-6">
@@ -413,6 +444,7 @@
         data-email="${escapeHtml(row.email)}" 
         data-addresh="${escapeHtml(row.address)}"
         data-memo="${escapeHtml(row.memo || '')}"
+        data-customer-type="${escapeHtml(row.customer_type || 'Counter & Counter')}"
         data-tax="${escapeHtml(row.taxnumber)}" 
         data-approved="${row.approved}" 
         data-active="${row.delet_flage}" 
@@ -527,6 +559,7 @@
     $('#email').val($(this).attr('data-email'));
     $('#address').val($(this).attr('data-addresh'));
     $('#memo').val($(this).attr('data-memo') || '');
+    $('#edit_customer_type').val($(this).attr('data-customer-type') || 'Counter & Counter');
     $('#tax').val($(this).attr('data-tax'));
     $("#coustomer_form").attr('action', act);
     if (approved == 1) {

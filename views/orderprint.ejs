@@ -271,7 +271,7 @@
           <%= oate %>
         </td>
       </tr>
-      <% const isDelOrderPrint = (order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery'); %>
+      <% const isDelOrderPrint = (order.order_type === 'Counter & Route' || order.order_type === 'Route & Route' || order.order_type === 'C & R' || order.order_type === 'R & R' || order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery'); %>
       <tr>
         <td class="text-start"><b><%= isDelOrderPrint ? 'Delivery:' : 'Pick-up:' %></b>
           <%= isDelOrderPrint ? ddate : (pdate || ddate) %>

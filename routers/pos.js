@@ -3530,7 +3530,7 @@ router.post("/order", auth, async (req, res) => {
     let order_year = order_date.getFullYear();
     let order_fullDate = `${order_year}-${order_month}-${order_day}`;
     let order_type = req.body.order_type || cart[0].order_type || "Counter & Counter";
-    let isDelivery = (order_type === 'Counter & Delivery' || order_type === 'Pick-up & Delivery' || order_type === 'Customer drop-off & Store delivery' || order_type === 'Store collection & Store delivery');
+    let isDelivery = (order_type === 'Counter & Route' || order_type === 'Route & Route' || order_type === 'C & R' || order_type === 'R & R' || order_type === 'Counter & Delivery' || order_type === 'Pick-up & Delivery' || order_type === 'Customer drop-off & Store delivery' || order_type === 'Store collection & Store delivery');
     let finalDeliveryDate = deliverydate
       ? formatMySQLDateTime(deliverydate, deliverytime || "16:00:00")
       : cart[0].delivery_date
@@ -4017,7 +4017,7 @@ router.post("/save_order", auth, async (req, res) => {
     let order_year = order_date.getFullYear();
     let order_fullDate = `${order_year}-${order_month}-${order_day}`;
     let order_type = req.body.order_type || cart[0].order_type || "Counter & Counter";
-    let isDelivery = (order_type === 'Counter & Delivery' || order_type === 'Pick-up & Delivery' || order_type === 'Customer drop-off & Store delivery' || order_type === 'Store collection & Store delivery');
+    let isDelivery = (order_type === 'Counter & Route' || order_type === 'Route & Route' || order_type === 'C & R' || order_type === 'R & R' || order_type === 'Counter & Delivery' || order_type === 'Pick-up & Delivery' || order_type === 'Customer drop-off & Store delivery' || order_type === 'Store collection & Store delivery');
     let finalDeliveryDate = deliverydate
       ? formatMySQLDateTime(deliverydate, deliverytime || "16:00:00")
       : cart[0].delivery_date

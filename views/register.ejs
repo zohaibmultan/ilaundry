@@ -181,14 +181,14 @@
                                 <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
                                     <% customer_types.forEach(function(ct, idx){ %>
                                         <option value="<%= ct.name %>" <%= idx === 0 ? 'selected' : '' %>>
-                                            <%= ct.name %>
+                                            <%= ct.name %><% if (ct.description) { %> - <%= ct.description %><% } %>
                                         </option>
                                     <% }); %>
                                 <% } else { %>
-                                    <option value="Counter & Counter" selected>Counter & Counter</option>
-                                    <option value="Counter & Delivery">Counter & Delivery</option>
-                                    <option value="Pick-up & Delivery">Pick-up & Delivery</option>
-                                    <option value="Pick-up & Counter">Pick-up & Counter</option>
+                                    <option value="Counter & Counter" selected>Counter & Counter - Customer will drop-off and customer will pickup</option>
+                                    <option value="Counter & Route">Counter & Route - Customer will drop-off and store will deliver</option>
+                                    <option value="Route & Route">Route & Route - Store will pickup and store will deliver</option>
+                                    <option value="Route & Counter">Route & Counter - Store will pickup and customer will pickup</option>
                                 <% } %>
                             </select>
                         </div>

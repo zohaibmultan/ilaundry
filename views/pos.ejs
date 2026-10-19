@@ -439,13 +439,13 @@
                                             <select class="form-select form-select-sm pos-input-sm w-100" id="pos_order_type" name="order_type" <%=login==='customer' ? 'disabled' : '' %>>
                                                 <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
                                                     <% customer_types.forEach(function(ct, idx) { %>
-                                                        <option value="<%= ct.name %>" <%= (cart.order_type === ct.name || (!cart.order_type && (ct.name === 'Counter & Counter' || idx === 0))) ? 'selected' : '' %>><%= (idx + 1) %>. <%= ct.name %></option>
+                                                        <option value="<%= ct.name %>" data-code="<%= ct.code || '' %>" title="<%= ct.name %><%= ct.description ? ' - ' + ct.description : '' %>" <%= (cart.order_type === ct.name || cart.order_type === ct.code || (!cart.order_type && (ct.name === 'Counter & Counter' || ct.code === 'C & C' || idx === 0))) ? 'selected' : '' %>><%= ct.code || ct.name %></option>
                                                     <% }); %>
                                                 <% } else { %>
-                                                    <option value="Counter & Counter" <%= (!cart.order_type || cart.order_type === 'Counter & Counter' || cart.order_type === 'Customer drop-off & Customer pick-up') ? 'selected' : '' %>>1. Counter & Counter</option>
-                                                    <option value="Counter & Delivery" <%= (cart.order_type === 'Counter & Delivery' || cart.order_type === 'Customer drop-off & Store delivery') ? 'selected' : '' %>>2. Counter & Delivery</option>
-                                                    <option value="Pick-up & Delivery" <%= (cart.order_type === 'Pick-up & Delivery' || cart.order_type === 'Store collection & Store delivery') ? 'selected' : '' %>>3. Pick-up & Delivery</option>
-                                                    <option value="Pick-up & Counter" <%= (cart.order_type === 'Pick-up & Counter' || cart.order_type === 'Store collection & Customer pick-up') ? 'selected' : '' %>>4. Pick-up & Counter</option>
+                                                    <option value="Counter & Counter" data-code="C & C" title="Counter & Counter - Customer will drop-off and customer will pickup" <%= (!cart.order_type || cart.order_type === 'Counter & Counter' || cart.order_type === 'C & C' || cart.order_type === 'Customer drop-off & Customer pick-up') ? 'selected' : '' %>>C & C</option>
+                                                    <option value="Counter & Route" data-code="C & R" title="Counter & Route - Customer will drop-off and store will deliver" <%= (cart.order_type === 'Counter & Route' || cart.order_type === 'C & R' || cart.order_type === 'Counter & Delivery' || cart.order_type === 'Customer drop-off & Store delivery') ? 'selected' : '' %>>C & R</option>
+                                                    <option value="Route & Route" data-code="R & R" title="Route & Route - Store will pickup and store will deliver" <%= (cart.order_type === 'Route & Route' || cart.order_type === 'R & R' || cart.order_type === 'Pick-up & Delivery' || cart.order_type === 'Store collection & Store delivery') ? 'selected' : '' %>>R & R</option>
+                                                    <option value="Route & Counter" data-code="R & C" title="Route & Counter - Store will pickup and customer will pickup" <%= (cart.order_type === 'Route & Counter' || cart.order_type === 'R & C' || cart.order_type === 'Pick-up & Counter' || cart.order_type === 'Store collection & Customer pick-up') ? 'selected' : '' %>>R & C</option>
                                                 <% } %>
                                             </select>
                                         </div>
@@ -473,7 +473,7 @@
 
                                         <% 
                                             let currentOrderType = cart.order_type || 'Counter & Counter';
-                                            let isDeliveryType = currentOrderType === 'Counter & Delivery' || currentOrderType === 'Pick-up & Delivery' || currentOrderType === 'Customer drop-off & Store delivery' || currentOrderType === 'Store collection & Store delivery';
+                                            let isDeliveryType = currentOrderType === 'Counter & Route' || currentOrderType === 'Route & Route' || currentOrderType === 'C & R' || currentOrderType === 'R & R' || currentOrderType === 'Counter & Delivery' || currentOrderType === 'Pick-up & Delivery' || currentOrderType === 'Customer drop-off & Store delivery' || currentOrderType === 'Store collection & Store delivery';
 
                                             let pick_raw = cart.pickup_date || cart.delivery_date || cart.order_date;
                                             let pick_date = new Date(pick_raw);
@@ -1016,13 +1016,13 @@
                                         <select class="form-control form-select" name="customer_type">
                                             <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
                                                 <% customer_types.forEach(function(ct, idx){ %>
-                                                    <option value="<%= ct.name %>" <%= idx === 0 ? 'selected' : '' %>><%= ct.name %></option>
+                                                    <option value="<%= ct.name %>" <%= idx === 0 ? 'selected' : '' %>><%= ct.name %><% if (ct.description) { %> - <%= ct.description %><% } %></option>
                                                 <% }); %>
                                             <% } else { %>
-                                                <option value="Counter & Counter" selected>Counter & Counter</option>
-                                                <option value="Counter & Delivery">Counter & Delivery</option>
-                                                <option value="Pick-up & Delivery">Pick-up & Delivery</option>
-                                                <option value="Pick-up & Counter">Pick-up & Counter</option>
+                                                <option value="Counter & Counter" selected>Counter & Counter - Customer will drop-off and customer will pickup</option>
+                                                <option value="Counter & Route">Counter & Route - Customer will drop-off and store will deliver</option>
+                                                <option value="Route & Route">Route & Route - Store will pickup and store will deliver</option>
+                                                <option value="Route & Counter">Route & Counter - Store will pickup and customer will pickup</option>
                                             <% } %>
                                         </select>
                                     </div>

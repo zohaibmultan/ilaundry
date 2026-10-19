@@ -62,12 +62,17 @@ router.get("/list", auth, async (req, res) => {
     assignedStoreId = storeList[0].id;
   }
 
+  const customer_types = await DataFind(
+    "SELECT id, name, code, description FROM tbl_customer_type WHERE status = 1 ORDER BY id ASC"
+  );
+
   res.render("coustomer", {
     coustormdata: [],
     login,
     ismulty,
     storeList,
     accessdata,
+    customer_types,
     is_staff: isStaff,
     staff_store_id: staffStoreId,
     staff_store_name: staffStoreName,
@@ -206,6 +211,7 @@ router.get("/list/data", auth, async (req, res) => {
             approved: cust.approved === 1 ? 1 : 0,
             delet_flage: cust.delet_flage,
             transiction: parseInt(cust.transiction) || 0,
+            customer_type: cust.customer_type || 'Counter & Counter',
             canEdit,
             canDelete,
             login
@@ -226,7 +232,7 @@ router.post("/update/:id", async (req, res) => {
   try {
     const id = req.params.id;
 
-    const { first_name, last_name, name, number, email, tax, address, memo } = req.body;
+    const { first_name, last_name, name, number, email, tax, address, memo, customer_type } = req.body;
 
     var approved;
     req.body.approved == 1 ? (approved = 1) : (approved = 0);
@@ -256,10 +262,9 @@ router.post("/update/:id", async (req, res) => {
     const safeAddress = (address || '').trim().replace(/'/g, "\\'");
     const safeTax = (tax || '').trim().replace(/'/g, "\\'");
     const safeMemo = (memo || '').trim().replace(/'/g, "\\'");
+    const safeCustomerType = (customer_type || '').trim().replace(/'/g, "\\'");
 
-    const data = await DataUpdate(
-      `tbl_customer`,
-      `name='${safeName}',
+    let updateFields = `name='${safeName}',
        first_name='${safeFirstName}',
        last_name='${safeLastName}',
        number='${safeNumber}',
@@ -267,7 +272,14 @@ router.post("/update/:id", async (req, res) => {
        address='${safeAddress}',
        memo='${safeMemo}',
        taxnumber='${safeTax}',
-       approved='${approved}'`,
+       approved='${approved}'`;
+    if (safeCustomerType) {
+      updateFields += `, customer_type='${safeCustomerType}'`;
+    }
+
+    const data = await DataUpdate(
+      `tbl_customer`,
+      updateFields,
       `id=${id}`,
       req.hostname,
       req.protocol

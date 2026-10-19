@@ -69,7 +69,7 @@
                                                             </span>
                                     </p>
                                     <% 
-                                        const isDeliveryOrder = (order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery');
+                                        const isDeliveryOrder = (order.order_type === 'Counter & Route' || order.order_type === 'Route & Route' || order.order_type === 'C & R' || order.order_type === 'R & R' || order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery');
                                         const orderDateLabel = isDeliveryOrder ? (language.Delivery_Date || 'Delivery Date') : (language.Pickup_Date || 'Pick-up Date');
                                         const activeDateVal = isDeliveryOrder ? order.delivery_date : (order.pickup_date || order.delivery_date);
                                         let Delivery_date = new Date(activeDateVal);

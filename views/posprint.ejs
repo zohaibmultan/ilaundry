@@ -1029,7 +1029,7 @@
                         </tr>
                         <% } %>
 
-                        <% const isDelPos = (order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery'); %>
+                        <% const isDelPos = (order.order_type === 'Counter & Route' || order.order_type === 'Route & Route' || order.order_type === 'C & R' || order.order_type === 'R & R' || order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery'); %>
                         <% if (order.order_type) { %>
                         <tr>
                           <td class="text-start" style="font-size: 11px;">Type:</td>
@@ -1108,7 +1108,7 @@
     const customerData = <%- JSON.stringify((Array.isArray(customer) && customer.length > 0) ? customer[0] : (customer || {})) %>;
     const storeName = "<%= (shope && shope.name) ? shope.name : (accessdata && accessdata.masterstore ? accessdata.masterstore.app_name : '') %>";
     const orderType = "<%= (order && order.order_type) ? order.order_type : 'Counter & Counter' %>";
-    const isDelivery = "<%= (order && (order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery')) ? '1' : '0' %>" === "1";
+    const isDelivery = "<%= (order && (order.order_type === 'Counter & Route' || order.order_type === 'Route & Route' || order.order_type === 'C & R' || order.order_type === 'R & R' || order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery')) ? '1' : '0' %>" === "1";
     const readyDate = isDelivery ? "<%= ddate %>" : "<%= pdate || ddate %>";
     const tagDateSuffix = isDelivery ? " [Del]" : " [Pick]";
 

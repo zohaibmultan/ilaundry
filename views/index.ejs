@@ -281,7 +281,7 @@
                                                                     </div>
                                                                     <div class="server-dt-secondary-text mb-0">
                                                                         <% 
-                                                                            var isDel = (data.order_type === 'Counter & Delivery' || data.order_type === 'Pick-up & Delivery' || data.order_type === 'Customer drop-off & Store delivery' || data.order_type === 'Store collection & Store delivery');
+                                                                            var isDel = (data.order_type === 'Counter & Route' || data.order_type === 'Route & Route' || data.order_type === 'C & R' || data.order_type === 'R & R' || data.order_type === 'Counter & Delivery' || data.order_type === 'Pick-up & Delivery' || data.order_type === 'Customer drop-off & Store delivery' || data.order_type === 'Store collection & Store delivery');
                                                                             var dateLabel = isDel ? (language.Delivery_Date || 'Delivery Date') : (language.Pickup_Date || 'Pick-up Date');
                                                                             var dateValue = isDel ? (data.formattedDeliveryDate || '') : (data.formattedPickupDate || data.formattedDeliveryDate || '');
                                                                         %>
