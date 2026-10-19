@@ -329,6 +329,7 @@
 
                         window.orderTable = initServerDataTable('#server_order_table', {
                             ajaxUrl: '/order/list/data',
+                            order: [[0, 'desc']],
                             searchInput: '#order_search_input',
                             pageLengthSelect: '#order_page_length',
                             filterInputs: '#order_status_filter, #order_type_filter, #order_store_filter, #order_start_date, #order_end_date',

@@ -1087,7 +1087,7 @@ router.get("/index", auth, async (req, res) => {
         LEFT JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
         LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
         WHERE (tbl_order.created_by = '1,${id}' OR tbl_order.created_by = '${id}')
-        ORDER BY tbl_order.id DESC 
+        ORDER BY tbl_order.order_date DESC, tbl_order.id DESC 
         LIMIT 10
       `);
 
@@ -1141,9 +1141,9 @@ router.get("/index", auth, async (req, res) => {
         FROM tbl_order
         LEFT JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id  
         LEFT JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
-        JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
+        LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
         WHERE tbl_order.store_id = '${activeStoreId}'
-        ORDER BY tbl_order.id DESC 
+        ORDER BY tbl_order.order_date DESC, tbl_order.id DESC 
         LIMIT 10
       `);
 
@@ -1237,7 +1237,7 @@ router.get("/index", auth, async (req, res) => {
         LEFT JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id 
         LEFT JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
         LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
-        ORDER BY tbl_order.id DESC 
+        ORDER BY tbl_order.order_date DESC, tbl_order.id DESC 
         LIMIT 10
       `);
 

@@ -159,7 +159,7 @@ async function buildOrderListQuery(
     LEFT JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id 
     LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id
     ${whereClause} 
-    ORDER BY tbl_order.id DESC 
+    ORDER BY tbl_order.order_date DESC, tbl_order.id DESC 
     LIMIT ${limit} OFFSET ${offset}
   `;
 
@@ -327,9 +327,9 @@ router.get("/list/data", auth, async (req, res) => {
       ],
       baseWhere: scopeConditions,
       filterWhere: filterConditions,
-      defaultOrder: "tbl_order.id DESC",
+      defaultOrder: "tbl_order.order_date DESC, tbl_order.id DESC",
       columnMap: {
-        0: "tbl_order.order_id",
+        0: "tbl_order.id",
         1: "tbl_customer.name",
         2: "tbl_order.gross_total",
         3: "tbl_order.order_status",
