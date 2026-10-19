@@ -319,7 +319,7 @@ router.post("/register", auth, async (req, res) => {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     } else {
-      const { first_name, last_name, name, number, email, taxnumber, address, memo, username, password } =
+      const { first_name, last_name, name, number, email, customer_type, taxnumber, address, memo, username, password } =
         req.body;
       const verfiyStore = await DataFind(`SELECT * FROM tbl_admin WHERE id=${id}`);
       const isStaff = verfiyStore.length > 0 && verfiyStore[0].is_staff != 0;
@@ -432,13 +432,14 @@ router.post("/register", auth, async (req, res) => {
       const safeEmail = (email || '').trim().replace(/'/g, "\\'");
       const safeAddress = (address || '').trim().replace(/'/g, "\\'");
       const safeTaxNumber = (taxnumber || '').trim().replace(/'/g, "\\'");
+      const safeCustomerType = (customer_type || 'Counter & Counter').trim().replace(/'/g, "\\'");
       const safeMemo = (memo || '').trim().replace(/'/g, "\\'");
       const safeUsername = cleanUsername.replace(/'/g, "\\'");
 
       const data = await DataInsert(
         `tbl_customer`,
-        `name,first_name,last_name,number,email,address,memo,taxnumber,username,password,store_ID,reffstore,main_roll_id,approved`,
-        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeMemo}','${safeTaxNumber}','${safeUsername}','${hashpass}','${storeid}','${storeid}',${main_roll[0].id},1`,
+        `name,first_name,last_name,number,email,address,customer_type,memo,taxnumber,username,password,store_ID,reffstore,main_roll_id,approved`,
+        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeCustomerType}','${safeMemo}','${safeTaxNumber}','${safeUsername}','${hashpass}','${storeid}','${storeid}',${main_roll[0].id},1`,
         req.hostname,
         req.protocol
       );

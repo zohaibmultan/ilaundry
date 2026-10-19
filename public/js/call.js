@@ -1117,6 +1117,16 @@
          }
          return;
       }
+
+      // Fast-path: read data-customer-type directly from the selected option for instant zero-latency UI update
+      var selectedOption = $(this).find('option:selected');
+      var fastCustomerType = selectedOption.attr('data-customer-type');
+      if (fastCustomerType && $('#pos_order_type').length) {
+         if ($('#pos_order_type').val() !== fastCustomerType) {
+            $('#pos_order_type').val(fastCustomerType).trigger('change');
+         }
+      }
+
       var baseUrl = window.location.origin;
       $.ajax({
          type: 'get',
@@ -1125,6 +1135,11 @@
          success: function (res) {
             if (res && res.stats && typeof window.updatePosCustomerIntelligence === 'function') {
                window.updatePosCustomerIntelligence(res.stats);
+            }
+            if (res && res.customer_type && $('#pos_order_type').length) {
+               if ($('#pos_order_type').val() !== res.customer_type) {
+                  $('#pos_order_type').val(res.customer_type).trigger('change');
+               }
             }
          }
       });

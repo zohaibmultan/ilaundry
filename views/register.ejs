@@ -172,10 +172,25 @@
                             <input type="text" class="form-control" name="number" placeholder="+1234567890" required>
                         </div>
 
-                        <!-- Tax Number -->
+                        <!-- Customer Type -->
                         <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Tax / ID Number</strong></label>
-                            <input type="text" class="form-control" name="taxnumber" placeholder="Optional Tax ID">
+                            <label class="form-label mb-1"><strong>Customer Type</strong> <span
+                                    class="text-danger">*</span></label>
+                            <select class="form-control form-select" name="customer_type" id="customer_type" required>
+                                <option value="" disabled>Choose Customer Type</option>
+                                <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
+                                    <% customer_types.forEach(function(ct, idx){ %>
+                                        <option value="<%= ct.name %>" <%= idx === 0 ? 'selected' : '' %>>
+                                            <%= ct.name %>
+                                        </option>
+                                    <% }); %>
+                                <% } else { %>
+                                    <option value="Counter & Counter" selected>Counter & Counter</option>
+                                    <option value="Counter & Delivery">Counter & Delivery</option>
+                                    <option value="Pick-up & Delivery">Pick-up & Delivery</option>
+                                    <option value="Pick-up & Counter">Pick-up & Counter</option>
+                                <% } %>
+                            </select>
                         </div>
 
                         <!-- Address -->

@@ -120,12 +120,18 @@
 
                                     <div class="col-12">
                                         <div class="pos-date-group">
-                                            <label class="pos-field-label mb-0" for="edit_pos_order_type"><%= language.Order_Type || 'Order Type' %></label>
+                                            <label class="pos-field-label mb-0" for="edit_pos_order_type"><%= language.Customer_Type || 'Customer Type' %></label>
                                             <select class="form-select form-select-sm pos-input-sm w-100" id="edit_pos_order_type" name="edit_pos_order_type">
-                                                <option value="Counter & Counter" <%= (!order_date[0].order_type || order_date[0].order_type === 'Counter & Counter' || order_date[0].order_type === 'Customer drop-off & Customer pick-up') ? 'selected' : '' %>>1. Counter & Counter</option>
-                                                <option value="Counter & Delivery" <%= (order_date[0].order_type === 'Counter & Delivery' || order_date[0].order_type === 'Customer drop-off & Store delivery') ? 'selected' : '' %>>2. Counter & Delivery</option>
-                                                <option value="Pick-up & Delivery" <%= (order_date[0].order_type === 'Pick-up & Delivery' || order_date[0].order_type === 'Store collection & Store delivery') ? 'selected' : '' %>>3. Pick-up & Delivery</option>
-                                                <option value="Pick-up & Counter" <%= (order_date[0].order_type === 'Pick-up & Counter' || order_date[0].order_type === 'Store collection & Customer pick-up') ? 'selected' : '' %>>4. Pick-up & Counter</option>
+                                                <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
+                                                    <% customer_types.forEach(function(ct, idx) { %>
+                                                        <option value="<%= ct.name %>" <%= (order_date[0].order_type === ct.name || (!order_date[0].order_type && (ct.name === 'Counter & Counter' || idx === 0))) ? 'selected' : '' %>><%= (idx + 1) %>. <%= ct.name %></option>
+                                                    <% }); %>
+                                                <% } else { %>
+                                                    <option value="Counter & Counter" <%= (!order_date[0].order_type || order_date[0].order_type === 'Counter & Counter' || order_date[0].order_type === 'Customer drop-off & Customer pick-up') ? 'selected' : '' %>>1. Counter & Counter</option>
+                                                    <option value="Counter & Delivery" <%= (order_date[0].order_type === 'Counter & Delivery' || order_date[0].order_type === 'Customer drop-off & Store delivery') ? 'selected' : '' %>>2. Counter & Delivery</option>
+                                                    <option value="Pick-up & Delivery" <%= (order_date[0].order_type === 'Pick-up & Delivery' || order_date[0].order_type === 'Store collection & Store delivery') ? 'selected' : '' %>>3. Pick-up & Delivery</option>
+                                                    <option value="Pick-up & Counter" <%= (order_date[0].order_type === 'Pick-up & Counter' || order_date[0].order_type === 'Store collection & Customer pick-up') ? 'selected' : '' %>>4. Pick-up & Counter</option>
+                                                <% } %>
                                             </select>
                                         </div>
                                     </div>

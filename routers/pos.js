@@ -101,6 +101,7 @@ async function getStoreScopedCustomers(storeId, includeWalkIn = true) {
       tbl_customer.number, 
       tbl_customer.email, 
       tbl_customer.username, 
+      tbl_customer.customer_type, 
       tbl_store.name AS store_name
     FROM 
       tbl_customer
@@ -171,13 +172,13 @@ router.get("/pos", auth, async (req, res) => {
 
       // 1. Fetch customer details
       const customerData = await DataFind(
-        "SELECT id, name, number, email, store_ID, reffstore FROM tbl_customer WHERE id=" +
+        "SELECT id, name, number, email, store_ID, reffstore, customer_type FROM tbl_customer WHERE id=" +
           id,
       );
       customerList =
         customerData.length > 0
           ? customerData
-          : [{ id, name: "Customer", number: "", email: "" }];
+          : [{ id, name: "Customer", number: "", email: "", customer_type: "Counter & Counter" }];
 
       // 2. Resolve store: customer's store_ID -> reffstore -> token store -> fallback to first active store
       let resolvedStore =
@@ -560,10 +561,15 @@ router.get("/pos", auth, async (req, res) => {
       );
     }
 
+    const customer_types = await DataFind(
+      "SELECT * FROM tbl_customer_type WHERE status = 1 ORDER BY id ASC",
+    );
+
     res.render("pos", {
       storePrinterConfig,
       login,
       storeList,
+      customer_types,
       service_list,
       categoryList,
       subcategoryList,
@@ -673,9 +679,14 @@ router.get("/edit/:id", auth, async (req, res) => {
       order_date[0].store_id,
     );
 
+    const customer_types = await DataFind(
+      "SELECT * FROM tbl_customer_type WHERE status = 1 ORDER BY id ASC",
+    );
+
     res.render("pos_edit", {
       accessdata,
       order_date,
+      customer_types,
       readySchedule,
       service_list: service_list || [],
       cartservice: cartservice || [],
@@ -1411,10 +1422,14 @@ router.get("/newcustomerid/:id", auth, async (req, res) => {
       memo: ""
     };
 
+    let custType = "Counter & Counter";
     if (cleanCustomerId && cleanCustomerId !== "0" && cleanCustomerId !== "null" && cleanCustomerId !== "undefined") {
-      const custData = await DataFind(`SELECT id, name, memo FROM tbl_customer WHERE id='${cleanCustomerId}' LIMIT 1`);
+      const custData = await DataFind(`SELECT id, name, memo, customer_type FROM tbl_customer WHERE id='${cleanCustomerId}' LIMIT 1`);
       if (custData && custData.length > 0) {
         stats.memo = custData[0].memo || "";
+        if (custData[0].customer_type) {
+          custType = custData[0].customer_type;
+        }
       }
 
       const orderStats = await DataFind(`
@@ -1433,7 +1448,7 @@ router.get("/newcustomerid/:id", auth, async (req, res) => {
       }
     }
 
-    return res.status(200).json({ status: 200, success: true, stats });
+    return res.status(200).json({ status: 200, success: true, stats, customer_type: custType });
   } catch (error) {
     console.error("Error in /newcustomerid:", error);
     return res.status(500).json({ status: 500, success: false, message: error.message });

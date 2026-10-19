@@ -528,6 +528,10 @@ router.get("/register", async (req, res) => {
     "SELECT * FROM tbl_master_shop where id=1",
   );
 
+  const customerTypes = await DataFind(
+    "SELECT * FROM tbl_customer_type WHERE status = 1 ORDER BY id ASC",
+  );
+
   const Country_name = countryCodes.customList("countryCode", "{countryCode}");
   const nameCode = Object.values(Country_name);
 
@@ -560,6 +564,7 @@ router.get("/register", async (req, res) => {
       data: masterstore[0],
       nameCode,
       CountryCode,
+      customer_types: customerTypes,
     });
   } else {
     res.render("register", {
@@ -568,6 +573,7 @@ router.get("/register", async (req, res) => {
       data: masterstore[0],
       nameCode,
       CountryCode,
+      customer_types: customerTypes,
     });
   }
 });
@@ -608,6 +614,7 @@ router.post("/register", async (req, res) => {
       name,
       number,
       email,
+      customer_type,
       taxnumber,
       address,
       username,
@@ -638,6 +645,7 @@ router.post("/register", async (req, res) => {
     const safeEmail = (email || '').trim().replace(/'/g, "\\'");
     const safeAddress = (address || '').trim().replace(/'/g, "\\'");
     const safeTaxNumber = (taxnumber || '').trim().replace(/'/g, "\\'");
+    const safeCustomerType = (customer_type || 'Counter & Counter').trim().replace(/'/g, "\\'");
     const safeUsername = (username || '').trim().replace(/'/g, "\\'");
 
     const check_number = await DataFind(
@@ -678,8 +686,8 @@ router.post("/register", async (req, res) => {
     if (store) {
       const customerInsert = await DataInsert(
         `tbl_customer`,
-        `name,first_name,last_name,number,email,address,taxnumber,username,password,main_roll_id,approved,store_ID`,
-        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved},'${store}'`,
+        `name,first_name,last_name,number,email,address,customer_type,taxnumber,username,password,main_roll_id,approved,store_ID`,
+        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeCustomerType}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved},'${store}'`,
         req.hostname,
         req.protocol,
       );
@@ -694,8 +702,8 @@ router.post("/register", async (req, res) => {
     } else {
       const customerInsert = await DataInsert(
         `tbl_customer`,
-        `name,first_name,last_name,number,email,address,taxnumber,username,password,main_roll_id,approved`,
-        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved}`,
+        `name,first_name,last_name,number,email,address,customer_type,taxnumber,username,password,main_roll_id,approved`,
+        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeCustomerType}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved}`,
         req.hostname,
         req.protocol,
       );
