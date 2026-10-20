@@ -301,8 +301,9 @@
                     });
                 },
                 eventClick: function (calEvent, jsEvent, view) {
-                    if (calEvent.extendedProps) {
-                        openOrderEventModal(calEvent.extendedProps, calEvent);
+                    const orderData = calEvent.extendedProps || calEvent;
+                    if (orderData && orderData.orderId) {
+                        openOrderEventModal(orderData, calEvent);
                     }
                 },
                 eventRender: function (event, element) {
@@ -316,7 +317,7 @@
                 activeOrderData = order;
                 currentOpenOrderId = order.orderId;
 
-                $('#modal_order_code').text('#' + order.orderCode);
+                $('#modal_order_code').text('#' + (order.orderCode || order.orderId));
                 $('#modal_order_type_badge').text(order.orderType);
                 $('#modal_customer_name').text(order.customerName);
                 $('#modal_customer_phone').text(order.customerPhone || 'No Phone');
@@ -352,8 +353,9 @@
                 $('#modal_print_link').attr('href', '/order/pos_invoice/' + order.orderId);
 
                 // Event Badge
-                if (calEvent.extendedProps.eventType === 'pickup') {
-                    $('#modal_event_badge').removeClass('bg-primary').addClass('bg-warning text-dark').text('Pick-up Event');
+                const evtType = (calEvent.extendedProps && calEvent.extendedProps.eventType) || calEvent.eventType;
+                if (evtType === 'pickup') {
+                    $('#modal_event_badge').removeClass('bg-primary text-white').addClass('bg-warning text-dark').text('Pick-up Event');
                 } else {
                     $('#modal_event_badge').removeClass('bg-warning text-dark').addClass('bg-primary text-white').text('Delivery Event');
                 }

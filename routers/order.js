@@ -1529,8 +1529,16 @@ router.get("/calendar/events", auth, async (req, res) => {
         c.first_name LIKE '%${q}%' OR
         c.last_name LIKE '%${q}%' OR
         c.name LIKE '%${q}%' OR
-        c.mobile_no LIKE '%${q}%'
+        c.number LIKE '%${q}%'
       )`;
+    }
+
+    function toLocalISOString(date) {
+      if (!date) return null;
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return null;
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     }
 
     // Exclude Counter & Counter per Rule 1: "Counter & Counter: don't show any event on calendar"
@@ -1558,16 +1566,15 @@ router.get("/calendar/events", auth, async (req, res) => {
         c.first_name,
         c.last_name,
         c.name AS legacy_customer_name,
-        c.mobile_no,
+        c.number AS mobile_no,
         c.address,
         c.city,
         c.state,
-        c.zip_code
+        c.zipcode AS zip_code
       FROM tbl_order o
       LEFT JOIN tbl_customer c ON o.customer_id = c.id
       LEFT JOIN tbl_store s ON o.store_id = s.id
-      WHERE o.delet_flage = 0
-        AND o.order_type NOT IN ('Counter & Counter', 'Customer drop-off & Store collection')
+      WHERE o.order_type NOT IN ('Counter & Counter', 'Customer drop-off & Store collection')
         ${storeCondition}
         ${searchCondition}
       ORDER BY o.order_date DESC
@@ -1642,14 +1649,19 @@ router.get("/calendar/events", auth, async (req, res) => {
           if (status_filter === "pending" && isDone) includeStatus = false;
           if (status_filter === "completed" && !isDone) includeStatus = false;
 
-          if (includeStatus && ord.pickup_date) {
+          const pickupStart = toLocalISOString(ord.pickup_date);
+          if (includeStatus && pickupStart) {
             events.push({
               id: `pickup_${ord.id}`,
               title: `📦 Pick-up: #${ord.order_id} - ${customerName}`,
-              start: ord.pickup_date,
+              start: pickupStart,
               color: isDone ? "#b45309" : "#ea580c",
               textColor: "#ffffff",
               className: `fc-event-pickup status-${isDone ? "completed" : "pending"}`,
+              ...commonDetails,
+              eventType: "pickup",
+              eventCategoryLabel: "Pick-up Schedule",
+              statusLabel: isDone ? "Picked Up" : "Pending Pick-up",
               extendedProps: {
                 ...commonDetails,
                 eventType: "pickup",
@@ -1669,14 +1681,19 @@ router.get("/calendar/events", auth, async (req, res) => {
           if (status_filter === "pending" && isDone) includeStatus = false;
           if (status_filter === "completed" && !isDone) includeStatus = false;
 
-          if (includeStatus && ord.delivery_date) {
+          const deliveryStart = toLocalISOString(ord.delivery_date);
+          if (includeStatus && deliveryStart) {
             events.push({
               id: `delivery_${ord.id}`,
               title: `🚚 Delivery: #${ord.order_id} - ${customerName}`,
-              start: ord.delivery_date,
+              start: deliveryStart,
               color: isDone ? "#16a34a" : "#2563eb",
               textColor: "#ffffff",
               className: `fc-event-delivery status-${isDone ? "completed" : "pending"}`,
+              ...commonDetails,
+              eventType: "delivery",
+              eventCategoryLabel: "Delivery Schedule",
+              statusLabel: isDone ? "Delivered" : "Pending Delivery",
               extendedProps: {
                 ...commonDetails,
                 eventType: "delivery",
