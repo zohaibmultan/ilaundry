@@ -269,16 +269,78 @@
                 header: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'month,agendaWeek,agendaDay,listWeek'
+                    right: 'month,agendaWeek,basicDay,agendaDay,listWeek'
+                },
+                buttonText: {
+                    today: 'Today',
+                    month: 'Month',
+                    agendaWeek: 'Week',
+                    basicDay: 'Day',
+                    agendaDay: 'Hourly',
+                    listWeek: 'List'
                 },
                 defaultView: 'month',
                 height: 'auto',
                 contentHeight: 'auto',
                 fixedWeekCount: false,
                 navLinks: true,
+                navLinkDayClick: 'basicDay',
                 editable: false,
                 eventLimit: 4,
                 timeFormat: 'h:mm a',
+                minTime: '06:00:00',
+                maxTime: '22:00:00',
+                scrollTime: '08:00:00',
+                views: {
+                    agendaWeek: {
+                        minTime: '06:00:00',
+                        maxTime: '22:00:00',
+                        scrollTime: '08:00:00',
+                        slotDuration: '00:30:00'
+                    },
+                    agendaDay: {
+                        minTime: '06:00:00',
+                        maxTime: '22:00:00',
+                        scrollTime: '08:00:00',
+                        slotDuration: '00:30:00'
+                    },
+                    basicDay: {
+                        // Dedicated daily dispatch card view
+                    }
+                },
+                viewRender: function (view, element) {
+                    element.find('.calendar-empty-day-note').remove();
+                },
+                eventAfterAllRender: function (view) {
+                    if (view && (view.name === 'basicDay' || view.name === 'agendaDay')) {
+                        const hasEvents = $('#route_calendar').find('.fc-event').length > 0;
+                        $('#route_calendar').find('.calendar-empty-day-note').remove();
+                        if (!hasEvents) {
+                            const emptyNotice = `
+                                <div class="calendar-empty-day-note text-center p-4 my-4 mx-auto" style="max-width: 440px; border-radius: 12px; background: rgba(59, 130, 246, 0.05); border: 1px dashed rgba(59, 130, 246, 0.25);">
+                                    <i class="fas fa-calendar-day text-primary mb-2" style="font-size: 2rem; opacity: 0.7;"></i>
+                                    <h6 class="fw-bold text-dark mb-1">No Orders Scheduled</h6>
+                                    <p class="text-muted small mb-0">There are no route pick-ups or deliveries scheduled for this date.</p>
+                                </div>
+                            `;
+                            if (view.name === 'basicDay') {
+                                $('#route_calendar .fc-day-grid').after(emptyNotice);
+                            } else {
+                                $('#route_calendar .fc-time-grid').prepend(emptyNotice);
+                            }
+                        } else if (view.name === 'agendaDay') {
+                            const $firstEvent = $('#route_calendar').find('.fc-time-grid-event').first();
+                            if ($firstEvent.length) {
+                                const topPos = parseInt($firstEvent.css('top'), 10);
+                                if (!isNaN(topPos) && topPos > 80) {
+                                    $('#route_calendar .fc-time-grid-container').animate({
+                                        scrollTop: Math.max(0, topPos - 50)
+                                    }, 250);
+                                }
+                            }
+                        }
+                    }
+                },
                 events: function (start, end, timezone, callback) {
                     const params = {
                         start: start.toISOString(),

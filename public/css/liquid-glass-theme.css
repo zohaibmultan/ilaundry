@@ -4029,13 +4029,21 @@ table.dataTable td.text-center {
   height: auto !important;
 }
 
-#route_calendar .fc-view-container,
-#route_calendar .fc-view,
-#route_calendar .fc-scroller,
+/* Month view & DayGrid views: allow natural expansion to prevent row clipping */
+#route_calendar .fc-month-view .fc-scroller,
+#route_calendar .fc-basic-view .fc-scroller,
 #route_calendar .fc-day-grid-container {
   height: auto !important;
   max-height: none !important;
   overflow: visible !important;
+}
+
+/* TimeGrid views (agendaWeek, agendaDay): maintain bounded scroll container */
+#route_calendar .fc-agenda-view .fc-time-grid-container.fc-scroller {
+  height: 550px !important;
+  max-height: 550px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
 }
 
 #route_calendar .fc-toolbar {
@@ -4101,6 +4109,57 @@ table.dataTable td.text-center {
 #route_calendar .fc-day-grid-event .fc-content {
   white-space: normal !important;
   overflow: visible !important;
+}
+
+/* TimeGrid Events in agendaWeek / agendaDay */
+#route_calendar .fc-time-grid-event {
+  min-height: 56px !important;
+  height: auto !important;
+  overflow: visible !important;
+  z-index: 10 !important;
+  border-radius: 8px !important;
+}
+
+#route_calendar .fc-time-grid-event .fc-content,
+#route_calendar .fc-time-grid-event.fc-short .fc-content,
+#route_calendar .fc-time-grid-event.fc-short {
+  white-space: normal !important;
+  overflow: visible !important;
+}
+
+/* Dedicated Day Cards View (basicDay) */
+#route_calendar .fc-basicDay-view .fc-day-grid-event {
+  margin: 6px 12px 10px 12px !important;
+  padding: 10px 14px !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12) !important;
+}
+
+#route_calendar .fc-basicDay-view .fc-day-grid-event .event-card-order {
+  font-size: 13.5px !important;
+}
+
+#route_calendar .fc-basicDay-view .fc-day-grid-event .event-card-customer {
+  font-size: 13px !important;
+}
+
+#route_calendar .fc-basicDay-view .fc-day-grid-event .event-card-time {
+  font-size: 12px !important;
+}
+
+/* Clickable Day Numbers in Month View */
+#route_calendar .fc-day-top a.fc-day-number {
+  color: #3b82f6 !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  transition: all 0.15s ease !important;
+}
+
+#route_calendar .fc-day-top a.fc-day-number:hover {
+  background: rgba(59, 130, 246, 0.15) !important;
+  text-decoration: underline !important;
 }
 
 #route_calendar .fc-time {
@@ -4361,4 +4420,27 @@ table.dataTable td.text-center {
 [data-theme-version="dark"] #route_calendar .fc-list-item td {
   border-color: rgba(255, 255, 255, 0.06) !important;
   color: #e2e8f0 !important;
-}
+}
+
+/* Empty Day Note in Dark Mode */
+[data-theme-version="dark"] .calendar-empty-day-note {
+  background: rgba(59, 130, 246, 0.08) !important;
+  border-color: rgba(59, 130, 246, 0.25) !important;
+}
+
+[data-theme-version="dark"] .calendar-empty-day-note h6 {
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] .calendar-empty-day-note p {
+  color: #94a3b8 !important;
+}
+
+[data-theme-version="dark"] #route_calendar .fc-time-grid .fc-slats td {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme-version="dark"] #route_calendar .fc-axis {
+  color: #94a3b8 !important;
+}
+
