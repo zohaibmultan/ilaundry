@@ -3,55 +3,54 @@
 
 
 <head>
-    <!-- meta and links start -->
-    <%- include('templet/meta')-%>
+  <!-- meta and links start -->
+  <%- include('templet/meta')-%>
 
 </head>
 
 <body>
-    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
-        <!--********** Content body start **********-->
+  <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+  <!--********** Content body start **********-->
 
-        <div class="content-body">
+  <div class="content-body">
 
-            <div class="container-fluid" style="min-height: 100vh;">
-                <% 
+    <div class="container-fluid" style="min-height: 100vh;">
+      <% 
                     const isMaster = (accessdata?.logas === 'master' || (accessdata?.roll && accessdata.roll.rollType === 'master'));
                     const canEditOrder = accessdata?.logas != 'custmor' && (isMaster || (accessdata?.roll?.orders && accessdata.roll.orders.includes('edit')));
                     const canDeleteOrder = accessdata?.logas != 'custmor' && (isMaster || (accessdata?.roll?.orders && accessdata.roll.orders.includes('delete')));
                 %>
-                <div class="row">
-                    <div class="col-xl-9">
-                        <div class="card border-0 shadow-sm rounded-3">
-                            <div class="card-header border-bottom py-3 px-4 position-relative z-1">
-                                <div class="d-none">
-                                    <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
-                                    <input type="hiden" name="pls" value="<%= accessdata.plac %>">
-                                    <input type="hiden" name="thousands_separator"
-                                        value="<%= accessdata.thousands_separator %>">
-                                </div>
-<div class="mt-4">
-                                    <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
-                                        <h3 class="card-title mb-0 fw-bold text-dark d-flex align-items-center">
-                                            <i class="fa fa-file-invoice text-primary me-2"></i>
-                                            <span><%= language.Order_ID %> :</span>
-                                            <span class="ms-1 text-primary"><%=order.order_id %></span>
-                                        </h3>
-                                        <% if (order.transferred_from_store_id && transferredFromStore) { %>
-                                            <span class="badge bg-warning text-dark d-inline-flex align-items-center gap-1 py-1 px-2 rounded-pill fs-12 fw-semibold" title="Transferred from <%= transferredFromStore.name %>">
-                                                <i class="fas fa-random"></i>
-                                                <span>Transferred from: <%= transferredFromStore.name %></span>
-                                            </span>
-                                        <% } %>
-                                        <% if (order.order_type) { %>
-                                            <span class="badge bg-light text-dark border d-inline-flex align-items-center gap-1 py-1 px-2 rounded-pill fs-12 fw-semibold">
-                                                <i class="fa fa-tag text-muted"></i>
-                                                <span><%= order.order_type %></span>
-                                            </span>
-                                        <% } %>
-                                    </div>
-                                    <small class="text-muted d-block mb-3"><%= language.Order_Details_Subtitle || 'Comprehensive invoice summary, service breakdown, and tracking details' %></small>
-                                    <%
+      <div class="row">
+        <div class="col-xl-9">
+          <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header border-bottom py-3 px-4 position-relative z-1">
+              <div class="d-none">
+                <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
+                <input type="hiden" name="pls" value="<%= accessdata.plac %>">
+                <input type="hiden" name="thousands_separator" value="<%= accessdata.thousands_separator %>">
+              </div>
+              <div class="mt-4">
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                  <h3 class="card-title mb-0 fw-bold text-dark d-flex align-items-center">
+                    <i class="fa fa-file-invoice text-primary me-2"></i>
+                    <span><%= language.Order_ID %> :</span>
+                    <span class="ms-1 text-primary"><%=order.order_id %></span>
+                  </h3>
+                  <% if (order.transferred_from_store_id && transferredFromStore) { %>
+                  <span class="badge bg-warning text-dark d-inline-flex align-items-center gap-1 py-1 px-2 rounded-pill fs-12 fw-semibold" title="Transferred from <%= transferredFromStore.name %>">
+                    <i class="fas fa-random"></i>
+                    <span>Transferred from: <%= transferredFromStore.name %></span>
+                  </span>
+                  <% } %>
+                  <% if (order.order_type) { %>
+                  <span class="badge bg-light text-dark border d-inline-flex align-items-center gap-1 py-1 px-2 rounded-pill fs-12 fw-semibold">
+                    <i class="fa fa-tag text-muted"></i>
+                    <span><%= order.order_type %></span>
+                  </span>
+                  <% } %>
+                </div>
+                <small class="text-muted d-block mb-3"><%= language.Order_Details_Subtitle || 'Comprehensive invoice summary, service breakdown, and tracking details' %></small>
+                <%
                                         function formatNiceDateTime(dt) {
                                             if (!dt) return '—';
                                             const d = new Date(dt);
@@ -122,1489 +121,1474 @@
                                         let Delivery_year = Delivery_date.getFullYear();
                                         let Delivery_fullDate = `${Delivery_year}-${Delivery_month}-${Delivery_day}`;
                                     %>
-                                    <p class="text-sm mb-1">
-                                        <span class="text-muted"><%= language.Order_Date %>:</span>
-                                        <strong class="text-dark ms-1"><%= Order_fullDate %></strong>
-                                    </p>
-                                    <p class="text-sm mb-2">
-                                        <span class="text-muted"><%= language.Target_Ready || 'Target Ready' %>:</span>
-                                        <strong class="text-dark ms-1"><%= formatNiceDateTime(order.ready_date || order.delivery_date) %></strong>
-                                    </p>
-                                    <div class="d-flex align-items-center">
-                                        <div>
-                                            <%= language.Order_Status %> :
-                                        </div>
-                                        <div class="btn-group m-2 position-relative z-3" role="group">
-                                            <button type="button"
-                                                class="btn btn-primary btn-xs <%= (accessdata.logas != 'custmor' && accessdata.roll.orders.includes('edit')) ? 'dropdown-toggle' : '' %>"
-                                                data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" <%=(accessdata.logas !='custmor' &&
+                <p class="text-sm mb-1">
+                  <span class="text-muted"><%= language.Order_Date %>:</span>
+                  <strong class="text-dark ms-1"><%= Order_fullDate %></strong>
+                </p>
+                <p class="text-sm mb-2">
+                  <span class="text-muted"><%= language.Target_Ready || 'Target Ready' %>:</span>
+                  <strong class="text-dark ms-1"><%= formatNiceDateTime(order.ready_date || order.delivery_date) %></strong>
+                </p>
+                <div class="d-flex align-items-center">
+                  <div>
+                    <%= language.Order_Status %> :
+                  </div>
+                  <div class="btn-group m-2 position-relative z-3" role="group">
+                    <button type="button" class="btn btn-primary btn-xs <%= (accessdata.logas != 'custmor' && accessdata.roll.orders.includes('edit')) ? 'dropdown-toggle' : '' %>" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" <%=(accessdata.logas !='custmor' &&
                                                 accessdata.roll.orders.includes('edit')) ? '' : 'disabled' %>>
-                                                <%= order.status %>
-                                            </button>
+                      <%= order.status %>
+                    </button>
 
-                                            <% if (accessdata.logas !='custmor' &&
+                    <% if (accessdata.logas !='custmor' &&
                                                 accessdata.roll.orders.includes('edit')) { %>
-                                                <ul class="dropdown-menu shadow-lg border-0" style="z-index: 1060;">
-                                                    <% Ordersatus.forEach(function(data) { %>
-                                                        <li>
-                                                            <a class="dropdown-item" href="javascript:void(0)"
-                                                                onclick="changeOrderStatus('<%= data.id %>', '<%= order.id %>')">
-                                                                <%= data.status %>
-                                                            </a>
-                                                        </li>
-                                                        <% }); %>
-                                                        <li><hr class="dropdown-divider my-1"></li>
-                                                        <li>
-                                                            <a class="dropdown-item text-primary fw-semibold" href="javascript:void(0)"
-                                                                onclick="openTransferStoreModal()">
-                                                                <i class="fas fa-truck-moving me-2"></i> Deliver to Store
-                                                            </a>
-                                                        </li>
-                                                </ul>
-                                                <% } %>
-                                        </div>
+                    <ul class="dropdown-menu shadow-lg border-0" style="z-index: 1060;">
+                      <% Ordersatus.forEach(function(data) { %>
+                      <li>
+                        <a class="dropdown-item" href="javascript:void(0)" onclick="changeOrderStatus('<%= data.id %>', '<%= order.id %>')">
+                          <%= data.status %>
+                        </a>
+                      </li>
+                      <% }); %>
+                      <li>
+                        <hr class="dropdown-divider my-1">
+                      </li>
+                      <li>
+                        <a class="dropdown-item text-primary fw-semibold" href="javascript:void(0)" onclick="openTransferStoreModal()">
+                          <i class="fas fa-truck-moving me-2"></i> Deliver to Store
+                        </a>
+                      </li>
+                    </ul>
+                    <% } %>
+                  </div>
 
-                                    </div>
+                </div>
 
-                                </div>
-                                <div>
-                                    <h3 class="text-uppercase mb-3">
-                                        <%=storedata.name.toUpperCase() %>
-                                    </h3>
+              </div>
+              <div>
+                <h3 class="text-uppercase mb-3">
+                  <%=storedata.name.toUpperCase() %>
+                </h3>
 
-                                    <p class="mb-0">
-                                        <%= language.Phone_No %> : <span>
-                                                <%=storedata.mobile_number %>
-                                            </span>
-                                    </p>
-                                    <p class="mb-0">
-                                        <%= language.Email %> : <span>
-                                                <%=storedata.store_email %>
-                                            </span>
-                                    </p>
-                                    <p class="mb-0 text-break w-100">
-                                        <%= language.Address %> : <span>
-                                                <%=storedata.address %>
-                                            </span>
-                                    </p>
-                                    <p class="mb-0">
-                                        <%= language.TAX %> : <span>
-                                                <%= storedata.store_tax_number.toUpperCase() %>
-                                            </span>
-                                    </p>
-                                </div>
-
-                                
-                            </div>
-                            <div class="card-body p-4">
-                                <!-- Dispatch & Route Tracking Section -->
-                                <div class="card border rounded-3 p-3 mb-4 bg-light-subtle">
-                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-                                        <h5 class="fw-bold text-dark mb-0 d-flex align-items-center">
-                                            <i class="fa fa-route text-primary me-2"></i>
-                                            <%= language.Dispatch_Schedule || 'Dispatch & Route Tracking' %>
-                                        </h5>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span class="badge bg-light text-dark border py-1 px-2 fw-semibold">
-                                                <i class="fa fa-tag text-muted me-1"></i> <%= order.order_type || 'Standard Order' %>
-                                            </span>
-                                            <span class="badge bg-primary text-white py-1 px-2">
-                                                <%= order.status %>
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div class="row g-3">
-                                        <!-- 1. Route Pick-up Card -->
-                                        <div class="col-12 col-md-4">
-                                            <div class="p-3 border rounded-3 bg-white h-100 shadow-xs">
-                                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                                    <span class="text-muted small fw-bold text-uppercase">
-                                                        <i class="fa fa-box text-warning me-1"></i> <%= language.Route_Pickup || 'Route Pick-up' %>
-                                                    </span>
-                                                    <% if (hasPickup) { %>
-                                                        <span id="details_pickup_badge" class="badge <%= (String(order.is_picked_up) === '1') ? 'bg-success text-white' : 'bg-warning text-dark' %>">
-                                                            <i class="fa <%= (String(order.is_picked_up) === '1') ? 'fa-check-circle' : 'fa-clock' %> me-1"></i>
-                                                            <%= (String(order.is_picked_up) === '1') ? (language.Picked_Up || 'Picked Up') : (language.Pending || 'Pending Pick-up') %>
-                                                        </span>
-                                                    <% } else { %>
-                                                        <span class="badge bg-light text-dark border">Counter Intake</span>
-                                                    <% } %>
-                                                </div>
-
-                                                <div class="fw-bold text-dark fs-6 mb-1">
-                                                    <%= hasPickup ? formatNiceDateTime(order.pickup_date) : 'Store Drop-off' %>
-                                                </div>
-                                                <div class="text-muted small mb-2" id="details_pickup_time">
-                                                    <% if (hasPickup) { %>
-                                                        <%= (String(order.is_picked_up) === '1') ? ((order.picked_up_at ? ('Picked up on ' + formatNiceDateTime(order.picked_up_at)) : 'Picked Up')) : 'Pending Route Pick-up' %>
-                                                    <% } else { %>
-                                                        Customer brought garments to counter
-                                                    <% } %>
-                                                </div>
-
-                                                <% if (hasPickup && canEditOrder) { %>
-                                                    <div class="pt-2 border-top mt-2">
-                                                        <div class="form-check form-switch mb-0">
-                                                            <input class="form-check-input" type="checkbox" role="switch" id="details_pickup_toggle" style="cursor: pointer;" <%= (String(order.is_picked_up) === '1') ? 'checked' : '' %>>
-                                                            <label class="form-check-label fw-bold text-dark small" for="details_pickup_toggle" style="cursor: pointer;">
-                                                                <%= language.Mark_Picked_Up || 'Picked Up from Customer' %>
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                <% } %>
-                                            </div>
-                                        </div>
-
-                                        <!-- 2. Factory Target Ready Card -->
-                                        <div class="col-12 col-md-4">
-                                            <div class="p-3 border rounded-3 bg-white h-100 shadow-xs">
-                                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                                    <span class="text-muted small fw-bold text-uppercase">
-                                                        <i class="fa fa-clock text-info me-1"></i> <%= language.Factory_Ready || 'Factory Target Ready' %>
-                                                    </span>
-                                                    <span class="badge bg-info text-white">
-                                                        <i class="fa fa-tshirt me-1"></i> <%= order.status %>
-                                                    </span>
-                                                </div>
-
-                                                <div class="fw-bold text-dark fs-6 mb-1">
-                                                    <%= formatNiceDateTime(order.ready_date || order.delivery_date) %>
-                                                </div>
-                                                <div class="text-muted small mb-2">
-                                                    Factory/Store Cleaning Target
-                                                </div>
-                                                <div class="pt-2 border-top mt-2 text-muted small">
-                                                    <i class="fa fa-info-circle me-1 text-primary"></i> Working Days & Cutoff Schedule
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- 3. Route Delivery Card -->
-                                        <div class="col-12 col-md-4">
-                                            <div class="p-3 border rounded-3 bg-white h-100 shadow-xs">
-                                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                                    <span class="text-muted small fw-bold text-uppercase">
-                                                        <i class="fa fa-truck text-primary me-1"></i> <%= language.Route_Delivery || 'Route Delivery' %>
-                                                    </span>
-                                                    <% if (hasDelivery) { %>
-                                                        <span id="details_delivery_badge" class="badge <%= (String(order.is_delivered) === '1') ? 'bg-success text-white' : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'bg-secondary text-white' : 'bg-primary text-white') %>">
-                                                            <i class="fa <%= (String(order.is_delivered) === '1') ? 'fa-check-circle' : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'fa-lock' : 'fa-truck') %> me-1"></i>
-                                                            <%= (String(order.is_delivered) === '1') ? (language.Delivered || 'Delivered') : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'Locked' : (language.Pending || 'Pending Delivery')) %>
-                                                        </span>
-                                                    <% } else { %>
-                                                        <span class="badge bg-light text-dark border">Counter Collection</span>
-                                                    <% } %>
-                                                </div>
-
-                                                <div class="fw-bold text-dark fs-6 mb-1">
-                                                    <%= hasDelivery ? formatNiceDateTime(order.delivery_date) : formatNiceDateTime(order.ready_date || order.delivery_date) %>
-                                                </div>
-                                                <div class="text-muted small mb-2" id="details_delivery_time">
-                                                    <% if (hasDelivery) { %>
-                                                        <%= (String(order.is_delivered) === '1') ? ((order.delivered_at ? ('Delivered on ' + formatNiceDateTime(order.delivered_at)) : 'Delivered')) : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'Awaiting customer pick-up' : 'Pending Route Delivery') %>
-                                                    <% } else { %>
-                                                        Customer will pick up at counter
-                                                    <% } %>
-                                                </div>
-
-                                                <% if (hasDelivery && canEditOrder) { %>
-                                                    <div class="pt-2 border-top mt-2">
-                                                        <div class="form-check form-switch mb-0">
-                                                            <input class="form-check-input" type="checkbox" role="switch" id="details_delivery_toggle" style="cursor: pointer;" <%= (String(order.is_delivered) === '1') ? 'checked' : '' %> <%= (isRouteRoute && String(order.is_picked_up) !== '1') ? 'disabled' : '' %>>
-                                                            <label class="form-check-label fw-bold text-dark small" for="details_delivery_toggle" style="cursor: pointer;">
-                                                                <%= language.Mark_Delivered || 'Delivered to Customer' %>
-                                                            </label>
-                                                        </div>
-                                                        <div id="details_delivery_gated_note" class="alert alert-warning py-1 px-2 small mt-2 mb-0 <%= (isRouteRoute && String(order.is_picked_up) !== '1') ? '' : 'd-none' %>">
-                                                            <i class="fa fa-info-circle me-1"></i> Pick-up must be confirmed first.
-                                                        </div>
-                                                    </div>
-                                                <% } %>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="table-responsive">
-                                    <table class="table">
-                                        <thead class="table_head">
-                                            <tr>
-                                                <th>#</th>
-                                                <th>
-                                                    <%= language.Service_Name %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Color %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Rate %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Qty %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Total %>
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <% orderServiceList.forEach(function (data, i){ %>
-                                                <tr>
-                                                    <th>
-                                                        <%= i+1 %>
-                                                    </th>
-                                                    <td>
-                                                        <div class="d-flex">
-                                                            <div class="mx-5">
-                                                                <img class="rounded-circle" width="60" height="60"
-                                                                    src="../../uploads/<%= data.service_img %>"
-                                                                    alt="image">
-                                                            </div>
-                                                            <div class="d-flex flex-column justify-content-center">
-                                                                <span class="fw-bold">
-                                                                    <%= data.service_name %>
-                                                                    <% if (data.no_of_items && parseInt(data.no_of_items) > 1) { %>
-                                                                        <span class="badge bg-secondary text-white ms-1" style="font-size:0.75rem;"><%= data.no_of_items %> Pcs</span>
-                                                                    <% } %>
-                                                                </span>
-                                                                <span class="text-muted small">[<%= data.service_type_name %>]</span>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td><input type="color" class="p-1 w-75"
-                                                            value="<%= data.service_color %>" disabled></td>
-                                                    <td class="symbol">
-                                                        <%= data.service_type_price.toFixed(2) %>
-                                                    </td>
-                                                    <td>
-                                                        <%= data.service_quntity %>
-                                                    </td>
-                                                    <td class="symbol">
-                                                        <%= (data.service_type_price * data.service_quntity).toFixed(2)
-                                                            %>
-                                                    </td>
-                                                </tr>
-                                                <% }) %>
+                <p class="mb-0">
+                  <%= language.Phone_No %> : <span>
+                    <%=storedata.mobile_number %>
+                  </span>
+                </p>
+                <p class="mb-0">
+                  <%= language.Email %> : <span>
+                    <%=storedata.store_email %>
+                  </span>
+                </p>
+                <p class="mb-0 text-break w-100">
+                  <%= language.Address %> : <span>
+                    <%=storedata.address %>
+                  </span>
+                </p>
+                <p class="mb-0">
+                  <%= language.TAX %> : <span>
+                    <%= storedata.store_tax_number.toUpperCase() %>
+                  </span>
+                </p>
+              </div>
 
 
-                                        </tbody>
-                                    </table>
-                                </div>
+            </div>
+            <div class="card-body p-4">
+              <!-- Dispatch & Route Tracking Section -->
+              <div class="card border rounded-3 p-3 mb-4 bg-light-subtle">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                  <h5 class="fw-bold text-dark mb-0 d-flex align-items-center">
+                    <i class="fa fa-route text-primary me-2"></i>
+                    <%= language.Dispatch_Schedule || 'Dispatch & Route Tracking' %>
+                  </h5>
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-dark border py-1 px-2 fw-semibold">
+                      <i class="fa fa-tag text-muted me-1"></i> <%= order.order_type || 'Standard Order' %>
+                    </span>
+                    <span class="badge bg-primary text-white py-1 px-2">
+                      <%= order.status %>
+                    </span>
+                  </div>
+                </div>
 
-                                <div class="card-header">
+                <div class="row g-3">
+                  <!-- 1. Route Pick-up Card -->
+                  <div class="col-12 col-md-4">
+                    <div class="p-3 border rounded-3 bg-white h-100 shadow-xs">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small fw-bold text-uppercase">
+                          <i class="fa fa-box text-warning me-1"></i> <%= language.Route_Pickup || 'Route Pick-up' %>
+                        </span>
+                        <% if (hasPickup) { %>
+                        <span id="details_pickup_badge" class="badge <%= (String(order.is_picked_up) === '1') ? 'bg-success text-white' : 'bg-warning text-dark' %>">
+                          <i class="fa <%= (String(order.is_picked_up) === '1') ? 'fa-check-circle' : 'fa-clock' %> me-1"></i>
+                          <%= (String(order.is_picked_up) === '1') ? (language.Picked_Up || 'Picked Up') : (language.Pending || 'Pending Pick-up') %>
+                        </span>
+                        <% } else { %>
+                        <span class="badge bg-light text-dark border">Counter Intake</span>
+                        <% } %>
+                      </div>
 
-                                    <div>
-                                        <% if (customer && customer.name && customer.name !='Walk in customer' ) { %>
-                                            <h4 class="mb-0">
-                                                <%= language.Invoice_To %> :
-                                            </h4>
-                                            <p class="mb-0">
-                                                <%= language.Name %> : <span>
-                                                        <%= customer.name || '' %>
-                                                    </span>
-                                            </p>
-                                            <p class="mb-0">
-                                                <%= language.Phone_No %> : <span>
-                                                        <%= customer.number || '' %>
-                                                    </span>
-                                            </p>
-                                            <p class="mb-0">
-                                                <%= language.Email %> : <span>
-                                                        <%= customer.email || '' %>
-                                                    </span>
-                                            </p>
-                                            <p class="mb-0 text-break w-100">
-                                                <%= language.Address %> : <span>
-                                                        <%= [customer.address, customer.city, customer.state, customer.zipcode].filter(Boolean).join(', ') %>
-                                                    </span>
-                                            </p>
-                                            <p class="mb-0">
-                                                <%= language.TAX %> : <span>
-                                                        <%= customer.taxnumber || '' %>
-                                                    </span>
-                                            </p>
-                                            <% } %>
-                                    </div>
+                      <div class="fw-bold text-dark fs-6 mb-1">
+                        <%= hasPickup ? formatNiceDateTime(order.pickup_date) : 'Store Drop-off' %>
+                      </div>
+                      <div class="text-muted small mb-2" id="details_pickup_time">
+                        <% if (hasPickup) { %>
+                        <%= (String(order.is_picked_up) === '1') ? ((order.picked_up_at ? ('Picked up on ' + formatNiceDateTime(order.picked_up_at)) : 'Picked Up')) : 'Pending Route Pick-up' %>
+                        <% } else { %>
+                        Customer brought garments to counter
+                        <% } %>
+                      </div>
 
-                                    <div>
-                                        <h4>
-                                            <%= language.Payment_Details %> :
-                                        </h4>
-                                        <p class="mb-0">
-                                            <span>
-                                                <%= language.Sub_Total %> :
-                                            </span>
-                                            <span class="symbol">
-                                                <%=order.sub_total.toFixed(2) %>
-                                            </span>
-                                        </p>
-                                        <p class="mb-0">
-                                            <span>
-                                                <%= language.Addon %> :
-                                            </span>
-                                            <span class="symbol">
-                                                <%=order.addon_price.toFixed(2) %>
-                                            </span>
-                                        </p>
-                                        <p class="mb-0">
-                                            <span>
-                                                <%= language.Discount %> :
-                                            </span>
-                                            <span class="symbol">
-                                                <%=order.extra_discount.toFixed(2) %>
-                                            </span>
-                                        </p>
-                                        <p class="mb-0">
-                                            <span>
-                                                <%= language.Coupon_Discount %> :
-                                            </span>
-                                            <span class="symbol">
-                                                <%=order.coupon_discount.toFixed(2) %>
-                                            </span>
-                                        </p>
-                                        <p class="mb-2">
-                                            <span>
-                                                <%= language.TAX %> (<%=order.tax %> %) :
-                                            </span>
-                                            <span class="symbol">
-                                                <%=order.tax_amount.toFixed(2) %>
-                                            </span>
-                                        </p>
-                                        <p>
-                                            <span><b>
-                                                    <%= language.Gross_Total %> :
-                                                </b></span>
-                                            <span><b class="symbol">
-                                                    <%=order.gross_total.toFixed(2) %>
-                                                </b></span>
-                                        </p>
-
-                                    </div>
-                                </div>
-
-                                <div class="mt-4">
-                                    <div class="col">
-                                        <p>
-                                            <%= language.Notes %> :
-                                                <span>
-                                                    <%=order.note %>
-                                                </span>
-                                        </p>
-                                    </div>
-                                </div>
-
-                            </div>
+                      <% if (hasPickup && canEditOrder) { %>
+                      <div class="pt-2 border-top mt-2">
+                        <div class="form-check form-switch mb-0">
+                          <input class="form-check-input" type="checkbox" role="switch" id="details_pickup_toggle" style="cursor: pointer;" <%= (String(order.is_picked_up) === '1') ? 'checked' : '' %>>
+                          <label class="form-check-label fw-bold text-dark small" for="details_pickup_toggle" style="cursor: pointer;">
+                            <%= language.Mark_Picked_Up || 'Picked Up from Customer' %>
+                          </label>
                         </div>
+                      </div>
+                      <% } %>
                     </div>
+                  </div>
 
-                    <div class="col-xl-3">
-                        <div class="row">
-                            <div class="col-xl-12">
-                                <div class="card border-0 shadow-sm rounded-3">
-                                    <div class="card-body p-4">
-                                        <% if(addonlist.length> 0){ %>
-                                            <h4 class="card-title">
-                                                <%= language.Service_Addons %>
-                                            </h4>
-                                            <ul class="list-group mb-3" style="background-color: #F2F2F2;">
-                                                <% addonlist.forEach(function(data){ %>
-                                                    <li class="list-group-item d-flex px-4 py-1">
-                                                        <div class="d-flex flex-column">
-                                                            <span class="text-sm mb-0">
-                                                                <span>
-                                                                    <%=data.addon %> :
-                                                                </span>
-                                                                <span class="symbol">
-                                                                    <%=data.price %>
-                                                                </span>
-                                                            </span>
+                  <!-- 2. Factory Target Ready Card -->
+                  <div class="col-12 col-md-4">
+                    <div class="p-3 border rounded-3 bg-white h-100 shadow-xs">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small fw-bold text-uppercase">
+                          <i class="fa fa-clock text-info me-1"></i> <%= language.Factory_Ready || 'Factory Target Ready' %>
+                        </span>
+                        <span class="badge bg-info text-white">
+                          <i class="fa fa-tshirt me-1"></i> <%= order.status %>
+                        </span>
+                      </div>
 
-                                                        </div>
-                                                    </li>
-                                                    <% }) %>
-                                            </ul>
-                                            <% } %>
-                                                <h4 class="card-title mb-3 fw-bold text-dark d-flex align-items-center">
-                                                    <i class="fa fa-history text-primary me-2"></i>
-                                                    <%= language.Order_Timeline || 'Order Timeline' %>
-                                                </h4>
-                                                <div id="DZ_W_TimeLine1" class="widget-timeline style-1 ps ps--active-y mb-4">
-                                                    <ul class="timeline" id="order_lifecycle_timeline">
-                                                        <!-- 1. Order Placed Milestone -->
-                                                        <li>
-                                                            <div class="timeline-badge primary"></div>
-                                                            <div class="timeline-panel">
-                                                                <span><%= Order_fullDate %></span>
-                                                                <h6 class="mb-0 fw-bold text-dark">
-                                                                    <i class="fa fa-receipt text-primary me-1"></i> <%= language.Order_Placed || 'Order Placed' %>
-                                                                </h6>
-                                                                <p class="mb-0 text-muted fs-12">
-                                                                    Order #<%= order.order_id %> created.
-                                                                    <span class="d-block">Total: <strong class="symbol text-dark"><%= order.gross_total.toFixed(2) %></strong></span>
-                                                                </p>
-                                                            </div>
-                                                        </li>
+                      <div class="fw-bold text-dark fs-6 mb-1">
+                        <%= formatNiceDateTime(order.ready_date || order.delivery_date) %>
+                      </div>
+                      <div class="text-muted small mb-2">
+                        Factory/Store Cleaning Target
+                      </div>
+                      <div class="pt-2 border-top mt-2 text-muted small">
+                        <i class="fa fa-info-circle me-1 text-primary"></i> Working Days & Cutoff Schedule
+                      </div>
+                    </div>
+                  </div>
 
-                                                        <!-- 2. Route Pick-up Milestone (if applicable) -->
-                                                        <% if (hasPickup) { %>
-                                                            <li>
-                                                                <div class="timeline-badge <%= (String(order.is_picked_up) === '1') ? 'success' : 'warning' %>" id="timeline_pickup_badge"></div>
-                                                                <div class="timeline-panel" id="timeline_pickup_panel">
-                                                                    <span id="timeline_pickup_time">
-                                                                        <%= (String(order.is_picked_up) === '1' && order.picked_up_at) ? formatNiceDateTime(order.picked_up_at) : ('Scheduled: ' + formatNiceDateTime(order.pickup_date)) %>
-                                                                    </span>
-                                                                    <h6 class="mb-0 fw-bold <%= (String(order.is_picked_up) === '1') ? 'text-success' : 'text-warning' %>" id="timeline_pickup_title">
-                                                                        <i class="fa <%= (String(order.is_picked_up) === '1') ? 'fa-check-circle' : 'fa-clock' %> me-1"></i>
-                                                                        <%= (String(order.is_picked_up) === '1') ? (language.Picked_Up || 'Picked Up from Customer') : (language.Pending_Pickup || 'Awaiting Route Pick-up') %>
-                                                                    </h6>
-                                                                    <p class="mb-0 text-muted fs-12" id="timeline_pickup_desc">
-                                                                        <%= (String(order.is_picked_up) === '1') ? 'Garments collected from customer on route.' : 'Awaiting driver collection on customer route.' %>
-                                                                    </p>
-                                                                </div>
-                                                            </li>
-                                                        <% } %>
+                  <!-- 3. Route Delivery Card -->
+                  <div class="col-12 col-md-4">
+                    <div class="p-3 border rounded-3 bg-white h-100 shadow-xs">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small fw-bold text-uppercase">
+                          <i class="fa fa-truck text-primary me-1"></i> <%= language.Route_Delivery || 'Route Delivery' %>
+                        </span>
+                        <% if (hasDelivery) { %>
+                        <span id="details_delivery_badge" class="badge <%= (String(order.is_delivered) === '1') ? 'bg-success text-white' : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'bg-secondary text-white' : 'bg-primary text-white') %>">
+                          <i class="fa <%= (String(order.is_delivered) === '1') ? 'fa-check-circle' : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'fa-lock' : 'fa-truck') %> me-1"></i>
+                          <%= (String(order.is_delivered) === '1') ? (language.Delivered || 'Delivered') : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'Locked' : (language.Pending || 'Pending Delivery')) %>
+                        </span>
+                        <% } else { %>
+                        <span class="badge bg-light text-dark border">Counter Collection</span>
+                        <% } %>
+                      </div>
 
-                                                        <!-- 3. Cleaning & Ready Target Milestone -->
-                                                        <li>
-                                                            <div class="timeline-badge info"></div>
-                                                            <div class="timeline-panel">
-                                                                <span>Target: <%= formatNiceDateTime(order.ready_date || order.delivery_date) %></span>
-                                                                <h6 class="mb-0 fw-bold text-info">
-                                                                    <i class="fa fa-tshirt me-1"></i> <%= language.Cleaning_Processing || 'Cleaning & Processing' %>
-                                                                </h6>
-                                                                <p class="mb-0 text-muted fs-12">
-                                                                    Status: <span class="badge bg-light text-dark border py-1 px-2 fw-semibold"><%= order.status %></span>
-                                                                </p>
-                                                            </div>
-                                                        </li>
+                      <div class="fw-bold text-dark fs-6 mb-1">
+                        <%= hasDelivery ? formatNiceDateTime(order.delivery_date) : formatNiceDateTime(order.ready_date || order.delivery_date) %>
+                      </div>
+                      <div class="text-muted small mb-2" id="details_delivery_time">
+                        <% if (hasDelivery) { %>
+                        <%= (String(order.is_delivered) === '1') ? ((order.delivered_at ? ('Delivered on ' + formatNiceDateTime(order.delivered_at)) : 'Delivered')) : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'Awaiting customer pick-up' : 'Pending Route Delivery') %>
+                        <% } else { %>
+                        Customer will pick up at counter
+                        <% } %>
+                      </div>
 
-                                                        <!-- 4. Delivery / Counter Collection Milestone -->
-                                                        <% if (hasDelivery) { %>
-                                                            <li>
-                                                                <div class="timeline-badge <%= (String(order.is_delivered) === '1') ? 'success' : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'dark' : 'primary') %>" id="timeline_delivery_badge"></div>
-                                                                <div class="timeline-panel" id="timeline_delivery_panel">
-                                                                    <span id="timeline_delivery_time">
-                                                                        <%= (String(order.is_delivered) === '1' && order.delivered_at) ? formatNiceDateTime(order.delivered_at) : ('Scheduled: ' + formatNiceDateTime(order.delivery_date)) %>
-                                                                    </span>
-                                                                    <h6 class="mb-0 fw-bold <%= (String(order.is_delivered) === '1') ? 'text-success' : 'text-primary' %>" id="timeline_delivery_title">
-                                                                        <i class="fa <%= (String(order.is_delivered) === '1') ? 'fa-check-circle' : 'fa-truck' %> me-1"></i>
-                                                                        <%= (String(order.is_delivered) === '1') ? (language.Delivered || 'Delivered to Customer') : (language.Delivery_Scheduled || 'Route Delivery Scheduled') %>
-                                                                    </h6>
-                                                                    <p class="mb-0 text-muted fs-12" id="timeline_delivery_desc">
-                                                                        <%= (String(order.is_delivered) === '1') ? 'Clean garments delivered to customer.' : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'Awaiting route pick-up first.' : 'Ready for route delivery dispatch.') %>
-                                                                    </p>
-                                                                </div>
-                                                            </li>
-                                                        <% } else { %>
-                                                            <li>
-                                                                <% const isCounterDelivered = (order.order_status == 4 || String(order.status).toLowerCase().includes('delivered')); %>
-                                                                <div class="timeline-badge <%= isCounterDelivered ? 'success' : 'primary' %>"></div>
-                                                                <div class="timeline-panel">
-                                                                    <span><%= isCounterDelivered ? 'Completed' : ('Ready: ' + formatNiceDateTime(order.ready_date || order.delivery_date)) %></span>
-                                                                    <h6 class="mb-0 fw-bold <%= isCounterDelivered ? 'text-success' : 'text-dark' %>">
-                                                                        <i class="fa <%= isCounterDelivered ? 'fa-check-circle text-success' : 'fa-store text-primary' %> me-1"></i>
-                                                                        <%= isCounterDelivered ? 'Collected at Store' : 'Counter Collection' %>
-                                                                    </h6>
-                                                                    <p class="mb-0 text-muted fs-12">
-                                                                        <%= isCounterDelivered ? 'Customer collected order at counter.' : 'Customer will pick up order from store counter.' %>
-                                                                    </p>
-                                                                </div>
-                                                            </li>
-                                                        <% } %>
+                      <% if (hasDelivery && canEditOrder) { %>
+                      <div class="pt-2 border-top mt-2">
+                        <div class="form-check form-switch mb-0">
+                          <input class="form-check-input" type="checkbox" role="switch" id="details_delivery_toggle" style="cursor: pointer;" <%= (String(order.is_delivered) === '1') ? 'checked' : '' %> <%= (isRouteRoute && String(order.is_picked_up) !== '1') ? 'disabled' : '' %>>
+                          <label class="form-check-label fw-bold text-dark small" for="details_delivery_toggle" style="cursor: pointer;">
+                            <%= language.Mark_Delivered || 'Delivered to Customer' %>
+                          </label>
+                        </div>
+                        <div id="details_delivery_gated_note" class="alert alert-warning py-1 px-2 small mt-2 mb-0 <%= (isRouteRoute && String(order.is_picked_up) !== '1') ? '' : 'd-none' %>">
+                          <i class="fa fa-info-circle me-1"></i> Pick-up must be confirmed first.
+                        </div>
+                      </div>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                                                        <!-- 5. Payment Milestones -->
-                                                        <% if (payments && payments.length > 0) { %>
-                                                            <% payments.forEach(function(pay) { %>
-                                                                <% 
+              <div class="table-responsive">
+                <table class="table">
+                  <thead class="table_head">
+                    <tr>
+                      <th>#</th>
+                      <th>
+                        <%= language.Service_Name %>
+                      </th>
+                      <th>
+                        <%= language.Color %>
+                      </th>
+                      <th>
+                        <%= language.Rate %>
+                      </th>
+                      <th>
+                        <%= language.Qty %>
+                      </th>
+                      <th>
+                        <%= language.Total %>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% orderServiceList.forEach(function (data, i){ %>
+                    <tr>
+                      <th>
+                        <%= i+1 %>
+                      </th>
+                      <td>
+                        <div class="d-flex">
+                          <div class="mx-5">
+                            <img class="rounded-circle" width="60" height="60" src="../../uploads/<%= data.service_img %>" alt="image">
+                          </div>
+                          <div class="d-flex flex-column justify-content-center">
+                            <span class="fw-bold">
+                              <%= data.service_name %>
+                              <% if (data.no_of_items && parseInt(data.no_of_items) > 1) { %>
+                              <span class="badge bg-secondary text-white ms-1" style="font-size:0.75rem;"><%= data.no_of_items %> Pcs</span>
+                              <% } %>
+                            </span>
+                            <span class="text-muted small">[<%= data.service_type_name %>]</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td><input type="color" class="p-1 w-75" value="<%= data.service_color %>" disabled></td>
+                      <td class="symbol">
+                        <%= data.service_type_price.toFixed(2) %>
+                      </td>
+                      <td>
+                        <%= data.service_quntity %>
+                      </td>
+                      <td class="symbol">
+                        <%= (data.service_type_price * data.service_quntity).toFixed(2)
+                                                            %>
+                      </td>
+                    </tr>
+                    <% }) %>
+
+
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="card-header">
+
+                <div>
+                  <% if (customer && customer.name && customer.name !='Walk in customer' ) { %>
+                  <h4 class="mb-0">
+                    <%= language.Invoice_To %> :
+                  </h4>
+                  <p class="mb-0">
+                    <%= language.Name %> : <span>
+                      <%= customer.name || '' %>
+                    </span>
+                  </p>
+                  <p class="mb-0">
+                    <%= language.Phone_No %> : <span>
+                      <%= customer.number || '' %>
+                    </span>
+                  </p>
+                  <p class="mb-0">
+                    <%= language.Email %> : <span>
+                      <%= customer.email || '' %>
+                    </span>
+                  </p>
+                  <p class="mb-0 text-break w-100">
+                    <%= language.Address %> : <span>
+                      <%= [customer.address, customer.city, customer.state, customer.zipcode].filter(Boolean).join(', ') %>
+                    </span>
+                  </p>
+                  <p class="mb-0">
+                    <%= language.TAX %> : <span>
+                      <%= customer.taxnumber || '' %>
+                    </span>
+                  </p>
+                  <% } %>
+                </div>
+
+                <div>
+                  <h4>
+                    <%= language.Payment_Details %> :
+                  </h4>
+                  <p class="mb-0">
+                    <span>
+                      <%= language.Sub_Total %> :
+                    </span>
+                    <span class="symbol">
+                      <%=order.sub_total.toFixed(2) %>
+                    </span>
+                  </p>
+                  <p class="mb-0">
+                    <span>
+                      <%= language.Addon %> :
+                    </span>
+                    <span class="symbol">
+                      <%=order.addon_price.toFixed(2) %>
+                    </span>
+                  </p>
+                  <p class="mb-0">
+                    <span>
+                      <%= language.Discount %> :
+                    </span>
+                    <span class="symbol">
+                      <%=order.extra_discount.toFixed(2) %>
+                    </span>
+                  </p>
+                  <p class="mb-0">
+                    <span>
+                      <%= language.Coupon_Discount %> :
+                    </span>
+                    <span class="symbol">
+                      <%=order.coupon_discount.toFixed(2) %>
+                    </span>
+                  </p>
+                  <p class="mb-2">
+                    <span>
+                      <%= language.TAX %> (<%=order.tax %> %) :
+                    </span>
+                    <span class="symbol">
+                      <%=order.tax_amount.toFixed(2) %>
+                    </span>
+                  </p>
+                  <p>
+                    <span><b>
+                        <%= language.Gross_Total %> :
+                      </b></span>
+                    <span><b class="symbol">
+                        <%=order.gross_total.toFixed(2) %>
+                      </b></span>
+                  </p>
+
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <div class="col">
+                  <p>
+                    <%= language.Notes %> :
+                    <span>
+                      <%=order.note %>
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xl-3">
+          <div class="row">
+            <div class="col-xl-12">
+              <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-4">
+                  <% if(addonlist.length> 0){ %>
+                  <h4 class="card-title">
+                    <%= language.Service_Addons %>
+                  </h4>
+                  <ul class="list-group mb-3" style="background-color: #F2F2F2;">
+                    <% addonlist.forEach(function(data){ %>
+                    <li class="list-group-item d-flex px-4 py-1">
+                      <div class="d-flex flex-column">
+                        <span class="text-sm mb-0">
+                          <span>
+                            <%=data.addon %> :
+                          </span>
+                          <span class="symbol">
+                            <%=data.price %>
+                          </span>
+                        </span>
+
+                      </div>
+                    </li>
+                    <% }) %>
+                  </ul>
+                  <% } %>
+                  <h4 class="card-title mb-3 fw-bold text-dark d-flex align-items-center">
+                    <i class="fa fa-history text-primary me-2"></i>
+                    <%= language.Order_Timeline || 'Order Timeline' %>
+                  </h4>
+                  <div id="DZ_W_TimeLine1" class="widget-timeline style-1 ps ps--active-y mb-4">
+                    <ul class="timeline" id="order_lifecycle_timeline">
+                      <!-- 1. Order Placed Milestone -->
+                      <li>
+                        <div class="timeline-badge primary"></div>
+                        <div class="timeline-panel">
+                          <span><%= Order_fullDate %></span>
+                          <h6 class="mb-0 fw-bold text-dark">
+                            <i class="fa fa-receipt text-primary me-1"></i> <%= language.Order_Placed || 'Order Placed' %>
+                          </h6>
+                          <p class="mb-0 text-muted fs-12">
+                            Order #<%= order.order_id %> created.
+                            <span class="d-block">Total: <strong class="symbol text-dark"><%= order.gross_total.toFixed(2) %></strong></span>
+                          </p>
+                        </div>
+                      </li>
+
+                      <!-- 2. Route Pick-up Milestone (if applicable) -->
+                      <% if (hasPickup) { %>
+                      <li>
+                        <div class="timeline-badge <%= (String(order.is_picked_up) === '1') ? 'success' : 'warning' %>" id="timeline_pickup_badge"></div>
+                        <div class="timeline-panel" id="timeline_pickup_panel">
+                          <span id="timeline_pickup_time">
+                            <%= (String(order.is_picked_up) === '1' && order.picked_up_at) ? formatNiceDateTime(order.picked_up_at) : ('Scheduled: ' + formatNiceDateTime(order.pickup_date)) %>
+                          </span>
+                          <h6 class="mb-0 fw-bold <%= (String(order.is_picked_up) === '1') ? 'text-success' : 'text-warning' %>" id="timeline_pickup_title">
+                            <i class="fa <%= (String(order.is_picked_up) === '1') ? 'fa-check-circle' : 'fa-clock' %> me-1"></i>
+                            <%= (String(order.is_picked_up) === '1') ? (language.Picked_Up || 'Picked Up from Customer') : (language.Pending_Pickup || 'Awaiting Route Pick-up') %>
+                          </h6>
+                          <p class="mb-0 text-muted fs-12" id="timeline_pickup_desc">
+                            <%= (String(order.is_picked_up) === '1') ? 'Garments collected from customer on route.' : 'Awaiting driver collection on customer route.' %>
+                          </p>
+                        </div>
+                      </li>
+                      <% } %>
+
+                      <!-- 3. Cleaning & Ready Target Milestone -->
+                      <li>
+                        <div class="timeline-badge info"></div>
+                        <div class="timeline-panel">
+                          <span>Target: <%= formatNiceDateTime(order.ready_date || order.delivery_date) %></span>
+                          <h6 class="mb-0 fw-bold text-info">
+                            <i class="fa fa-tshirt me-1"></i> <%= language.Cleaning_Processing || 'Cleaning & Processing' %>
+                          </h6>
+                          <p class="mb-0 text-muted fs-12">
+                            Status: <span class="badge bg-light text-dark border py-1 px-2 fw-semibold"><%= order.status %></span>
+                          </p>
+                        </div>
+                      </li>
+
+                      <!-- 4. Delivery / Counter Collection Milestone -->
+                      <% if (hasDelivery) { %>
+                      <li>
+                        <div class="timeline-badge <%= (String(order.is_delivered) === '1') ? 'success' : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'dark' : 'primary') %>" id="timeline_delivery_badge"></div>
+                        <div class="timeline-panel" id="timeline_delivery_panel">
+                          <span id="timeline_delivery_time">
+                            <%= (String(order.is_delivered) === '1' && order.delivered_at) ? formatNiceDateTime(order.delivered_at) : ('Scheduled: ' + formatNiceDateTime(order.delivery_date)) %>
+                          </span>
+                          <h6 class="mb-0 fw-bold <%= (String(order.is_delivered) === '1') ? 'text-success' : 'text-primary' %>" id="timeline_delivery_title">
+                            <i class="fa <%= (String(order.is_delivered) === '1') ? 'fa-check-circle' : 'fa-truck' %> me-1"></i>
+                            <%= (String(order.is_delivered) === '1') ? (language.Delivered || 'Delivered to Customer') : (language.Delivery_Scheduled || 'Route Delivery Scheduled') %>
+                          </h6>
+                          <p class="mb-0 text-muted fs-12" id="timeline_delivery_desc">
+                            <%= (String(order.is_delivered) === '1') ? 'Clean garments delivered to customer.' : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'Awaiting route pick-up first.' : 'Ready for route delivery dispatch.') %>
+                          </p>
+                        </div>
+                      </li>
+                      <% } else { %>
+                      <li>
+                        <% const isCounterDelivered = (order.order_status == 4 || String(order.status).toLowerCase().includes('delivered')); %>
+                        <div class="timeline-badge <%= isCounterDelivered ? 'success' : 'primary' %>"></div>
+                        <div class="timeline-panel">
+                          <span><%= isCounterDelivered ? 'Completed' : ('Ready: ' + formatNiceDateTime(order.ready_date || order.delivery_date)) %></span>
+                          <h6 class="mb-0 fw-bold <%= isCounterDelivered ? 'text-success' : 'text-dark' %>">
+                            <i class="fa <%= isCounterDelivered ? 'fa-check-circle text-success' : 'fa-store text-primary' %> me-1"></i>
+                            <%= isCounterDelivered ? 'Collected at Store' : 'Counter Collection' %>
+                          </h6>
+                          <p class="mb-0 text-muted fs-12">
+                            <%= isCounterDelivered ? 'Customer collected order at counter.' : 'Customer will pick up order from store counter.' %>
+                          </p>
+                        </div>
+                      </li>
+                      <% } %>
+
+                      <!-- 5. Payment Milestones -->
+                      <% if (payments && payments.length > 0) { %>
+                      <% payments.forEach(function(pay) { %>
+                      <% 
                                                                     let pDate = new Date(pay.payment_date);
                                                                     let pDay = (pDate.getDate() < 10 ? '0' : '') + pDate.getDate();
                                                                     let pMonth = ((pDate.getMonth() + 1) < 10 ? '0' : '') + (pDate.getMonth() + 1);
                                                                     let pYear = pDate.getFullYear();
                                                                     let pFullDate = `${pYear}-${pMonth}-${pDay}`;
                                                                 %>
-                                                                <li>
-                                                                    <div class="timeline-badge success"></div>
-                                                                    <div class="timeline-panel">
-                                                                        <span><%= pFullDate %></span>
-                                                                        <h6 class="mb-0 fw-bold text-success">
-                                                                            <i class="fa fa-money-bill-wave me-1"></i> <%= language.Paid || 'Paid' %>: <strong class="symbol"><%= pay.payment_amount %></strong>
-                                                                        </h6>
-                                                                        <p class="mb-0 text-muted fs-12">
-                                                                            Account: <strong>[<%= pay.ac_name %>]</strong>
-                                                                        </p>
-                                                                    </div>
-                                                                </li>
-                                                            <% }); %>
-                                                        <% } %>
-                                                    </ul>
-
-
-                                                    <div class="row">
-                                                        <% if (canEditOrder && order.order_status != 6) { %>
-                                                            <div class="col-12">
-                                                                <a href="/admin/edit/<%= order.id %>"
-                                                                    class="btn btn-primary mb-3 w-100">
-                                                                    <i class="fa fa-edit me-2"></i>
-                                                                    <%= language.Edit || 'Edit Order' %>
-                                                                </a>
-                                                            </div>
-                                                        <% } %>
-                                                        <% if (canEditOrder) { %>
-                                                            <div class="col-12">
-                                                                <button data-bs-toggle="modal"
-                                                                    data-bs-target="#addpaymentmodel" type="button"
-                                                                    class="btn btn-primary mb-3 w-100"
-                                                                    <%= order.balance_amount > 0 ? '' : 'disabled' %>>
-                                                                    <i class="fa fa-plus me-2"></i>
-                                                                    <%= language.Add_Payment %>
-                                                                </button>
-                                                            </div>
-                                                        <% } %>
-                                                        <div class="col-12">
-                                                            <a href="/admin/posprint?id=<%= order.id %>&mode=invoice" target="_blank" class="btn btn-info mb-2 w-100">
-                                                                <i class="fa fa-print me-2"></i> <%= language.Print_Invoice %>
-                                                            </a>
-                                                        </div>
-                                                        <div class="col-12">
-                                                            <a href="/admin/posprint?id=<%= order.id %>&mode=tags" target="_blank" class="btn btn-info mb-2 w-100">
-                                                                <i class="fa fa-tags me-2"></i> <%= language.Print_Cloth_Tag || language.Print_Barcode || 'Print Cloth Tag' %>
-                                                            </a>
-                                                        </div>
-                                                        <% if (canDeleteOrder) { %>
-                                                            <div class="col-12">
-                                                                <button type="button" class="btn btn-danger w-100"
-                                                                    data-bs-toggle="modal" data-bs-target="#deleteOrderModal"
-                                                                    data-id="<%= order.id %>" data-orderid="<%= order.order_id %>">
-                                                                    <i class="fa fa-trash me-2"></i> <%= language.Delete_Order || 'Delete Order' %>
-                                                                </button>
-                                                            </div>
-                                                        <% } %>
-                                                    </div>
-                                                </div>
-
-                                    </div>
-                                </div>
-                            </div>
+                      <li>
+                        <div class="timeline-badge success"></div>
+                        <div class="timeline-panel">
+                          <span><%= pFullDate %></span>
+                          <h6 class="mb-0 fw-bold text-success">
+                            <i class="fa fa-money-bill-wave me-1"></i> <%= language.Paid || 'Paid' %>: <strong class="symbol"><%= pay.payment_amount %></strong>
+                          </h6>
+                          <p class="mb-0 text-muted fs-12">
+                            Account: <strong>[<%= pay.ac_name %>]</strong>
+                          </p>
                         </div>
+                      </li>
+                      <% }); %>
+                      <% } %>
+                    </ul>
+
+
+                    <div class="row">
+                      <% if (canEditOrder && order.order_status != 6) { %>
+                      <div class="col-12">
+                        <a href="/admin/edit/<%= order.id %>" class="btn btn-primary mb-3 w-100">
+                          <i class="fa fa-edit me-2"></i>
+                          <%= language.Edit || 'Edit Order' %>
+                        </a>
+                      </div>
+                      <% } %>
+                      <% if (canEditOrder) { %>
+                      <div class="col-12">
+                        <button data-bs-toggle="modal" data-bs-target="#addpaymentmodel" type="button" class="btn btn-primary mb-3 w-100" <%= order.balance_amount > 0 ? '' : 'disabled' %>>
+                          <i class="fa fa-plus me-2"></i>
+                          <%= language.Add_Payment %>
+                        </button>
+                      </div>
+                      <% } %>
+                      <div class="col-12">
+                        <a href="/admin/posprint?id=<%= order.id %>&mode=invoice" target="_blank" class="btn btn-info mb-2 w-100">
+                          <i class="fa fa-print me-2"></i> <%= language.Print_Invoice %>
+                        </a>
+                      </div>
+                      <div class="col-12">
+                        <a href="/admin/posprint?id=<%= order.id %>&mode=tags" target="_blank" class="btn btn-info mb-2 w-100">
+                          <i class="fa fa-tags me-2"></i> <%= language.Print_Cloth_Tag || language.Print_Barcode || 'Print Cloth Tag' %>
+                        </a>
+                      </div>
+                      <% if (canDeleteOrder) { %>
+                      <div class="col-12">
+                        <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#deleteOrderModal" data-id="<%= order.id %>" data-orderid="<%= order.order_id %>">
+                          <i class="fa fa-trash me-2"></i> <%= language.Delete_Order || 'Delete Order' %>
+                        </button>
+                      </div>
+                      <% } %>
                     </div>
-                </div>
-
-            </div>
-
-            <!--********** Content body end **********-->
-
-            <!-- Modal add -->
-            <div class="modal fade" id="addpaymentmodel">
-                <div class="modal-dialog  modal-dialog-scrollable" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">
-                                <%= language.Add_Payment %>
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-
-                        <div class="modal-body">
-                            <form id="add_order_payment" method="post" class="need-validation">
-                                <div class="row g-2 align-items-center">
-                                    <div class=" col-12">
-
-                                        <div class="row mb-50 align-items-center">
-                                            <div class="col text-sm">
-                                                <%= language.Customer_Name %> :
-                                            </div>
-                                            <div class="col-auto text-sm">
-                                                <%= (customer && customer.name) ? customer.name : 'Walk in customer' %>
-                                            </div>
-                                        </div>
-
-                                        <div class="row mb-50 align-items-center">
-                                            <div class="col text-sm">
-                                                <%= language.Order_ID %> :
-                                            </div>
-                                            <div class="col-auto text-sm">
-                                                <%=order.order_id %>
-                                            </div>
-                                        </div>
-
-                                        <div class="row mb-50 align-items-center">
-                                            <div class="col text-sm">
-                                                <%= language.Order_Date %> :
-                                            </div>
-                                            <div class="col-auto text-sm">
-                                                <%=Order_fullDate %>
-                                            </div>
-                                        </div>
-
-                                        <div class="row mb-50 align-items-center">
-                                            <div class="col text-sm">
-                                                <%= orderDateLabel %> :
-                                            </div>
-                                            <div class="col-auto text-sm">
-                                                <%=Delivery_fullDate %>
-                                            </div>
-                                        </div>
-
-                                        <hr>
-
-                                        <div class="row mb-50 align-items-center">
-                                            <div class="col text-sm">
-                                                <%= language.Order_Amount %> :
-                                            </div>
-                                            <div class="col-auto text-sm symbol">
-                                                <%=order.gross_total.toFixed(2) %>
-                                            </div>
-                                        </div>
-
-                                        <div class="row mb-50 align-items-center">
-                                            <div class="col text-sm">
-                                                <%= language.Paid_Amount %> :
-                                            </div>
-                                            <div class="col-auto text-sm symbol">
-                                                <%=order.paid_amount.toFixed(2) %>
-                                            </div>
-                                        </div>
-
-                                        <hr>
-
-                                        <div class="row align-items-center">
-                                            <div class="col text-sm">
-                                                <%= language.Balance %> :
-                                            </div>
-                                            <div class="col-auto text-sm symbol">
-                                                <%=order.balance_amount.toFixed(2) %>
-                                            </div>
-                                        </div>
-
-                                        <hr>
-
-                                        <div class="row align-items-center">
-                                            <div class="col-md-6 mb-1">
-                                                <label class="form-label">
-                                                    <%= language.Paid_Amount %>
-                                                </label>
-                                                <input type="flot" class="form-control" placeholder="Enter Amount"
-                                                    name="paid" value="0">
-                                                <input type="hidden" name="orderid" value="<%=order.id%>">
-                                                <input type="hidden" name="balan" value="<%=order.balance_amount %>">
-                                            </div>
-                                            <div class="col-md-6 mb-1">
-                                                <label class="form-label">
-                                                    <%= language.Payment_Type %>
-                                                </label>
-                                                <select class=" form-control wide" name="payment" id="payment">
-                                                    <option value disabled>Choose Payment Type</option>
-                                                    <% account.forEach(function(data){ %>
-                                                        <option value="<%=data.id %>">
-                                                            <%=data.ac_name %>
-                                                        </option>
-                                                        <% }) %>
-                                                </select>
-
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                        </div>
-
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <i class="fa fa-times me-2"></i><%= language.Cancel %>
-                            </button>
-                            <button type="submit" value="submit" class="btn btn-primary" id="add_order_payment_submit">
-                                <i class="fa fa-save me-2"></i><%= language.Save %>
-                            </button>
-                        </div>
-                        </form>
-
-                    </div>
-
+                  </div>
 
                 </div>
+              </div>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <!-- Modal invoice -->
-            <div class="modal fade" id="invoice">
-                <div class="modal-dialog  modal-dialog-scrollable" role="document">
-                    <div class="modal-content">
-                        <div class="modal-body">
-                            <form action="/order/orderprint" method="post" class="invoice_page" id="invoice_page">
+    </div>
 
+    <!--********** Content body end **********-->
 
-                                <div class="text-center m-3">
-                                    <h3 class="text-uppercase">
-                                        <%=storedata.name.toUpperCase() %>
-                                    </h3>
-                                    <h6>
-                                        <%= language.Phone_Number %> : <%=storedata.mobile_number %>
-                                    </h6>
-                                    <h6>
-                                        <%= language.Email %> : <%=storedata.store_email %>
-                                    </h6>
-                                </div>
+    <!-- Modal add -->
+    <div class="modal fade" id="addpaymentmodel">
+      <div class="modal-dialog  modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <%= language.Add_Payment %>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
 
-                                <hr class="mb-3">
+          <div class="modal-body">
+            <form id="add_order_payment" method="post" class="need-validation">
+              <div class="row g-2 align-items-center">
+                <div class=" col-12">
 
-                                <div class="d-flex m-3 justify-content-between align-items-center">
-
-                                    <div>
-                                        <h5>
-                                            <%= language.Order_ID %> :<%=order.order_id %>
-                                                    <input type="hidden" name="orderid" value="<%=order.order_id %>">
-
-                                        </h5>
-                                        <h5>
-                                            <%= language.Order_Status %> : <%=order.status %>
-                                        </h5>
-                                    </div>
-                                    <div>
-                                        <h5>
-                                            <%= language.Order_Date %> : <%=Order_fullDate %>
-                                        </h5>
-                                        <h5>
-                                            <%= language.Delivery_Date %> : <%=Delivery_fullDate %>
-                                                    <input type="hidden" name="deliverydate"
-                                                        value="<%=Delivery_fullDate %>">
-                                        </h5>
-                                    </div>
-                                </div>
-
-                                <hr class="mt-2">
-
-                                <div class="table-responsive m-3">
-                                    <p class="mb-0">
-                                        <%= language.Service_List %>
-                                    </p>
-                                    <table id="default-datatable" class="display table">
-                                        <thead class="table_head">
-                                            <tr>
-                                                <th>#</th>
-                                                <th>
-                                                    <%= language.Item %>
-                                                </th>
-                                                <th>
-                                                    <%= language.QTY %>
-                                                </th>
-                                                <th>
-                                                    <%= language.Price %>
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="invoice_item" class="align-items-center">
-                                            <% orderServiceList.forEach(function (data, i){ %>
-                                                <tr>
-                                                    <td>
-                                                        <%= i+1 %>
-                                                    </td>
-                                                    <td>
-                                                        <h5 class="mb-0">
-                                                            <%= data.service_name %>
-                                                            <% if (data.no_of_items && parseInt(data.no_of_items) > 1) { %>
-                                                                <span class="badge bg-secondary text-white ms-1" style="font-size:0.75rem;"><%= data.no_of_items %> Pcs</span>
-                                                            <% } %>
-                                                        </h5>
-                                                        <span class="mb-0 fs-6">[<%= data.service_type_name %>] </span>
-                                                        <br>
-                                                    </td>
-                                                    <td>
-                                                        <%= data.service_quntity %>
-                                                    </td>
-                                                    <td class="symbol">
-                                                        <%= data.service_type_price %>
-                                                    </td>
-                                                </tr>
-                                                <% }) %>
-
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <hr>
-                                <% if(addonlist.length> 0){ %>
-                                    <div class="table-responsive m-3">
-                                        <p class="mb-0">
-                                            <%= language.Addons_List %>
-                                        </p>
-                                        <table id="default-datatable" class="display table">
-                                            <thead class="table_head">
-                                                <tr>
-                                                    <th>#</th>
-                                                    <th>
-                                                        <%= language.Addons %>
-                                                    </th>
-                                                    <th>
-                                                        <%= language.Price %>
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="align-items-center">
-                                                <% addonlist.forEach(function(data,i){ %>
-                                                    <tr>
-                                                        <td>
-                                                            <%= i+1 %>
-                                                        </td>
-                                                        <td>
-                                                            <%=data.addon %>
-                                                        </td>
-                                                        <td class="symbol">
-                                                            <%=data.price %>
-                                                        </td>
-                                                    </tr>
-                                                    <% }) %>
-                                            </tbody>
-                                        </table>
-
-                                    </div>
-                                    <hr>
-                                    <% } %>
-
-
-                                        <table class="table table-borderless px-4">
-                                            <tbody>
-                                                <tr>
-                                                    <td class="py-0 ">
-                                                        <%= language.Item_Price %> :
-                                                    </td>
-                                                    <td class="py-0 text-end symbol">
-                                                        <%=order.sub_total.toFixed(2) %>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-0">
-                                                        <%= language.Addons %> :
-                                                    </td>
-                                                    <td class="py-0 text-end symbol">
-                                                        <%=order.addon_price.toFixed(2) %>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-0">
-                                                        <%= language.TAX %> (<%=order.tax %>%) :
-                                                    </td>
-                                                    <td class="py-0 text-end symbol">
-                                                        <%=order.tax_amount.toFixed(2) %>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-0">
-                                                        <%= language.Discount %> :
-                                                    </td>
-                                                    <td class="py-0 text-end symbol">
-                                                        <%=order.extra_discount.toFixed(2) %>
-                                                            <input type="hidden" name="extradiscount"
-                                                                value="<%=order.extra_discount.toFixed(2) %>">
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-0">
-                                                        <%= language.Coupon %> :
-                                                    </td>
-                                                    <td class="py-0 text-end symbol">
-                                                        <%=order.coupon_discount.toFixed(2) %>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-0">
-                                                        <%= language.Total %> :
-                                                    </td>
-                                                    <td class="py-0 text-end symbol">
-                                                        <%=order.gross_total.toFixed(2) %>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-
-                                        <hr>
-
-                                        <div class="m-3">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <h5>
-                                                    <%= language.Paid_Amount %> : <span class="symbol">
-                                                            <%=order.paid_amount.toFixed(2) %>
-                                                        </span>
-                                                        <input type="hidden" name="paid_amount"
-                                                            value="<%=order.paid_amount.toFixed(2) %>">
-                                                </h5>
-                                                <h5>
-                                                    <%= language.Due_Amount %> : <span class="symbol">
-                                                            <%=order.balance_amount.toFixed(2) %>
-                                                        </span>
-                                                </h5>
-                                            </div>
-
-                                        </div>
-
-                                        <% if (customer && customer.name && customer.name !='Walk in customer' ) { %>
-                                            <hr>
-
-                                            <p class="mb-0 px-4">
-                                                <%= language.Invoice_To %>
-                                            </p>
-                                            <table class="table table-borderless px-4">
-                                                <tbody>
-                                                    <tr>
-                                                        <td class="py-0 ">
-                                                            <%= language.Name %> :
-                                                        </td>
-                                                        <td class="py-0 text-end">
-                                                            <%= customer.name || '' %>
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td class="py-0">
-                                                            <%= language.Number %> :
-                                                        </td>
-                                                        <td class="py-0 text-end">
-                                                            <%= customer.number || '' %>
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td class="py-0">
-                                                            <%= language.Email %> :
-                                                        </td>
-                                                        <td class="py-0 text-end">
-                                                            <%= customer.email || '' %>
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td class="py-0">
-                                                            <%= language.Address %> :
-                                                        </td>
-                                                        <td class="py-0 text-end">
-                                                            <%= [customer.address, customer.city, customer.state, customer.zipcode].filter(Boolean).join(', ') %>
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td class="py-0">
-                                                            <%= language.Tax_ID %> :
-                                                        </td>
-                                                        <td class="py-0 text-end">
-                                                            <%= customer.taxnumber || '' %>
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                            <% } %>
-
-                                                <hr>
-
-                                                <div class="d-flex justify-content-start px-4">
-                                                    <%=order.note %>
-                                                        <input type="hidden" value="<%=order.note %>" name="note">
-                                                </div>
-
-                                                <hr>
-
-                                                <div class="d-flex justify-content-center">
-                                                    ******** <%= language.Thank_You %> ********
-                                                </div>
-
-                                                <hr>
-
-                        </div>
-                        <div class="modal-footer">
-                            <footer class="m-3 d-flex justify-content-end gap-2">
-                                <button type="submit" class="btn btn-info" id="pri_invo">
-                                    <i class="fa fa-print me-2"></i><%= language.Print_Invoice %>
-                                </button>
-                                <button type="button" class="btn btn-secondary" onclick="location.reload()">
-                                    <i class="fa fa-arrow-left me-2"></i><%= language.Go_Back %>
-                                </button>
-                            </footer>
-                        </div>
-
-                        </form>
+                  <div class="row mb-50 align-items-center">
+                    <div class="col text-sm">
+                      <%= language.Customer_Name %> :
                     </div>
+                    <div class="col-auto text-sm">
+                      <%= (customer && customer.name) ? customer.name : 'Walk in customer' %>
+                    </div>
+                  </div>
 
+                  <div class="row mb-50 align-items-center">
+                    <div class="col text-sm">
+                      <%= language.Order_ID %> :
+                    </div>
+                    <div class="col-auto text-sm">
+                      <%=order.order_id %>
+                    </div>
+                  </div>
+
+                  <div class="row mb-50 align-items-center">
+                    <div class="col text-sm">
+                      <%= language.Order_Date %> :
+                    </div>
+                    <div class="col-auto text-sm">
+                      <%=Order_fullDate %>
+                    </div>
+                  </div>
+
+                  <div class="row mb-50 align-items-center">
+                    <div class="col text-sm">
+                      <%= orderDateLabel %> :
+                    </div>
+                    <div class="col-auto text-sm">
+                      <%=Delivery_fullDate %>
+                    </div>
+                  </div>
+
+                  <hr>
+
+                  <div class="row mb-50 align-items-center">
+                    <div class="col text-sm">
+                      <%= language.Order_Amount %> :
+                    </div>
+                    <div class="col-auto text-sm symbol">
+                      <%=order.gross_total.toFixed(2) %>
+                    </div>
+                  </div>
+
+                  <div class="row mb-50 align-items-center">
+                    <div class="col text-sm">
+                      <%= language.Paid_Amount %> :
+                    </div>
+                    <div class="col-auto text-sm symbol">
+                      <%=order.paid_amount.toFixed(2) %>
+                    </div>
+                  </div>
+
+                  <hr>
+
+                  <div class="row align-items-center">
+                    <div class="col text-sm">
+                      <%= language.Balance %> :
+                    </div>
+                    <div class="col-auto text-sm symbol">
+                      <%=order.balance_amount.toFixed(2) %>
+                    </div>
+                  </div>
+
+                  <hr>
+
+                  <div class="row align-items-center">
+                    <div class="col-md-6 mb-1">
+                      <label class="form-label">
+                        <%= language.Paid_Amount %>
+                      </label>
+                      <input type="flot" class="form-control" placeholder="Enter Amount" name="paid" value="0">
+                      <input type="hidden" name="orderid" value="<%=order.id%>">
+                      <input type="hidden" name="balan" value="<%=order.balance_amount %>">
+                    </div>
+                    <div class="col-md-6 mb-1">
+                      <label class="form-label">
+                        <%= language.Payment_Type %>
+                      </label>
+                      <select class=" form-control wide" name="payment" id="payment">
+                        <option value disabled>Choose Payment Type</option>
+                        <% account.forEach(function(data){ %>
+                        <option value="<%=data.id %>">
+                          <%=data.ac_name %>
+                        </option>
+                        <% }) %>
+                      </select>
+
+                    </div>
+                  </div>
                 </div>
+              </div>
 
-            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fa fa-times me-2"></i><%= language.Cancel %>
+            </button>
+            <button type="submit" value="submit" class="btn btn-primary" id="add_order_payment_submit">
+              <i class="fa fa-save me-2"></i><%= language.Save %>
+            </button>
+          </div>
+          </form>
 
         </div>
 
-        <!-- Cloth Tag / Barcode Modal -->
-        <div class="modal fade" id="exampleModalLong" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <%= language.Print_Cloth_Tag || language.Barcode || 'Print Cloth Tag' %>
+
+      </div>
+    </div>
+
+    <!-- Modal invoice -->
+    <div class="modal fade" id="invoice">
+      <div class="modal-dialog  modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+          <div class="modal-body">
+            <form action="/order/orderprint" method="post" class="invoice_page" id="invoice_page">
+
+
+              <div class="text-center m-3">
+                <h3 class="text-uppercase">
+                  <%=storedata.name.toUpperCase() %>
+                </h3>
+                <h6>
+                  <%= language.Phone_Number %> : <%=storedata.mobile_number %>
+                </h6>
+                <h6>
+                  <%= language.Email %> : <%=storedata.store_email %>
+                </h6>
+              </div>
+
+              <hr class="mb-3">
+
+              <div class="d-flex m-3 justify-content-between align-items-center">
+
+                <div>
+                  <h5>
+                    <%= language.Order_ID %> :<%=order.order_id %>
+                    <input type="hidden" name="orderid" value="<%=order.order_id %>">
+
+                  </h5>
+                  <h5>
+                    <%= language.Order_Status %> : <%=order.status %>
+                  </h5>
+                </div>
+                <div>
+                  <h5>
+                    <%= language.Order_Date %> : <%=Order_fullDate %>
+                  </h5>
+                  <h5>
+                    <%= language.Delivery_Date %> : <%=Delivery_fullDate %>
+                    <input type="hidden" name="deliverydate" value="<%=Delivery_fullDate %>">
+                  </h5>
+                </div>
+              </div>
+
+              <hr class="mt-2">
+
+              <div class="table-responsive m-3">
+                <p class="mb-0">
+                  <%= language.Service_List %>
+                </p>
+                <table id="default-datatable" class="display table">
+                  <thead class="table_head">
+                    <tr>
+                      <th>#</th>
+                      <th>
+                        <%= language.Item %>
+                      </th>
+                      <th>
+                        <%= language.QTY %>
+                      </th>
+                      <th>
+                        <%= language.Price %>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="invoice_item" class="align-items-center">
+                    <% orderServiceList.forEach(function (data, i){ %>
+                    <tr>
+                      <td>
+                        <%= i+1 %>
+                      </td>
+                      <td>
+                        <h5 class="mb-0">
+                          <%= data.service_name %>
+                          <% if (data.no_of_items && parseInt(data.no_of_items) > 1) { %>
+                          <span class="badge bg-secondary text-white ms-1" style="font-size:0.75rem;"><%= data.no_of_items %> Pcs</span>
+                          <% } %>
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="text-center" id="add_barcode"></div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-info" id="print_label" data-bs-dismiss="modal">
-                            <i class="fa fa-print me-2"></i> <%= language.Print_Cloth_Tag || language.Barcode || 'Print Cloth Tag' %>
-                        </button>
-                    </div>
+                        <span class="mb-0 fs-6">[<%= data.service_type_name %>] </span>
+                        <br>
+                      </td>
+                      <td>
+                        <%= data.service_quntity %>
+                      </td>
+                      <td class="symbol">
+                        <%= data.service_type_price %>
+                      </td>
+                    </tr>
+                    <% }) %>
+
+                  </tbody>
+                </table>
+              </div>
+
+              <hr>
+              <% if(addonlist.length> 0){ %>
+              <div class="table-responsive m-3">
+                <p class="mb-0">
+                  <%= language.Addons_List %>
+                </p>
+                <table id="default-datatable" class="display table">
+                  <thead class="table_head">
+                    <tr>
+                      <th>#</th>
+                      <th>
+                        <%= language.Addons %>
+                      </th>
+                      <th>
+                        <%= language.Price %>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="align-items-center">
+                    <% addonlist.forEach(function(data,i){ %>
+                    <tr>
+                      <td>
+                        <%= i+1 %>
+                      </td>
+                      <td>
+                        <%=data.addon %>
+                      </td>
+                      <td class="symbol">
+                        <%=data.price %>
+                      </td>
+                    </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+
+              </div>
+              <hr>
+              <% } %>
+
+
+              <table class="table table-borderless px-4">
+                <tbody>
+                  <tr>
+                    <td class="py-0 ">
+                      <%= language.Item_Price %> :
+                    </td>
+                    <td class="py-0 text-end symbol">
+                      <%=order.sub_total.toFixed(2) %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Addons %> :
+                    </td>
+                    <td class="py-0 text-end symbol">
+                      <%=order.addon_price.toFixed(2) %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.TAX %> (<%=order.tax %>%) :
+                    </td>
+                    <td class="py-0 text-end symbol">
+                      <%=order.tax_amount.toFixed(2) %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Discount %> :
+                    </td>
+                    <td class="py-0 text-end symbol">
+                      <%=order.extra_discount.toFixed(2) %>
+                      <input type="hidden" name="extradiscount" value="<%=order.extra_discount.toFixed(2) %>">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Coupon %> :
+                    </td>
+                    <td class="py-0 text-end symbol">
+                      <%=order.coupon_discount.toFixed(2) %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Total %> :
+                    </td>
+                    <td class="py-0 text-end symbol">
+                      <%=order.gross_total.toFixed(2) %>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr>
+
+              <div class="m-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <h5>
+                    <%= language.Paid_Amount %> : <span class="symbol">
+                      <%=order.paid_amount.toFixed(2) %>
+                    </span>
+                    <input type="hidden" name="paid_amount" value="<%=order.paid_amount.toFixed(2) %>">
+                  </h5>
+                  <h5>
+                    <%= language.Due_Amount %> : <span class="symbol">
+                      <%=order.balance_amount.toFixed(2) %>
+                    </span>
+                  </h5>
                 </div>
-            </div>
+
+              </div>
+
+              <% if (customer && customer.name && customer.name !='Walk in customer' ) { %>
+              <hr>
+
+              <p class="mb-0 px-4">
+                <%= language.Invoice_To %>
+              </p>
+              <table class="table table-borderless px-4">
+                <tbody>
+                  <tr>
+                    <td class="py-0 ">
+                      <%= language.Name %> :
+                    </td>
+                    <td class="py-0 text-end">
+                      <%= customer.name || '' %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Number %> :
+                    </td>
+                    <td class="py-0 text-end">
+                      <%= customer.number || '' %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Email %> :
+                    </td>
+                    <td class="py-0 text-end">
+                      <%= customer.email || '' %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Address %> :
+                    </td>
+                    <td class="py-0 text-end">
+                      <%= [customer.address, customer.city, customer.state, customer.zipcode].filter(Boolean).join(', ') %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Tax_ID %> :
+                    </td>
+                    <td class="py-0 text-end">
+                      <%= customer.taxnumber || '' %>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <% } %>
+
+              <hr>
+
+              <div class="d-flex justify-content-start px-4">
+                <%=order.note %>
+                <input type="hidden" value="<%=order.note %>" name="note">
+              </div>
+
+              <hr>
+
+              <div class="d-flex justify-content-center">
+                ******** <%= language.Thank_You %> ********
+              </div>
+
+              <hr>
+
+          </div>
+          <div class="modal-footer">
+            <footer class="m-3 d-flex justify-content-end gap-2">
+              <button type="submit" class="btn btn-info" id="pri_invo">
+                <i class="fa fa-print me-2"></i><%= language.Print_Invoice %>
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="location.reload()">
+                <i class="fa fa-arrow-left me-2"></i><%= language.Go_Back %>
+              </button>
+            </footer>
+          </div>
+
+          </form>
         </div>
 
-        <!-- Delete Order Confirmation Modal -->
-        <% if (canDeleteOrder) { %>
-        <div class="modal fade" id="deleteOrderModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
-                <div class="modal-content text-center p-3" style="border-radius: 16px;">
-                    <div class="modal-body pt-4">
-                        <div class="mb-3">
-                            <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; justify-content: center; color: #ef4444; font-size: 28px;">
-                                <i class="fa fa-exclamation-triangle"></i>
-                            </div>
-                        </div>
-                        <h4 class="mb-2 fw-bold text-dark"><%= language.Delete_Order || 'Delete Order' %></h4>
-                        <p class="text-muted mb-1"><%= language.Are_you_sure_delete || 'Are you sure you want to delete this order?' %></p>
-                        <p class="fw-bold text-danger fs-5 mb-3"><%= order.order_id %></p>
-                        <p class="text-xs text-muted mb-4"><%= language.Action_cannot_be_undone || 'This action will remove the order, related payments, and ledger transactions permanently.' %></p>
-                        <div class="d-flex gap-2 justify-content-center">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
-                            </button>
-                            <a href="/order/delete/<%= order.id %>" class="btn btn-danger">
-                                <i class="fa fa-trash me-2"></i> <%= language.Delete || 'Yes, Delete' %>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <% } %>
+      </div>
 
-        <!-- Transfer Store Modal (Step 1: Select Active Store) -->
-        <div class="modal fade" id="transferStoreModal" tabindex="-1" aria-labelledby="transferStoreModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title fw-bold" id="transferStoreModalLabel">
-                            <i class="fas fa-truck-moving text-primary me-2"></i>Deliver to Store
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="text-muted fs-13 mb-3">
-                            Select the destination store where you want to transfer order <strong class="text-dark"><%= order.order_id %></strong>:
-                        </p>
-                        <% if (typeof availableStores !== 'undefined' && availableStores && availableStores.length > 0) { %>
-                            <div class="list-group gap-2">
-                                <% availableStores.forEach(function(store, idx) { %>
-                                    <label class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3 border rounded cursor-pointer mb-0">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <input class="form-check-input flex-shrink-0 m-0" type="radio" name="target_store_radio" id="store_radio_<%= store.id %>" value="<%= store.id %>" data-store-name="<%= store.name %>" <%= idx === 0 ? 'checked' : '' %>>
-                                            <div>
-                                                <div class="fw-bold text-dark"><%= store.name %></div>
-                                                <div class="text-muted fs-12">
-                                                    <% if (store.city) { %>
-                                                        <i class="fas fa-map-marker-alt me-1 text-secondary"></i><%= store.city %>
-                                                    <% } %>
-                                                    <% if (store.mobile_number) { %>
-                                                        <span class="ms-2"><i class="fas fa-phone me-1 text-secondary"></i><%= store.mobile_number %></span>
-                                                    <% } %>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <span class="badge bg-light text-primary border">Store #<%= store.id %></span>
-                                    </label>
-                                <% }); %>
-                            </div>
-                        <% } else { %>
-                            <div class="alert alert-warning d-flex align-items-center mb-0" role="alert">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                <div>No other active stores available to transfer this order.</div>
-                            </div>
-                        <% } %>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
-                        </button>
-                        <button type="button" class="btn btn-primary" id="btnProceedTransfer" onclick="proceedToTransferConfirm()" <%= (typeof availableStores !== 'undefined' && availableStores && availableStores.length > 0) ? '' : 'disabled' %>>
-                            <i class="fa fa-arrow-right me-2"></i><%= language.OK || 'OK' %>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    </div>
 
-        <!-- Confirm Transfer Modal (Step 2: Confirmation Warning) -->
-        <div class="modal fade" id="confirmTransferModal" tabindex="-1" aria-labelledby="confirmTransferModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
-                <div class="modal-content text-center p-3">
-                    <div class="modal-body pt-3 pb-2">
-                        <div class="mb-3">
-                            <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); display: inline-flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 26px;">
-                                <i class="fas fa-exchange-alt"></i>
-                            </div>
-                        </div>
-                        <h4 class="mb-2 fw-bold text-dark">Confirm Order Transfer</h4>
-                        <div class="alert alert-warning text-start mb-3 py-2 px-3 fs-13">
-                            <i class="fas fa-info-circle me-1"></i> this order will tranfer to other store and will not show here
-                        </div>
-                        <div class="p-3 bg-light rounded text-start mb-3">
-                            <div class="d-flex justify-content-between mb-1 fs-13">
-                                <span class="text-muted">Order ID:</span>
-                                <strong class="text-dark"><%= order.order_id %></strong>
-                            </div>
-                            <div class="d-flex justify-content-between fs-13">
-                                <span class="text-muted">Destination Store:</span>
-                                <strong class="text-primary" id="confirmTargetStoreName">-</strong>
-                            </div>
-                        </div>
-                        <div class="d-flex gap-2 justify-content-center">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
-                            </button>
-                            <button type="button" class="btn btn-primary" id="btnExecuteTransfer" onclick="executeOrderTransfer()">
-                                <i class="fa fa-check me-2"></i> Confirm Transfer
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  </div>
 
-        <!--**********************************
+  <!-- Cloth Tag / Barcode Modal -->
+  <div class="modal fade" id="exampleModalLong" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <%= language.Print_Cloth_Tag || language.Barcode || 'Print Cloth Tag' %>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="text-center" id="add_barcode"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-info" id="print_label" data-bs-dismiss="modal">
+            <i class="fa fa-print me-2"></i> <%= language.Print_Cloth_Tag || language.Barcode || 'Print Cloth Tag' %>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Order Confirmation Modal -->
+  <% if (canDeleteOrder) { %>
+  <div class="modal fade" id="deleteOrderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+      <div class="modal-content text-center p-3" style="border-radius: 16px;">
+        <div class="modal-body pt-4">
+          <div class="mb-3">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; justify-content: center; color: #ef4444; font-size: 28px;">
+              <i class="fa fa-exclamation-triangle"></i>
+            </div>
+          </div>
+          <h4 class="mb-2 fw-bold text-dark"><%= language.Delete_Order || 'Delete Order' %></h4>
+          <p class="text-muted mb-1"><%= language.Are_you_sure_delete || 'Are you sure you want to delete this order?' %></p>
+          <p class="fw-bold text-danger fs-5 mb-3"><%= order.order_id %></p>
+          <p class="text-xs text-muted mb-4"><%= language.Action_cannot_be_undone || 'This action will remove the order, related payments, and ledger transactions permanently.' %></p>
+          <div class="d-flex gap-2 justify-content-center">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+            </button>
+            <a href="/order/delete/<%= order.id %>" class="btn btn-danger">
+              <i class="fa fa-trash me-2"></i> <%= language.Delete || 'Yes, Delete' %>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Transfer Store Modal (Step 1: Select Active Store) -->
+  <div class="modal fade" id="transferStoreModal" tabindex="-1" aria-labelledby="transferStoreModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="transferStoreModalLabel">
+            <i class="fas fa-truck-moving text-primary me-2"></i>Deliver to Store
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted fs-13 mb-3">
+            Select the destination store where you want to transfer order <strong class="text-dark"><%= order.order_id %></strong>:
+          </p>
+          <% if (typeof availableStores !== 'undefined' && availableStores && availableStores.length > 0) { %>
+          <div class="list-group gap-2">
+            <% availableStores.forEach(function(store, idx) { %>
+            <label class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3 border rounded cursor-pointer mb-0">
+              <div class="d-flex align-items-center gap-3">
+                <input class="form-check-input flex-shrink-0 m-0" type="radio" name="target_store_radio" id="store_radio_<%= store.id %>" value="<%= store.id %>" data-store-name="<%= store.name %>" <%= idx === 0 ? 'checked' : '' %>>
+                <div>
+                  <div class="fw-bold text-dark"><%= store.name %></div>
+                  <div class="text-muted fs-12">
+                    <% if (store.city) { %>
+                    <i class="fas fa-map-marker-alt me-1 text-secondary"></i><%= store.city %>
+                    <% } %>
+                    <% if (store.mobile_number) { %>
+                    <span class="ms-2"><i class="fas fa-phone me-1 text-secondary"></i><%= store.mobile_number %></span>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+              <span class="badge bg-light text-primary border">Store #<%= store.id %></span>
+            </label>
+            <% }); %>
+          </div>
+          <% } else { %>
+          <div class="alert alert-warning d-flex align-items-center mb-0" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <div>No other active stores available to transfer this order.</div>
+          </div>
+          <% } %>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+          </button>
+          <button type="button" class="btn btn-primary" id="btnProceedTransfer" onclick="proceedToTransferConfirm()" <%= (typeof availableStores !== 'undefined' && availableStores && availableStores.length > 0) ? '' : 'disabled' %>>
+            <i class="fa fa-arrow-right me-2"></i><%= language.OK || 'OK' %>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Transfer Modal (Step 2: Confirmation Warning) -->
+  <div class="modal fade" id="confirmTransferModal" tabindex="-1" aria-labelledby="confirmTransferModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+      <div class="modal-content text-center p-3">
+        <div class="modal-body pt-3 pb-2">
+          <div class="mb-3">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); display: inline-flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 26px;">
+              <i class="fas fa-exchange-alt"></i>
+            </div>
+          </div>
+          <h4 class="mb-2 fw-bold text-dark">Confirm Order Transfer</h4>
+          <div class="alert alert-warning text-start mb-3 py-2 px-3 fs-13">
+            <i class="fas fa-info-circle me-1"></i> this order will tranfer to other store and will not show here
+          </div>
+          <div class="p-3 bg-light rounded text-start mb-3">
+            <div class="d-flex justify-content-between mb-1 fs-13">
+              <span class="text-muted">Order ID:</span>
+              <strong class="text-dark"><%= order.order_id %></strong>
+            </div>
+            <div class="d-flex justify-content-between fs-13">
+              <span class="text-muted">Destination Store:</span>
+              <strong class="text-primary" id="confirmTargetStoreName">-</strong>
+            </div>
+          </div>
+          <div class="d-flex gap-2 justify-content-center">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+            </button>
+            <button type="button" class="btn btn-primary" id="btnExecuteTransfer" onclick="executeOrderTransfer()">
+              <i class="fa fa-check me-2"></i> Confirm Transfer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!--**********************************
             Footer start
         ***********************************-->
-        <%- include('templet/footer')-%>
+  <%- include('templet/footer')-%>
 
-            <!--**********************************
+  <!--**********************************
             Footer end
         ***********************************-->
 
-            </div>
+  </div>
 
-            <!--********** Main wrapper end **********-->
-            <%- include('templet/script')-%>
-                <script>
-                    $('#addpaymentmodel').on('shown.bs.modal', function () {
+  <!--********** Main wrapper end **********-->
+  <%- include('templet/script')-%>
+  <script>
+    $('#addpaymentmodel').on('shown.bs.modal', function() {
 
-                        $('#payment').select2({
-                            dropdownParent: $('#addpaymentmodel'),
-                            placeholder: 'Select account(a)',
-                            width: '100%',
-                            allowClear: true
-                        });
-                    });
+      $('#payment').select2({
+        dropdownParent: $('#addpaymentmodel'),
+        placeholder: 'Select account(a)',
+        width: '100%',
+        allowClear: true
+      });
+    });
 
-                    // Dispatch & Route Status Interactive Toggles
-                    $('#details_pickup_toggle').on('change', function () {
-                        const $sw = $(this);
-                        const isChecked = this.checked;
-                        const newStatus = isChecked ? '1' : '0';
-                        $sw.prop('disabled', true);
+    // Dispatch & Route Status Interactive Toggles
+    $('#details_pickup_toggle').on('change', function() {
+      const $sw = $(this);
+      const isChecked = this.checked;
+      const newStatus = isChecked ? '1' : '0';
+      $sw.prop('disabled', true);
 
-                        $.ajax({
-                            url: '/order/calendar/toggle-status',
-                            type: 'POST',
-                            contentType: 'application/json',
-                            data: JSON.stringify({
-                                order_id: '<%= order.id %>',
-                                field: 'pickup',
-                                status: newStatus
-                            }),
-                            success: function (res) {
-                                $sw.prop('disabled', false);
-                                if (res.success) {
-                                    const pickedUp = (res.is_picked_up === '1');
-                                    if (pickedUp) {
-                                        $('#details_pickup_badge').removeClass('bg-secondary bg-warning text-dark').addClass('bg-success text-white').html('<i class="fa fa-check-circle me-1"></i> Picked Up');
-                                        $('#details_pickup_time').text(res.picked_up_at ? ('Picked up on ' + res.picked_up_at) : 'Picked Up');
-                                    } else {
-                                        $('#details_pickup_badge').removeClass('bg-success text-white').addClass('bg-warning text-dark').html('<i class="fa fa-clock me-1"></i> Pending Pick-up');
-                                        $('#details_pickup_time').text('Pending Route Pick-up');
-                                    }
+      $.ajax({
+        url: '/order/calendar/toggle-status',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+          order_id: '<%= order.id %>',
+          field: 'pickup',
+          status: newStatus
+        }),
+        success: function(res) {
+          $sw.prop('disabled', false);
+          if (res.success) {
+            const pickedUp = (res.is_picked_up === '1');
+            if (pickedUp) {
+              $('#details_pickup_badge').removeClass('bg-secondary bg-warning text-dark').addClass('bg-success text-white').html('<i class="fa fa-check-circle me-1"></i> Picked Up');
+              $('#details_pickup_time').text(res.picked_up_at ? ('Picked up on ' + res.picked_up_at) : 'Picked Up');
+            } else {
+              $('#details_pickup_badge').removeClass('bg-success text-white').addClass('bg-warning text-dark').html('<i class="fa fa-clock me-1"></i> Pending Pick-up');
+              $('#details_pickup_time').text('Pending Route Pick-up');
+            }
 
-                                    <% if (isRouteRoute) { %>
-                                        if (!pickedUp) {
-                                            $('#details_delivery_toggle').prop('checked', false).prop('disabled', true);
-                                            $('#details_delivery_badge').removeClass('bg-success text-white').addClass('bg-secondary text-white').html('<i class="fa fa-lock me-1"></i> Locked');
-                                            $('#details_delivery_time').text('Awaiting customer pick-up');
-                                            $('#details_delivery_gated_note').removeClass('d-none');
-                                            updateTimelineDelivery(false, null);
-                                        } else {
-                                            $('#details_delivery_toggle').prop('disabled', false);
-                                            $('#details_delivery_gated_note').addClass('d-none');
-                                            if (!$('#details_delivery_toggle').is(':checked')) {
-                                                $('#details_delivery_badge').removeClass('bg-success text-white bg-secondary').addClass('bg-primary text-white').html('<i class="fa fa-clock me-1"></i> Pending Delivery');
-                                                $('#details_delivery_time').text('Pending Route Delivery');
-                                            }
-                                        }
-                                    <% } %>
+            <% if (isRouteRoute) { %>
+            if (!pickedUp) {
+              $('#details_delivery_toggle').prop('checked', false).prop('disabled', true);
+              $('#details_delivery_badge').removeClass('bg-success text-white').addClass('bg-secondary text-white').html('<i class="fa fa-lock me-1"></i> Locked');
+              $('#details_delivery_time').text('Awaiting customer pick-up');
+              $('#details_delivery_gated_note').removeClass('d-none');
+              updateTimelineDelivery(false, null);
+            } else {
+              $('#details_delivery_toggle').prop('disabled', false);
+              $('#details_delivery_gated_note').addClass('d-none');
+              if (!$('#details_delivery_toggle').is(':checked')) {
+                $('#details_delivery_badge').removeClass('bg-success text-white bg-secondary').addClass('bg-primary text-white').html('<i class="fa fa-clock me-1"></i> Pending Delivery');
+                $('#details_delivery_time').text('Pending Route Delivery');
+              }
+            }
+            <% } %>
 
-                                    updateTimelinePickup(pickedUp, res.picked_up_at);
-                                    if (typeof toastr !== 'undefined') toastr.success(res.message);
-                                } else {
-                                    $sw.prop('checked', !isChecked);
-                                    if (typeof toastr !== 'undefined') toastr.error(res.message);
-                                }
-                            },
-                            error: function (xhr) {
-                                $sw.prop('disabled', false);
-                                $sw.prop('checked', !isChecked);
-                                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error updating pick-up status.';
-                                if (typeof toastr !== 'undefined') toastr.error(msg);
-                            }
-                        });
-                    });
+            updateTimelinePickup(pickedUp, res.picked_up_at);
+            if (typeof toastr !== 'undefined') toastr.success(res.message);
+          } else {
+            $sw.prop('checked', !isChecked);
+            if (typeof toastr !== 'undefined') toastr.error(res.message);
+          }
+        },
+        error: function(xhr) {
+          $sw.prop('disabled', false);
+          $sw.prop('checked', !isChecked);
+          const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error updating pick-up status.';
+          if (typeof toastr !== 'undefined') toastr.error(msg);
+        }
+      });
+    });
 
-                    $('#details_delivery_toggle').on('change', function () {
-                        const $sw = $(this);
-                        const isChecked = this.checked;
-                        const newStatus = isChecked ? '1' : '0';
-                        $sw.prop('disabled', true);
+    $('#details_delivery_toggle').on('change', function() {
+      const $sw = $(this);
+      const isChecked = this.checked;
+      const newStatus = isChecked ? '1' : '0';
+      $sw.prop('disabled', true);
 
-                        $.ajax({
-                            url: '/order/calendar/toggle-status',
-                            type: 'POST',
-                            contentType: 'application/json',
-                            data: JSON.stringify({
-                                order_id: '<%= order.id %>',
-                                field: 'delivery',
-                                status: newStatus
-                            }),
-                            success: function (res) {
-                                $sw.prop('disabled', false);
-                                if (res.success) {
-                                    const delivered = (res.is_delivered === '1');
-                                    if (delivered) {
-                                        $('#details_delivery_badge').removeClass('bg-secondary bg-primary text-white').addClass('bg-success text-white').html('<i class="fa fa-check-circle me-1"></i> Delivered');
-                                        $('#details_delivery_time').text(res.delivered_at ? ('Delivered on ' + res.delivered_at) : 'Delivered');
-                                    } else {
-                                        $('#details_delivery_badge').removeClass('bg-success text-white bg-secondary').addClass('bg-primary text-white').html('<i class="fa fa-clock me-1"></i> Pending Delivery');
-                                        $('#details_delivery_time').text('Pending Route Delivery');
-                                    }
+      $.ajax({
+        url: '/order/calendar/toggle-status',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+          order_id: '<%= order.id %>',
+          field: 'delivery',
+          status: newStatus
+        }),
+        success: function(res) {
+          $sw.prop('disabled', false);
+          if (res.success) {
+            const delivered = (res.is_delivered === '1');
+            if (delivered) {
+              $('#details_delivery_badge').removeClass('bg-secondary bg-primary text-white').addClass('bg-success text-white').html('<i class="fa fa-check-circle me-1"></i> Delivered');
+              $('#details_delivery_time').text(res.delivered_at ? ('Delivered on ' + res.delivered_at) : 'Delivered');
+            } else {
+              $('#details_delivery_badge').removeClass('bg-success text-white bg-secondary').addClass('bg-primary text-white').html('<i class="fa fa-clock me-1"></i> Pending Delivery');
+              $('#details_delivery_time').text('Pending Route Delivery');
+            }
 
-                                    updateTimelineDelivery(delivered, res.delivered_at);
-                                    if (typeof toastr !== 'undefined') toastr.success(res.message);
-                                } else {
-                                    $sw.prop('checked', !isChecked);
-                                    if (typeof toastr !== 'undefined') toastr.error(res.message);
-                                }
-                            },
-                            error: function (xhr) {
-                                $sw.prop('disabled', false);
-                                $sw.prop('checked', !isChecked);
-                                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error updating delivery status.';
-                                if (typeof toastr !== 'undefined') toastr.error(msg);
-                            }
-                        });
-                    });
+            updateTimelineDelivery(delivered, res.delivered_at);
+            if (typeof toastr !== 'undefined') toastr.success(res.message);
+          } else {
+            $sw.prop('checked', !isChecked);
+            if (typeof toastr !== 'undefined') toastr.error(res.message);
+          }
+        },
+        error: function(xhr) {
+          $sw.prop('disabled', false);
+          $sw.prop('checked', !isChecked);
+          const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error updating delivery status.';
+          if (typeof toastr !== 'undefined') toastr.error(msg);
+        }
+      });
+    });
 
-                    function updateTimelinePickup(isPicked, timestamp) {
-                        const $badge = $('#timeline_pickup_badge');
-                        const $time = $('#timeline_pickup_time');
-                        const $title = $('#timeline_pickup_title');
-                        const $desc = $('#timeline_pickup_desc');
+    function updateTimelinePickup(isPicked, timestamp) {
+      const $badge = $('#timeline_pickup_badge');
+      const $time = $('#timeline_pickup_time');
+      const $title = $('#timeline_pickup_title');
+      const $desc = $('#timeline_pickup_desc');
 
-                        if (isPicked) {
-                            $badge.removeClass('warning dark').addClass('success');
-                            $time.text(timestamp || 'Picked Up');
-                            $title.removeClass('text-warning text-muted').addClass('text-success')
-                                  .html('<i class="fa fa-check-circle me-1"></i> <%= language.Picked_Up || "Picked Up from Customer" %>');
-                            $desc.text('Garments collected from customer on route.');
-                        } else {
-                            $badge.removeClass('success dark').addClass('warning');
-                            $time.text('Scheduled: <%= formatNiceDateTime(order.pickup_date) %>');
-                            $title.removeClass('text-success text-muted').addClass('text-warning')
-                                  .html('<i class="fa fa-clock me-1"></i> <%= language.Pending_Pickup || "Awaiting Route Pick-up" %>');
-                            $desc.text('Awaiting driver collection on customer route.');
-                        }
-                    }
+      if (isPicked) {
+        $badge.removeClass('warning dark').addClass('success');
+        $time.text(timestamp || 'Picked Up');
+        $title.removeClass('text-warning text-muted').addClass('text-success')
+          .html('<i class="fa fa-check-circle me-1"></i> <%= language.Picked_Up || "Picked Up from Customer" %>');
+        $desc.text('Garments collected from customer on route.');
+      } else {
+        $badge.removeClass('success dark').addClass('warning');
+        $time.text('Scheduled: <%= formatNiceDateTime(order.pickup_date) %>');
+        $title.removeClass('text-success text-muted').addClass('text-warning')
+          .html('<i class="fa fa-clock me-1"></i> <%= language.Pending_Pickup || "Awaiting Route Pick-up" %>');
+        $desc.text('Awaiting driver collection on customer route.');
+      }
+    }
 
-                    function updateTimelineDelivery(isDeliv, timestamp) {
-                        const $badge = $('#timeline_delivery_badge');
-                        const $time = $('#timeline_delivery_time');
-                        const $title = $('#timeline_delivery_title');
-                        const $desc = $('#timeline_delivery_desc');
+    function updateTimelineDelivery(isDeliv, timestamp) {
+      const $badge = $('#timeline_delivery_badge');
+      const $time = $('#timeline_delivery_time');
+      const $title = $('#timeline_delivery_title');
+      const $desc = $('#timeline_delivery_desc');
 
-                        if (isDeliv) {
-                            $badge.removeClass('primary dark warning').addClass('success');
-                            $time.text(timestamp || 'Delivered');
-                            $title.removeClass('text-primary text-muted').addClass('text-success')
-                                  .html('<i class="fa fa-check-circle me-1"></i> <%= language.Delivered || "Delivered to Customer" %>');
-                            $desc.text('Clean garments delivered to customer.');
-                        } else {
-                            <% if (isRouteRoute) { %>
-                                const isPicked = $('#details_pickup_toggle').is(':checked');
-                                if (!isPicked) {
-                                    $badge.removeClass('success primary warning').addClass('dark');
-                                    $time.text('Scheduled: <%= formatNiceDateTime(order.delivery_date) %>');
-                                    $title.removeClass('text-success text-primary').addClass('text-muted')
-                                          .html('<i class="fa fa-lock me-1"></i> Delivery Gated');
-                                    $desc.text('Awaiting route pick-up first.');
-                                    return;
-                                }
-                            <% } %>
-                            $badge.removeClass('success dark warning').addClass('primary');
-                            $time.text('Scheduled: <%= formatNiceDateTime(order.delivery_date) %>');
-                            $title.removeClass('text-success text-muted').addClass('text-primary')
-                                  .html('<i class="fa fa-truck me-1"></i> <%= language.Delivery_Scheduled || "Route Delivery Scheduled" %>');
-                            $desc.text('Ready for route delivery dispatch.');
-                        }
-                    }
+      if (isDeliv) {
+        $badge.removeClass('primary dark warning').addClass('success');
+        $time.text(timestamp || 'Delivered');
+        $title.removeClass('text-primary text-muted').addClass('text-success')
+          .html('<i class="fa fa-check-circle me-1"></i> <%= language.Delivered || "Delivered to Customer" %>');
+        $desc.text('Clean garments delivered to customer.');
+      } else {
+        <% if (isRouteRoute) { %>
+        const isPicked = $('#details_pickup_toggle').is(':checked');
+        if (!isPicked) {
+          $badge.removeClass('success primary warning').addClass('dark');
+          $time.text('Scheduled: <%= formatNiceDateTime(order.delivery_date) %>');
+          $title.removeClass('text-success text-primary').addClass('text-muted')
+            .html('<i class="fa fa-lock me-1"></i> Delivery Gated');
+          $desc.text('Awaiting route pick-up first.');
+          return;
+        }
+        <% } %>
+        $badge.removeClass('success dark warning').addClass('primary');
+        $time.text('Scheduled: <%= formatNiceDateTime(order.delivery_date) %>');
+        $title.removeClass('text-success text-muted').addClass('text-primary')
+          .html('<i class="fa fa-truck me-1"></i> <%= language.Delivery_Scheduled || "Route Delivery Scheduled" %>');
+        $desc.text('Ready for route delivery dispatch.');
+      }
+    }
 
-                    // Real-Time SSE Listener
-                    if (window.EventSource) {
-                        const sse = new EventSource('/order/calendar/stream');
-                        sse.onmessage = function (e) {
-                            try {
-                                const data = JSON.parse(e.data);
-                                if (data.type === 'connected') return;
-                                if (data.order_id && String(data.order_id) === '<%= order.id %>' && data.action === 'status_changed') {
-                                    if (data.field === 'pickup') {
-                                        const picked = (data.status === '1');
-                                        $('#details_pickup_toggle').prop('checked', picked);
-                                        if (picked) {
-                                            $('#details_pickup_badge').removeClass('bg-secondary bg-warning text-dark').addClass('bg-success text-white').html('<i class="fa fa-check-circle me-1"></i> Picked Up');
-                                            $('#details_pickup_time').text('Picked Up');
-                                        } else {
-                                            $('#details_pickup_badge').removeClass('bg-success text-white').addClass('bg-warning text-dark').html('<i class="fa fa-clock me-1"></i> Pending Pick-up');
-                                            $('#details_pickup_time').text('Pending Route Pick-up');
-                                        }
-                                        <% if (isRouteRoute) { %>
-                                            if (!picked) {
-                                                $('#details_delivery_toggle').prop('checked', false).prop('disabled', true);
-                                                $('#details_delivery_badge').removeClass('bg-success text-white').addClass('bg-secondary text-white').html('<i class="fa fa-lock me-1"></i> Locked');
-                                                $('#details_delivery_time').text('Awaiting customer pick-up');
-                                                $('#details_delivery_gated_note').removeClass('d-none');
-                                                updateTimelineDelivery(false, null);
-                                            } else {
-                                                $('#details_delivery_toggle').prop('disabled', false);
-                                                $('#details_delivery_gated_note').addClass('d-none');
-                                            }
-                                        <% } %>
-                                        updateTimelinePickup(picked, null);
-                                    } else if (data.field === 'delivery') {
-                                        const delivered = (data.status === '1');
-                                        $('#details_delivery_toggle').prop('checked', delivered);
-                                        if (delivered) {
-                                            $('#details_delivery_badge').removeClass('bg-secondary bg-primary text-white').addClass('bg-success text-white').html('<i class="fa fa-check-circle me-1"></i> Delivered');
-                                            $('#details_delivery_time').text('Delivered');
-                                        } else {
-                                            $('#details_delivery_badge').removeClass('bg-success text-white bg-secondary').addClass('bg-primary text-white').html('<i class="fa fa-clock me-1"></i> Pending Delivery');
-                                            $('#details_delivery_time').text('Pending Route Delivery');
-                                        }
-                                        updateTimelineDelivery(delivered, null);
-                                    }
-                                }
-                            } catch (err) {
-                                console.error('SSE sync error:', err);
-                            }
-                        };
-                    }
+    // Real-Time SSE Listener
+    if (window.EventSource) {
+      const sse = new EventSource('/order/calendar/stream');
+      sse.onmessage = function(e) {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.type === 'connected') return;
+          if (data.order_id && String(data.order_id) === '<%= order.id %>' && data.action === 'status_changed') {
+            if (data.field === 'pickup') {
+              const picked = (data.status === '1');
+              $('#details_pickup_toggle').prop('checked', picked);
+              if (picked) {
+                $('#details_pickup_badge').removeClass('bg-secondary bg-warning text-dark').addClass('bg-success text-white').html('<i class="fa fa-check-circle me-1"></i> Picked Up');
+                $('#details_pickup_time').text('Picked Up');
+              } else {
+                $('#details_pickup_badge').removeClass('bg-success text-white').addClass('bg-warning text-dark').html('<i class="fa fa-clock me-1"></i> Pending Pick-up');
+                $('#details_pickup_time').text('Pending Route Pick-up');
+              }
+              <% if (isRouteRoute) { %>
+              if (!picked) {
+                $('#details_delivery_toggle').prop('checked', false).prop('disabled', true);
+                $('#details_delivery_badge').removeClass('bg-success text-white').addClass('bg-secondary text-white').html('<i class="fa fa-lock me-1"></i> Locked');
+                $('#details_delivery_time').text('Awaiting customer pick-up');
+                $('#details_delivery_gated_note').removeClass('d-none');
+                updateTimelineDelivery(false, null);
+              } else {
+                $('#details_delivery_toggle').prop('disabled', false);
+                $('#details_delivery_gated_note').addClass('d-none');
+              }
+              <% } %>
+              updateTimelinePickup(picked, null);
+            } else if (data.field === 'delivery') {
+              const delivered = (data.status === '1');
+              $('#details_delivery_toggle').prop('checked', delivered);
+              if (delivered) {
+                $('#details_delivery_badge').removeClass('bg-secondary bg-primary text-white').addClass('bg-success text-white').html('<i class="fa fa-check-circle me-1"></i> Delivered');
+                $('#details_delivery_time').text('Delivered');
+              } else {
+                $('#details_delivery_badge').removeClass('bg-success text-white bg-secondary').addClass('bg-primary text-white').html('<i class="fa fa-clock me-1"></i> Pending Delivery');
+                $('#details_delivery_time').text('Pending Route Delivery');
+              }
+              updateTimelineDelivery(delivered, null);
+            }
+          }
+        } catch (err) {
+          console.error('SSE sync error:', err);
+        }
+      };
+    }
 
-                    // Order Transfer Workflow
-                    var selectedTargetStoreId = null;
-                    var selectedTargetStoreName = '';
+    // Order Transfer Workflow
+    var selectedTargetStoreId = null;
+    var selectedTargetStoreName = '';
 
-                    function openTransferStoreModal() {
-                        var transferModalEl = document.getElementById('transferStoreModal');
-                        if (transferModalEl) {
-                            var modal = bootstrap.Modal.getOrCreateInstance(transferModalEl);
-                            modal.show();
-                        }
-                    }
+    function openTransferStoreModal() {
+      var transferModalEl = document.getElementById('transferStoreModal');
+      if (transferModalEl) {
+        var modal = bootstrap.Modal.getOrCreateInstance(transferModalEl);
+        modal.show();
+      }
+    }
 
-                    function proceedToTransferConfirm() {
-                        var checkedRadio = document.querySelector('input[name="target_store_radio"]:checked');
-                        if (!checkedRadio) {
-                            if (typeof toastr !== 'undefined') {
-                                toastr.warning('Please select a destination store');
-                            } else {
-                                alert('Please select a destination store');
-                            }
-                            return;
-                        }
+    function proceedToTransferConfirm() {
+      var checkedRadio = document.querySelector('input[name="target_store_radio"]:checked');
+      if (!checkedRadio) {
+        if (typeof toastr !== 'undefined') {
+          toastr.warning('Please select a destination store');
+        } else {
+          alert('Please select a destination store');
+        }
+        return;
+      }
 
-                        selectedTargetStoreId = checkedRadio.value;
-                        selectedTargetStoreName = checkedRadio.getAttribute('data-store-name') || ('Store #' + selectedTargetStoreId);
+      selectedTargetStoreId = checkedRadio.value;
+      selectedTargetStoreName = checkedRadio.getAttribute('data-store-name') || ('Store #' + selectedTargetStoreId);
 
-                        // Set target name in confirm modal
-                        var nameEl = document.getElementById('confirmTargetStoreName');
-                        if (nameEl) {
-                            nameEl.textContent = selectedTargetStoreName;
-                        }
+      // Set target name in confirm modal
+      var nameEl = document.getElementById('confirmTargetStoreName');
+      if (nameEl) {
+        nameEl.textContent = selectedTargetStoreName;
+      }
 
-                        // Hide selection modal and show confirm modal
-                        var transferModalEl = document.getElementById('transferStoreModal');
-                        var confirmModalEl = document.getElementById('confirmTransferModal');
+      // Hide selection modal and show confirm modal
+      var transferModalEl = document.getElementById('transferStoreModal');
+      var confirmModalEl = document.getElementById('confirmTransferModal');
 
-                        var transferModal = bootstrap.Modal.getInstance(transferModalEl);
-                        if (transferModal) {
-                            transferModal.hide();
-                        }
+      var transferModal = bootstrap.Modal.getInstance(transferModalEl);
+      if (transferModal) {
+        transferModal.hide();
+      }
 
-                        setTimeout(function () {
-                            var confirmModal = bootstrap.Modal.getOrCreateInstance(confirmModalEl);
-                            confirmModal.show();
-                        }, 300);
-                    }
+      setTimeout(function() {
+        var confirmModal = bootstrap.Modal.getOrCreateInstance(confirmModalEl);
+        confirmModal.show();
+      }, 300);
+    }
 
-                    function executeOrderTransfer() {
-                        if (!selectedTargetStoreId) {
-                            if (typeof toastr !== 'undefined') {
-                                toastr.error('Invalid destination store selected');
-                            }
-                            return;
-                        }
+    function executeOrderTransfer() {
+      if (!selectedTargetStoreId) {
+        if (typeof toastr !== 'undefined') {
+          toastr.error('Invalid destination store selected');
+        }
+        return;
+      }
 
-                        var btnConfirm = document.getElementById('btnExecuteTransfer');
-                        if (btnConfirm) {
-                            btnConfirm.disabled = true;
-                            btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Transferring...';
-                        }
+      var btnConfirm = document.getElementById('btnExecuteTransfer');
+      if (btnConfirm) {
+        btnConfirm.disabled = true;
+        btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Transferring...';
+      }
 
-                        $.ajax({
-                            type: 'POST',
-                            url: '/order/transfer_store',
-                            data: {
-                                order_id: '<%= order.id %>',
-                                target_store_id: selectedTargetStoreId
-                            },
-                            dataType: 'json',
-                            success: function (res) {
-                                if (res.status === 'success') {
-                                    if (typeof toastr !== 'undefined') {
-                                        toastr.success(res.message || 'Order successfully transferred');
-                                    }
-                                    setTimeout(function () {
-                                        window.location.href = res.redirectUrl || '/order/list';
-                                    }, 1200);
-                                } else {
-                                    if (btnConfirm) {
-                                        btnConfirm.disabled = false;
-                                        btnConfirm.innerHTML = '<i class="fas fa-check me-1"></i> Confirm Transfer';
-                                    }
-                                    if (typeof toastr !== 'undefined') {
-                                        toastr.error(res.message || 'Failed to transfer order');
-                                    } else {
-                                        alert(res.message || 'Failed to transfer order');
-                                    }
-                                }
-                            },
-                            error: function (xhr) {
-                                if (btnConfirm) {
-                                    btnConfirm.disabled = false;
-                                    btnConfirm.innerHTML = '<i class="fas fa-check me-1"></i> Confirm Transfer';
-                                }
-                                var errorMsg = 'An error occurred while transferring the order';
-                                if (xhr.responseJSON && xhr.responseJSON.message) {
-                                    errorMsg = xhr.responseJSON.message;
-                                }
-                                if (typeof toastr !== 'undefined') {
-                                    toastr.error(errorMsg);
-                                } else {
-                                    alert(errorMsg);
-                                }
-                            }
-                        });
-                    }
-                </script>
+      $.ajax({
+        type: 'POST',
+        url: '/order/transfer_store',
+        data: {
+          order_id: '<%= order.id %>',
+          target_store_id: selectedTargetStoreId
+        },
+        dataType: 'json',
+        success: function(res) {
+          if (res.status === 'success') {
+            if (typeof toastr !== 'undefined') {
+              toastr.success(res.message || 'Order successfully transferred');
+            }
+            setTimeout(function() {
+              window.location.href = res.redirectUrl || '/order/list';
+            }, 1200);
+          } else {
+            if (btnConfirm) {
+              btnConfirm.disabled = false;
+              btnConfirm.innerHTML = '<i class="fas fa-check me-1"></i> Confirm Transfer';
+            }
+            if (typeof toastr !== 'undefined') {
+              toastr.error(res.message || 'Failed to transfer order');
+            } else {
+              alert(res.message || 'Failed to transfer order');
+            }
+          }
+        },
+        error: function(xhr) {
+          if (btnConfirm) {
+            btnConfirm.disabled = false;
+            btnConfirm.innerHTML = '<i class="fas fa-check me-1"></i> Confirm Transfer';
+          }
+          var errorMsg = 'An error occurred while transferring the order';
+          if (xhr.responseJSON && xhr.responseJSON.message) {
+            errorMsg = xhr.responseJSON.message;
+          }
+          if (typeof toastr !== 'undefined') {
+            toastr.error(errorMsg);
+          } else {
+            alert(errorMsg);
+          }
+        }
+      });
+    }
+  </script>
 </body>
 
 
