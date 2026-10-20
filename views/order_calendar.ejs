@@ -2,416 +2,415 @@
 <html lang="en" class="h-100">
 
 <head>
-    <%- include('templet/meta') -%>
-    <!-- FullCalendar v3 CSS -->
-    <link rel="stylesheet" href="/vendor/fullcalendar/css/fullcalendar.min.css">
+  <%- include('templet/meta') -%>
+  <!-- FullCalendar v3 CSS -->
+  <link rel="stylesheet" href="/vendor/fullcalendar/css/fullcalendar.min.css">
 </head>
 
 <body>
-    <%- include('templet/preloder_topbar_sidebar', { titel: titel || 'Route Calendar' }) -%>
+  <%- include('templet/preloder_topbar_sidebar', { titel: titel || 'Route Calendar' }) -%>
 
-    <div class="content-body">
-        <div class="container-fluid" style="min-height: 100vh;">
-            
-            <!-- Header Control Card -->
-            <div class="card border-0 shadow-sm rounded-3 mb-3">
-                <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <div>
-                        <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
-                            <i class="fa fa-calendar-alt text-primary me-2"></i>
-                            <%= language.Route_Calendar || 'Route Pick-up & Delivery Calendar' %>
-                        </h3>
-                        <small class="text-muted">
-                            <%= language.Route_Calendar_Subtitle || 'Live dispatch schedule and real-time status management for Route Pick-ups and Deliveries' %>
-                        </small>
-                    </div>
+  <div class="content-body">
+    <div class="container-fluid" style="min-height: 100vh;">
 
-                    <!-- Real-Time Sync Indicator -->
-                    <div class="d-flex align-items-center gap-3">
-                        <div id="live_sync_pill" class="d-flex align-items-center gap-2 py-1 px-3 rounded-pill bg-success-subtle text-success border border-success-subtle">
-                            <span class="live-dot pulse-success" id="live_sync_dot"></span>
-                            <small class="fw-bold" id="live_sync_label">Live Sync Active</small>
-                        </div>
-                        <a href="/admin/pos" class="btn btn-sm btn-primary">
-                            <i class="fa fa-plus me-1"></i> <%= language.Add_New_Orders || 'New Order' %>
-                        </a>
-                    </div>
-                </div>
+      <!-- Header Control Card -->
+      <div class="card border-0 shadow-sm rounded-3 mb-3">
+        <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
+              <i class="fa fa-calendar-alt text-primary me-2"></i>
+              <%= language.Route_Calendar || 'Route Pick-up & Delivery Calendar' %>
+            </h3>
+            <small class="text-muted">
+              <%= language.Route_Calendar_Subtitle || 'Live dispatch schedule and real-time status management for Route Pick-ups and Deliveries' %>
+            </small>
+          </div>
 
-                <div class="card-body p-4">
-                    <!-- Filters Bar -->
-                    <div class="row g-2 align-items-center mb-3">
-                        <!-- Search Box -->
-                        <div class="col-12 col-md-4 col-lg-3">
-                            <div class="input-group">
-                                <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
-                                <input type="text" class="form-control" id="calendar_search_input"
-                                    placeholder="<%= language.Search_Calendar || 'Search Invoice #, Customer, Phone...' %>">
-                            </div>
-                        </div>
+          <!-- Real-Time Sync Indicator -->
+          <div class="d-flex align-items-center gap-3">
+            <div id="live_sync_pill" class="d-flex align-items-center gap-2 py-1 px-3 rounded-pill bg-success-subtle text-success border border-success-subtle">
+              <span class="live-dot pulse-success" id="live_sync_dot"></span>
+              <small class="fw-bold" id="live_sync_label">Live Sync Active</small>
+            </div>
+            <a href="/admin/pos" class="btn btn-sm btn-primary">
+              <i class="fa fa-plus me-1"></i> <%= language.Add_New_Orders || 'New Order' %>
+            </a>
+          </div>
+        </div>
 
-                        <!-- Event Type Filter -->
-                        <div class="col-6 col-sm-6 col-md-3 col-lg-2">
-                            <select class="form-select" id="calendar_event_type">
-                                <option value="all" selected><%= language.All_Events || 'All Route Events' %></option>
-                                <option value="pickup">📦 <%= language.Pick_up_Only || 'Pick-up Only' %></option>
-                                <option value="delivery">🚚 <%= language.Delivery_Only || 'Delivery Only' %></option>
-                            </select>
-                        </div>
-
-                        <!-- Status Filter -->
-                        <div class="col-6 col-sm-6 col-md-3 col-lg-2">
-                            <select class="form-select" id="calendar_status_filter">
-                                <option value="all" selected><%= language.All_Statuses || 'All Statuses' %></option>
-                                <option value="pending"><%= language.Pending_Only || 'Pending Only' %></option>
-                                <option value="completed"><%= language.Completed_Only || 'Completed Only' %></option>
-                            </select>
-                        </div>
-
-                        <!-- Store Selector (For Master / Multibranch) -->
-                        <% if (accessdata?.login === 'master' && typeof storeList !== 'undefined' && storeList.length > 0) { %>
-                        <div class="col-12 col-sm-6 col-md-3 col-lg-2">
-                            <select class="form-select" id="calendar_store_filter">
-                                <option value="all" selected><%= language.All_Stores || 'All Stores' %></option>
-                                <% storeList.forEach(function (st) { %>
-                                    <option value="<%= st.id %>"><%= st.name %></option>
-                                <% }) %>
-                            </select>
-                        </div>
-                        <% } %>
-
-                        <!-- Legend Items -->
-                        <div class="col-12 col-lg d-flex align-items-center justify-content-lg-end flex-wrap gap-2 pt-2 pt-lg-0">
-                            <span class="badge bg-warning text-dark border py-2 px-2 d-inline-flex align-items-center gap-1">
-                                <i class="fas fa-box text-dark"></i> <%= language.Pick_up || 'Pick-up' %>
-                            </span>
-                            <span class="badge bg-primary text-white border py-2 px-2 d-inline-flex align-items-center gap-1">
-                                <i class="fas fa-truck text-white"></i> <%= language.Delivery || 'Delivery' %>
-                            </span>
-                            <span class="badge bg-success text-white border py-2 px-2 d-inline-flex align-items-center gap-1">
-                                <i class="fas fa-check-circle text-white"></i> <%= language.Completed || 'Completed' %>
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Calendar Glass Container -->
-                    <div class="calendar-glass-card p-3 p-md-4">
-                        <div id="route_calendar"></div>
-                    </div>
-                </div>
+        <div class="card-body p-4">
+          <!-- Filters Bar -->
+          <div class="row g-2 align-items-center mb-3">
+            <!-- Search Box -->
+            <div class="col-12 col-md-4 col-lg-3">
+              <div class="input-group">
+                <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
+                <input type="text" class="form-control" id="calendar_search_input" placeholder="<%= language.Search_Calendar || 'Search Invoice #, Customer, Phone...' %>">
+              </div>
             </div>
 
-        </div>
-    </div>
-
-    <!-- Order Event Details & Live Action Modal -->
-    <div class="modal fade" id="orderEventModal" tabindex="-1" aria-labelledby="orderEventModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content border-0 shadow-lg rounded-3 overflow-hidden">
-                <div class="modal-header border-bottom py-3 px-4 bg-light d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <h5 class="modal-title fw-bold text-dark mb-0 d-flex align-items-center gap-2" id="orderEventModalLabel">
-                            <i class="fa fa-receipt text-primary"></i>
-                            <span id="modal_order_code">#INV</span>
-                        </h5>
-                        <span id="modal_order_type_badge" class="badge bg-light text-dark border">Order Type</span>
-                        <span id="modal_event_badge" class="badge bg-primary">Event</span>
-                        <span id="modal_zero_item_badge" class="badge bg-warning-subtle text-dark border border-warning d-none">
-                            0 Items (Pending Intake)
-                        </span>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-
-                <div class="modal-body p-4">
-                    <!-- Customer Information Box -->
-                    <div class="card bg-light-subtle border rounded-3 p-3 mb-3">
-                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                            <div>
-                                <div class="text-muted small fw-bold text-uppercase"><%= language.Customer || 'Customer' %></div>
-                                <h5 class="fw-bold text-dark mb-1" id="modal_customer_name">-</h5>
-                                <div>
-                                    <a href="#" id="modal_customer_phone_link" class="text-primary text-decoration-none fw-semibold">
-                                        <i class="fa fa-phone me-1 opacity-75"></i><span id="modal_customer_phone">-</span>
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="text-end">
-                                <span id="modal_store_badge" class="badge bg-white text-dark border py-1 px-2 fw-semibold">Store</span>
-                            </div>
-                        </div>
-                        <div class="mt-2 pt-2 border-top text-muted small d-flex align-items-start gap-1">
-                            <i class="fa fa-map-marker-alt text-danger mt-1"></i>
-                            <span id="modal_customer_address">-</span>
-                        </div>
-                    </div>
-
-                    <!-- 3-Schedule Breakdown Grid -->
-                    <div class="row g-2 mb-3">
-                        <!-- Route Pick-up Schedule -->
-                        <div class="col-12 col-md-4" id="modal_pickup_schedule_col">
-                            <div class="p-2 border rounded-3 bg-white h-100">
-                                <div class="text-muted small fw-bold"><i class="fa fa-box text-warning me-1"></i> Route Pick-up</div>
-                                <div class="fw-bold text-dark mt-1" id="modal_pickup_date_val">-</div>
-                            </div>
-                        </div>
-
-                        <!-- Factory Ready Schedule -->
-                        <div class="col-12 col-md-4">
-                            <div class="p-2 border rounded-3 bg-white h-100">
-                                <div class="text-muted small fw-bold"><i class="fa fa-clock text-info me-1"></i> Factory Target Ready</div>
-                                <div class="fw-bold text-dark mt-1" id="modal_ready_date_val">-</div>
-                            </div>
-                        </div>
-
-                        <!-- Route Delivery Schedule -->
-                        <div class="col-12 col-md-4" id="modal_delivery_schedule_col">
-                            <div class="p-2 border rounded-3 bg-white h-100">
-                                <div class="text-muted small fw-bold"><i class="fa fa-truck text-primary me-1"></i> Route Delivery</div>
-                                <div class="fw-bold text-dark mt-1" id="modal_delivery_date_val">-</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Financial Summary & Fast Action Buttons -->
-                    <div class="row g-2 align-items-center mb-3 p-3 bg-light rounded-3 border">
-                        <div class="col-12 col-sm-6 col-md-3">
-                            <small class="text-muted d-block"><%= language.Gross_Total || 'Total Gross' %></small>
-                            <span class="fw-bold fs-6 text-dark" id="modal_gross_val">$0.00</span>
-                        </div>
-                        <div class="col-12 col-sm-6 col-md-3">
-                            <small class="text-muted d-block"><%= language.Paid_Amount || 'Amount Paid' %></small>
-                            <span class="fw-bold fs-6 text-success" id="modal_paid_val">$0.00</span>
-                        </div>
-                        <div class="col-12 col-sm-6 col-md-3">
-                            <small class="text-muted d-block"><%= language.Balance || 'Balance' %></small>
-                            <span class="fw-bold fs-6" id="modal_balance_val">$0.00</span>
-                        </div>
-                        <div class="col-12 col-sm-6 col-md-3 text-sm-end">
-                            <a href="#" id="modal_view_link" target="_blank" class="btn btn-sm btn-outline-primary me-1">
-                                <i class="fa fa-eye"></i> View
-                            </a>
-                            <a href="#" id="modal_print_link" target="_blank" class="btn btn-sm btn-outline-secondary">
-                                <i class="fa fa-receipt"></i> Print
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Interactive Status Toggle Controls (Core Feature) -->
-                    <div class="border rounded-3 p-3 bg-white shadow-sm">
-                        <h6 class="fw-bold text-dark mb-3 d-flex align-items-center">
-                            <i class="fa fa-toggle-on text-primary me-2"></i> Real-Time Dispatch Status
-                        </h6>
-
-                        <!-- Pick-up Toggle Container -->
-                        <div id="pickup_toggle_container" class="p-3 rounded-3 border mb-2 bg-light-subtle">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="form-check form-switch fs-5 mb-0">
-                                        <input class="form-check-input" type="checkbox" role="switch" id="pickup_status_toggle" style="cursor: pointer;">
-                                    </div>
-                                    <div>
-                                        <label class="form-check-label fw-bold text-dark mb-0" for="pickup_status_toggle" style="cursor: pointer;">
-                                            📦 Picked Up from Customer
-                                        </label>
-                                        <div class="text-muted small" id="pickup_status_timestamp">Pending Route Pick-up</div>
-                                    </div>
-                                </div>
-                                <span id="pickup_status_pill" class="badge bg-secondary">Pending</span>
-                            </div>
-                        </div>
-
-                        <!-- Delivery Toggle Container -->
-                        <div id="delivery_toggle_container" class="p-3 rounded-3 border bg-light-subtle">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="form-check form-switch fs-5 mb-0">
-                                        <input class="form-check-input" type="checkbox" role="switch" id="delivery_status_toggle" style="cursor: pointer;">
-                                    </div>
-                                    <div>
-                                        <label class="form-check-label fw-bold text-dark mb-0" for="delivery_status_toggle" style="cursor: pointer;">
-                                            🚚 Delivered to Customer
-                                        </label>
-                                        <div class="text-muted small" id="delivery_status_timestamp">Pending Route Delivery</div>
-                                    </div>
-                                </div>
-                                <span id="delivery_status_pill" class="badge bg-secondary">Pending</span>
-                            </div>
-                            <!-- Conditional Gating Note for Route & Route -->
-                            <div id="delivery_gated_note" class="alert alert-warning py-1 px-3 small mt-2 mb-0 d-none">
-                                <i class="fa fa-info-circle me-1"></i> Pick-up must be confirmed before marking Delivery as completed.
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="modal-footer border-top py-2 px-4 bg-light">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
-                </div>
+            <!-- Event Type Filter -->
+            <div class="col-6 col-sm-6 col-md-3 col-lg-2">
+              <select class="form-select" id="calendar_event_type">
+                <option value="all" selected><%= language.All_Events || 'All Route Events' %></option>
+                <option value="pickup">📦 <%= language.Pick_up_Only || 'Pick-up Only' %></option>
+                <option value="delivery">🚚 <%= language.Delivery_Only || 'Delivery Only' %></option>
+              </select>
             </div>
+
+            <!-- Status Filter -->
+            <div class="col-6 col-sm-6 col-md-3 col-lg-2">
+              <select class="form-select" id="calendar_status_filter">
+                <option value="all" selected><%= language.All_Statuses || 'All Statuses' %></option>
+                <option value="pending"><%= language.Pending_Only || 'Pending Only' %></option>
+                <option value="completed"><%= language.Completed_Only || 'Completed Only' %></option>
+              </select>
+            </div>
+
+            <!-- Store Selector (For Master / Multibranch) -->
+            <% if (accessdata?.login === 'master' && typeof storeList !== 'undefined' && storeList.length > 0) { %>
+            <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+              <select class="form-select" id="calendar_store_filter">
+                <option value="all" selected><%= language.All_Stores || 'All Stores' %></option>
+                <% storeList.forEach(function (st) { %>
+                <option value="<%= st.id %>"><%= st.name %></option>
+                <% }) %>
+              </select>
+            </div>
+            <% } %>
+
+            <!-- Legend Items -->
+            <div class="col-12 col-lg d-flex align-items-center justify-content-lg-end flex-wrap gap-2 pt-2 pt-lg-0">
+              <span class="badge bg-warning text-white border py-2 px-2 d-inline-flex align-items-center gap-1">
+                <i class="fas fa-box text-white"></i> <%= language.Pick_up || 'Pick-up' %>
+              </span>
+              <span class="badge bg-primary text-white border py-2 px-2 d-inline-flex align-items-center gap-1">
+                <i class="fas fa-truck text-white"></i> <%= language.Delivery || 'Delivery' %>
+              </span>
+              <span class="badge bg-success text-white border py-2 px-2 d-inline-flex align-items-center gap-1">
+                <i class="fas fa-check-circle text-white"></i> <%= language.Completed || 'Completed' %>
+              </span>
+            </div>
+          </div>
+
+          <!-- Calendar Glass Container -->
+          <div class="calendar-glass-card p-3 p-md-4">
+            <div id="route_calendar"></div>
+          </div>
         </div>
+      </div>
+
     </div>
+  </div>
 
-    <!-- Scripts -->
-    <%- include('templet/script') -%>
-    <!-- FullCalendar v3 JS & Dependencies -->
-    <script src="/vendor/moment/moment.min.js"></script>
-    <script src="/vendor/fullcalendar/js/fullcalendar.min.js"></script>
+  <!-- Order Event Details & Live Action Modal -->
+  <div class="modal fade" id="orderEventModal" tabindex="-1" aria-labelledby="orderEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow-lg rounded-3 overflow-hidden">
+        <div class="modal-header border-bottom py-3 px-4 bg-light d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <h5 class="modal-title fw-bold text-dark mb-0 d-flex align-items-center gap-2" id="orderEventModalLabel">
+              <i class="fa fa-receipt text-primary"></i>
+              <span id="modal_order_code">#INV</span>
+            </h5>
+            <span id="modal_order_type_badge" class="badge bg-light text-dark border">Order Type</span>
+            <span id="modal_event_badge" class="badge bg-primary">Event</span>
+            <span id="modal_zero_item_badge" class="badge bg-warning-subtle text-dark border border-warning d-none">
+              0 Items (Pending Intake)
+            </span>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
 
-    <script>
-        $(document).ready(function () {
-            let activeOrderData = null;
-            let currentOpenOrderId = null;
+        <div class="modal-body p-4">
+          <!-- Customer Information Box -->
+          <div class="card bg-light-subtle border rounded-3 p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+              <div>
+                <div class="text-muted small fw-bold text-uppercase"><%= language.Customer || 'Customer' %></div>
+                <h5 class="fw-bold text-dark mb-1" id="modal_customer_name">-</h5>
+                <div>
+                  <a href="#" id="modal_customer_phone_link" class="text-primary text-decoration-none fw-semibold">
+                    <i class="fa fa-phone me-1 opacity-75"></i><span id="modal_customer_phone">-</span>
+                  </a>
+                </div>
+              </div>
+              <div class="text-end">
+                <span id="modal_store_badge" class="badge bg-white text-dark border py-1 px-2 fw-semibold">Store</span>
+              </div>
+            </div>
+            <div class="mt-2 pt-2 border-top text-muted small d-flex align-items-start gap-1">
+              <i class="fa fa-map-marker-alt text-danger mt-1"></i>
+              <span id="modal_customer_address">-</span>
+            </div>
+          </div>
 
-            // 1. Initialize FullCalendar v3
-            const $calendar = $('#route_calendar').fullCalendar({
-                header: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'month,agendaWeek,basicDay,agendaDay,listWeek'
-                },
-                buttonText: {
-                    today: 'Today',
-                    month: 'Month',
-                    agendaWeek: 'Week',
-                    basicDay: 'Day',
-                    agendaDay: 'Hourly',
-                    listWeek: 'List'
-                },
-                defaultView: 'month',
-                height: 'auto',
-                contentHeight: 'auto',
-                fixedWeekCount: false,
-                navLinks: true,
-                navLinkDayClick: 'basicDay',
-                editable: false,
-                eventLimit: 4,
-                timeFormat: 'h:mm a',
-                minTime: '06:00:00',
-                maxTime: '22:00:00',
-                scrollTime: '08:00:00',
-                views: {
-                    agendaWeek: {
-                        minTime: '06:00:00',
-                        maxTime: '22:00:00',
-                        scrollTime: '08:00:00',
-                        slotDuration: '00:30:00'
-                    },
-                    agendaDay: {
-                        minTime: '06:00:00',
-                        maxTime: '22:00:00',
-                        scrollTime: '08:00:00',
-                        slotDuration: '00:30:00'
-                    },
-                    basicDay: {
-                        // Dedicated daily dispatch card view
-                    }
-                },
-                viewRender: function (view, element) {
-                    element.find('.calendar-empty-day-note').remove();
-                },
-                eventAfterAllRender: function (view) {
-                    if (view && (view.name === 'basicDay' || view.name === 'agendaDay')) {
-                        const hasEvents = $('#route_calendar').find('.fc-event').length > 0;
-                        $('#route_calendar').find('.calendar-empty-day-note').remove();
-                        if (!hasEvents) {
-                            const emptyNotice = `
+          <!-- 3-Schedule Breakdown Grid -->
+          <div class="row g-2 mb-3">
+            <!-- Route Pick-up Schedule -->
+            <div class="col-12 col-md-4" id="modal_pickup_schedule_col">
+              <div class="p-2 border rounded-3 bg-white h-100">
+                <div class="text-muted small fw-bold"><i class="fa fa-box text-warning me-1"></i> Route Pick-up</div>
+                <div class="fw-bold text-dark mt-1" id="modal_pickup_date_val">-</div>
+              </div>
+            </div>
+
+            <!-- Factory Ready Schedule -->
+            <div class="col-12 col-md-4">
+              <div class="p-2 border rounded-3 bg-white h-100">
+                <div class="text-muted small fw-bold"><i class="fa fa-clock text-info me-1"></i> Factory Target Ready</div>
+                <div class="fw-bold text-dark mt-1" id="modal_ready_date_val">-</div>
+              </div>
+            </div>
+
+            <!-- Route Delivery Schedule -->
+            <div class="col-12 col-md-4" id="modal_delivery_schedule_col">
+              <div class="p-2 border rounded-3 bg-white h-100">
+                <div class="text-muted small fw-bold"><i class="fa fa-truck text-primary me-1"></i> Route Delivery</div>
+                <div class="fw-bold text-dark mt-1" id="modal_delivery_date_val">-</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Financial Summary & Fast Action Buttons -->
+          <div class="row g-2 align-items-center mb-3 p-3 bg-light rounded-3 border">
+            <div class="col-12 col-sm-6 col-md-3">
+              <small class="text-muted d-block"><%= language.Gross_Total || 'Total Gross' %></small>
+              <span class="fw-bold fs-6 text-dark" id="modal_gross_val">$0.00</span>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <small class="text-muted d-block"><%= language.Paid_Amount || 'Amount Paid' %></small>
+              <span class="fw-bold fs-6 text-success" id="modal_paid_val">$0.00</span>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <small class="text-muted d-block"><%= language.Balance || 'Balance' %></small>
+              <span class="fw-bold fs-6" id="modal_balance_val">$0.00</span>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3 text-sm-end">
+              <a href="#" id="modal_view_link" target="_blank" class="btn btn-sm btn-outline-primary me-1">
+                <i class="fa fa-eye"></i> View
+              </a>
+              <a href="#" id="modal_print_link" target="_blank" class="btn btn-sm btn-outline-secondary">
+                <i class="fa fa-receipt"></i> Print
+              </a>
+            </div>
+          </div>
+
+          <!-- Interactive Status Toggle Controls (Core Feature) -->
+          <div class="border rounded-3 p-3 bg-white shadow-sm">
+            <h6 class="fw-bold text-dark mb-3 d-flex align-items-center">
+              <i class="fa fa-toggle-on text-primary me-2"></i> Real-Time Dispatch Status
+            </h6>
+
+            <!-- Pick-up Toggle Container -->
+            <div id="pickup_toggle_container" class="p-3 rounded-3 border mb-2 bg-light-subtle">
+              <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="form-check form-switch fs-5 mb-0">
+                    <input class="form-check-input" type="checkbox" role="switch" id="pickup_status_toggle" style="cursor: pointer;">
+                  </div>
+                  <div>
+                    <label class="form-check-label fw-bold text-dark mb-0" for="pickup_status_toggle" style="cursor: pointer;">
+                      📦 Picked Up from Customer
+                    </label>
+                    <div class="text-muted small" id="pickup_status_timestamp">Pending Route Pick-up</div>
+                  </div>
+                </div>
+                <span id="pickup_status_pill" class="badge bg-secondary">Pending</span>
+              </div>
+            </div>
+
+            <!-- Delivery Toggle Container -->
+            <div id="delivery_toggle_container" class="p-3 rounded-3 border bg-light-subtle">
+              <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="form-check form-switch fs-5 mb-0">
+                    <input class="form-check-input" type="checkbox" role="switch" id="delivery_status_toggle" style="cursor: pointer;">
+                  </div>
+                  <div>
+                    <label class="form-check-label fw-bold text-dark mb-0" for="delivery_status_toggle" style="cursor: pointer;">
+                      🚚 Delivered to Customer
+                    </label>
+                    <div class="text-muted small" id="delivery_status_timestamp">Pending Route Delivery</div>
+                  </div>
+                </div>
+                <span id="delivery_status_pill" class="badge bg-secondary">Pending</span>
+              </div>
+              <!-- Conditional Gating Note for Route & Route -->
+              <div id="delivery_gated_note" class="alert alert-warning py-1 px-3 small mt-2 mb-0 d-none">
+                <i class="fa fa-info-circle me-1"></i> Pick-up must be confirmed before marking Delivery as completed.
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal-footer border-top py-2 px-4 bg-light">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <%- include('templet/script') -%>
+  <!-- FullCalendar v3 JS & Dependencies -->
+  <script src="/vendor/moment/moment.min.js"></script>
+  <script src="/vendor/fullcalendar/js/fullcalendar.min.js"></script>
+
+  <script>
+    $(document).ready(function() {
+      let activeOrderData = null;
+      let currentOpenOrderId = null;
+
+      // 1. Initialize FullCalendar v3
+      const $calendar = $('#route_calendar').fullCalendar({
+        header: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'month,agendaWeek,basicDay,agendaDay,listWeek'
+        },
+        buttonText: {
+          today: 'Today',
+          month: 'Month',
+          agendaWeek: 'Week',
+          basicDay: 'Day',
+          agendaDay: 'Hourly',
+          listWeek: 'List'
+        },
+        defaultView: 'month',
+        height: 'auto',
+        contentHeight: 'auto',
+        fixedWeekCount: false,
+        navLinks: true,
+        navLinkDayClick: 'basicDay',
+        editable: false,
+        eventLimit: 4,
+        timeFormat: 'h:mm a',
+        minTime: '06:00:00',
+        maxTime: '22:00:00',
+        scrollTime: '08:00:00',
+        views: {
+          agendaWeek: {
+            minTime: '06:00:00',
+            maxTime: '22:00:00',
+            scrollTime: '08:00:00',
+            slotDuration: '00:30:00'
+          },
+          agendaDay: {
+            minTime: '06:00:00',
+            maxTime: '22:00:00',
+            scrollTime: '08:00:00',
+            slotDuration: '00:30:00'
+          },
+          basicDay: {
+            // Dedicated daily dispatch card view
+          }
+        },
+        viewRender: function(view, element) {
+          element.find('.calendar-empty-day-note').remove();
+        },
+        eventAfterAllRender: function(view) {
+          if (view && (view.name === 'basicDay' || view.name === 'agendaDay')) {
+            const hasEvents = $('#route_calendar').find('.fc-event').length > 0;
+            $('#route_calendar').find('.calendar-empty-day-note').remove();
+            if (!hasEvents) {
+              const emptyNotice = `
                                 <div class="calendar-empty-day-note text-center p-4 my-4 mx-auto" style="max-width: 440px; border-radius: 12px; background: rgba(59, 130, 246, 0.05); border: 1px dashed rgba(59, 130, 246, 0.25);">
                                     <i class="fas fa-calendar-day text-primary mb-2" style="font-size: 2rem; opacity: 0.7;"></i>
                                     <h6 class="fw-bold text-dark mb-1">No Orders Scheduled</h6>
                                     <p class="text-muted small mb-0">There are no route pick-ups or deliveries scheduled for this date.</p>
                                 </div>
                             `;
-                            if (view.name === 'basicDay') {
-                                $('#route_calendar .fc-day-grid').after(emptyNotice);
-                            } else {
-                                $('#route_calendar .fc-time-grid').prepend(emptyNotice);
-                            }
-                        } else if (view.name === 'agendaDay') {
-                            const $firstEvent = $('#route_calendar').find('.fc-time-grid-event').first();
-                            if ($firstEvent.length) {
-                                const topPos = parseInt($firstEvent.css('top'), 10);
-                                if (!isNaN(topPos) && topPos > 80) {
-                                    $('#route_calendar .fc-time-grid-container').animate({
-                                        scrollTop: Math.max(0, topPos - 50)
-                                    }, 250);
-                                }
-                            }
-                        }
-                    }
-                },
-                events: function (start, end, timezone, callback) {
-                    const params = {
-                        start: start.toISOString(),
-                        end: end.toISOString(),
-                        search: $('#calendar_search_input').val() || '',
-                        event_type: $('#calendar_event_type').val() || 'all',
-                        status_filter: $('#calendar_status_filter').val() || 'all',
-                        store_id: $('#calendar_store_filter').length ? ($('#calendar_store_filter').val() || 'all') : ''
-                    };
+              if (view.name === 'basicDay') {
+                $('#route_calendar .fc-day-grid').after(emptyNotice);
+              } else {
+                $('#route_calendar .fc-time-grid').prepend(emptyNotice);
+              }
+            } else if (view.name === 'agendaDay') {
+              const $firstEvent = $('#route_calendar').find('.fc-time-grid-event').first();
+              if ($firstEvent.length) {
+                const topPos = parseInt($firstEvent.css('top'), 10);
+                if (!isNaN(topPos) && topPos > 80) {
+                  $('#route_calendar .fc-time-grid-container').animate({
+                    scrollTop: Math.max(0, topPos - 50)
+                  }, 250);
+                }
+              }
+            }
+          }
+        },
+        events: function(start, end, timezone, callback) {
+          const params = {
+            start: start.toISOString(),
+            end: end.toISOString(),
+            search: $('#calendar_search_input').val() || '',
+            event_type: $('#calendar_event_type').val() || 'all',
+            status_filter: $('#calendar_status_filter').val() || 'all',
+            store_id: $('#calendar_store_filter').length ? ($('#calendar_store_filter').val() || 'all') : ''
+          };
 
-                    $.ajax({
-                        url: '/order/calendar/events',
-                        type: 'GET',
-                        dataType: 'json',
-                        data: params,
-                        success: function (events) {
-                            callback(events);
-                        },
-                        error: function (xhr, status, error) {
-                            console.error('Error fetching calendar events:', error);
-                            callback([]);
-                        }
-                    });
-                },
-                eventClick: function (calEvent, jsEvent, view) {
-                    const orderData = calEvent.extendedProps || calEvent;
-                    if (orderData && orderData.orderId) {
-                        openOrderEventModal(orderData, calEvent);
-                    }
-                },
-                eventRender: function (event, element, view) {
-                    element.attr('title', event.title || '');
+          $.ajax({
+            url: '/order/calendar/events',
+            type: 'GET',
+            dataType: 'json',
+            data: params,
+            success: function(events) {
+              callback(events);
+            },
+            error: function(xhr, status, error) {
+              console.error('Error fetching calendar events:', error);
+              callback([]);
+            }
+          });
+        },
+        eventClick: function(calEvent, jsEvent, view) {
+          const orderData = calEvent.extendedProps || calEvent;
+          if (orderData && orderData.orderId) {
+            openOrderEventModal(orderData, calEvent);
+          }
+        },
+        eventRender: function(event, element, view) {
+          element.attr('title', event.title || '');
 
-                    const ext = event.extendedProps || {};
-                    const orderCode = event.orderCode || ext.orderCode || (event.orderId ? String(event.orderId) : '');
-                    const customerName = event.customerName || ext.customerName || 'Walk-in Customer';
-                    const eventType = event.eventType || ext.eventType || (event.id && String(event.id).indexOf('pickup') === 0 ? 'pickup' : 'delivery');
-                    const isDone = (eventType === 'pickup')
-                        ? (event.isPickedUp === true || ext.isPickedUp === true || String(event.isPickedUp) === '1' || String(ext.isPickedUp) === '1')
-                        : (event.isDelivered === true || ext.isDelivered === true || String(event.isDelivered) === '1' || String(ext.isDelivered) === '1');
-                    const isZeroItem = (event.isZeroItem === true || ext.isZeroItem === true);
+          const ext = event.extendedProps || {};
+          const orderCode = event.orderCode || ext.orderCode || (event.orderId ? String(event.orderId) : '');
+          const customerName = event.customerName || ext.customerName || 'Walk-in Customer';
+          const eventType = event.eventType || ext.eventType || (event.id && String(event.id).indexOf('pickup') === 0 ? 'pickup' : 'delivery');
+          const isDone = (eventType === 'pickup') ?
+            (event.isPickedUp === true || ext.isPickedUp === true || String(event.isPickedUp) === '1' || String(ext.isPickedUp) === '1') :
+            (event.isDelivered === true || ext.isDelivered === true || String(event.isDelivered) === '1' || String(ext.isDelivered) === '1');
+          const isZeroItem = (event.isZeroItem === true || ext.isZeroItem === true);
 
-                    let timeStr = '';
-                    if (event.start) {
-                        if (typeof event.start.format === 'function') {
-                            timeStr = event.start.format('h:mm A');
-                        } else if (window.moment) {
-                            timeStr = moment(event.start).format('h:mm A');
-                        }
-                    }
+          let timeStr = '';
+          if (event.start) {
+            if (typeof event.start.format === 'function') {
+              timeStr = event.start.format('h:mm A');
+            } else if (window.moment) {
+              timeStr = moment(event.start).format('h:mm A');
+            }
+          }
 
-                    const isPickup = (eventType === 'pickup');
-                    const typeLabel = isPickup ? 'Pick-up' : 'Delivery';
-                    const typeIcon = isPickup ? 'fa-box' : 'fa-truck';
-                    const statusText = isDone ? (isPickup ? 'Picked Up' : 'Delivered') : (isPickup ? 'Pending' : 'Pending');
-                    const formattedOrderCode = orderCode ? (orderCode.startsWith('#') ? orderCode : ('#' + orderCode)) : '';
+          const isPickup = (eventType === 'pickup');
+          const typeLabel = isPickup ? 'Pick-up' : 'Delivery';
+          const typeIcon = isPickup ? 'fa-box' : 'fa-truck';
+          const statusText = isDone ? (isPickup ? 'Picked Up' : 'Delivered') : (isPickup ? 'Pending' : 'Pending');
+          const formattedOrderCode = orderCode ? (orderCode.startsWith('#') ? orderCode : ('#' + orderCode)) : '';
 
-                    if (view && view.name === 'listWeek') {
-                        const $titleEl = element.find('.fc-list-item-title a');
-                        if ($titleEl.length) {
-                            $titleEl.html(
-                                '<strong>' + formattedOrderCode + '</strong> - ' + customerName +
-                                ' <span class="badge ms-2 ' + (isPickup ? 'bg-warning text-dark' : 'bg-primary text-white') + '"><i class="fas ' + typeIcon + ' me-1"></i>' + typeLabel + '</span>' +
-                                (isDone ? ' <span class="badge bg-success ms-1"><i class="fas fa-check-circle me-1"></i>' + statusText + '</span>' : '') +
-                                (isZeroItem ? ' <span class="badge bg-danger ms-1">0-Item</span>' : '')
-                            );
-                        }
-                        return;
-                    }
+          if (view && view.name === 'listWeek') {
+            const $titleEl = element.find('.fc-list-item-title a');
+            if ($titleEl.length) {
+              $titleEl.html(
+                '<strong>' + formattedOrderCode + '</strong> - ' + customerName +
+                ' <span class="badge ms-2 ' + (isPickup ? 'bg-warning text-dark' : 'bg-primary text-white') + '"><i class="fas ' + typeIcon + ' me-1"></i>' + typeLabel + '</span>' +
+                (isDone ? ' <span class="badge bg-success ms-1"><i class="fas fa-check-circle me-1"></i>' + statusText + '</span>' : '') +
+                (isZeroItem ? ' <span class="badge bg-danger ms-1">0-Item</span>' : '')
+              );
+            }
+            return;
+          }
 
-                    const cardHtml = `
+          const cardHtml = `
                         <div class="calendar-event-card">
                             <div class="event-card-top">
                                 <span class="event-card-time"><i class="far fa-clock me-1"></i>${timeStr}</span>
@@ -430,288 +429,288 @@
                         </div>
                     `;
 
-                    const $content = element.find('.fc-content');
-                    if ($content.length) {
-                        $content.html(cardHtml);
-                    } else {
-                        element.html(cardHtml);
-                    }
-                }
-            });
+          const $content = element.find('.fc-content');
+          if ($content.length) {
+            $content.html(cardHtml);
+          } else {
+            element.html(cardHtml);
+          }
+        }
+      });
 
-            // 2. Open Order Modal & Bind Interactive Controls
-            function openOrderEventModal(order, calEvent) {
-                activeOrderData = order;
-                currentOpenOrderId = order.orderId;
+      // 2. Open Order Modal & Bind Interactive Controls
+      function openOrderEventModal(order, calEvent) {
+        activeOrderData = order;
+        currentOpenOrderId = order.orderId;
 
-                $('#modal_order_code').text('#' + (order.orderCode || order.orderId));
-                $('#modal_order_type_badge').text(order.orderType);
-                $('#modal_customer_name').text(order.customerName);
-                $('#modal_customer_phone').text(order.customerPhone || 'No Phone');
-                $('#modal_customer_phone_link').attr('href', order.customerPhone ? ('tel:' + order.customerPhone) : '#');
-                $('#modal_customer_address').text(order.customerAddress || 'No Address Provided');
-                $('#modal_store_badge').text(order.storeName || 'Store');
+        $('#modal_order_code').text('#' + (order.orderCode || order.orderId));
+        $('#modal_order_type_badge').text(order.orderType);
+        $('#modal_customer_name').text(order.customerName);
+        $('#modal_customer_phone').text(order.customerPhone || 'No Phone');
+        $('#modal_customer_phone_link').attr('href', order.customerPhone ? ('tel:' + order.customerPhone) : '#');
+        $('#modal_customer_address').text(order.customerAddress || 'No Address Provided');
+        $('#modal_store_badge').text(order.storeName || 'Store');
 
-                // Schedules
-                $('#modal_pickup_date_val').text(order.formattedPickupDate);
-                $('#modal_ready_date_val').text(order.formattedReadyDate);
-                $('#modal_delivery_date_val').text(order.formattedDeliveryDate);
+        // Schedules
+        $('#modal_pickup_date_val').text(order.formattedPickupDate);
+        $('#modal_ready_date_val').text(order.formattedReadyDate);
+        $('#modal_delivery_date_val').text(order.formattedDeliveryDate);
 
-                // Financials
-                $('#modal_gross_val').text('$' + order.grossTotal);
-                $('#modal_paid_val').text('$' + order.paidAmount);
-                $('#modal_balance_val').text('$' + order.balanceAmount);
+        // Financials
+        $('#modal_gross_val').text('$' + order.grossTotal);
+        $('#modal_paid_val').text('$' + order.paidAmount);
+        $('#modal_balance_val').text('$' + order.balanceAmount);
 
-                if (parseFloat(order.balanceAmount) > 0) {
-                    $('#modal_balance_val').removeClass('text-success').addClass('text-danger');
-                } else {
-                    $('#modal_balance_val').removeClass('text-danger').addClass('text-success');
-                }
+        if (parseFloat(order.balanceAmount) > 0) {
+          $('#modal_balance_val').removeClass('text-success').addClass('text-danger');
+        } else {
+          $('#modal_balance_val').removeClass('text-danger').addClass('text-success');
+        }
 
-                // Zero-item badge
-                if (order.isZeroItem) {
-                    $('#modal_zero_item_badge').removeClass('d-none');
-                } else {
-                    $('#modal_zero_item_badge').addClass('d-none');
-                }
+        // Zero-item badge
+        if (order.isZeroItem) {
+          $('#modal_zero_item_badge').removeClass('d-none');
+        } else {
+          $('#modal_zero_item_badge').addClass('d-none');
+        }
 
-                // Links
-                $('#modal_view_link').attr('href', '/order/view/' + order.orderId);
-                $('#modal_print_link').attr('href', '/order/pos_invoice/' + order.orderId);
+        // Links
+        $('#modal_view_link').attr('href', '/order/view/' + order.orderId);
+        $('#modal_print_link').attr('href', '/order/pos_invoice/' + order.orderId);
 
-                // Event Badge
-                const evtType = (calEvent.extendedProps && calEvent.extendedProps.eventType) || calEvent.eventType;
-                if (evtType === 'pickup') {
-                    $('#modal_event_badge').removeClass('bg-primary text-white').addClass('bg-warning text-dark').text('Pick-up Event');
-                } else {
-                    $('#modal_event_badge').removeClass('bg-warning text-dark').addClass('bg-primary text-white').text('Delivery Event');
-                }
+        // Event Badge
+        const evtType = (calEvent.extendedProps && calEvent.extendedProps.eventType) || calEvent.eventType;
+        if (evtType === 'pickup') {
+          $('#modal_event_badge').removeClass('bg-primary text-white').addClass('bg-warning text-dark').text('Pick-up Event');
+        } else {
+          $('#modal_event_badge').removeClass('bg-warning text-dark').addClass('bg-primary text-white').text('Delivery Event');
+        }
 
-                // Render Switches based on Order Type & Gating Rules
-                refreshModalSwitchUI(order);
+        // Render Switches based on Order Type & Gating Rules
+        refreshModalSwitchUI(order);
 
-                // Show modal
-                $('#orderEventModal').modal('show');
+        // Show modal
+        $('#orderEventModal').modal('show');
+      }
+
+      // 3. Dynamic Switch Rendering and Gating Logic
+      function refreshModalSwitchUI(order) {
+        const type = order.orderType || '';
+        const isRouteRoute = type === 'Route & Route' || type === 'Pick-up & Delivery' || type === 'Store collection & Store delivery';
+        const isRouteCounter = type === 'Route & Counter' || type === 'Pick-up & Counter';
+        const isCounterRoute = type === 'Counter & Route' || type === 'Counter & Delivery' || type === 'Customer drop-off & Store delivery';
+
+        // --- Pick-up Switch ---
+        if (isRouteRoute || isRouteCounter) {
+          $('#pickup_toggle_container').removeClass('d-none');
+          $('#pickup_status_toggle').prop('checked', order.isPickedUp);
+
+          if (order.isPickedUp) {
+            $('#pickup_status_pill').removeClass('bg-secondary').addClass('bg-success').text('Picked Up');
+            $('#pickup_status_timestamp').text(order.pickedUpAt ? ('Picked up on ' + order.pickedUpAt) : 'Picked Up');
+          } else {
+            $('#pickup_status_pill').removeClass('bg-success').addClass('bg-secondary').text('Pending');
+            $('#pickup_status_timestamp').text('Pending Route Pick-up');
+          }
+        } else {
+          $('#pickup_toggle_container').addClass('d-none');
+        }
+
+        // --- Delivery Switch & Gating ---
+        if (isCounterRoute) {
+          // Counter & Route: Only show delivered switch, directly active
+          $('#delivery_toggle_container').removeClass('d-none');
+          $('#delivery_status_toggle').prop('disabled', false).prop('checked', order.isDelivered);
+          $('#delivery_gated_note').addClass('d-none');
+
+          if (order.isDelivered) {
+            $('#delivery_status_pill').removeClass('bg-secondary').addClass('bg-success').text('Delivered');
+            $('#delivery_status_timestamp').text(order.deliveredAt ? ('Delivered on ' + order.deliveredAt) : 'Delivered');
+          } else {
+            $('#delivery_status_pill').removeClass('bg-success').addClass('bg-secondary').text('Pending');
+            $('#delivery_status_timestamp').text('Pending Route Delivery');
+          }
+        } else if (isRouteRoute) {
+          $('#delivery_toggle_container').removeClass('d-none');
+
+          if (order.isPickedUp) {
+            // Unlocked: Picked up is confirmed
+            $('#delivery_status_toggle').prop('disabled', false).prop('checked', order.isDelivered);
+            $('#delivery_gated_note').addClass('d-none');
+
+            if (order.isDelivered) {
+              $('#delivery_status_pill').removeClass('bg-secondary').addClass('bg-success').text('Delivered');
+              $('#delivery_status_timestamp').text(order.deliveredAt ? ('Delivered on ' + order.deliveredAt) : 'Delivered');
+            } else {
+              $('#delivery_status_pill').removeClass('bg-success').addClass('bg-secondary').text('Pending');
+              $('#delivery_status_timestamp').text('Pending Route Delivery');
             }
+          } else {
+            // Gated: Cannot deliver until picked up
+            $('#delivery_status_toggle').prop('disabled', true).prop('checked', false);
+            $('#delivery_status_pill').removeClass('bg-success').addClass('bg-secondary').text('Locked');
+            $('#delivery_status_timestamp').text('Awaiting customer pick-up');
+            $('#delivery_gated_note').removeClass('d-none');
+          }
+        } else {
+          $('#delivery_toggle_container').addClass('d-none');
+        }
+      }
 
-            // 3. Dynamic Switch Rendering and Gating Logic
-            function refreshModalSwitchUI(order) {
-                const type = order.orderType || '';
-                const isRouteRoute = type === 'Route & Route' || type === 'Pick-up & Delivery' || type === 'Store collection & Store delivery';
-                const isRouteCounter = type === 'Route & Counter' || type === 'Pick-up & Counter';
-                const isCounterRoute = type === 'Counter & Route' || type === 'Counter & Delivery' || type === 'Customer drop-off & Store delivery';
+      // 4. Handle Pick-up Toggle Click
+      $('#pickup_status_toggle').on('change', function() {
+        if (!activeOrderData) return;
+        const newStatus = this.checked ? '1' : '0';
+        const $switch = $(this);
+        $switch.prop('disabled', true);
 
-                // --- Pick-up Switch ---
-                if (isRouteRoute || isRouteCounter) {
-                    $('#pickup_toggle_container').removeClass('d-none');
-                    $('#pickup_status_toggle').prop('checked', order.isPickedUp);
+        $.ajax({
+          url: '/order/calendar/toggle-status',
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            order_id: activeOrderData.orderId,
+            field: 'pickup',
+            status: newStatus
+          }),
+          success: function(res) {
+            $switch.prop('disabled', false);
+            if (res.success) {
+              activeOrderData.isPickedUp = (res.is_picked_up === '1');
+              activeOrderData.pickedUpAt = res.picked_up_at;
+              activeOrderData.isDelivered = (res.is_delivered === '1');
+              activeOrderData.deliveredAt = res.delivered_at;
 
-                    if (order.isPickedUp) {
-                        $('#pickup_status_pill').removeClass('bg-secondary').addClass('bg-success').text('Picked Up');
-                        $('#pickup_status_timestamp').text(order.pickedUpAt ? ('Picked up on ' + order.pickedUpAt) : 'Picked Up');
-                    } else {
-                        $('#pickup_status_pill').removeClass('bg-success').addClass('bg-secondary').text('Pending');
-                        $('#pickup_status_timestamp').text('Pending Route Pick-up');
-                    }
-                } else {
-                    $('#pickup_toggle_container').addClass('d-none');
-                }
-
-                // --- Delivery Switch & Gating ---
-                if (isCounterRoute) {
-                    // Counter & Route: Only show delivered switch, directly active
-                    $('#delivery_toggle_container').removeClass('d-none');
-                    $('#delivery_status_toggle').prop('disabled', false).prop('checked', order.isDelivered);
-                    $('#delivery_gated_note').addClass('d-none');
-
-                    if (order.isDelivered) {
-                        $('#delivery_status_pill').removeClass('bg-secondary').addClass('bg-success').text('Delivered');
-                        $('#delivery_status_timestamp').text(order.deliveredAt ? ('Delivered on ' + order.deliveredAt) : 'Delivered');
-                    } else {
-                        $('#delivery_status_pill').removeClass('bg-success').addClass('bg-secondary').text('Pending');
-                        $('#delivery_status_timestamp').text('Pending Route Delivery');
-                    }
-                } else if (isRouteRoute) {
-                    $('#delivery_toggle_container').removeClass('d-none');
-
-                    if (order.isPickedUp) {
-                        // Unlocked: Picked up is confirmed
-                        $('#delivery_status_toggle').prop('disabled', false).prop('checked', order.isDelivered);
-                        $('#delivery_gated_note').addClass('d-none');
-
-                        if (order.isDelivered) {
-                            $('#delivery_status_pill').removeClass('bg-secondary').addClass('bg-success').text('Delivered');
-                            $('#delivery_status_timestamp').text(order.deliveredAt ? ('Delivered on ' + order.deliveredAt) : 'Delivered');
-                        } else {
-                            $('#delivery_status_pill').removeClass('bg-success').addClass('bg-secondary').text('Pending');
-                            $('#delivery_status_timestamp').text('Pending Route Delivery');
-                        }
-                    } else {
-                        // Gated: Cannot deliver until picked up
-                        $('#delivery_status_toggle').prop('disabled', true).prop('checked', false);
-                        $('#delivery_status_pill').removeClass('bg-success').addClass('bg-secondary').text('Locked');
-                        $('#delivery_status_timestamp').text('Awaiting customer pick-up');
-                        $('#delivery_gated_note').removeClass('d-none');
-                    }
-                } else {
-                    $('#delivery_toggle_container').addClass('d-none');
-                }
+              refreshModalSwitchUI(activeOrderData);
+              $('#route_calendar').fullCalendar('refetchEvents');
+              if (typeof toastr !== 'undefined') toastr.success(res.message);
+            } else {
+              $switch.prop('checked', !this.checked);
+              if (typeof toastr !== 'undefined') toastr.error(res.message);
             }
-
-            // 4. Handle Pick-up Toggle Click
-            $('#pickup_status_toggle').on('change', function () {
-                if (!activeOrderData) return;
-                const newStatus = this.checked ? '1' : '0';
-                const $switch = $(this);
-                $switch.prop('disabled', true);
-
-                $.ajax({
-                    url: '/order/calendar/toggle-status',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({
-                        order_id: activeOrderData.orderId,
-                        field: 'pickup',
-                        status: newStatus
-                    }),
-                    success: function (res) {
-                        $switch.prop('disabled', false);
-                        if (res.success) {
-                            activeOrderData.isPickedUp = (res.is_picked_up === '1');
-                            activeOrderData.pickedUpAt = res.picked_up_at;
-                            activeOrderData.isDelivered = (res.is_delivered === '1');
-                            activeOrderData.deliveredAt = res.delivered_at;
-
-                            refreshModalSwitchUI(activeOrderData);
-                            $('#route_calendar').fullCalendar('refetchEvents');
-                            if (typeof toastr !== 'undefined') toastr.success(res.message);
-                        } else {
-                            $switch.prop('checked', !this.checked);
-                            if (typeof toastr !== 'undefined') toastr.error(res.message);
-                        }
-                    },
-                    error: function (xhr) {
-                        $switch.prop('disabled', false);
-                        $switch.prop('checked', !this.checked);
-                        const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error updating pick-up status.';
-                        if (typeof toastr !== 'undefined') toastr.error(msg);
-                    }
-                });
-            });
-
-            // 5. Handle Delivery Toggle Click
-            $('#delivery_status_toggle').on('change', function () {
-                if (!activeOrderData) return;
-                const newStatus = this.checked ? '1' : '0';
-                const $switch = $(this);
-                $switch.prop('disabled', true);
-
-                $.ajax({
-                    url: '/order/calendar/toggle-status',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({
-                        order_id: activeOrderData.orderId,
-                        field: 'delivery',
-                        status: newStatus
-                    }),
-                    success: function (res) {
-                        $switch.prop('disabled', false);
-                        if (res.success) {
-                            activeOrderData.isDelivered = (res.is_delivered === '1');
-                            activeOrderData.deliveredAt = res.delivered_at;
-
-                            refreshModalSwitchUI(activeOrderData);
-                            $('#route_calendar').fullCalendar('refetchEvents');
-                            if (typeof toastr !== 'undefined') toastr.success(res.message);
-                        } else {
-                            $switch.prop('checked', !this.checked);
-                            if (typeof toastr !== 'undefined') toastr.error(res.message);
-                        }
-                    },
-                    error: function (xhr) {
-                        $switch.prop('disabled', false);
-                        $switch.prop('checked', !this.checked);
-                        const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error updating delivery status.';
-                        if (typeof toastr !== 'undefined') toastr.error(msg);
-                    }
-                });
-            });
-
-            // 6. Reset open state on modal hide
-            $('#orderEventModal').on('hidden.bs.modal', function () {
-                currentOpenOrderId = null;
-                activeOrderData = null;
-            });
-
-            // 7. Live Filtering & Search Debounce
-            let searchTimeout = null;
-            $('#calendar_search_input').on('keyup input', function () {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(function () {
-                    $('#route_calendar').fullCalendar('refetchEvents');
-                }, 350);
-            });
-
-            $('#calendar_event_type, #calendar_status_filter, #calendar_store_filter').on('change', function () {
-                $('#route_calendar').fullCalendar('refetchEvents');
-            });
-
-            // 8. Server-Sent Events (SSE) Real-Time Synchronization
-            function initCalendarEventStream() {
-                if (!window.EventSource) {
-                    console.warn('Browser does not support Server-Sent Events (SSE).');
-                    $('#live_sync_label').text('Sync (Polling Mode)');
-                    return;
-                }
-
-                const sse = new EventSource('/order/calendar/stream');
-
-                sse.onopen = function () {
-                    $('#live_sync_dot').removeClass('pulse-warning').addClass('pulse-success');
-                    $('#live_sync_label').text('Live Sync Active');
-                    $('#live_sync_pill').removeClass('bg-warning-subtle text-warning border-warning-subtle')
-                                       .addClass('bg-success-subtle text-success border-success-subtle');
-                };
-
-                sse.onmessage = function (e) {
-                    try {
-                        const data = JSON.parse(e.data);
-                        if (data.type === 'connected') return;
-
-                        // Instantly refresh calendar across all connected clients
-                        $('#route_calendar').fullCalendar('refetchEvents');
-
-                        // If modal is currently open and this order changed:
-                        if (currentOpenOrderId && data.order_id && String(data.order_id) === String(currentOpenOrderId)) {
-                            if (data.action === 'status_changed' && activeOrderData) {
-                                if (data.field === 'pickup') {
-                                    activeOrderData.isPickedUp = (data.status === '1');
-                                } else if (data.field === 'delivery') {
-                                    activeOrderData.isDelivered = (data.status === '1');
-                                }
-                                refreshModalSwitchUI(activeOrderData);
-                            } else if (data.action === 'order_deleted') {
-                                $('#orderEventModal').modal('hide');
-                                if (typeof toastr !== 'undefined') toastr.info('Order was removed by another user.');
-                            }
-                        }
-                    } catch (err) {
-                        console.error('SSE Message parsing error:', err);
-                    }
-                };
-
-                sse.onerror = function () {
-                    $('#live_sync_dot').removeClass('pulse-success').addClass('pulse-warning');
-                    $('#live_sync_label').text('Reconnecting...');
-                    $('#live_sync_pill').removeClass('bg-success-subtle text-success border-success-subtle')
-                                       .addClass('bg-warning-subtle text-warning border-warning-subtle');
-                };
-            }
-
-            initCalendarEventStream();
+          },
+          error: function(xhr) {
+            $switch.prop('disabled', false);
+            $switch.prop('checked', !this.checked);
+            const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error updating pick-up status.';
+            if (typeof toastr !== 'undefined') toastr.error(msg);
+          }
         });
-    </script>
+      });
+
+      // 5. Handle Delivery Toggle Click
+      $('#delivery_status_toggle').on('change', function() {
+        if (!activeOrderData) return;
+        const newStatus = this.checked ? '1' : '0';
+        const $switch = $(this);
+        $switch.prop('disabled', true);
+
+        $.ajax({
+          url: '/order/calendar/toggle-status',
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            order_id: activeOrderData.orderId,
+            field: 'delivery',
+            status: newStatus
+          }),
+          success: function(res) {
+            $switch.prop('disabled', false);
+            if (res.success) {
+              activeOrderData.isDelivered = (res.is_delivered === '1');
+              activeOrderData.deliveredAt = res.delivered_at;
+
+              refreshModalSwitchUI(activeOrderData);
+              $('#route_calendar').fullCalendar('refetchEvents');
+              if (typeof toastr !== 'undefined') toastr.success(res.message);
+            } else {
+              $switch.prop('checked', !this.checked);
+              if (typeof toastr !== 'undefined') toastr.error(res.message);
+            }
+          },
+          error: function(xhr) {
+            $switch.prop('disabled', false);
+            $switch.prop('checked', !this.checked);
+            const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error updating delivery status.';
+            if (typeof toastr !== 'undefined') toastr.error(msg);
+          }
+        });
+      });
+
+      // 6. Reset open state on modal hide
+      $('#orderEventModal').on('hidden.bs.modal', function() {
+        currentOpenOrderId = null;
+        activeOrderData = null;
+      });
+
+      // 7. Live Filtering & Search Debounce
+      let searchTimeout = null;
+      $('#calendar_search_input').on('keyup input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+          $('#route_calendar').fullCalendar('refetchEvents');
+        }, 350);
+      });
+
+      $('#calendar_event_type, #calendar_status_filter, #calendar_store_filter').on('change', function() {
+        $('#route_calendar').fullCalendar('refetchEvents');
+      });
+
+      // 8. Server-Sent Events (SSE) Real-Time Synchronization
+      function initCalendarEventStream() {
+        if (!window.EventSource) {
+          console.warn('Browser does not support Server-Sent Events (SSE).');
+          $('#live_sync_label').text('Sync (Polling Mode)');
+          return;
+        }
+
+        const sse = new EventSource('/order/calendar/stream');
+
+        sse.onopen = function() {
+          $('#live_sync_dot').removeClass('pulse-warning').addClass('pulse-success');
+          $('#live_sync_label').text('Live Sync Active');
+          $('#live_sync_pill').removeClass('bg-warning-subtle text-warning border-warning-subtle')
+            .addClass('bg-success-subtle text-success border-success-subtle');
+        };
+
+        sse.onmessage = function(e) {
+          try {
+            const data = JSON.parse(e.data);
+            if (data.type === 'connected') return;
+
+            // Instantly refresh calendar across all connected clients
+            $('#route_calendar').fullCalendar('refetchEvents');
+
+            // If modal is currently open and this order changed:
+            if (currentOpenOrderId && data.order_id && String(data.order_id) === String(currentOpenOrderId)) {
+              if (data.action === 'status_changed' && activeOrderData) {
+                if (data.field === 'pickup') {
+                  activeOrderData.isPickedUp = (data.status === '1');
+                } else if (data.field === 'delivery') {
+                  activeOrderData.isDelivered = (data.status === '1');
+                }
+                refreshModalSwitchUI(activeOrderData);
+              } else if (data.action === 'order_deleted') {
+                $('#orderEventModal').modal('hide');
+                if (typeof toastr !== 'undefined') toastr.info('Order was removed by another user.');
+              }
+            }
+          } catch (err) {
+            console.error('SSE Message parsing error:', err);
+          }
+        };
+
+        sse.onerror = function() {
+          $('#live_sync_dot').removeClass('pulse-success').addClass('pulse-warning');
+          $('#live_sync_label').text('Reconnecting...');
+          $('#live_sync_pill').removeClass('bg-success-subtle text-success border-success-subtle')
+            .addClass('bg-warning-subtle text-warning border-warning-subtle');
+        };
+      }
+
+      initCalendarEventStream();
+    });
+  </script>
 </body>
 
 </html>

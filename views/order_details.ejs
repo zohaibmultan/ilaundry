@@ -51,40 +51,84 @@
                                         <% } %>
                                     </div>
                                     <small class="text-muted d-block mb-3"><%= language.Order_Details_Subtitle || 'Comprehensive invoice summary, service breakdown, and tracking details' %></small>
-                                    <p class="text-sm mb-1">
-                                        <span>
-                                            <%= language.Order_Date %> :
-                                        </span>
-                                        <% let Order_date=new Date(order.order_date) %>
-                                            <% let Order_day=(Order_date.getDate() < 10 ? '0' : '' ) +
-                                                Order_date.getDate() %>
-                                                <% let Order_month=((Order_date.getMonth()+1) < 10 ? '0' : '' ) +
-                                                    (Order_date.getMonth()+1) %>
-                                                    <% let Order_year=Order_date.getFullYear() %>
-                                                        <% let
-                                                            Order_fullDate=`${Order_year}-${Order_month}-${Order_day}`
-                                                            %>
-                                                            <span>
-                                                                <%=Order_fullDate %>
-                                                            </span>
-                                    </p>
-                                    <% 
-                                        const isDeliveryOrder = (order.order_type === 'Counter & Route' || order.order_type === 'Route & Route' || order.order_type === 'C & R' || order.order_type === 'R & R' || order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery');
+                                    <%
+                                        function formatNiceDateTime(dt) {
+                                            if (!dt) return '—';
+                                            const d = new Date(dt);
+                                            if (isNaN(d.getTime())) return '—';
+                                            const y = d.getFullYear();
+                                            const m = String(d.getMonth() + 1).padStart(2, '0');
+                                            const day = String(d.getDate()).padStart(2, '0');
+                                            let h = d.getHours();
+                                            const min = String(d.getMinutes()).padStart(2, '0');
+                                            const ampm = h >= 12 ? 'PM' : 'AM';
+                                            h = h % 12;
+                                            h = h ? h : 12;
+                                            return `${y}-${m}-${day} ${String(h).padStart(2, '0')}:${min} ${ampm}`;
+                                        }
+
+                                        function formatNiceDate(dt) {
+                                            if (!dt) return '—';
+                                            const d = new Date(dt);
+                                            if (isNaN(d.getTime())) return '—';
+                                            const y = d.getFullYear();
+                                            const m = String(d.getMonth() + 1).padStart(2, '0');
+                                            const day = String(d.getDate()).padStart(2, '0');
+                                            return `${y}-${m}-${day}`;
+                                        }
+
+                                        const orderType = order.order_type || '';
+                                        const hasPickup = (
+                                            orderType === 'Route & Route' || 
+                                            orderType === 'Route & Counter' || 
+                                            orderType === 'Pick-up & Delivery' || 
+                                            orderType === 'Pick-up & Counter' || 
+                                            orderType === 'Store collection & Store delivery' ||
+                                            orderType === 'R & R' ||
+                                            orderType === 'R & C'
+                                        );
+                                        const hasDelivery = (
+                                            orderType === 'Route & Route' || 
+                                            orderType === 'Counter & Route' || 
+                                            orderType === 'Pick-up & Delivery' || 
+                                            orderType === 'Counter & Delivery' || 
+                                            orderType === 'Customer drop-off & Store delivery' || 
+                                            orderType === 'Store collection & Store delivery' ||
+                                            orderType === 'R & R' ||
+                                            orderType === 'C & R'
+                                        );
+                                        const isRouteRoute = (
+                                            orderType === 'Route & Route' || 
+                                            orderType === 'Pick-up & Delivery' || 
+                                            orderType === 'Store collection & Store delivery' ||
+                                            orderType === 'R & R'
+                                        );
+
+                                        const isPickedUp = (String(order.is_picked_up) === '1');
+                                        const isDelivered = (String(order.is_delivered) === '1');
+
+                                        let Order_date = new Date(order.order_date);
+                                        let Order_day = (Order_date.getDate() < 10 ? '0' : '') + Order_date.getDate();
+                                        let Order_month = ((Order_date.getMonth() + 1) < 10 ? '0' : '') + (Order_date.getMonth() + 1);
+                                        let Order_year = Order_date.getFullYear();
+                                        let Order_fullDate = `${Order_year}-${Order_month}-${Order_day}`;
+
+                                        const isDeliveryOrder = hasDelivery;
                                         const orderDateLabel = isDeliveryOrder ? (language.Delivery_Date || 'Delivery Date') : (language.Pickup_Date || 'Pick-up Date');
                                         const activeDateVal = isDeliveryOrder ? order.delivery_date : (order.pickup_date || order.delivery_date);
                                         let Delivery_date = new Date(activeDateVal);
                                         let Delivery_day = (Delivery_date.getDate() < 10 ? '0' : '') + Delivery_date.getDate();
-                                        let Delivery_month = ((Delivery_date.getMonth()+1) < 10 ? '0' : '') + (Delivery_date.getMonth()+1);
+                                        let Delivery_month = ((Delivery_date.getMonth() + 1) < 10 ? '0' : '') + (Delivery_date.getMonth() + 1);
                                         let Delivery_year = Delivery_date.getFullYear();
                                         let Delivery_fullDate = `${Delivery_year}-${Delivery_month}-${Delivery_day}`;
                                     %>
-                                    <p class="text-sm mb-3">
-                                        <span>
-                                            <%= orderDateLabel %> :
-                                        </span>
-                                        <span>
-                                            <%=Delivery_fullDate %>
-                                        </span>
+                                    <p class="text-sm mb-1">
+                                        <span class="text-muted"><%= language.Order_Date %>:</span>
+                                        <strong class="text-dark ms-1"><%= Order_fullDate %></strong>
+                                    </p>
+                                    <p class="text-sm mb-2">
+                                        <span class="text-muted"><%= language.Target_Ready || 'Target Ready' %>:</span>
+                                        <strong class="text-dark ms-1"><%= formatNiceDateTime(order.ready_date || order.delivery_date) %></strong>
                                     </p>
                                     <div class="d-flex align-items-center">
                                         <div>
@@ -153,6 +197,135 @@
                                 
                             </div>
                             <div class="card-body p-4">
+                                <!-- Dispatch & Route Tracking Section -->
+                                <div class="card border rounded-3 p-3 mb-4 bg-light-subtle">
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                                        <h5 class="fw-bold text-dark mb-0 d-flex align-items-center">
+                                            <i class="fa fa-route text-primary me-2"></i>
+                                            <%= language.Dispatch_Schedule || 'Dispatch & Route Tracking' %>
+                                        </h5>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-light text-dark border py-1 px-2 fw-semibold">
+                                                <i class="fa fa-tag text-muted me-1"></i> <%= order.order_type || 'Standard Order' %>
+                                            </span>
+                                            <span class="badge bg-primary text-white py-1 px-2">
+                                                <%= order.status %>
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <!-- 1. Route Pick-up Card -->
+                                        <div class="col-12 col-md-4">
+                                            <div class="p-3 border rounded-3 bg-white h-100 shadow-xs">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <span class="text-muted small fw-bold text-uppercase">
+                                                        <i class="fa fa-box text-warning me-1"></i> <%= language.Route_Pickup || 'Route Pick-up' %>
+                                                    </span>
+                                                    <% if (hasPickup) { %>
+                                                        <span id="details_pickup_badge" class="badge <%= (String(order.is_picked_up) === '1') ? 'bg-success text-white' : 'bg-warning text-dark' %>">
+                                                            <i class="fa <%= (String(order.is_picked_up) === '1') ? 'fa-check-circle' : 'fa-clock' %> me-1"></i>
+                                                            <%= (String(order.is_picked_up) === '1') ? (language.Picked_Up || 'Picked Up') : (language.Pending || 'Pending Pick-up') %>
+                                                        </span>
+                                                    <% } else { %>
+                                                        <span class="badge bg-light text-dark border">Counter Intake</span>
+                                                    <% } %>
+                                                </div>
+
+                                                <div class="fw-bold text-dark fs-6 mb-1">
+                                                    <%= hasPickup ? formatNiceDateTime(order.pickup_date) : 'Store Drop-off' %>
+                                                </div>
+                                                <div class="text-muted small mb-2" id="details_pickup_time">
+                                                    <% if (hasPickup) { %>
+                                                        <%= (String(order.is_picked_up) === '1') ? ((order.picked_up_at ? ('Picked up on ' + formatNiceDateTime(order.picked_up_at)) : 'Picked Up')) : 'Pending Route Pick-up' %>
+                                                    <% } else { %>
+                                                        Customer brought garments to counter
+                                                    <% } %>
+                                                </div>
+
+                                                <% if (hasPickup && canEditOrder) { %>
+                                                    <div class="pt-2 border-top mt-2">
+                                                        <div class="form-check form-switch mb-0">
+                                                            <input class="form-check-input" type="checkbox" role="switch" id="details_pickup_toggle" style="cursor: pointer;" <%= (String(order.is_picked_up) === '1') ? 'checked' : '' %>>
+                                                            <label class="form-check-label fw-bold text-dark small" for="details_pickup_toggle" style="cursor: pointer;">
+                                                                <%= language.Mark_Picked_Up || 'Picked Up from Customer' %>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                <% } %>
+                                            </div>
+                                        </div>
+
+                                        <!-- 2. Factory Target Ready Card -->
+                                        <div class="col-12 col-md-4">
+                                            <div class="p-3 border rounded-3 bg-white h-100 shadow-xs">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <span class="text-muted small fw-bold text-uppercase">
+                                                        <i class="fa fa-clock text-info me-1"></i> <%= language.Factory_Ready || 'Factory Target Ready' %>
+                                                    </span>
+                                                    <span class="badge bg-info text-white">
+                                                        <i class="fa fa-tshirt me-1"></i> <%= order.status %>
+                                                    </span>
+                                                </div>
+
+                                                <div class="fw-bold text-dark fs-6 mb-1">
+                                                    <%= formatNiceDateTime(order.ready_date || order.delivery_date) %>
+                                                </div>
+                                                <div class="text-muted small mb-2">
+                                                    Factory/Store Cleaning Target
+                                                </div>
+                                                <div class="pt-2 border-top mt-2 text-muted small">
+                                                    <i class="fa fa-info-circle me-1 text-primary"></i> Working Days & Cutoff Schedule
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 3. Route Delivery Card -->
+                                        <div class="col-12 col-md-4">
+                                            <div class="p-3 border rounded-3 bg-white h-100 shadow-xs">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <span class="text-muted small fw-bold text-uppercase">
+                                                        <i class="fa fa-truck text-primary me-1"></i> <%= language.Route_Delivery || 'Route Delivery' %>
+                                                    </span>
+                                                    <% if (hasDelivery) { %>
+                                                        <span id="details_delivery_badge" class="badge <%= (String(order.is_delivered) === '1') ? 'bg-success text-white' : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'bg-secondary text-white' : 'bg-primary text-white') %>">
+                                                            <i class="fa <%= (String(order.is_delivered) === '1') ? 'fa-check-circle' : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'fa-lock' : 'fa-truck') %> me-1"></i>
+                                                            <%= (String(order.is_delivered) === '1') ? (language.Delivered || 'Delivered') : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'Locked' : (language.Pending || 'Pending Delivery')) %>
+                                                        </span>
+                                                    <% } else { %>
+                                                        <span class="badge bg-light text-dark border">Counter Collection</span>
+                                                    <% } %>
+                                                </div>
+
+                                                <div class="fw-bold text-dark fs-6 mb-1">
+                                                    <%= hasDelivery ? formatNiceDateTime(order.delivery_date) : formatNiceDateTime(order.ready_date || order.delivery_date) %>
+                                                </div>
+                                                <div class="text-muted small mb-2" id="details_delivery_time">
+                                                    <% if (hasDelivery) { %>
+                                                        <%= (String(order.is_delivered) === '1') ? ((order.delivered_at ? ('Delivered on ' + formatNiceDateTime(order.delivered_at)) : 'Delivered')) : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'Awaiting customer pick-up' : 'Pending Route Delivery') %>
+                                                    <% } else { %>
+                                                        Customer will pick up at counter
+                                                    <% } %>
+                                                </div>
+
+                                                <% if (hasDelivery && canEditOrder) { %>
+                                                    <div class="pt-2 border-top mt-2">
+                                                        <div class="form-check form-switch mb-0">
+                                                            <input class="form-check-input" type="checkbox" role="switch" id="details_delivery_toggle" style="cursor: pointer;" <%= (String(order.is_delivered) === '1') ? 'checked' : '' %> <%= (isRouteRoute && String(order.is_picked_up) !== '1') ? 'disabled' : '' %>>
+                                                            <label class="form-check-label fw-bold text-dark small" for="details_delivery_toggle" style="cursor: pointer;">
+                                                                <%= language.Mark_Delivered || 'Delivered to Customer' %>
+                                                            </label>
+                                                        </div>
+                                                        <div id="details_delivery_gated_note" class="alert alert-warning py-1 px-2 small mt-2 mb-0 <%= (isRouteRoute && String(order.is_picked_up) !== '1') ? '' : 'd-none' %>">
+                                                            <i class="fa fa-info-circle me-1"></i> Pick-up must be confirmed first.
+                                                        </div>
+                                                    </div>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="table-responsive">
                                     <table class="table">
                                         <thead class="table_head">
@@ -352,45 +525,118 @@
                                                     <% }) %>
                                             </ul>
                                             <% } %>
-                                                <h4 class="card-title">
-                                                    <%= language.Payments %>
+                                                <h4 class="card-title mb-3 fw-bold text-dark d-flex align-items-center">
+                                                    <i class="fa fa-history text-primary me-2"></i>
+                                                    <%= language.Order_Timeline || 'Order Timeline' %>
                                                 </h4>
-                                                <div id="DZ_W_TimeLine1"
-                                                    class="widget-timeline style-1 ps ps--active-y">
-                                                    <ul class="timeline">
-                                                        <% payments.forEach(function(data){ %>
-                                                            <li>
-                                                                <div class="timeline-badge primary"></div>
-                                                                <div class="mx-5">
-                                                                    <h5><strong class="symbol">
-                                                                            <%=data.payment_amount %>
-                                                                        </strong></h5>
+                                                <div id="DZ_W_TimeLine1" class="widget-timeline style-1 ps ps--active-y mb-4">
+                                                    <ul class="timeline" id="order_lifecycle_timeline">
+                                                        <!-- 1. Order Placed Milestone -->
+                                                        <li>
+                                                            <div class="timeline-badge primary"></div>
+                                                            <div class="timeline-panel">
+                                                                <span><%= Order_fullDate %></span>
+                                                                <h6 class="mb-0 fw-bold text-dark">
+                                                                    <i class="fa fa-receipt text-primary me-1"></i> <%= language.Order_Placed || 'Order Placed' %>
+                                                                </h6>
+                                                                <p class="mb-0 text-muted fs-12">
+                                                                    Order #<%= order.order_id %> created.
+                                                                    <span class="d-block">Total: <strong class="symbol text-dark"><%= order.gross_total.toFixed(2) %></strong></span>
+                                                                </p>
+                                                            </div>
+                                                        </li>
 
-                                                                    <span>
-                                                                        <% let payment_date=new Date(data.payment_date)
-                                                                            %>
-                                                                            <% let payment_day=(payment_date.getDate() <
-                                                                                10 ? '0' : '' ) + payment_date.getDate()
-                                                                                %>
-                                                                                <% let
-                                                                                    payment_month=((payment_date.getMonth()+1)
-                                                                                    < 10 ? '0' : '' ) +
-                                                                                    (payment_date.getMonth()+1) %>
-                                                                                    <% let
-                                                                                        payment_year=payment_date.getFullYear()
-                                                                                        %>
-                                                                                        <% let
-                                                                                            payment_fullDate=`${payment_year}-${payment_month}-${payment_day}`
-                                                                                            %>
-                                                                                            <h6>
-                                                                                                <%=payment_fullDate %>
-                                                                                            </h6>
+                                                        <!-- 2. Route Pick-up Milestone (if applicable) -->
+                                                        <% if (hasPickup) { %>
+                                                            <li>
+                                                                <div class="timeline-badge <%= (String(order.is_picked_up) === '1') ? 'success' : 'warning' %>" id="timeline_pickup_badge"></div>
+                                                                <div class="timeline-panel" id="timeline_pickup_panel">
+                                                                    <span id="timeline_pickup_time">
+                                                                        <%= (String(order.is_picked_up) === '1' && order.picked_up_at) ? formatNiceDateTime(order.picked_up_at) : ('Scheduled: ' + formatNiceDateTime(order.pickup_date)) %>
                                                                     </span>
-                                                                    <strong>[<%=data.ac_name %>]</strong>
+                                                                    <h6 class="mb-0 fw-bold <%= (String(order.is_picked_up) === '1') ? 'text-success' : 'text-warning' %>" id="timeline_pickup_title">
+                                                                        <i class="fa <%= (String(order.is_picked_up) === '1') ? 'fa-check-circle' : 'fa-clock' %> me-1"></i>
+                                                                        <%= (String(order.is_picked_up) === '1') ? (language.Picked_Up || 'Picked Up from Customer') : (language.Pending_Pickup || 'Awaiting Route Pick-up') %>
+                                                                    </h6>
+                                                                    <p class="mb-0 text-muted fs-12" id="timeline_pickup_desc">
+                                                                        <%= (String(order.is_picked_up) === '1') ? 'Garments collected from customer on route.' : 'Awaiting driver collection on customer route.' %>
+                                                                    </p>
                                                                 </div>
                                                             </li>
-                                                            <% }) %>
+                                                        <% } %>
 
+                                                        <!-- 3. Cleaning & Ready Target Milestone -->
+                                                        <li>
+                                                            <div class="timeline-badge info"></div>
+                                                            <div class="timeline-panel">
+                                                                <span>Target: <%= formatNiceDateTime(order.ready_date || order.delivery_date) %></span>
+                                                                <h6 class="mb-0 fw-bold text-info">
+                                                                    <i class="fa fa-tshirt me-1"></i> <%= language.Cleaning_Processing || 'Cleaning & Processing' %>
+                                                                </h6>
+                                                                <p class="mb-0 text-muted fs-12">
+                                                                    Status: <span class="badge bg-light text-dark border py-1 px-2 fw-semibold"><%= order.status %></span>
+                                                                </p>
+                                                            </div>
+                                                        </li>
+
+                                                        <!-- 4. Delivery / Counter Collection Milestone -->
+                                                        <% if (hasDelivery) { %>
+                                                            <li>
+                                                                <div class="timeline-badge <%= (String(order.is_delivered) === '1') ? 'success' : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'dark' : 'primary') %>" id="timeline_delivery_badge"></div>
+                                                                <div class="timeline-panel" id="timeline_delivery_panel">
+                                                                    <span id="timeline_delivery_time">
+                                                                        <%= (String(order.is_delivered) === '1' && order.delivered_at) ? formatNiceDateTime(order.delivered_at) : ('Scheduled: ' + formatNiceDateTime(order.delivery_date)) %>
+                                                                    </span>
+                                                                    <h6 class="mb-0 fw-bold <%= (String(order.is_delivered) === '1') ? 'text-success' : 'text-primary' %>" id="timeline_delivery_title">
+                                                                        <i class="fa <%= (String(order.is_delivered) === '1') ? 'fa-check-circle' : 'fa-truck' %> me-1"></i>
+                                                                        <%= (String(order.is_delivered) === '1') ? (language.Delivered || 'Delivered to Customer') : (language.Delivery_Scheduled || 'Route Delivery Scheduled') %>
+                                                                    </h6>
+                                                                    <p class="mb-0 text-muted fs-12" id="timeline_delivery_desc">
+                                                                        <%= (String(order.is_delivered) === '1') ? 'Clean garments delivered to customer.' : ((isRouteRoute && String(order.is_picked_up) !== '1') ? 'Awaiting route pick-up first.' : 'Ready for route delivery dispatch.') %>
+                                                                    </p>
+                                                                </div>
+                                                            </li>
+                                                        <% } else { %>
+                                                            <li>
+                                                                <% const isCounterDelivered = (order.order_status == 4 || String(order.status).toLowerCase().includes('delivered')); %>
+                                                                <div class="timeline-badge <%= isCounterDelivered ? 'success' : 'primary' %>"></div>
+                                                                <div class="timeline-panel">
+                                                                    <span><%= isCounterDelivered ? 'Completed' : ('Ready: ' + formatNiceDateTime(order.ready_date || order.delivery_date)) %></span>
+                                                                    <h6 class="mb-0 fw-bold <%= isCounterDelivered ? 'text-success' : 'text-dark' %>">
+                                                                        <i class="fa <%= isCounterDelivered ? 'fa-check-circle text-success' : 'fa-store text-primary' %> me-1"></i>
+                                                                        <%= isCounterDelivered ? 'Collected at Store' : 'Counter Collection' %>
+                                                                    </h6>
+                                                                    <p class="mb-0 text-muted fs-12">
+                                                                        <%= isCounterDelivered ? 'Customer collected order at counter.' : 'Customer will pick up order from store counter.' %>
+                                                                    </p>
+                                                                </div>
+                                                            </li>
+                                                        <% } %>
+
+                                                        <!-- 5. Payment Milestones -->
+                                                        <% if (payments && payments.length > 0) { %>
+                                                            <% payments.forEach(function(pay) { %>
+                                                                <% 
+                                                                    let pDate = new Date(pay.payment_date);
+                                                                    let pDay = (pDate.getDate() < 10 ? '0' : '') + pDate.getDate();
+                                                                    let pMonth = ((pDate.getMonth() + 1) < 10 ? '0' : '') + (pDate.getMonth() + 1);
+                                                                    let pYear = pDate.getFullYear();
+                                                                    let pFullDate = `${pYear}-${pMonth}-${pDay}`;
+                                                                %>
+                                                                <li>
+                                                                    <div class="timeline-badge success"></div>
+                                                                    <div class="timeline-panel">
+                                                                        <span><%= pFullDate %></span>
+                                                                        <h6 class="mb-0 fw-bold text-success">
+                                                                            <i class="fa fa-money-bill-wave me-1"></i> <%= language.Paid || 'Paid' %>: <strong class="symbol"><%= pay.payment_amount %></strong>
+                                                                        </h6>
+                                                                        <p class="mb-0 text-muted fs-12">
+                                                                            Account: <strong>[<%= pay.ac_name %>]</strong>
+                                                                        </p>
+                                                                    </div>
+                                                                </li>
+                                                            <% }); %>
+                                                        <% } %>
                                                     </ul>
 
 
@@ -1044,6 +1290,213 @@
                             allowClear: true
                         });
                     });
+
+                    // Dispatch & Route Status Interactive Toggles
+                    $('#details_pickup_toggle').on('change', function () {
+                        const $sw = $(this);
+                        const isChecked = this.checked;
+                        const newStatus = isChecked ? '1' : '0';
+                        $sw.prop('disabled', true);
+
+                        $.ajax({
+                            url: '/order/calendar/toggle-status',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({
+                                order_id: '<%= order.id %>',
+                                field: 'pickup',
+                                status: newStatus
+                            }),
+                            success: function (res) {
+                                $sw.prop('disabled', false);
+                                if (res.success) {
+                                    const pickedUp = (res.is_picked_up === '1');
+                                    if (pickedUp) {
+                                        $('#details_pickup_badge').removeClass('bg-secondary bg-warning text-dark').addClass('bg-success text-white').html('<i class="fa fa-check-circle me-1"></i> Picked Up');
+                                        $('#details_pickup_time').text(res.picked_up_at ? ('Picked up on ' + res.picked_up_at) : 'Picked Up');
+                                    } else {
+                                        $('#details_pickup_badge').removeClass('bg-success text-white').addClass('bg-warning text-dark').html('<i class="fa fa-clock me-1"></i> Pending Pick-up');
+                                        $('#details_pickup_time').text('Pending Route Pick-up');
+                                    }
+
+                                    <% if (isRouteRoute) { %>
+                                        if (!pickedUp) {
+                                            $('#details_delivery_toggle').prop('checked', false).prop('disabled', true);
+                                            $('#details_delivery_badge').removeClass('bg-success text-white').addClass('bg-secondary text-white').html('<i class="fa fa-lock me-1"></i> Locked');
+                                            $('#details_delivery_time').text('Awaiting customer pick-up');
+                                            $('#details_delivery_gated_note').removeClass('d-none');
+                                            updateTimelineDelivery(false, null);
+                                        } else {
+                                            $('#details_delivery_toggle').prop('disabled', false);
+                                            $('#details_delivery_gated_note').addClass('d-none');
+                                            if (!$('#details_delivery_toggle').is(':checked')) {
+                                                $('#details_delivery_badge').removeClass('bg-success text-white bg-secondary').addClass('bg-primary text-white').html('<i class="fa fa-clock me-1"></i> Pending Delivery');
+                                                $('#details_delivery_time').text('Pending Route Delivery');
+                                            }
+                                        }
+                                    <% } %>
+
+                                    updateTimelinePickup(pickedUp, res.picked_up_at);
+                                    if (typeof toastr !== 'undefined') toastr.success(res.message);
+                                } else {
+                                    $sw.prop('checked', !isChecked);
+                                    if (typeof toastr !== 'undefined') toastr.error(res.message);
+                                }
+                            },
+                            error: function (xhr) {
+                                $sw.prop('disabled', false);
+                                $sw.prop('checked', !isChecked);
+                                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error updating pick-up status.';
+                                if (typeof toastr !== 'undefined') toastr.error(msg);
+                            }
+                        });
+                    });
+
+                    $('#details_delivery_toggle').on('change', function () {
+                        const $sw = $(this);
+                        const isChecked = this.checked;
+                        const newStatus = isChecked ? '1' : '0';
+                        $sw.prop('disabled', true);
+
+                        $.ajax({
+                            url: '/order/calendar/toggle-status',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({
+                                order_id: '<%= order.id %>',
+                                field: 'delivery',
+                                status: newStatus
+                            }),
+                            success: function (res) {
+                                $sw.prop('disabled', false);
+                                if (res.success) {
+                                    const delivered = (res.is_delivered === '1');
+                                    if (delivered) {
+                                        $('#details_delivery_badge').removeClass('bg-secondary bg-primary text-white').addClass('bg-success text-white').html('<i class="fa fa-check-circle me-1"></i> Delivered');
+                                        $('#details_delivery_time').text(res.delivered_at ? ('Delivered on ' + res.delivered_at) : 'Delivered');
+                                    } else {
+                                        $('#details_delivery_badge').removeClass('bg-success text-white bg-secondary').addClass('bg-primary text-white').html('<i class="fa fa-clock me-1"></i> Pending Delivery');
+                                        $('#details_delivery_time').text('Pending Route Delivery');
+                                    }
+
+                                    updateTimelineDelivery(delivered, res.delivered_at);
+                                    if (typeof toastr !== 'undefined') toastr.success(res.message);
+                                } else {
+                                    $sw.prop('checked', !isChecked);
+                                    if (typeof toastr !== 'undefined') toastr.error(res.message);
+                                }
+                            },
+                            error: function (xhr) {
+                                $sw.prop('disabled', false);
+                                $sw.prop('checked', !isChecked);
+                                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error updating delivery status.';
+                                if (typeof toastr !== 'undefined') toastr.error(msg);
+                            }
+                        });
+                    });
+
+                    function updateTimelinePickup(isPicked, timestamp) {
+                        const $badge = $('#timeline_pickup_badge');
+                        const $time = $('#timeline_pickup_time');
+                        const $title = $('#timeline_pickup_title');
+                        const $desc = $('#timeline_pickup_desc');
+
+                        if (isPicked) {
+                            $badge.removeClass('warning dark').addClass('success');
+                            $time.text(timestamp || 'Picked Up');
+                            $title.removeClass('text-warning text-muted').addClass('text-success')
+                                  .html('<i class="fa fa-check-circle me-1"></i> <%= language.Picked_Up || "Picked Up from Customer" %>');
+                            $desc.text('Garments collected from customer on route.');
+                        } else {
+                            $badge.removeClass('success dark').addClass('warning');
+                            $time.text('Scheduled: <%= formatNiceDateTime(order.pickup_date) %>');
+                            $title.removeClass('text-success text-muted').addClass('text-warning')
+                                  .html('<i class="fa fa-clock me-1"></i> <%= language.Pending_Pickup || "Awaiting Route Pick-up" %>');
+                            $desc.text('Awaiting driver collection on customer route.');
+                        }
+                    }
+
+                    function updateTimelineDelivery(isDeliv, timestamp) {
+                        const $badge = $('#timeline_delivery_badge');
+                        const $time = $('#timeline_delivery_time');
+                        const $title = $('#timeline_delivery_title');
+                        const $desc = $('#timeline_delivery_desc');
+
+                        if (isDeliv) {
+                            $badge.removeClass('primary dark warning').addClass('success');
+                            $time.text(timestamp || 'Delivered');
+                            $title.removeClass('text-primary text-muted').addClass('text-success')
+                                  .html('<i class="fa fa-check-circle me-1"></i> <%= language.Delivered || "Delivered to Customer" %>');
+                            $desc.text('Clean garments delivered to customer.');
+                        } else {
+                            <% if (isRouteRoute) { %>
+                                const isPicked = $('#details_pickup_toggle').is(':checked');
+                                if (!isPicked) {
+                                    $badge.removeClass('success primary warning').addClass('dark');
+                                    $time.text('Scheduled: <%= formatNiceDateTime(order.delivery_date) %>');
+                                    $title.removeClass('text-success text-primary').addClass('text-muted')
+                                          .html('<i class="fa fa-lock me-1"></i> Delivery Gated');
+                                    $desc.text('Awaiting route pick-up first.');
+                                    return;
+                                }
+                            <% } %>
+                            $badge.removeClass('success dark warning').addClass('primary');
+                            $time.text('Scheduled: <%= formatNiceDateTime(order.delivery_date) %>');
+                            $title.removeClass('text-success text-muted').addClass('text-primary')
+                                  .html('<i class="fa fa-truck me-1"></i> <%= language.Delivery_Scheduled || "Route Delivery Scheduled" %>');
+                            $desc.text('Ready for route delivery dispatch.');
+                        }
+                    }
+
+                    // Real-Time SSE Listener
+                    if (window.EventSource) {
+                        const sse = new EventSource('/order/calendar/stream');
+                        sse.onmessage = function (e) {
+                            try {
+                                const data = JSON.parse(e.data);
+                                if (data.type === 'connected') return;
+                                if (data.order_id && String(data.order_id) === '<%= order.id %>' && data.action === 'status_changed') {
+                                    if (data.field === 'pickup') {
+                                        const picked = (data.status === '1');
+                                        $('#details_pickup_toggle').prop('checked', picked);
+                                        if (picked) {
+                                            $('#details_pickup_badge').removeClass('bg-secondary bg-warning text-dark').addClass('bg-success text-white').html('<i class="fa fa-check-circle me-1"></i> Picked Up');
+                                            $('#details_pickup_time').text('Picked Up');
+                                        } else {
+                                            $('#details_pickup_badge').removeClass('bg-success text-white').addClass('bg-warning text-dark').html('<i class="fa fa-clock me-1"></i> Pending Pick-up');
+                                            $('#details_pickup_time').text('Pending Route Pick-up');
+                                        }
+                                        <% if (isRouteRoute) { %>
+                                            if (!picked) {
+                                                $('#details_delivery_toggle').prop('checked', false).prop('disabled', true);
+                                                $('#details_delivery_badge').removeClass('bg-success text-white').addClass('bg-secondary text-white').html('<i class="fa fa-lock me-1"></i> Locked');
+                                                $('#details_delivery_time').text('Awaiting customer pick-up');
+                                                $('#details_delivery_gated_note').removeClass('d-none');
+                                                updateTimelineDelivery(false, null);
+                                            } else {
+                                                $('#details_delivery_toggle').prop('disabled', false);
+                                                $('#details_delivery_gated_note').addClass('d-none');
+                                            }
+                                        <% } %>
+                                        updateTimelinePickup(picked, null);
+                                    } else if (data.field === 'delivery') {
+                                        const delivered = (data.status === '1');
+                                        $('#details_delivery_toggle').prop('checked', delivered);
+                                        if (delivered) {
+                                            $('#details_delivery_badge').removeClass('bg-secondary bg-primary text-white').addClass('bg-success text-white').html('<i class="fa fa-check-circle me-1"></i> Delivered');
+                                            $('#details_delivery_time').text('Delivered');
+                                        } else {
+                                            $('#details_delivery_badge').removeClass('bg-success text-white bg-secondary').addClass('bg-primary text-white').html('<i class="fa fa-clock me-1"></i> Pending Delivery');
+                                            $('#details_delivery_time').text('Pending Route Delivery');
+                                        }
+                                        updateTimelineDelivery(delivered, null);
+                                    }
+                                }
+                            } catch (err) {
+                                console.error('SSE sync error:', err);
+                            }
+                        };
+                    }
 
                     // Order Transfer Workflow
                     var selectedTargetStoreId = null;
