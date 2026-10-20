@@ -627,6 +627,7 @@ router.get("/view/:id", auth, async (req, res) => {
       email: "",
       address: "",
       taxnumber: "",
+      memo: "",
     };
     if (order[0].customer_id) {
       const customer = await DataFind(

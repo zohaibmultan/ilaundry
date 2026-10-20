@@ -191,11 +191,10 @@
                 </p>
               </div>
 
-
             </div>
             <div class="card-body p-4">
               <!-- Dispatch & Route Tracking Section -->
-              <div class="card border rounded-3 p-3 mb-4 bg-light-subtle">
+              <div class="card border rounded-3 p-3 mb-4 bg-light-subtle" style="height: auto">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
                   <h5 class="fw-bold text-dark mb-0 d-flex align-items-center">
                     <i class="fa fa-route text-primary me-2"></i>
@@ -418,6 +417,14 @@
                       <%= customer.taxnumber || '' %>
                     </span>
                   </p>
+                  <% if (customer.memo && customer.memo.trim()) { %>
+                  <p class="mb-0 text-break mt-1">
+                    <strong class="text-warning"><i class="fa fa-sticky-note me-1"></i><%= language.Customer_Memo || 'Customer Memo' %> :</strong>
+                    <span class="text-dark fw-semibold">
+                      <%= customer.memo.trim() %>
+                    </span>
+                  </p>
+                  <% } %>
                   <% } %>
                 </div>
 
@@ -477,14 +484,56 @@
                 </div>
               </div>
 
-              <div class="mt-4">
-                <div class="col">
-                  <p>
-                    <%= language.Notes %> :
-                    <span>
-                      <%=order.note %>
-                    </span>
-                  </p>
+              <div class="mt-4 pt-3 border-top">
+                <div class="row g-3">
+                  <% const hasCustMemo = Boolean(customer && customer.memo && customer.memo.trim()); %>
+                  <% const hasOrderNote = Boolean(order && order.note && order.note.trim()); %>
+
+                  <% if (hasCustMemo) { %>
+                  <div class="col-12 <%= hasOrderNote ? 'col-md-6' : '' %>">
+                    <div class="card border rounded-3 p-3 bg-light-subtle h-100 mb-0 shadow-none">
+                      <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fw-bold text-dark d-flex align-items-center gap-2">
+                          <i class="fa fa-sticky-note text-warning"></i>
+                          <%= language.Customer_Memo || 'Customer Memo' %>
+                        </span>
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                          <%= language.Customer_Profile || 'Customer Preferences' %>
+                        </span>
+                      </div>
+                      <p class="mb-0 text-secondary text-break small">
+                        <%= customer.memo.trim() %>
+                      </p>
+                    </div>
+                  </div>
+                  <% } %>
+
+                  <% if (hasOrderNote) { %>
+                  <div class="col-12 <%= hasCustMemo ? 'col-md-6' : '' %>">
+                    <div class="card border rounded-3 p-3 bg-light-subtle h-100 mb-0 shadow-none">
+                      <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fw-bold text-dark d-flex align-items-center gap-2">
+                          <i class="fa fa-comment-dots text-primary"></i>
+                          <%= language.Notes || 'Order Notes' %>
+                        </span>
+                        <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">
+                          <%= language.This_Order || 'This Order' %>
+                        </span>
+                      </div>
+                      <p class="mb-0 text-secondary text-break small">
+                        <%= order.note.trim() %>
+                      </p>
+                    </div>
+                  </div>
+                  <% } %>
+
+                  <% if (!hasCustMemo && !hasOrderNote) { %>
+                  <div class="col-12">
+                    <p class="text-muted small mb-0">
+                      <strong><%= language.Notes || 'Notes' %>:</strong> —
+                    </p>
+                  </div>
+                  <% } %>
                 </div>
               </div>
 
@@ -1068,14 +1117,35 @@
                       <%= customer.taxnumber || '' %>
                     </td>
                   </tr>
+                  <% if (customer && customer.memo && customer.memo.trim()) { %>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Customer_Memo || 'Customer Memo' %> :
+                    </td>
+                    <td class="py-0 text-end text-break">
+                      <%= customer.memo.trim() %>
+                    </td>
+                  </tr>
+                  <% } %>
                 </tbody>
               </table>
               <% } %>
 
               <hr>
 
-              <div class="d-flex justify-content-start px-4">
-                <%=order.note %>
+              <div class="px-4">
+                <% if (customer && customer.memo && customer.memo.trim()) { %>
+                <div class="mb-2 text-start">
+                  <small class="text-muted fw-bold d-block"><%= language.Customer_Memo || 'Customer Memo' %>:</small>
+                  <span><%= customer.memo.trim() %></span>
+                </div>
+                <% } %>
+                <% if (order.note && order.note.trim()) { %>
+                <div class="text-start">
+                  <small class="text-muted fw-bold d-block"><%= language.Notes || 'Order Notes' %>:</small>
+                  <span><%= order.note.trim() %></span>
+                </div>
+                <% } %>
                 <input type="hidden" value="<%=order.note %>" name="note">
               </div>
 
