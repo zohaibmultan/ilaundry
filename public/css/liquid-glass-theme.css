@@ -4026,6 +4026,16 @@ table.dataTable td.text-center {
 /* FullCalendar Component Integration */
 #route_calendar {
   min-height: 650px;
+  height: auto !important;
+}
+
+#route_calendar .fc-view-container,
+#route_calendar .fc-view,
+#route_calendar .fc-scroller,
+#route_calendar .fc-day-grid-container {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
 
 #route_calendar .fc-toolbar {
@@ -4078,7 +4088,7 @@ table.dataTable td.text-center {
   min-height: 66px !important;
   height: auto !important;
   display: block !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
 #route_calendar .fc-event:hover {
@@ -4097,9 +4107,23 @@ table.dataTable td.text-center {
   display: none !important;
 }
 
-/* Day cell heights in month view to accommodate multi-line cards */
+/* Day cell heights in month view to accommodate multi-line cards without clipping */
+#route_calendar .fc-row,
+#route_calendar .fc-row.fc-rigid,
 #route_calendar .fc-basic-view .fc-body .fc-row {
   min-height: 125px !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+#route_calendar .fc-row.fc-rigid .fc-content-skeleton {
+  position: relative !important;
+  height: auto !important;
+}
+
+#route_calendar .fc-row .fc-content-skeleton {
+  position: relative !important;
+  padding-bottom: 8px !important;
 }
 
 #route_calendar .fc-row .fc-content-skeleton table,
