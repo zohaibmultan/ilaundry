@@ -274,7 +274,7 @@
                 defaultView: 'month',
                 navLinks: true,
                 editable: false,
-                eventLimit: true,
+                eventLimit: 4,
                 timeFormat: 'h:mm a',
                 events: function (start, end, timezone, callback) {
                     const params = {
@@ -306,9 +306,71 @@
                         openOrderEventModal(orderData, calEvent);
                     }
                 },
-                eventRender: function (event, element) {
-                    // Enrich tooltip and title formatting
-                    element.attr('title', event.title);
+                eventRender: function (event, element, view) {
+                    element.attr('title', event.title || '');
+
+                    const ext = event.extendedProps || {};
+                    const orderCode = event.orderCode || ext.orderCode || (event.orderId ? String(event.orderId) : '');
+                    const customerName = event.customerName || ext.customerName || 'Walk-in Customer';
+                    const eventType = event.eventType || ext.eventType || (event.id && String(event.id).indexOf('pickup') === 0 ? 'pickup' : 'delivery');
+                    const isDone = (eventType === 'pickup')
+                        ? (event.isPickedUp === true || ext.isPickedUp === true || String(event.isPickedUp) === '1' || String(ext.isPickedUp) === '1')
+                        : (event.isDelivered === true || ext.isDelivered === true || String(event.isDelivered) === '1' || String(ext.isDelivered) === '1');
+                    const isZeroItem = (event.isZeroItem === true || ext.isZeroItem === true);
+
+                    let timeStr = '';
+                    if (event.start) {
+                        if (typeof event.start.format === 'function') {
+                            timeStr = event.start.format('h:mm A');
+                        } else if (window.moment) {
+                            timeStr = moment(event.start).format('h:mm A');
+                        }
+                    }
+
+                    const isPickup = (eventType === 'pickup');
+                    const typeLabel = isPickup ? 'Pick-up' : 'Delivery';
+                    const typeIcon = isPickup ? 'fa-box' : 'fa-truck';
+                    const statusText = isDone ? (isPickup ? 'Picked Up' : 'Delivered') : (isPickup ? 'Pending' : 'Pending');
+                    const formattedOrderCode = orderCode ? (orderCode.startsWith('#') ? orderCode : ('#' + orderCode)) : '';
+
+                    if (view && view.name === 'listWeek') {
+                        const $titleEl = element.find('.fc-list-item-title a');
+                        if ($titleEl.length) {
+                            $titleEl.html(
+                                '<strong>' + formattedOrderCode + '</strong> - ' + customerName +
+                                ' <span class="badge ms-2 ' + (isPickup ? 'bg-warning text-dark' : 'bg-primary text-white') + '"><i class="fas ' + typeIcon + ' me-1"></i>' + typeLabel + '</span>' +
+                                (isDone ? ' <span class="badge bg-success ms-1"><i class="fas fa-check-circle me-1"></i>' + statusText + '</span>' : '') +
+                                (isZeroItem ? ' <span class="badge bg-danger ms-1">0-Item</span>' : '')
+                            );
+                        }
+                        return;
+                    }
+
+                    const cardHtml = `
+                        <div class="calendar-event-card">
+                            <div class="event-card-top">
+                                <span class="event-card-time"><i class="far fa-clock me-1"></i>${timeStr}</span>
+                                <span class="event-card-type"><i class="fas ${typeIcon} me-1"></i>${typeLabel}</span>
+                            </div>
+                            <div class="event-card-mid">
+                                <div class="event-card-order">${formattedOrderCode}</div>
+                                <div class="event-card-customer text-truncate" title="${customerName}">${customerName}</div>
+                            </div>
+                            <div class="event-card-bot">
+                                <span class="event-card-status status-${isDone ? 'done' : 'wait'}">
+                                    <i class="fas ${isDone ? 'fa-check-circle' : 'fa-clock'} me-1"></i>${statusText}
+                                </span>
+                                ${isZeroItem ? '<span class="event-card-zero-badge" title="0-Item Manifest Order">0-Item</span>' : ''}
+                            </div>
+                        </div>
+                    `;
+
+                    const $content = element.find('.fc-content');
+                    if ($content.length) {
+                        $content.html(cardHtml);
+                    } else {
+                        element.html(cardHtml);
+                    }
                 }
             });
 
