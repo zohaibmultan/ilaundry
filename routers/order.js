@@ -13,6 +13,11 @@ var {
 } = require("../middelwer/databaseQurey");
 const { paginateDataTable } = require("../middelwer/dataTableHelper");
 
+const {
+  addClient,
+  broadcastCalendarChange,
+} = require("../middelwer/calendarBroadcaster");
+
 const { generateOrderId } = require("../middelwer/orderIdHelper");
 
 async function idfororder(storeId) {
@@ -551,6 +556,14 @@ router.get("/delete/:id", auth, async (req, res) => {
       req.flash("error", "Error deleting order, please try again");
       return res.redirect("/order/list");
     }
+
+    // Broadcast instant real-time sync to all calendar views
+    broadcastCalendarChange({
+      action: "order_deleted",
+      order_id: order.id,
+      order_code: order.order_id,
+      store_id: order.store_id,
+    });
 
     req.flash("success", `Order #${order.order_id} deleted successfully`);
     return res.redirect("/order/list");
@@ -1439,5 +1452,367 @@ const handleListStatus = async (req, res) => {
 
 router.get("/liststattus/:status", auth, handleListStatus);
 router.get("/liststattus", auth, handleListStatus);
+
+// ==========================================
+// REAL-TIME ROUTE PICK-UP & DELIVERY CALENDAR
+// ==========================================
+
+// 1. View Route: Render Calendar Page
+router.get("/calendar", auth, async (req, res) => {
+  try {
+    const accessdata = await access(req.user);
+    if (
+      accessdata?.logas === "custmor" &&
+      (!accessdata?.roll?.orders || !accessdata.roll.orders.includes("read"))
+    ) {
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect("/");
+    }
+
+    const { id, store, loginas } = req.user;
+    const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
+
+    const storeList = await DataFind(
+      "SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0"
+    );
+
+    res.render("order_calendar", {
+      titel: req.language_data?.Route_Calendar || "Route Calendar",
+      accessdata,
+      storeList: storeList || [],
+      isStaff,
+      staffStoreId,
+      currentStoreId: isStaff ? staffStoreId : store,
+      language: req.language_data,
+      language_name: req.language_name,
+    });
+  } catch (error) {
+    console.error("Error in /order/calendar:", error);
+    req.flash("error", "Error loading route calendar");
+    res.redirect("/order/list");
+  }
+});
+
+// 2. Real-Time SSE Stream Endpoint
+router.get("/calendar/stream", auth, (req, res) => {
+  addClient(req, res);
+});
+
+// 3. FullCalendar Events JSON Feed
+router.get("/calendar/events", auth, async (req, res) => {
+  try {
+    const { id, store, loginas } = req.user;
+    const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
+    const accessdata = await access(req.user);
+
+    const {
+      search,
+      event_type = "all", // 'all' | 'pickup' | 'delivery'
+      status_filter = "all", // 'all' | 'pending' | 'completed'
+      store_id,
+    } = req.query;
+
+    let storeCondition = "";
+    if (isStaff && staffStoreId) {
+      storeCondition = `AND o.store_id = '${staffStoreId}'`;
+    } else if (accessdata.login === "store") {
+      storeCondition = `AND o.store_id = '${store}'`;
+    } else if (store_id && store_id !== "all" && store_id !== "") {
+      storeCondition = `AND o.store_id = '${String(store_id).replace(/'/g, "\\'")}'`;
+    }
+
+    let searchCondition = "";
+    if (search && search.trim().length > 0) {
+      const q = String(search).trim().replace(/'/g, "\\'");
+      searchCondition = `AND (
+        o.order_id LIKE '%${q}%' OR
+        c.first_name LIKE '%${q}%' OR
+        c.last_name LIKE '%${q}%' OR
+        c.name LIKE '%${q}%' OR
+        c.mobile_no LIKE '%${q}%'
+      )`;
+    }
+
+    // Exclude Counter & Counter per Rule 1: "Counter & Counter: don't show any event on calendar"
+    const query = `
+      SELECT 
+        o.id,
+        o.order_id,
+        o.order_type,
+        o.order_date,
+        o.pickup_date,
+        o.ready_date,
+        o.delivery_date,
+        o.order_status,
+        o.is_picked_up,
+        o.picked_up_at,
+        o.is_delivered,
+        o.delivered_at,
+        o.gross_total,
+        o.paid_amount,
+        o.balance_amount,
+        o.service_list,
+        o.store_id,
+        s.name AS store_name,
+        c.id AS customer_id,
+        c.first_name,
+        c.last_name,
+        c.name AS legacy_customer_name,
+        c.mobile_no,
+        c.address,
+        c.city,
+        c.state,
+        c.zip_code
+      FROM tbl_order o
+      LEFT JOIN tbl_customer c ON o.customer_id = c.id
+      LEFT JOIN tbl_store s ON o.store_id = s.id
+      WHERE o.delet_flage = 0
+        AND o.order_type NOT IN ('Counter & Counter', 'Customer drop-off & Store collection')
+        ${storeCondition}
+        ${searchCondition}
+      ORDER BY o.order_date DESC
+    `;
+
+    const orders = await DataFind(query);
+    const events = [];
+
+    orders.forEach((ord) => {
+      const type = ord.order_type || "";
+      const isRouteRoute =
+        type === "Route & Route" ||
+        type === "Pick-up & Delivery" ||
+        type === "Store collection & Store delivery";
+      const isRouteCounter =
+        type === "Route & Counter" || type === "Pick-up & Counter";
+      const isCounterRoute =
+        type === "Counter & Route" ||
+        type === "Counter & Delivery" ||
+        type === "Customer drop-off & Store delivery";
+
+      const customerName =
+        ord.last_name || ord.first_name
+          ? `${ord.last_name || ""}, ${ord.first_name || ""}`
+              .trim()
+              .replace(/^,\s*|,\s*$/g, "")
+          : ord.legacy_customer_name || "Customer";
+      const customerPhone = ord.mobile_no || "";
+      const customerAddress = [ord.address, ord.city, ord.state, ord.zip_code]
+        .filter(Boolean)
+        .join(", ");
+
+      const commonDetails = {
+        orderId: ord.id,
+        orderCode: ord.order_id,
+        orderType: ord.order_type,
+        storeName: ord.store_name || "",
+        customerName,
+        customerPhone,
+        customerAddress,
+        grossTotal: parseFloat(ord.gross_total || 0).toFixed(2),
+        paidAmount: parseFloat(ord.paid_amount || 0).toFixed(2),
+        balanceAmount: parseFloat(ord.balance_amount || 0).toFixed(2),
+        isZeroItem:
+          !ord.service_list ||
+          ord.service_list.trim() === "" ||
+          ord.service_list === "0",
+        isPickedUp: String(ord.is_picked_up) === "1",
+        pickedUpAt: ord.picked_up_at
+          ? new Date(ord.picked_up_at).toLocaleString()
+          : null,
+        isDelivered: String(ord.is_delivered) === "1",
+        deliveredAt: ord.delivered_at
+          ? new Date(ord.delivered_at).toLocaleString()
+          : null,
+        formattedPickupDate: ord.pickup_date
+          ? new Date(ord.pickup_date).toLocaleString()
+          : "Not Scheduled",
+        formattedReadyDate: ord.ready_date
+          ? new Date(ord.ready_date).toLocaleString()
+          : "Not Scheduled",
+        formattedDeliveryDate: ord.delivery_date
+          ? new Date(ord.delivery_date).toLocaleString()
+          : "Not Scheduled",
+      };
+
+      // 1. Pick-up Event (for Route & Route and Route & Counter)
+      if (isRouteRoute || isRouteCounter) {
+        if (event_type === "all" || event_type === "pickup") {
+          const isDone = String(ord.is_picked_up) === "1";
+          let includeStatus = true;
+          if (status_filter === "pending" && isDone) includeStatus = false;
+          if (status_filter === "completed" && !isDone) includeStatus = false;
+
+          if (includeStatus && ord.pickup_date) {
+            events.push({
+              id: `pickup_${ord.id}`,
+              title: `📦 Pick-up: #${ord.order_id} - ${customerName}`,
+              start: ord.pickup_date,
+              color: isDone ? "#b45309" : "#ea580c",
+              textColor: "#ffffff",
+              className: `fc-event-pickup status-${isDone ? "completed" : "pending"}`,
+              extendedProps: {
+                ...commonDetails,
+                eventType: "pickup",
+                eventCategoryLabel: "Pick-up Schedule",
+                statusLabel: isDone ? "Picked Up" : "Pending Pick-up",
+              },
+            });
+          }
+        }
+      }
+
+      // 2. Delivery Event (for Route & Route and Counter & Route)
+      if (isRouteRoute || isCounterRoute) {
+        if (event_type === "all" || event_type === "delivery") {
+          const isDone = String(ord.is_delivered) === "1";
+          let includeStatus = true;
+          if (status_filter === "pending" && isDone) includeStatus = false;
+          if (status_filter === "completed" && !isDone) includeStatus = false;
+
+          if (includeStatus && ord.delivery_date) {
+            events.push({
+              id: `delivery_${ord.id}`,
+              title: `🚚 Delivery: #${ord.order_id} - ${customerName}`,
+              start: ord.delivery_date,
+              color: isDone ? "#16a34a" : "#2563eb",
+              textColor: "#ffffff",
+              className: `fc-event-delivery status-${isDone ? "completed" : "pending"}`,
+              extendedProps: {
+                ...commonDetails,
+                eventType: "delivery",
+                eventCategoryLabel: "Delivery Schedule",
+                statusLabel: isDone ? "Delivered" : "Pending Delivery",
+              },
+            });
+          }
+        }
+      }
+    });
+
+    res.json(events);
+  } catch (error) {
+    console.error("Error in /order/calendar/events:", error);
+    res.status(500).json({ error: error.message, events: [] });
+  }
+});
+
+// 4. Toggle Pick-up or Delivery Status
+router.post("/calendar/toggle-status", auth, async (req, res) => {
+  try {
+    const { order_id, field, status } = req.body;
+    if (!order_id || !field) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Order ID and field are required." });
+    }
+
+    const orderRows = await DataFind(
+      `SELECT * FROM tbl_order WHERE id = '${String(order_id).replace(/'/g, "\\'")}'`
+    );
+    if (!orderRows || orderRows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found." });
+    }
+
+    const order = orderRows[0];
+    const isRouteRoute =
+      order.order_type === "Route & Route" ||
+      order.order_type === "Pick-up & Delivery" ||
+      order.order_type === "Store collection & Store delivery";
+    const targetStatus =
+      status === "1" || status === 1 || status === true || status === "true"
+        ? "1"
+        : "0";
+
+    // Business Logic Gating:
+    if (field === "delivery") {
+      if (targetStatus === "1" && isRouteRoute) {
+        if (String(order.is_picked_up) !== "1") {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Garments must be confirmed as Picked-up before marking as Delivered.",
+          });
+        }
+      }
+      const setDeliveredAt =
+        targetStatus === "1" ? "CURRENT_TIMESTAMP" : "NULL";
+      const setDeliveredBy =
+        targetStatus === "1" ? `'${req.user.id}'` : "NULL";
+      await DataUpdate(
+        "tbl_order",
+        `is_delivered = '${targetStatus}', delivered_at = ${setDeliveredAt}, delivered_by = ${setDeliveredBy}`,
+        `id = '${order.id}'`,
+        req.hostname,
+        req.protocol
+      );
+    } else if (field === "pickup") {
+      const setPickedUpAt = targetStatus === "1" ? "CURRENT_TIMESTAMP" : "NULL";
+      const setPickedUpBy = targetStatus === "1" ? `'${req.user.id}'` : "NULL";
+
+      // If unchecking pickup on Route & Route where is_delivered is 1, also reset is_delivered to 0
+      let cascadeResetDelivery = "";
+      if (
+        targetStatus === "0" &&
+        isRouteRoute &&
+        String(order.is_delivered) === "1"
+      ) {
+        cascadeResetDelivery = `, is_delivered = '0', delivered_at = NULL, delivered_by = NULL`;
+      }
+
+      await DataUpdate(
+        "tbl_order",
+        `is_picked_up = '${targetStatus}', picked_up_at = ${setPickedUpAt}, picked_up_by = ${setPickedUpBy} ${cascadeResetDelivery}`,
+        `id = '${order.id}'`,
+        req.hostname,
+        req.protocol
+      );
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid field specified." });
+    }
+
+    // Fetch updated order record
+    const updatedRows = await DataFind(
+      `SELECT is_picked_up, picked_up_at, is_delivered, delivered_at FROM tbl_order WHERE id = '${order.id}'`
+    );
+    const updated = updatedRows[0];
+
+    // Broadcast instant real-time sync via SSE
+    broadcastCalendarChange({
+      action: "status_changed",
+      order_id: order.id,
+      order_code: order.order_id,
+      field,
+      status: targetStatus,
+      is_picked_up: updated.is_picked_up,
+      is_delivered: updated.is_delivered,
+    });
+
+    return res.status(200).json({
+      success: true,
+      order_id: order.id,
+      field,
+      is_picked_up: updated.is_picked_up,
+      picked_up_at: updated.picked_up_at
+        ? new Date(updated.picked_up_at).toLocaleString()
+        : null,
+      is_delivered: updated.is_delivered,
+      delivered_at: updated.delivered_at
+        ? new Date(updated.delivered_at).toLocaleString()
+        : null,
+      message: `${
+        field === "pickup" ? "Pick-up" : "Delivery"
+      } status updated successfully.`,
+    });
+  } catch (error) {
+    console.error("Error in /order/calendar/toggle-status:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error updating status." });
+  }
+});
 
 module.exports = router;

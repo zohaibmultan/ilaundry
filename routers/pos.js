@@ -18,6 +18,9 @@ const {
   getEffectiveReadySchedule,
   calculateReadyDateTime,
 } = require("../middelwer/readyScheduleHelper");
+const {
+  broadcastCalendarChange,
+} = require("../middelwer/calendarBroadcaster");
 
 function formatMySQLDateTime(d, fallbackTime = "16:00:00") {
   if (!d) return null;
@@ -3454,6 +3457,15 @@ router.post("/edit_order", auth, async (req, res) => {
       );
     }
 
+    if (updated_order && updated_order.length > 0) {
+      broadcastCalendarChange({
+        action: "order_updated",
+        order_id: updated_order[0].id,
+        order_code: updated_order[0].order_id,
+        store_id: updated_order[0].store_id,
+      });
+    }
+
     return res.json({
       success: true,
       order: updated_order[0],
@@ -3564,6 +3576,13 @@ router.post("/edit_order_direct", auth, async (req, res) => {
       req.hostname,
       req.protocol,
     );
+
+    broadcastCalendarChange({
+      action: "order_updated",
+      order_id: order.id,
+      order_code: order.order_id,
+      store_id: order.store_id,
+    });
 
     return res.json({ success: true, order_id });
   } catch (error) {
@@ -4045,6 +4064,15 @@ router.post("/order", auth, async (req, res) => {
       sendNotification(customer_message);
     }
 
+    if (orderdata && orderdata.length > 0) {
+      broadcastCalendarChange({
+        action: "order_created",
+        order_id: orderdata[0].id,
+        order_code: orderdata[0].order_id,
+        store_id: orderdata[0].store_id,
+      });
+    }
+
     res.status(200).json({
       status: "success",
       cartservice,
@@ -4429,6 +4457,13 @@ router.post("/save_order", auth, async (req, res) => {
       };
       sendNotification(customer_message);
     }
+
+    broadcastCalendarChange({
+      action: "order_created",
+      order_id: order.insertId,
+      order_code: orderid,
+      store_id: cart[0].store_id,
+    });
 
     return res.status(200).json({
       success: true,

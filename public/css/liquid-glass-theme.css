@@ -3952,3 +3952,210 @@ table.dataTable td.text-center {
 [data-sidebar-style="mini"] .sidebar-branding-logo-box {
   margin: 0 auto !important;
 }
+
+/* ==========================================================================
+   28. REAL-TIME ROUTE & DISPATCH CALENDAR GLASS STYLING
+   ========================================================================== */
+.calendar-glass-card {
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.85) !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06) !important;
+  border-radius: 1rem !important;
+}
+
+[data-theme-version="dark"] .calendar-glass-card {
+  background: rgba(18, 26, 44, 0.85) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Live Sync Pulsing Dot */
+.live-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.pulse-success {
+  background-color: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulse-green 2s infinite;
+}
+
+.pulse-warning {
+  background-color: #f59e0b;
+  box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  animation: pulse-yellow 2s infinite;
+}
+
+@keyframes pulse-green {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes pulse-yellow {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+/* FullCalendar Component Integration */
+#route_calendar {
+  min-height: 650px;
+}
+
+#route_calendar .fc-toolbar {
+  margin-bottom: 1.25rem;
+}
+
+#route_calendar .fc-toolbar h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+#route_calendar .fc-button {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  box-shadow: none;
+  text-shadow: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+#route_calendar .fc-button:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+#route_calendar .fc-button.fc-state-active {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+}
+
+#route_calendar .fc-event {
+  padding: 4px 7px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  margin-bottom: 3px;
+}
+
+#route_calendar .fc-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+}
+
+/* Status markers on events */
+.fc-event-pickup {
+  border-left: 3px solid #7c2d12 !important;
+}
+
+.fc-event-pickup.status-completed {
+  border-left: 3px solid #16a34a !important;
+  opacity: 0.88;
+}
+
+.fc-event-delivery {
+  border-left: 3px solid #1e3a8a !important;
+}
+
+.fc-event-delivery.status-completed {
+  border-left: 3px solid #14532d !important;
+  opacity: 0.88;
+}
+
+/* Dark Mode FullCalendar Adaptations */
+[data-theme-version="dark"] #route_calendar .fc-toolbar h2 {
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] #route_calendar .fc-button {
+  background: rgba(30, 41, 59, 0.8) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme-version="dark"] #route_calendar .fc-button:hover {
+  background: rgba(51, 65, 85, 0.9) !important;
+  color: #ffffff !important;
+}
+
+[data-theme-version="dark"] #route_calendar .fc-button.fc-state-active {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+}
+
+[data-theme-version="dark"] #route_calendar .fc-widget-header {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(15, 23, 42, 0.6) !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme-version="dark"] #route_calendar .fc-widget-content {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+[data-theme-version="dark"] #route_calendar .fc-day-number {
+  color: #cbd5e1 !important;
+  font-weight: 600;
+}
+
+[data-theme-version="dark"] #route_calendar .fc-today {
+  background: rgba(59, 130, 246, 0.12) !important;
+}
+
+[data-theme-version="dark"] #route_calendar .fc-other-month .fc-day-number {
+  color: #64748b !important;
+}
+
+[data-theme-version="dark"] #route_calendar .fc-list-heading td {
+  background: rgba(15, 23, 42, 0.8) !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme-version="dark"] #route_calendar .fc-list-item:hover td {
+  background: rgba(30, 41, 59, 0.7) !important;
+}
+
+[data-theme-version="dark"] #route_calendar .fc-list-item td {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  color: #e2e8f0 !important;
+}
