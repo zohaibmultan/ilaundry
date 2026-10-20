@@ -340,6 +340,37 @@ body[data-theme-version="light"] {
   box-shadow: 0 2px 8px rgba(0, 129, 238, 0.1) !important;
 }
 
+.deznav .metismenu>li>a i {
+  font-size: 1.15rem !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-right: 12px !important;
+  opacity: 0.85 !important;
+  transition: all 0.2s ease !important;
+  color: inherit !important;
+}
+
+[dir="rtl"] .deznav .metismenu>li>a i,
+[direction="rtl"] .deznav .metismenu>li>a i {
+  margin-right: 0 !important;
+  margin-left: 12px !important;
+}
+
+.deznav .metismenu>li:hover>a i {
+  opacity: 1 !important;
+  transform: scale(1.08) !important;
+  color: #0081EE !important;
+}
+
+.deznav .metismenu>li.mm-active>a i {
+  opacity: 1 !important;
+  color: #0081EE !important;
+}
+
+
 [data-theme-version="dark"] .deznav {
   background: rgba(15, 23, 42, 0.84) !important;
   backdrop-filter: blur(var(--lg-glass-blur)) saturate(var(--lg-glass-saturate)) !important;
