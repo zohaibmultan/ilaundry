@@ -303,3 +303,49 @@ This document establishes the universal rules and constraints for the **iCleaner
 2. **Consistent User Experience**:
    - Never sort order lists in ascending order by default, as cashiers and store managers expect newly created orders to appear immediately at row 1.
 
+### Y. Font Awesome Icon Package Standard & Raw SVG Prohibition
+1. **Never Embed Multi-line Raw SVGs in Views**:
+   * EJS views, navigation templates, buttons, badges, and partials must **never** embed raw, multi-line `<svg viewBox="...">` elements.
+2. **Canonical Icon Package (Font Awesome)**:
+   * The project standardizes on **Font Awesome 5/6** (`public/icons/font-awesome/css/all.min.css`):
+     - Sidebar / Navigation: `<i class="fa fa-cash-register"></i>`, `<i class="fa fa-receipt"></i>`, `<i class="fa fa-calendar-alt"></i>`.
+     - Actions: `<i class="fa fa-eye"></i>`, `<i class="fa fa-edit"></i>`, `<i class="fa fa-trash"></i>`, `<i class="fa fa-print"></i>`.
+     - Status: `<i class="fa fa-check-circle"></i>`, `<i class="fa fa-clock"></i>`, `<i class="fa fa-box"></i>`, `<i class="fa fa-truck"></i>`.
+3. **Preserve Script Hook Classes**:
+   * Interactive theme toggle icons must retain their operational hook classes:
+     - Moon: `<i class="fa fa-moon lighticon fs-5"></i>`
+     - Sun: `<i class="fa fa-sun darkicon fs-5"></i>`
+4. **Styling & Sizing**:
+   * Control icon dimensions and spacing exclusively with Bootstrap utility classes (`fs-5`, `fs-6`, `me-1`, `me-2`) and centralized rules in `public/css/liquid-glass-theme.css`.
+
+### Z. Real-Time Route Calendar & Dispatch Schedule Protocol
+1. **Order Type Filtering Rules**:
+   - **Counter & Counter (`C & C`)**: Strictly excluded from the Route Calendar (no route events).
+   - **Route & Route (`R & R`)**: Generates two distinct calendar events:
+     - **Pick-up Event**: Amber (`#f59e0b`, `fa-box`).
+     - **Delivery Event**: Primary Blue (`#0081EE`, `fa-truck`).
+   - **Counter & Route (`C & R`)**: Generates only the Route Delivery event.
+   - **Route & Counter (`R & C`)**: Generates only the Route Pick-up event.
+2. **Pick-up Before Delivery Gating Invariant**:
+   - For `Route & Route` orders, the delivery switch/status is strictly locked until pick-up is confirmed (`is_picked_up === '1'`).
+   - If an existing pick-up is unchecked, the backend cascades a reset to delivery (`is_delivered = '0'`) to preserve logical state consistency.
+3. **Real-Time Multi-Client Synchronization (SSE)**:
+   - Calendar events, status toggles, and dispatch actions must broadcast updates via Server-Sent Events (`/order/calendar/stream`).
+   - Connected calendar clients and order details pages must listen to this stream and update event states instantly without requiring manual page reloads.
+
+### AA. Order Details Lifecycle Tracking & Complete Timeline Invariant
+1. **Dispatch & Route Tracking Cards**:
+   * The Order Details view (`views/order_details.ejs`) must display high-visibility route status cards:
+     - **Route Pick-up**: Scheduled date/time, status badge (`Picked Up` / `Pending Pick-up`), completion timestamp (`picked_up_at`), and interactive toggle switch for authorized staff.
+     - **Factory Target Ready**: Target cleaning date/time, current laundry status badge, and working days/cutoff schedule indicator.
+     - **Route Delivery**: Scheduled date/time, status badge (`Delivered` / `Pending Delivery` / `Locked`), completion timestamp (`delivered_at`), and interactive toggle switch gated by pick-up confirmation.
+2. **Comprehensive Order Timeline (`.widget-timeline.style-1`)**:
+   * The order timeline must never be restricted solely to payments. It must present the full chronological order lifecycle:
+     1. **Order Placed**: Creation date/time, Order ID, and gross amount.
+     2. **Route Pick-up**: Confirmation date/time or scheduled date, with status color dot (`success` for picked up, `warning` for pending).
+     3. **Cleaning Target**: Factory target completion date and current laundry status.
+     4. **Route Delivery / Counter Collection**: Delivery timestamp or scheduled date (`success` for delivered, `primary` for scheduled, `dark` for gated).
+     5. **Payment Milestones**: Chronological breakdown of each recorded payment (amount, date, account).
+3. **Optimistic AJAX & Dynamic DOM Updates**:
+   * Toggling pick-up or delivery must execute an AJAX POST to `/order/calendar/toggle-status`, update status badges and timeline milestone dots dynamically without a full page reload, and display toast feedback.
+
