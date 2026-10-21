@@ -370,11 +370,13 @@
                 <div class="col-12 col-md-6">
                   <!-- Customer Selector -->
                   <% if (isEditMode) { %>
-                  <div class="pos-date-group mb-3">
+                  <div class="pos-date-group mb-1.5">
                     <label class="pos-field-label mb-0"><%= language.Customer || 'Customer' %></label>
                     <div class="input-group input-group-sm">
-                      <span class="input-group-text bg-light"><i class="fa fa-user"></i></span>
-                      <input type="text" class="form-control pos-input-sm" value="<%= (typeof order_date !== 'undefined' && order_date[0] && order_date[0].customer_name) ? order_date[0].customer_name : ((customerList.find(c => c.id == cart.customer_id) || {}).name || 'Customer') %>" readonly>
+                      <span class="input-group-text bg-light-subtle border-end-0 py-0 px-2 text-primary">
+                        <i class="fa fa-user"></i>
+                      </span>
+                      <input type="text" class="form-control pos-input-sm border-start-0 ps-1 fw-semibold text-dark" value="<%= (typeof order_date !== 'undefined' && order_date[0] && order_date[0].customer_name) ? order_date[0].customer_name : ((customerList.find(c => c.id == cart.customer_id) || {}).name || 'Customer') %>" readonly>
                     </div>
                     <input type="hidden" id="single-select" name="customer" value="<%= cart.customer_id %>">
                     <input type="hidden" id="customer_id" value="<%= cart.customer_id %>">
@@ -382,15 +384,13 @@
                     <input type="hidden" id="pos_staff_store_id" value="<%= cart.store_id %>">
                   </div>
                   <% } else if (login === 'customer') { %>
-                  <div class="d-flex align-items-center justify-content-between p-2 rounded border mb-1.5 bg-light">
-                    <div class="d-flex align-items-center gap-2">
-                      <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
-                        <i class="fa fa-user fs-12"></i>
-                      </div>
-                      <div>
-                        <span class="fs-11 text-muted text-uppercase fw-semibold d-block">Customer</span>
-                        <strong class="text-dark fs-13"><%= (customerList && customerList[0] && customerList[0].name) ? customerList[0].name : 'Customer' %></strong>
-                      </div>
+                  <div class="pos-date-group mb-1.5">
+                    <label class="pos-field-label mb-0"><%= language.Customer || 'Customer' %></label>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-light-subtle border-end-0 py-0 px-2 text-primary">
+                        <i class="fa fa-user"></i>
+                      </span>
+                      <input type="text" class="form-control pos-input-sm border-start-0 ps-1 fw-semibold text-dark" value="<%= (customerList && customerList[0] && customerList[0].name) ? customerList[0].name : 'Customer' %>" readonly>
                     </div>
                   </div>
                   <input type="hidden" name="store" id="pos_store_id" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
@@ -412,11 +412,13 @@
                   <input type="hidden" id="pos_staff_store_id" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
                   <% } %>
 
-                  <div class="pos-date-group mb-3">
+                  <div class="pos-date-group mb-1.5">
                     <div class="d-flex justify-content-between align-items-center mb-0.5">
-                      <label class="pos-field-label mb-0"><%= language.Select_Customer || 'Select Customer' %> <span class="text-danger">*</span></label>
-                      <a href="javascript:void(0)" style="font-size: 11px;" class="btn btn-outline-primary py-0 px-1.5 border-0" data-bs-toggle="modal" data-bs-target="#addcustomer">
-                        <i class="fa fa-plus"></i> <%= language.Add || 'Add' %>
+                      <label class="pos-field-label mb-0">
+                        <i class="fa fa-user text-primary me-1 fs-11"></i><%= language.Select_Customer || 'Select Customer' %> <span class="text-danger">*</span>
+                      </label>
+                      <a href="javascript:void(0)" class="btn btn-xs btn-primary-subtle text-primary border rounded-pill px-2 py-0 fw-semibold d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#addcustomer" style="font-size: 11px;">
+                        <i class="fa fa-plus fs-10"></i> <%= language.Add || 'Add' %>
                       </a>
                     </div>
                     <select id="single-select" name="customer" class="default-select wide w-100" data-live-search="true" required <%= (typeof showStoreSelect !== 'undefined' && showStoreSelect && (!cart.store_id || cart.store_id==0)) ? 'disabled' : '' %>>
@@ -442,8 +444,10 @@
                   <% } %>
 
                   <!-- Customer Type Dropdown -->
-                  <div class="pos-date-group mb-3">
-                    <label class="pos-field-label mb-0" for="<%= isEditMode ? 'edit_pos_order_type' : 'pos_order_type' %>"><%= language.Customer_Type || 'Customer Type' %></label>
+                  <div class="pos-date-group mb-1.5">
+                    <label class="pos-field-label mb-0" for="<%= isEditMode ? 'edit_pos_order_type' : 'pos_order_type' %>">
+                      <i class="fa fa-exchange-alt text-secondary me-1 fs-11"></i><%= language.Customer_Type || 'Customer Type' %>
+                    </label>
                     <select class="form-select form-select-sm pos-input-sm w-100" id="<%= isEditMode ? 'edit_pos_order_type' : 'pos_order_type' %>" name="<%= isEditMode ? 'edit_pos_order_type' : 'order_type' %>" <%=login==='customer' ? 'disabled' : '' %>>
                       <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
                       <% customer_types.forEach(function(ct, idx) { %>
@@ -459,16 +463,20 @@
                   </div>
 
                   <!-- Row with Order No and Order Date -->
-                  <div class="row g-2 mb-3">
+                  <div class="row g-1 mb-1.5">
                     <div class="col-6">
                       <div class="pos-date-group">
-                        <label class="pos-field-label mb-0"><%= language.Order_No || 'Order #' %></label>
-                        <input type="text" id="pos_order_id" class="form-control pos-input-sm w-100" value="<%= cart.order_id %>" readonly title="Order ID">
+                        <label class="pos-field-label mb-0">
+                          <i class="fa fa-hashtag text-muted me-1 fs-11"></i><%= language.Order_No || 'Order #' %>
+                        </label>
+                        <input type="text" id="pos_order_id" class="form-control pos-input-sm w-100 fw-bold text-dark" value="<%= cart.order_id %>" readonly title="Order ID">
                       </div>
                     </div>
                     <div class="col-6">
                       <div class="pos-date-group">
-                        <label class="pos-field-label mb-0"><%= language.Order_Date || 'Order Date' %></label>
+                        <label class="pos-field-label mb-0">
+                          <i class="fa fa-calendar-alt text-muted me-1 fs-11"></i><%= language.Order_Date || 'Order Date' %>
+                        </label>
                         <% let new_date=new Date(cart.order_date) %>
                         <% let year=new_date.getFullYear() %>
                         <% let new_day=(new_date.getDate() < 10 ? '0' : '' ) + new_date.getDate() %>
@@ -480,43 +488,43 @@
                   </div>
 
                   <% 
-                                            let currentOrderType = cart.order_type || 'Counter & Counter';
-                                            let isRoutePickup = currentOrderType === 'Route & Route' || currentOrderType === 'Route & Counter' || currentOrderType === 'R & R' || currentOrderType === 'R & C' || currentOrderType === 'Store collection & Store delivery' || currentOrderType === 'Pick-up & Delivery' || currentOrderType === 'Pick-up & Counter';
-                                            let isRouteDelivery = currentOrderType === 'Route & Route' || currentOrderType === 'Counter & Route' || currentOrderType === 'R & R' || currentOrderType === 'C & R' || currentOrderType === 'Counter & Delivery' || currentOrderType === 'Pick-up & Delivery' || currentOrderType === 'Customer drop-off & Store delivery' || currentOrderType === 'Store collection & Store delivery';
+                    let currentOrderType = cart.order_type || 'Counter & Counter';
+                    let isRoutePickup = currentOrderType === 'Route & Route' || currentOrderType === 'Route & Counter' || currentOrderType === 'R & R' || currentOrderType === 'R & C' || currentOrderType === 'Store collection & Store delivery' || currentOrderType === 'Pick-up & Delivery' || currentOrderType === 'Pick-up & Counter';
+                    let isRouteDelivery = currentOrderType === 'Route & Route' || currentOrderType === 'Counter & Route' || currentOrderType === 'R & R' || currentOrderType === 'C & R' || currentOrderType === 'Counter & Delivery' || currentOrderType === 'Pick-up & Delivery' || currentOrderType === 'Customer drop-off & Store delivery' || currentOrderType === 'Store collection & Store delivery';
 
-                                            let ready_raw = cart.ready_date || cart.delivery_date || cart.order_date;
-                                            let ready_date = new Date(ready_raw);
-                                            let ready_year = ready_date.getFullYear();
-                                            let ready_day = (ready_date.getDate() < 10 ? '0' : '') + ready_date.getDate();
-                                            let ready_month = ((ready_date.getMonth()+1) < 10 ? '0' : '') + (ready_date.getMonth()+1);
-                                            let ready_fullDate = `${ready_year}-${ready_month}-${ready_day}`;
-                                            let ready_hours = (ready_date.getHours() < 10 ? '0' : '') + ready_date.getHours();
-                                            let ready_mins = (ready_date.getMinutes() < 10 ? '0' : '') + ready_date.getMinutes();
-                                            let ready_time = (ready_hours !== '00' || ready_mins !== '00') ? `${ready_hours}:${ready_mins}` : '16:00';
+                    let ready_raw = cart.ready_date || cart.delivery_date || cart.order_date;
+                    let ready_date = new Date(ready_raw);
+                    let ready_year = ready_date.getFullYear();
+                    let ready_day = (ready_date.getDate() < 10 ? '0' : '') + ready_date.getDate();
+                    let ready_month = ((ready_date.getMonth()+1) < 10 ? '0' : '') + (ready_date.getMonth()+1);
+                    let ready_fullDate = `${ready_year}-${ready_month}-${ready_day}`;
+                    let ready_hours = (ready_date.getHours() < 10 ? '0' : '') + ready_date.getHours();
+                    let ready_mins = (ready_date.getMinutes() < 10 ? '0' : '') + ready_date.getMinutes();
+                    let ready_time = (ready_hours !== '00' || ready_mins !== '00') ? `${ready_hours}:${ready_mins}` : '16:00';
 
-                                            let pick_raw = cart.pickup_date || cart.order_date;
-                                            let pick_date = new Date(pick_raw);
-                                            let pick_year = pick_date.getFullYear();
-                                            let pick_day = (pick_date.getDate() < 10 ? '0' : '') + pick_date.getDate();
-                                            let pick_month = ((pick_date.getMonth()+1) < 10 ? '0' : '') + (pick_date.getMonth()+1);
-                                            let pick_fullDate = `${pick_year}-${pick_month}-${pick_day}`;
-                                            let pick_hours = (pick_date.getHours() < 10 ? '0' : '') + pick_date.getHours();
-                                            let pick_mins = (pick_date.getMinutes() < 10 ? '0' : '') + pick_date.getMinutes();
-                                            let pick_time = (pick_hours !== '00' || pick_mins !== '00') ? `${pick_hours}:${pick_mins}` : '10:00';
+                    let pick_raw = cart.pickup_date || cart.order_date;
+                    let pick_date = new Date(pick_raw);
+                    let pick_year = pick_date.getFullYear();
+                    let pick_day = (pick_date.getDate() < 10 ? '0' : '') + pick_date.getDate();
+                    let pick_month = ((pick_date.getMonth()+1) < 10 ? '0' : '') + (pick_date.getMonth()+1);
+                    let pick_fullDate = `${pick_year}-${pick_month}-${pick_day}`;
+                    let pick_hours = (pick_date.getHours() < 10 ? '0' : '') + pick_date.getHours();
+                    let pick_mins = (pick_date.getMinutes() < 10 ? '0' : '') + pick_date.getMinutes();
+                    let pick_time = (pick_hours !== '00' || pick_mins !== '00') ? `${pick_hours}:${pick_mins}` : '10:00';
 
-                                            let del_raw = cart.delivery_date || cart.ready_date || cart.order_date;
-                                            let del_date = new Date(del_raw);
-                                            let del_year = del_date.getFullYear();
-                                            let del_day = (del_date.getDate() < 10 ? '0' : '') + del_date.getDate();
-                                            let del_month = ((del_date.getMonth()+1) < 10 ? '0' : '') + (del_date.getMonth()+1);
-                                            let del_fullDate = `${del_year}-${del_month}-${del_day}`;
-                                            let del_hours = (del_date.getHours() < 10 ? '0' : '') + del_date.getHours();
-                                            let del_mins = (del_date.getMinutes() < 10 ? '0' : '') + del_date.getMinutes();
-                                            let del_time = (del_hours !== '00' || del_mins !== '00') ? `${del_hours}:${del_mins}` : '16:00';
-                                        %>
+                    let del_raw = cart.delivery_date || cart.ready_date || cart.order_date;
+                    let del_date = new Date(del_raw);
+                    let del_year = del_date.getFullYear();
+                    let del_day = (del_date.getDate() < 10 ? '0' : '') + del_date.getDate();
+                    let del_month = ((del_date.getMonth()+1) < 10 ? '0' : '') + (del_date.getMonth()+1);
+                    let del_fullDate = `${del_year}-${del_month}-${del_day}`;
+                    let del_hours = (del_date.getHours() < 10 ? '0' : '') + del_date.getHours();
+                    let del_mins = (del_date.getMinutes() < 10 ? '0' : '') + del_date.getMinutes();
+                    let del_time = (del_hours !== '00' || del_mins !== '00') ? `${del_hours}:${del_mins}` : '16:00';
+                  %>
 
                   <!-- Route Pick-up Date & Time -->
-                  <div class="pos-date-group mb-2" id="<%= isEditMode ? 'edit_pos_pickup_date_group' : 'pos_pickup_date_group' %>" style="<%= !isRoutePickup ? 'display: none;' : '' %>">
+                  <div class="pos-date-group pos-sched-card pos-sched-pickup mb-1" id="<%= isEditMode ? 'edit_pos_pickup_date_group' : 'pos_pickup_date_group' %>" style="<%= !isRoutePickup ? 'display: none;' : '' %>">
                     <div class="d-flex align-items-center justify-content-between mb-0.5">
                       <label class="pos-field-label mb-0">
                         <i class="fa fa-truck text-primary me-1"></i><%= language.Route_Pickup_Date || 'Route Pick-up Schedule' %>
@@ -529,7 +537,7 @@
                   </div>
 
                   <!-- Ready Schedule (Always Visible for All Order Types) -->
-                  <div class="pos-date-group mb-2" id="<%= isEditMode ? 'edit_pos_ready_date_group' : 'pos_ready_date_group' %>">
+                  <div class="pos-date-group pos-sched-card pos-sched-ready mb-1" id="<%= isEditMode ? 'edit_pos_ready_date_group' : 'pos_ready_date_group' %>">
                     <div class="d-flex align-items-center justify-content-between mb-0.5">
                       <label class="pos-field-label mb-0">
                         <i class="fa fa-check-circle text-success me-1"></i><%= language.Ready_Schedule || 'Ready Schedule' %>
@@ -545,7 +553,7 @@
                   </div>
 
                   <!-- Route Delivery Date & Time -->
-                  <div class="pos-date-group mb-2" id="<%= isEditMode ? 'edit_pos_delivery_date_group' : 'pos_delivery_date_group' %>" style="<%= !isRouteDelivery ? 'display: none;' : '' %>">
+                  <div class="pos-date-group pos-sched-card pos-sched-delivery mb-1" id="<%= isEditMode ? 'edit_pos_delivery_date_group' : 'pos_delivery_date_group' %>" style="<%= !isRouteDelivery ? 'display: none;' : '' %>">
                     <div class="d-flex align-items-center justify-content-between mb-0.5">
                       <label class="pos-field-label mb-0">
                         <i class="fa fa-home text-info me-1"></i><%= language.Route_Delivery_Date || 'Route Delivery Schedule' %>
@@ -562,7 +570,7 @@
                 <div class="col-12 col-md-6 d-flex flex-column justify-content-between">
                   <!-- 3 Compact Stat Tiles (Horizontal Row) -->
                   <div>
-                    <div class="pos-cust-stats-row mb-3">
+                    <div class="pos-cust-stats-row mb-1.5">
                       <!-- Total Orders -->
                       <div class="pos-cust-stat-tile tile-total" title="Total Lifetime Orders">
                         <div class="stat-icon"><i class="fa fa-shopping-bag"></i></div>
@@ -628,7 +636,7 @@
               </div>
 
               <div class="pos-table-scroll">
-                <table class="pos-cart-table table-bordered verticle-middle text-center">
+                <table class="pos-cart-table table-bordered verticle-middle text-center mb-0 <%= (cartservice && cartservice.length > 0) ? '' : 'd-none' %>" id="pos_cart_main_table">
                   <thead>
                     <tr>
                       <th style="text-align: left; padding-left: 8px !important;">
@@ -637,13 +645,13 @@
                       <th style="width: 65px !important; text-align: center;">
                         <%= language.Color %>
                       </th>
-                      <th style="width: 120px !important;text-align: center;">
+                      <th style="width: 120px !important; text-align: center;">
                         <%= language.Rate %>
                       </th>
-                      <th style="width: 110px !important;text-align: center;">
+                      <th style="width: 110px !important; text-align: center;">
                         <%= language.Qty %>
                       </th>
-                      <th style="width: 35px !important;text-align: center;"></th>
+                      <th style="width: 35px !important; text-align: center;"></th>
                     </tr>
                   </thead>
                   <tbody id="POS_service_added_list">
@@ -657,8 +665,7 @@
                             <span class="badge bg-secondary text-white ms-1" style="font-size:0.75rem;"><%= x.no_of_items %> Pcs</span>
                             <% } %>
                           </span>
-                          <span class="pos-cart-item-badge">[<%= x.service_type_name
-                                                                    %>]</span>
+                          <span class="pos-cart-item-badge">[<%= x.service_type_name %>]</span>
                         </div>
                       </td>
                       <td class="text-center">
@@ -687,8 +694,18 @@
                     <% }) %>
                   </tbody>
                 </table>
+
+                <!-- Modern Empty Cart State (hidden when cart has items) -->
+                <div class="pos-empty-cart-state d-flex flex-column align-items-center justify-content-center text-center <%= (cartservice && cartservice.length > 0) ? 'd-none' : '' %>" id="pos_empty_cart_indicator">
+                  <div class="pos-empty-icon-wrap mb-2">
+                    <i class="fa fa-shopping-basket"></i>
+                  </div>
+                  <div class="fw-bold text-dark fs-13 mb-0.5">Your cart is empty</div>
+                  <p class="text-muted fs-11 mb-0" style="max-width: 220px;">Select laundry services from the catalog to build this order</p>
+                </div>
               </div>
 
+              <!-- Bottom Actions & Financial Summary Area -->
               <div class="pos-bottom-section">
                 <div class="row g-1 align-items-center">
                   <div class="col-5">
@@ -708,30 +725,25 @@
                           <i class="fa fa-arrow-left me-1"></i><%= language.Back || 'Back' %>
                         </a>
                       </div>
-                      <button type="button" class="btn btn-info text-white pos-btn-pay-primary" id="edit_POS_payment_model_show">
+                      <button type="button" class="btn btn-info text-white pos-btn-pay-primary shadow-sm" id="edit_POS_payment_model_show">
                         <i class="fa fa-credit-card me-1"></i> <span>Save & Payment</span> <i class="fas fa-arrow-right ms-1"></i>
                       </button>
                       <% } else { %>
                       <div class="pos-actions-grid">
                         <button type="button" class="btn btn-primary pos-btn-mini" data-bs-toggle="modal" data-bs-target="#addons">
-                          <i class="fa fa-plus-circle me-1"></i>
-                          <%= language.Addons %>
+                          <i class="fa fa-plus-circle me-1"></i><%= language.Addons %>
                         </button>
                         <button type="button" class="btn btn-primary pos-btn-mini" id="POS_coupon_model_show">
-                          <i class="fa fa-tag me-1"></i>
-                          <%= language.Coupon %>
+                          <i class="fa fa-tag me-1"></i><%= language.Coupon %>
                         </button>
                         <button type="button" class="btn btn-outline-danger pos-btn-mini" id="POS_clear">
-                          <i class="fa fa-trash-alt me-1"></i>
-                          <%= language.ClearAll %>
+                          <i class="fa fa-trash-alt me-1"></i><%= language.ClearAll %>
                         </button>
                         <button type="button" class="btn btn-light pos-btn-mini" style="visibility: hidden;">
                         </button>
                       </div>
-                      <button type="button" class="btn btn-success pos-btn-pay-primary" id="POS_payment_model_show">
-                        <span>
-                          <%= language.Payment %>
-                        </span> <i class="fas fa-arrow-right ms-2"></i>
+                      <button type="button" class="btn btn-success pos-btn-pay-primary shadow-sm" id="POS_payment_model_show">
+                        <span><%= language.Payment || 'Payment' %></span> <i class="fas fa-arrow-right ms-2"></i>
                       </button>
                       <% } %>
                     </div>
@@ -739,60 +751,35 @@
                   <div class="col-7">
                     <div class="pos-totals-container">
                       <div class="pos-total-row">
-                        <span class="pos-total-label">
-                          <%= language.Sub_Total %>:
-                        </span>
-                        <span class="pos-total-value symbol possymbol" id="POS_sub_total">
-                          <%= (Number(cart.sub_total) || 0).toFixed(2) %>
-                        </span>
+                        <span class="pos-total-label"><%= language.Sub_Total %>:</span>
+                        <span class="pos-total-value symbol possymbol" id="POS_sub_total"><%= (Number(cart.sub_total) || 0).toFixed(2) %></span>
                       </div>
                       <div class="pos-total-row">
-                        <span class="pos-total-label">
-                          <%= language.Addon_Total %>:
-                        </span>
-                        <span class="pos-total-value symbol possymbol" id="POS_addon_total">
-                          <%= (Number(cart.addon_price) || 0).toFixed(2) %>
-                        </span>
+                        <span class="pos-total-label"><%= language.Addon_Total %>:</span>
+                        <span class="pos-total-value symbol possymbol" id="POS_addon_total"><%= (Number(cart.addon_price) || 0).toFixed(2) %></span>
+                      </div>
+                      <div class="pos-total-row text-success">
+                        <span class="pos-total-label text-success"><%= language.Coupon_Discount %>:</span>
+                        <span class="pos-total-value text-success symbol possymbol" id="POS_coupon_total"><%= (Number(cart.coupon_discount) || 0).toFixed(2) %></span>
                       </div>
                       <div class="pos-total-row">
-                        <span class="pos-total-label">
-                          <%= language.Coupon_Discount %>:
-                        </span>
-                        <span class="pos-total-value symbol possymbol" id="POS_coupon_total">
-                          <%= (Number(cart.coupon_discount) || 0).toFixed(2) %>
-                        </span>
-                      </div>
-                      <div class="pos-total-row">
-                        <span class="pos-total-label" id="POS_tax_percent">
-                          <%= language.TAX %> (<%=cart.tax%> %):
-                        </span>
-                        <span class="pos-total-value symbol possymbol" id="POS_tax_total">
-                          <%= (Number(cart.tax_amount) || 0).toFixed(2) %>
-                        </span>
+                        <span class="pos-total-label" id="POS_tax_percent"><%= language.TAX %> (<%=cart.tax%> %):</span>
+                        <span class="pos-total-value symbol possymbol" id="POS_tax_total"><%= (Number(cart.tax_amount) || 0).toFixed(2) %></span>
                       </div>
                       <div class="pos-total-row pos-total-row-gross">
-                        <span class="pos-total-label">
-                          <%= language.Gross_Total %>:
-                        </span>
-                        <span class="pos-total-value symbol possymbol" id="POS_gross_total">
-                          <%= (Number(cart.gross_total) || 0).toFixed(2) %>
-                        </span>
+                        <span class="pos-total-label"><%= language.Gross_Total %>:</span>
+                        <span class="pos-total-value symbol possymbol" id="POS_gross_total"><%= (Number(cart.gross_total) || 0).toFixed(2) %></span>
                       </div>
                       <% if (isEditMode) { %>
                       <div class="pos-total-row">
-                        <span class="pos-total-label">
-                          <%= language.Paid_Amount || 'Paid Amount' %>:
-                        </span>
-                        <span class="pos-total-value symbol possymbol" id="POS_paid_amount">
-                          <%= (Number(cart.paid_amount) || 0).toFixed(2) %>
-                        </span>
+                        <span class="pos-total-label"><%= language.Paid_Amount || 'Paid Amount' %>:</span>
+                        <span class="pos-total-value symbol possymbol" id="POS_paid_amount"><%= (Number(cart.paid_amount) || 0).toFixed(2) %></span>
                       </div>
                       <% } %>
                     </div>
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
@@ -1919,15 +1906,35 @@
       }
       window.switchPosMobileTab = switchPosMobileTab;
 
-      // Update mobile cart badge count automatically
+      // Update mobile cart badge count and empty cart state automatically
       function updatePosMobileCartBadge() {
         const cartList = document.getElementById('POS_service_added_list');
         const badge = document.getElementById('posMobileCartBadge');
-        if (cartList && badge) {
-          const count = cartList.querySelectorAll('tr').length;
+        const emptyIndicator = document.getElementById('pos_empty_cart_indicator');
+        const cartTable = document.getElementById('pos_cart_main_table');
+        const count = cartList ? cartList.querySelectorAll('tr').length : 0;
+
+        if (badge) {
           badge.textContent = count;
         }
+
+        if (emptyIndicator) {
+          if (count === 0) {
+            emptyIndicator.classList.remove('d-none');
+            emptyIndicator.classList.add('d-flex');
+            if (cartTable) cartTable.classList.add('d-none');
+          } else {
+            emptyIndicator.classList.add('d-none');
+            emptyIndicator.classList.remove('d-flex');
+            if (cartTable) cartTable.classList.remove('d-none');
+          }
+        }
+
+        if (typeof updatePosCheckoutBtnState === 'function') {
+          updatePosCheckoutBtnState();
+        }
       }
+      window.updatePosMobileCartBadge = updatePosMobileCartBadge;
 
 
       window.POS_READY_SCHEDULE = <%- JSON.stringify((typeof readySchedule !== 'undefined' && readySchedule) ? readySchedule : (typeof locals !== 'undefined' && locals.readySchedule ? locals.readySchedule : {})) %>;
@@ -2117,6 +2124,7 @@
             childList: true
           });
         }
+        updatePosMobileCartBadge();
       });
     })();
   </script>
