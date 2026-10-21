@@ -605,11 +605,14 @@ router.get("/view/:id", auth, async (req, res) => {
       "SELECT * FROM tbl_store WHERE id=" + order[0].store_id + "",
     );
     const Ordersatus = await DataFind("SELECT * FROM tbl_orderstatus");
-    const orderServiceList = await DataFind(
-      "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-        order[0].service_list +
-        "')",
-    );
+    const rawServiceList = (order[0].service_list || "").trim();
+    const orderServiceList = (rawServiceList && rawServiceList !== "0")
+      ? await DataFind(
+          "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
+            rawServiceList +
+            "')",
+        )
+      : [];
     const addonlist = await DataFind(
       "SELECT * from tbl_addons WHERE find_in_set(tbl_addons.id,'" +
         order[0].addon_data +
@@ -1282,18 +1285,25 @@ router.get("/barcode/:id", auth, async (req, res) => {
     const order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.params.id}'`,
     );
-    // console.log(order_date);
+    if (!order_date || order_date.length === 0) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
 
-    const service_list = order_date[0].service_list.split(",");
-    console.log(service_list);
+    const rawServiceList = order_date[0].service_list || "";
+    const service_list = rawServiceList
+      ? rawServiceList.split(",").map(s => s.trim()).filter(s => s && s !== "0")
+      : [];
 
-    const service_list_data = await DataFind(
-      `SELECT * FROM tbl_cart_servicelist`,
-    );
-    // console.log(service_list_data);
-    res.json({ service_list, service_list_data, order_date, accessdata });
+    let service_list_data = [];
+    if (service_list.length > 0) {
+      service_list_data = await DataFind(
+        `SELECT * FROM tbl_cart_servicelist WHERE find_in_set(id, '${service_list.join(",")}')`,
+      );
+    }
+    return res.json({ service_list, service_list_data, order_date, accessdata });
   } catch (error) {
-    console.log(error);
+    console.error("Error in /barcode/:id:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 });
 

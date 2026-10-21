@@ -1,4 +1,4 @@
-<%- scriptFile -%>
+<%- typeof scriptFile !== 'undefined' ? scriptFile : '' -%>
 <script src="/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
 <script>
    if (window.jQuery && jQuery.fn && jQuery.fn.selectpicker) {

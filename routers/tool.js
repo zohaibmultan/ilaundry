@@ -1633,7 +1633,6 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
       var logo = req.file.filename;
       const salt = bcrypt.genSaltSync(10);
       const hashpass = bcrypt.hashSync(password, salt);
-      console.log(hashpass);
 
       // const admindata = await DataFind(
       //   "INSERT INTO tbl_admin (name,number,email,username,password,img) VALUE ('" +

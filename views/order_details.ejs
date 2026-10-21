@@ -77,31 +77,9 @@
                                         }
 
                                         const orderType = order.order_type || '';
-                                        const hasPickup = (
-                                            orderType === 'Route & Route' || 
-                                            orderType === 'Route & Counter' || 
-                                            orderType === 'Pick-up & Delivery' || 
-                                            orderType === 'Pick-up & Counter' || 
-                                            orderType === 'Store collection & Store delivery' ||
-                                            orderType === 'R & R' ||
-                                            orderType === 'R & C'
-                                        );
-                                        const hasDelivery = (
-                                            orderType === 'Route & Route' || 
-                                            orderType === 'Counter & Route' || 
-                                            orderType === 'Pick-up & Delivery' || 
-                                            orderType === 'Counter & Delivery' || 
-                                            orderType === 'Customer drop-off & Store delivery' || 
-                                            orderType === 'Store collection & Store delivery' ||
-                                            orderType === 'R & R' ||
-                                            orderType === 'C & R'
-                                        );
-                                        const isRouteRoute = (
-                                            orderType === 'Route & Route' || 
-                                            orderType === 'Pick-up & Delivery' || 
-                                            orderType === 'Store collection & Store delivery' ||
-                                            orderType === 'R & R'
-                                        );
+                                        const hasPickup = (typeof orderTypes !== 'undefined' && orderTypes.hasPickup) ? orderTypes.hasPickup(orderType) : false;
+                                        const hasDelivery = (typeof orderTypes !== 'undefined' && orderTypes.hasDelivery) ? orderTypes.hasDelivery(orderType) : false;
+                                        const isRouteRoute = (typeof orderTypes !== 'undefined' && orderTypes.isRouteRoute) ? orderTypes.isRouteRoute(orderType) : false;
 
                                         const isPickedUp = (String(order.is_picked_up) === '1');
                                         const isDelivered = (String(order.is_delivered) === '1');
@@ -345,6 +323,7 @@
                     </tr>
                   </thead>
                   <tbody>
+                    <% if (orderServiceList && orderServiceList.length > 0) { %>
                     <% orderServiceList.forEach(function (data, i){ %>
                     <tr>
                       <th>
@@ -379,8 +358,15 @@
                       </td>
                     </tr>
                     <% }) %>
-
-
+                    <% } else { %>
+                    <tr>
+                      <td colspan="6" class="text-center py-4 text-muted">
+                        <div class="mb-1"><i class="fa fa-clipboard-list fa-2x text-muted opacity-50"></i></div>
+                        <strong>No service items recorded for this order yet.</strong>
+                        <div class="small">Items can be added by editing the order.</div>
+                      </td>
+                    </tr>
+                    <% } %>
                   </tbody>
                 </table>
               </div>
@@ -388,7 +374,7 @@
               <div class="card-header">
 
                 <div>
-                  <% if (customer && customer.name && customer.name !='Walk in customer' ) { %>
+                  <% if (typeof customer !== 'undefined' && customer && customer.name && customer.name !='Walk in customer' ) { %>
                   <h4 class="mb-0">
                     <%= language.Invoice_To %> :
                   </h4>
@@ -831,18 +817,16 @@
                       </label>
                       <select class=" form-control wide" name="payment" id="payment">
                         <option value disabled>Choose Payment Type</option>
-                        <% account.forEach(function(data){ %>
+                        <% if (typeof account !== 'undefined' && account && account.length > 0) { account.forEach(function(data){ %>
                         <option value="<%=data.id %>">
                           <%=data.ac_name %>
                         </option>
-                        <% }) %>
+                        <% }) } %>
                       </select>
-
                     </div>
                   </div>
                 </div>
               </div>
-
           </div>
 
           <div class="modal-footer">
@@ -854,10 +838,7 @@
             </button>
           </div>
           </form>
-
         </div>
-
-
       </div>
     </div>
 
@@ -928,6 +909,7 @@
                     </tr>
                   </thead>
                   <tbody id="invoice_item" class="align-items-center">
+                    <% if (orderServiceList && orderServiceList.length > 0) { %>
                     <% orderServiceList.forEach(function (data, i){ %>
                     <tr>
                       <td>
@@ -951,7 +933,13 @@
                       </td>
                     </tr>
                     <% }) %>
-
+                    <% } else { %>
+                    <tr>
+                      <td colspan="4" class="text-center py-3 text-muted">
+                        <em>No service items recorded for this order.</em>
+                      </td>
+                    </tr>
+                    <% } %>
                   </tbody>
                 </table>
               </div>

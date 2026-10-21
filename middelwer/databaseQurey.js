@@ -1,17 +1,17 @@
 const { mySqlQury } = require('./db');
 
-async function DataFind(qry) {
+async function DataFind(qry, params = []) {
     try {
-        return await mySqlQury(qry);
+        return await mySqlQury(qry, params);
     } catch (err) {
         console.error("DataFind error:", err);
         return [];
     }
 }
 
-async function FullDataInsert(qry) {
+async function FullDataInsert(qry, params = []) {
     try {
-        return await mySqlQury(qry);
+        return await mySqlQury(qry, params);
     } catch (err) {
         console.error("FullDataInsert error:", err);
         return -1;

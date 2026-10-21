@@ -1582,10 +1582,16 @@
       var $btn = $('#POS_payment_model_show');
       if ($btn.length === 0) return;
 
-      if (serviselength < 1 && isRoutePickup) {
-         $btn.removeClass('btn-success').addClass('btn-primary');
-         $btn.find('span').text('Schedule Route Pick-up');
-         $btn.find('i').removeClass('fa-arrow-right').addClass('fa-truck-pickup');
+      if (serviselength < 1) {
+         if (isRoutePickup) {
+            $btn.removeClass('btn-success').addClass('btn-primary');
+            $btn.find('span').text('Schedule Route Pick-up');
+            $btn.find('i').removeClass('fa-arrow-right').addClass('fa-truck-pickup');
+         } else {
+            $btn.removeClass('btn-primary').addClass('btn-success');
+            $btn.find('span').text('Save Order (0 Items)');
+            $btn.find('i').removeClass('fa-truck-pickup').addClass('fa-arrow-right');
+         }
       } else {
          $btn.removeClass('btn-primary').addClass('btn-success');
          $btn.find('span').text('Payment');
@@ -2712,10 +2718,9 @@
          toastr.warning('Please Select Customer');
          return;
       }
-      if (serviselength < 1 && !isRoutePickup) {
-         toastr.warning('Min One Service Required');
-         return;
-      }
+
+      $('#modal_customer_id').val(customer);
+      $('#modal_store_id').val(store);
          $.ajax({
             type: 'GET',
             url: baseUrl + "/admin/paymentdata/",
@@ -2800,8 +2805,6 @@
       var baseUrl = window.location.origin;
       if (!customer) {
          toastr.warning('Please Select Coustomer')
-      } else if (serviselength < 1 && !isRoutePickup) {
-         toastr.warning('Min One Service Required')
       } else {
          $.ajax({
             type: 'POST',
@@ -4630,13 +4633,17 @@
             dataType: 'json',
             success: function (res) {
                $('#add_barcode').html(" ")
+               if (!res.service_list || res.service_list.length === 0) {
+                  $('#add_barcode').html('<div class="p-4 text-center text-muted"><em>No service items recorded for this order.</em></div>');
+                  return;
+               }
                $.each(res.service_list, function (index, value) {
                   var a = '#barcode' + index
                   $.each(res.service_list_data, function (x, data) {
                      if (value == data.id) {
                         console.log(data.service_name);
                         $('#add_barcode').append('<div class="mb-3">' +
-                           '<h4 class="text-black">' + res.accessdata.masterstore.app_name + '</h4>' +
+                           '<h4 class="text-black">' + (res.accessdata && res.accessdata.masterstore ? res.accessdata.masterstore.app_name : 'Laundry') + '</h4>' +
                            '<h5 class="mb-0">Order id: ' + res.order_date[0].order_id + '</h5>' +
                            '<svg class="barcode" style="width: 200px !important;" id="barcode' + index + '"></svg>' +
                            '</div>')

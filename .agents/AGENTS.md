@@ -22,6 +22,18 @@ This document establishes the universal rules and constraints for the **iCleaner
 2. For strings embedded inside HTML attributes or JS strings:
    * ✅ `const store = "<%= (shop && shop.name) ? shop.name : '' %>";`
 3. Always provide sensible fallback values (`|| {}`, `|| []`, `|| ''`) in templates to prevent `null` reference errors.
+4. **Defensive Variable Access & Undeclared Global Protection (`typeof <var> !== 'undefined'`)**:
+   * In EJS, accessing an undeclared variable directly (e.g. `if (orderdata)` or `<%- scriptFile %>`) triggers a fatal JavaScript `ReferenceError` if the controller did not include it in `res.render(...)` or `res.locals`.
+   * Never assume a variable exists in template scope. Always guard optional locals with `typeof`:
+     ```javascript
+     const activeOrder = (typeof order !== 'undefined' && order)
+       ? order
+       : ((typeof orderdata !== 'undefined' && orderdata && orderdata[0]) ? orderdata[0] : {});
+     ```
+   * When injecting partial script variables or optional assets:
+     ```ejs
+     <%- typeof scriptFile !== 'undefined' ? scriptFile : '' %>
+     ```
 
 ### B. Printing System & Combined Thermal Print Invariant
 1. Always support **Dual-Mode Printing**:
@@ -267,22 +279,29 @@ This document establishes the universal rules and constraints for the **iCleaner
 3. **Default Assignment**:
    * Always default new carts, intake forms, and fallback assignments strictly to the new canonical value (e.g. `'Counter & Counter'`).
 
-### V. Zero-Item Route Order Intake & Manifest Invariant
-1. **0-Item Route Order Creation**:
-   - The application strictly permits generating an order with 0 service items ($0.00 gross, $0.00 paid, $0.00 balance) whenever an order type with Route Pick-up is selected (`Route & Route`, `Route & Counter`).
-   - This provides drivers with an official Route Pick-up Manifest / Driver Ticket before clothes are counted in the store.
+### V. Universal Zero-Item Order Creation & Intake Manifest Invariant
+1. **Universal 0-Item Order Creation**:
+   - The application strictly permits generating orders with 0 service items ($0.00 gross, $0.00 paid, $0.00 balance) across **all order types** (`Counter & Counter`, `Counter & Route`, `Route & Route`, `Route & Counter`).
+   - This enables:
+     - **Counter Intake**: Registering a customer drop-off ticket before clothes are sorted, counted, or inspected.
+     - **Route Pick-up**: Providing drivers with an official Route Pick-up Manifest / Driver Ticket before clothes arrive at the cleaning plant.
 2. **Dynamic POS Action Button**:
-   - When `serviselength < 1` and order type has Route Pick-up:
-     - Button switches to `.btn-primary` with text `"Schedule Route Pick-up"` and icon `fa-truck-pickup`.
-   - When service items exist or order type is Counter intake:
-     - Button remains `.btn-success` with text `"Payment"` and icon `fa-arrow-right`.
-3. **Thermal Receipt Driver Manifest**:
+   - When active cart items count is 0 (`serviselength < 1`):
+     - Route Intake (`Route & Route`, `Route & Counter`): Button displays `"Schedule Route Pick-up"` (`.btn-primary`, `fa-truck-pickup`).
+     - Counter Intake (`Counter & Counter`, `Counter & Route`): Button displays `"Save Order (0 Items)"` (`.btn-warning`, `fa-clipboard-check`).
+     - Clicking the button bypasses the cash/card breakdown modal and submits `#posprintform` directly with customer ID and store ID.
+   - When cart items count >= 1:
+     - Button displays `"Payment"` (`.btn-success`, `fa-arrow-right`) and opens `#POS_payment_model_show`.
+3. **Thermal Receipt Intake & Driver Manifest**:
    - When printing an order with 0 services (`views/posprint.ejs`):
-     - Items table renders a centered **"ROUTE PICK-UP MANIFEST"** banner explaining that garments will be counted and priced at store intake.
-     - Cloth garment wash tags are skipped entirely until items are added.
-4. **Subsequent Staff Intake Editing**:
-   - Once garments arrive at the store, staff opens `/admin/edit/:id` to add counted garment items and process payment.
-   - Orders list and dashboard tables must render a warning badge `<span class="badge bg-warning-subtle text-dark border border-warning">0 Items (Pending Intake)</span>` to highlight pending manifests.
+     - Route orders display a prominent centered **"ROUTE PICK-UP MANIFEST"** banner.
+     - Counter orders display a prominent centered **"ORDER INTAKE (0 ITEMS)"** banner.
+     - Cloth garment wash tags and auto-cutter sequences are safely bypassed until items are added.
+4. **Barcode Modal & Order List Handling**:
+   - Barcode preview modal (`#exampleModalLong`) displays an empty-state notification instead of generating empty barcode strips.
+   - Orders list and dashboard tables render a status badge `<span class="badge bg-warning-subtle text-dark border border-warning">0 Items (Pending Intake)</span>` to highlight unpriced intake tickets.
+5. **Intake Completion via Order Edit**:
+   - Once garments are inspected and counted, staff opens `/admin/edit/:id` to add service items, recalculate gross totals, and collect payment.
 
 ### W. Customer Address Field Partitioning Invariant
 1. **Four Partitioned Database Fields**:

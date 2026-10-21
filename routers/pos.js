@@ -682,25 +682,87 @@ router.get("/edit/:id", auth, async (req, res) => {
       addonlist = await DataFind(`SELECT * FROM tbl_addons WHERE status = 0`);
     }
 
-    const readySchedule = await getEffectiveReadySchedule(
-      order_date[0].store_id,
-    );
+    const targetStoreId = order_date[0].store_id;
+
+    const readySchedule = await getEffectiveReadySchedule(targetStoreId);
 
     const customer_types = await DataFind(
       "SELECT * FROM tbl_customer_type WHERE status = 1 ORDER BY id ASC",
     );
 
-    res.render("pos_edit", {
-      accessdata,
-      order_date,
+    let storePrinterConfig = null;
+    if (targetStoreId) {
+      const spRows = await DataFind(
+        `SELECT printing_server_url, invoice_printer_name, invoice_printer_format, tag_printer_name, tag_printer_format, silent_print_enabled, printer_auto_cut, printer_open_cash_drawer, printer_copies FROM tbl_store WHERE id = '${targetStoreId}' LIMIT 1`,
+      );
+      if (spRows.length > 0) storePrinterConfig = spRows[0];
+    }
+
+    let categoryList = [];
+    let subcategoryList = [];
+    if (targetStoreId) {
+      categoryList = await DataFind(`
+        SELECT id, name, sequence_no 
+        FROM tbl_service_category 
+        WHERE (store_ID = '${targetStoreId}' OR store_id = 0 OR store_id IS NULL) AND delete_flage = '0' AND status = '0' 
+        ORDER BY sequence_no ASC, name ASC
+      `);
+      subcategoryList = await DataFind(`
+        SELECT id, category_id, name, sequence_no 
+        FROM tbl_service_subcategory 
+        WHERE (store_ID = '${targetStoreId}' OR store_id = 0 OR store_id IS NULL) AND delete_flage = '0' AND status = '0' 
+        ORDER BY sequence_no ASC, name ASC
+      `);
+    }
+
+    const customerList = await getStoreScopedCustomers(targetStoreId, true);
+    const storeList = await DataFind(
+      "SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0",
+    );
+
+    const cart = {
+      ...order_date[0],
+      isEdit: true,
+      balance: Number(order_date[0].balance_amount) || 0,
+      addon_id: String(order_date[0].addon_data || ""),
+      sub_total: Number(order_date[0].sub_total) || 0,
+      addon_price: Number(order_date[0].addon_price) || 0,
+      coupon_discount: Number(order_date[0].coupon_discount) || 0,
+      tax_amount: Number(order_date[0].tax_amount) || 0,
+      gross_total: Number(order_date[0].gross_total) || 0,
+      paid_amount: Number(order_date[0].paid_amount) || 0,
+      tax: order_date[0].tax || 0,
+      order_item: cartservice || [],
+    };
+
+    res.render("pos", {
+      storePrinterConfig,
+      login: loginas == 0 ? "master" : (loginas == "staff" ? "staff" : "store"),
+      storeList,
       customer_types,
-      readySchedule,
       service_list: service_list || [],
-      cartservice: cartservice || [],
+      categoryList: categoryList || [],
+      subcategoryList: subcategoryList || [],
+      ismulty: false,
+      customerList: customerList || [],
       addonlist: addonlist || [],
-      roll,
+      cartservice: cartservice || [],
+      cart,
+      accessdata,
+      readySchedule,
+      isStaff: isStaff || false,
+      staffStoreId: staffStoreId || null,
+      staffStoreName: order_date[0].store_name || "",
+      showStoreSelect: false,
+      assignedStoreId: targetStoreId,
+      assignedStoreName: order_date[0].store_name || "Main Store",
+      isMaster: loginas == 0,
+      isDefaultCustomerEnabled: true,
       language: req.language_data,
       language_name: req.language_name,
+      splite_id: [],
+      isEdit: true,
+      order_date,
     });
   } catch (error) {
     console.log("Error in /edit/:id:", error);
@@ -3272,18 +3334,21 @@ router.get("/paymentdata", auth, async (req, res) => {
     var cart = await DataFind(
       " SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
     );
-    console.log("cart", cart);
+    if (!cart || cart.length === 0) {
+      return res.status(404).json({ success: false, message: "Cart not found" });
+    }
 
+    const storeId = cart[0].store_id || store || 1;
     var payment = await DataFind(
       "SELECT id, ac_name From tbl_account WHERE store_ID=" +
-        cart[0].store_id +
+        storeId +
         " AND delet_flage != '1'  ",
     );
-    console.log("payment", payment);
 
-    res.status(200).json({ cart: cart[0], payment });
+    return res.status(200).json({ cart: cart[0], payment: payment || [] });
   } catch (error) {
-    console.log(error);
+    console.error("Error in /paymentdata:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -3295,18 +3360,21 @@ router.post("/edit_paymentdata", auth, async (req, res) => {
     const order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`,
     );
-    console.log("order_date", order_date);
-    // var cart = await DataFind(" SELECT * FROM tbl_cart WHERE created_by='"+loginas+','+id+"'");
+    if (!order_date || order_date.length === 0) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    const storeId = order_date[0].store_id || store || 1;
     var payment = await DataFind(
       "SELECT id, ac_name From tbl_account WHERE store_ID=" +
-        order_date[0].store_id +
+        storeId +
         " AND delet_flage != '1'  ",
     );
-    console.log("payment", payment);
 
-    res.status(200).json({ order_date: order_date[0], payment });
+    return res.status(200).json({ order_date: order_date[0], payment: payment || [] });
   } catch (error) {
-    console.log(error);
+    console.error("Error in /edit_paymentdata:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -4109,31 +4177,48 @@ router.post("/save_order", auth, async (req, res) => {
     const cart = await DataFind(
       " SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
     );
-    if (
-      !cart ||
-      cart.length === 0 ||
-      !cart[0].service_list_id ||
-      cart[0].service_list_id === "0"
-    ) {
+    if (!cart || cart.length === 0) {
       return res
         .status(400)
-        .json({ success: false, message: "Cart is empty or not found." });
+        .json({ success: false, message: "Cart not found." });
     }
 
-    const storeId = cart[0].store_id || store;
+    const customerId = (req.body.customer_id && req.body.customer_id != "0")
+      ? req.body.customer_id
+      : (cart[0].customer_id && cart[0].customer_id != "0")
+        ? cart[0].customer_id
+        : (req.body.customer || 0);
+
+    if (!customerId || customerId == "0") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Please select a customer." });
+    }
+
+    const storeId = (req.body.store_id && req.body.store_id != "0")
+      ? req.body.store_id
+      : (cart[0].store_id || store);
+
     let orderid = (cart[0].order_id && cart[0].order_id.trim()) ? cart[0].order_id.trim() : null;
     const existingOrder = orderid ? await DataFind(`SELECT id FROM tbl_order WHERE order_id = '${orderid}' LIMIT 1`) : [];
     if (!orderid || existingOrder.length > 0) {
       orderid = await idfororder(storeId);
     }
 
-    const gross = parseFloat(cart[0].gross_total) - parseFloat(extradiscount);
-    const balance =
-      parseFloat(cart[0].gross_total) -
-      parseFloat(extradiscount) -
-      parseFloat(paid_amount);
+    const serviceListId = (cart[0].service_list_id && String(cart[0].service_list_id).trim() !== "0")
+      ? cart[0].service_list_id
+      : "";
+
+    const cartGross = parseFloat(cart[0].gross_total) || 0;
+    const cartSub = parseFloat(cart[0].sub_total) || 0;
+    const cartAddon = parseFloat(cart[0].addon_price) || 0;
+    const cartCoupon = parseFloat(cart[0].coupon_discount) || 0;
+    const cartTaxAmt = parseFloat(cart[0].tax_amount) || 0;
+    const gross = Math.max(0, cartGross - parseFloat(extradiscount));
+    const balance = gross - parseFloat(paid_amount);
+
     const comiss = await DataFind(
-      "SELECT shop_commission From tbl_store WHERE id=" + cart[0].store_id + "",
+      "SELECT shop_commission From tbl_store WHERE id=" + storeId + "",
     );
 
     const comi_amount =
@@ -4152,33 +4237,44 @@ router.post("/save_order", auth, async (req, res) => {
     let order_fullDate = `${order_year}-${order_month}-${order_day}`;
     let order_type = req.body.order_type || cart[0].order_type || "Counter & Counter";
     let isDelivery = (order_type === 'Counter & Route' || order_type === 'Route & Route' || order_type === 'C & R' || order_type === 'R & R' || order_type === 'Counter & Delivery' || order_type === 'Pick-up & Delivery' || order_type === 'Customer drop-off & Store delivery' || order_type === 'Store collection & Store delivery');
+    let isRoutePickup = (order_type === 'Route & Route' || order_type === 'Route & Counter' || order_type === 'R & R' || order_type === 'R & C' || order_type === 'Store collection & Store delivery' || order_type === 'Pick-up & Delivery' || order_type === 'Pick-up & Counter');
+
+    let finalReadyDate = req.body.readydate
+      ? formatMySQLDateTime(req.body.readydate, req.body.readytime || "16:00:00")
+      : cart[0].ready_date
+        ? formatMySQLDateTime(cart[0].ready_date)
+        : deliverydate
+          ? formatMySQLDateTime(deliverydate, deliverytime || "16:00:00")
+          : `${order_fullDate} 16:00:00`;
+
     let finalDeliveryDate = deliverydate
       ? formatMySQLDateTime(deliverydate, deliverytime || "16:00:00")
       : cart[0].delivery_date
         ? formatMySQLDateTime(cart[0].delivery_date)
-        : `${order_fullDate} 16:00:00`;
+        : finalReadyDate;
+
     let finalPickupDate = req.body.pickupdate
-      ? formatMySQLDateTime(req.body.pickupdate, req.body.pickuptime || "16:00:00")
+      ? formatMySQLDateTime(req.body.pickupdate, req.body.pickuptime || "10:00:00")
       : cart[0].pickup_date
         ? formatMySQLDateTime(cart[0].pickup_date)
-        : (!isDelivery ? finalDeliveryDate : null);
+        : (isRoutePickup ? `${order_fullDate} 10:00:00` : null);
 
     const order = await DataInsert(
       `tbl_order`,
-      `order_id,order_date,delivery_date,pickup_date,order_type,order_status,service_list,customer_id,created_by,store_id,addon_data,
+      `order_id,order_date,ready_date,delivery_date,pickup_date,order_type,order_status,service_list,customer_id,created_by,store_id,addon_data,
         addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission,commission_status,reference_number`,
       `'${orderid}',
-        '${order_fullDate}','${finalDeliveryDate}',${finalPickupDate ? `'${finalPickupDate}'` : 'NULL'},'${order_type.replace(/'/g, "\\'")}',${1},'${
-          cart[0].service_list_id
-        }','${cart[0].customer_id}','${cart[0].created_by}','${
-          cart[0].store_id
-        }','${cart[0].addon_id}',
-        ${cart[0].addon_price},${cart[0].sub_total},'${cart[0].tax}','${
-          cart[0].coupon_id
+        '${order_fullDate}','${finalReadyDate}','${finalDeliveryDate}',${finalPickupDate ? `'${finalPickupDate}'` : 'NULL'},'${order_type.replace(/'/g, "\\'")}',${1},'${
+          serviceListId
+        }','${customerId}','${cart[0].created_by}','${
+          storeId
+        }','${cart[0].addon_id || '0'}',
+        ${cartAddon},${cartSub},'${cart[0].tax || 0}','${
+          cart[0].coupon_id || 0
         }',${
-          cart[0].coupon_discount
+          cartCoupon
         },${extradiscount},${gross},${paid_amount},${balance},
-        '${0}',${cart[0].tax_amount},'${note}',${comi_amount},'1','${reference_number || ""}'`,
+        '${0}',${cartTaxAmt},'${(note || "").replace(/'/g, "\\'")}',${comi_amount},'1','${(reference_number || "").replace(/'/g, "\\'")}'`,
       req.hostname,
       req.protocol,
     );
@@ -4193,7 +4289,7 @@ router.post("/save_order", auth, async (req, res) => {
     const custnotifiction = await DataInsert(
       `tbl_notification`,
       `invoice, date, sender, received, notification`,
-      `'${orderid}', '${order_fullDate}', '${accessdata.topbardata.id}', '${cart[0].customer_id}', 'There is a new order registered, please check it orderid ${orderid}.'`,
+      `'${orderid}', '${order_fullDate}', '${accessdata.topbardata.id}', '${customerId}', 'There is a new order registered, please check it orderid ${orderid}.'`,
       req.hostname,
       req.protocol,
     );
@@ -4201,7 +4297,7 @@ router.post("/save_order", auth, async (req, res) => {
     const storenotifiction = await DataInsert(
       `tbl_notification`,
       `invoice, date, sender, received, notification`,
-      `'${orderid}', '${order_fullDate}', '${accessdata.topbardata.id}', '${cart[0].store_id}', 'There is a new order registered, please check it orderid ${orderid}.'`,
+      `'${orderid}', '${order_fullDate}', '${accessdata.topbardata.id}', '${storeId}', 'There is a new order registered, please check it orderid ${orderid}.'`,
       req.hostname,
       req.protocol,
     );
@@ -4226,7 +4322,7 @@ router.post("/save_order", auth, async (req, res) => {
     }
 
     const customer_data = await DataFind(
-      `SELECT * FROM tbl_customer WHERE id = '${cart[0].customer_id}'`,
+      `SELECT * FROM tbl_customer WHERE id = '${customerId}'`,
     );
 
     if (
@@ -4254,7 +4350,7 @@ router.post("/save_order", auth, async (req, res) => {
         await DataInsert(
           `tbl_transections`,
           `account_id,store_ID,transec_detail,transec_type,debit_amount,credit_amount,balance_amount,date, customer_id`,
-          `'${payment_type}','${account[0].store_ID}','POS Income ${orderid}','INCOME',0,${paid_amount},${balance},'${order_fullDate}', '${cart[0].customer_id}'`,
+          `'${payment_type}','${account[0].store_ID}','POS Income ${orderid}','INCOME',0,${paid_amount},${balance},'${order_fullDate}', '${customerId}'`,
           req.hostname,
           req.protocol,
         );
@@ -4262,9 +4358,9 @@ router.post("/save_order", auth, async (req, res) => {
     }
 
     // clear cart
-    var neworderid = await idfororder(cart[0].store_id);
+    var neworderid = await idfororder(storeId);
     var tax = await DataFind(
-      "SELECT tax_percent FROM tbl_store WHERE id=" + cart[0].store_id + "",
+      "SELECT tax_percent FROM tbl_store WHERE id=" + storeId + "",
     );
 
     await DataUpdate(
@@ -4275,6 +4371,7 @@ router.post("/save_order", auth, async (req, res) => {
    addon_price = 0,
    delivery_date = CURRENT_TIMESTAMP,
    pickup_date = CURRENT_TIMESTAMP,
+   ready_date = CURRENT_TIMESTAMP,
    order_type = 'Counter & Counter',
    extra_discount = 0,
    coupon_id = 0,
@@ -4288,22 +4385,22 @@ router.post("/save_order", auth, async (req, res) => {
    customer_id = '0',
    balance = 0,
    notes = '',
-   tax = ${tax[0].tax_percent}`,
+   tax = ${(tax && tax.length > 0 && tax[0].tax_percent) ? tax[0].tax_percent : 0}`,
       `created_by = '${loginas},${id}'`,
       req.hostname,
       req.protocol,
     );
 
     var shope = await DataFind(
-      "SELECT * FROM tbl_store WHERE id=" + cart[0].store_id + "",
+      "SELECT * FROM tbl_store WHERE id=" + storeId + "",
     );
 
     var coust = await DataFind(
-      "SELECT * From tbl_customer WHERE id=" + cart[0].customer_id + "",
+      "SELECT * From tbl_customer WHERE id=" + customerId + "",
     );
 
     const emailData = await DataFind(
-      "SELECT * FROM tbl_email WHERE store_id=" + cart[0].store_id + "",
+      "SELECT * FROM tbl_email WHERE store_id=" + storeId + "",
     );
 
     if (
@@ -4524,10 +4621,11 @@ const renderPosPrint = async (req, res) => {
     );
 
     let cartservice = [];
-    if (orderdata[0].service_list) {
+    const rawServiceList = (orderdata[0].service_list || "").trim();
+    if (rawServiceList && rawServiceList !== "0") {
       cartservice = await DataFind(
         "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
-          orderdata[0].service_list +
+          rawServiceList +
           "')",
       );
     }
@@ -4696,6 +4794,7 @@ const renderPosPrint = async (req, res) => {
       cartservice,
       shope: shope && shope.length > 0 ? shope[0] : {},
       order: orderdata[0],
+      orderdata: orderdata,
       addonslist,
       paymenttype,
       customer:

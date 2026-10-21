@@ -29,4 +29,15 @@ Thumbs.db
 desktop.ini
 .ssh/
 id_rsa*
+
+# Environment & Credentials
+config.env
+.env
+.env.*
+!.env.example
+!config.env.example
+
+# Dynamic User Uploads
+uploads/
+
 

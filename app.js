@@ -38,10 +38,16 @@ const sessionStore = new MySQLStore(
   conn
 );
 
+let sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret || !String(sessionSecret).trim()) {
+  sessionSecret = require("crypto").randomBytes(32).toString("hex");
+  console.warn("⚠️  SESSION_SECRET is not set in config.env — using a random per-process secret. Set it to keep sessions across restarts.");
+}
+
 app.use(
   session({
     key: "icleaners_sid",
-    secret: process.env.SESSION_SECRET || "flashblog",
+    secret: sessionSecret,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
@@ -65,8 +71,11 @@ conn.query("SELECT timezone FROM tbl_master_shop where id=1", (err, row) => {
   }
 });
 
+const orderTypes = require("./public/js/shared/orderTypes");
+
 app.use((req, res, next) => {
-  res.locals.scriptFile = `<script src="/vendor/global/global.min.js"></script>\n<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>\n<script src="/Changes/jquery-ui.min.js"></script>`;
+  res.locals.orderTypes = orderTypes;
+  res.locals.scriptFile = `<script src="/vendor/global/global.min.js"></script>\n<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>\n<script src="/Changes/jquery-ui.min.js"></script>\n<script src="/js/shared/orderTypes.js"></script>`;
   res.locals.show_demo_accounts = process.env.show_demo_accounts !== undefined
     ? String(process.env.show_demo_accounts).trim().toLowerCase() === "true"
     : true;

@@ -420,9 +420,6 @@ router.post("/login", async (req, res) => {
         return res.redirect(req.get("Referrer") || "/");
       }
       let isValidPass = bcrypt.compareSync(password, data[0].password);
-      console.log("isValidPass", isValidPass);
-      console.log("password", password);
-      console.log("data[0].password", data[0].password);
 
       if (!isValidPass) {
         req.flash("error", "Wrong Password!!!!");
@@ -442,9 +439,6 @@ router.post("/login", async (req, res) => {
 
     if (data[0].password.length > 0) {
       let isValidPass = bcrypt.compareSync(password, data[0].password);
-      console.log("isValidPass", isValidPass);
-      console.log("password", password);
-      console.log("data[0].password", data[0].password);
 
       if (!isValidPass) {
         req.flash("error", "Wrong Password!!!!");
@@ -470,6 +464,7 @@ router.post("/login", async (req, res) => {
       var token = await jwt.sign(
         { id: data[0].id, roll: 0, store: data[0].store_ID, loginas },
         process.env.TOKEN_KEY,
+        { expiresIn: "1h" },
       );
     } else {
       var token = await jwt.sign(
@@ -480,12 +475,16 @@ router.post("/login", async (req, res) => {
           loginas,
         },
         process.env.TOKEN_KEY,
+        { expiresIn: "1h" },
       );
     }
 
+    // Token lifetime matches cookie lifetime (1h) so a leaked token cannot be replayed indefinitely.
     res.cookie("webtoken", token, {
       expires: new Date(Date.now() + 1000 * 60 * 60),
       httpOnly: true,
+      sameSite: "lax",
+      secure: req.secure || req.headers["x-forwarded-proto"] === "https",
     });
 
     const lang = req.cookies.lang;

@@ -496,12 +496,13 @@
       // 3. Dynamic Switch Rendering and Gating Logic
       function refreshModalSwitchUI(order) {
         const type = order.orderType || '';
-        const isRouteRoute = type === 'Route & Route' || type === 'Pick-up & Delivery' || type === 'Store collection & Store delivery';
-        const isRouteCounter = type === 'Route & Counter' || type === 'Pick-up & Counter';
-        const isCounterRoute = type === 'Counter & Route' || type === 'Counter & Delivery' || type === 'Customer drop-off & Store delivery';
+        const hasPickup = (typeof OrderTypes !== 'undefined') ? OrderTypes.hasPickup(type) : (type === 'Route & Route' || type === 'Pick-up & Delivery' || type === 'Store collection & Store delivery' || type === 'Route & Counter' || type === 'Pick-up & Counter');
+        const hasDelivery = (typeof OrderTypes !== 'undefined') ? OrderTypes.hasDelivery(type) : (type === 'Route & Route' || type === 'Pick-up & Delivery' || type === 'Store collection & Store delivery' || type === 'Counter & Route' || type === 'Counter & Delivery' || type === 'Customer drop-off & Store delivery');
+        const isRouteRoute = (typeof OrderTypes !== 'undefined') ? OrderTypes.isRouteRoute(type) : (type === 'Route & Route' || type === 'Pick-up & Delivery' || type === 'Store collection & Store delivery');
+        const isCounterRoute = hasDelivery && !hasPickup;
 
         // --- Pick-up Switch ---
-        if (isRouteRoute || isRouteCounter) {
+        if (hasPickup) {
           $('#pickup_toggle_container').removeClass('d-none');
           $('#pickup_status_toggle').prop('checked', order.isPickedUp);
 

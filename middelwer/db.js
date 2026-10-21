@@ -32,12 +32,19 @@ conn.getConnection((err, connection) => {
     }
 });
 
-const mySqlQury = (qry) => {
+const mySqlQury = (qry, params = []) => {
     return new Promise((resolve, reject) => {
-        conn.query(qry, (err, row) => {
-            if (err) return reject(err);
-            resolve(row);
-        });
+        if (params && Array.isArray(params) && params.length > 0) {
+            conn.query(qry, params, (err, row) => {
+                if (err) return reject(err);
+                resolve(row);
+            });
+        } else {
+            conn.query(qry, (err, row) => {
+                if (err) return reject(err);
+                resolve(row);
+            });
+        }
     });
 };
 
