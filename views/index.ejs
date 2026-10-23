@@ -236,25 +236,23 @@
                                                 <thead>
                                                     <tr>
                                                         <th scope="col">
-                                                            <%= language.Order_Info || 'Order Info' %>
+                                                            <%= language.Order_ID || 'Order Number' %>
                                                         </th>
                                                         <th scope="col">
-                                                            <%= language.Customer || language.Customers || 'Customer' %>
+                                                            <%= language.Order_Date || 'Order Date' %>
+                                                        </th>
+                                                        <th scope="col">
+                                                            <%= language.Customer_Name || language.Customer || 'Customer Name' %>
                                                         </th>
                                                         <th scope="col">
                                                             <%= language.Order_Amount || 'Order Amount' %>
                                                         </th>
                                                         <th scope="col">
-                                                            <%= language.Status || 'Status' %>
-                                                        </th>
-                                                        <th scope="col">
                                                             <%= language.Payment || language.Payment_Amount || 'Payment' %>
                                                         </th>
-                                                        <% if (!isScopedUser && accessdata?.mutibranch === true) { %>
-                                                            <th scope="col">
-                                                                <%= language.Store_Name || 'Store Name' %>
-                                                            </th>
-                                                        <% } %>
+                                                        <th scope="col">
+                                                            <%= language.Status || 'Status' %>
+                                                        </th>
                                                         <th scope="col" class="text-center" style="width: 170px;">
                                                             <%= language.Action || 'Action' %>
                                                         </th>
@@ -265,65 +263,16 @@
                                                         <% recentOrder.forEach(function (data) { %>
                                                             <tr>
                                                                 <td>
-                                                                    <div class="server-dt-primary-text mb-1">
-                                                                        <a href="/order/view/<%= data.id %>" class="me-1 fw-bold text-primary"><%= data.order_id || '' %></a>
-                                                                    </div>
-                                                                    <% if (data.order_type) { %>
-                                                                        <div class="mb-1">
-                                                                            <span class="badge bg-light text-dark border py-1 px-2 text-wrap d-inline-block mt-1" style="font-size: 0.72rem; line-height: 1.1;">
-                                                                                <%= data.order_type %>
-                                                                            </span>
-                                                                        </div>
-                                                                    <% } %>
-                                                                    <% if (data.isZeroItemOrder) { %>
-                                                                        <div class="mb-1">
-                                                                            <span class="badge bg-warning-subtle text-dark border border-warning py-0 px-1 text-wrap d-inline-block mt-1" style="font-size: 0.68rem; line-height: 1.1;">
-                                                                                0 Items (Pending Intake)
-                                                                            </span>
-                                                                        </div>
-                                                                    <% } %>
-                                                                    <div class="server-dt-secondary-text mb-0">
-                                                                        <span class="me-1 opacity-75"><%= language.Order_Date || 'Order Date' %>:</span>
-                                                                        <span><%= data.formattedOrderDate || '' %></span>
-                                                                    </div>
-                                                                    <% 
-                                                                        var hasPickup = (data.order_type === 'Route & Counter' || data.order_type === 'Route & Route' || data.order_type === 'R & C' || data.order_type === 'R & R' || data.order_type === 'Pick-up & Counter' || data.order_type === 'Pick-up & Delivery' || data.order_type === 'Store collection & Store delivery' || data.order_type === 'Store collection & Customer pick-up');
-                                                                        var hasDelivery = (data.order_type === 'Counter & Route' || data.order_type === 'Route & Route' || data.order_type === 'C & R' || data.order_type === 'R & R' || data.order_type === 'Counter & Delivery' || data.order_type === 'Pick-up & Delivery' || data.order_type === 'Customer drop-off & Store delivery' || data.order_type === 'Store collection & Store delivery');
-                                                                        var readyDateVal = data.formattedReadyDate || data.formattedDeliveryDate || '';
-                                                                    %>
-                                                                    <% if (hasPickup && data.formattedPickupDate) { %>
-                                                                        <div class="server-dt-secondary-text mb-0">
-                                                                            <span class="me-1 opacity-75"><%= language.Pickup_Date || 'Pick-up' %>:</span>
-                                                                            <span><%= data.formattedPickupDate %></span>
-                                                                        </div>
-                                                                    <% } %>
-                                                                    <div class="server-dt-secondary-text mb-0">
-                                                                        <span class="me-1 opacity-75 fw-semibold text-success"><%= language.Ready_Schedule || 'Ready' %>:</span>
-                                                                        <span class="fw-semibold"><%= readyDateVal %></span>
-                                                                    </div>
-                                                                    <% if (hasDelivery && data.formattedDeliveryDate) { %>
-                                                                        <div class="server-dt-secondary-text mb-0">
-                                                                            <span class="me-1 opacity-75"><%= language.Delivery_Date || 'Delivery' %>:</span>
-                                                                            <span><%= data.formattedDeliveryDate %></span>
-                                                                        </div>
-                                                                    <% } %>
+                                                                    <a href="/order/view/<%= data.id %>" class="fw-bold text-primary"><%= data.order_id || '' %></a>
                                                                 </td>
-
+                                                                <td>
+                                                                    <div class="server-dt-primary-text"><%= data.formattedOrderDate || '' %></div>
+                                                                </td>
                                                                 <td>
                                                                     <div class="server-dt-primary-text"><%= data.customer_name || data.customer || 'Walk In Customer' %></div>
-                                                                    <% if (data.customer_number) { %>
-                                                                        <div class="server-dt-secondary-text">
-                                                                            <i class="fa fa-phone me-1 opacity-50"></i><%= data.customer_number %>
-                                                                        </div>
-                                                                    <% } %>
                                                                 </td>
                                                                 <td class="symbol font-w600">
                                                                     <%= parseFloat(data.gross_total || 0).toFixed(2) %>
-                                                                </td>
-                                                                <td>
-                                                                    <span class="badge-status-pill <%= data.statusClass %>">
-                                                                        <%= data.orderStatusName || data.status || 'Pending' %>
-                                                                    </span>
                                                                 </td>
                                                                 <td>
                                                                     <% 
@@ -349,13 +298,11 @@
                                                                         <% } %>
                                                                     </div>
                                                                 </td>
-                                                                <% if (!isScopedUser && accessdata?.mutibranch === true) { %>
-                                                                    <td>
-                                                                        <span class="badge bg-light text-dark fw-bold border">
-                                                                            <%= data.storeName || data.store || '-' %>
-                                                                        </span>
-                                                                    </td>
-                                                                <% } %>
+                                                                <td>
+                                                                    <span class="badge-status-pill <%= data.statusClass %>">
+                                                                        <%= data.orderStatusName || data.status || 'Pending' %>
+                                                                    </span>
+                                                                </td>
                                                                 <td class="text-center">
                                                                     <div class="server-dt-actions justify-content-center">
                                                                         <% if (accessdata?.logas === 'custmor') { %>
@@ -389,7 +336,7 @@
                                                         <% }) %>
                                                     <% } else { %>
                                                         <tr>
-                                                            <td colspan="<%= (!isScopedUser && accessdata?.mutibranch === true) ? 7 : 6 %>" class="text-center py-4 text-muted">
+                                                            <td colspan="7" class="text-center py-4 text-muted">
                                                                 <i class="fa fa-inbox fa-2x mb-2 d-block opacity-50"></i>
                                                                 <%= language.No_data_found || 'No recent orders found' %>
                                                             </td>

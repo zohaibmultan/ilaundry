@@ -444,13 +444,13 @@ body[data-theme-version="light"] {
 /* Form Field Labels (Semibold 12px) */
 .form-label,
 label:not(.form-check-label):not(.btn):not(.custom-control-label) {
-  font-size: 14px !important;
+  font-size: 12px !important;
   font-weight: 400 !important;
-  letter-spacing: 0.015em !important;
-  margin-bottom: 5px !important;
+  /* letter-spacing: 0.015em !important;
+  margin-bottom: 0px !important; */
   display: inline-block !important;
   color: #475569 !important;
-  line-height: 1.35 !important;
+  /* line-height: 1.35 !important; */
 }
 
 [data-theme-version="dark"] .form-label,
@@ -470,8 +470,7 @@ select,
   min-height: 38px !important;
   max-height: 38px !important;
   padding: 6px 12px !important;
-  font-size: 13px !important;
-  line-height: 1.4 !important;
+  font-size: 16px !important;
   border-radius: 8px !important;
   box-sizing: border-box !important;
   background-color: rgba(255, 255, 255, 0.82) !important;
@@ -778,7 +777,8 @@ textarea.form-control:focus {
   text-align: left !important;
   margin: 0 !important;
   padding: 0 !important;
-  font-size: 13px !important;
+  font-size: 16px !important;
+  font-weight: bold !important;
   color: inherit !important;
   overflow: hidden !important;
 }
@@ -4114,68 +4114,61 @@ table.dataTable td.text-center {
 }
 
 #route_calendar .fc-event {
-  padding: 6px 8px !important;
-  border-radius: 8px !important;
-  font-size: 0.82rem !important;
-  font-weight: 500 !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   cursor: pointer !important;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14) !important;
   transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease !important;
-  margin: 3px 2px 6px 2px !important;
-  white-space: normal !important;
-  min-height: 66px !important;
+  margin: 2px 2px 3px 2px !important;
+  white-space: nowrap !important;
+  min-height: auto !important;
   height: auto !important;
   display: block !important;
-  overflow: visible !important;
+  overflow: hidden !important;
 }
 
 #route_calendar .fc-event:hover {
-  transform: translateY(-2px) scale(1.01) !important;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28) !important;
+  transform: translateY(-1px) scale(1.01) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.24) !important;
   filter: brightness(1.06) !important;
   z-index: 25 !important;
 }
 
 #route_calendar .fc-day-grid-event .fc-content {
-  white-space: normal !important;
-  overflow: visible !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 /* TimeGrid Events in agendaWeek / agendaDay */
 #route_calendar .fc-time-grid-event {
-  min-height: 56px !important;
+  min-height: 26px !important;
   height: auto !important;
-  overflow: visible !important;
+  overflow: hidden !important;
   z-index: 10 !important;
-  border-radius: 8px !important;
+  border-radius: 6px !important;
 }
 
 #route_calendar .fc-time-grid-event .fc-content,
 #route_calendar .fc-time-grid-event.fc-short .fc-content,
 #route_calendar .fc-time-grid-event.fc-short {
-  white-space: normal !important;
-  overflow: visible !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
 }
 
-/* Dedicated Day Cards View (basicDay) */
+/* Dedicated Day View (basicDay) */
 #route_calendar .fc-basicDay-view .fc-day-grid-event {
-  margin: 6px 12px 10px 12px !important;
-  padding: 10px 14px !important;
-  border-radius: 10px !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12) !important;
+  margin: 4px 10px 6px 10px !important;
+  padding: 6px 12px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12) !important;
 }
 
-#route_calendar .fc-basicDay-view .fc-day-grid-event .event-card-order {
-  font-size: 13.5px !important;
-}
-
-#route_calendar .fc-basicDay-view .fc-day-grid-event .event-card-customer {
-  font-size: 13px !important;
-}
-
-#route_calendar .fc-basicDay-view .fc-day-grid-event .event-card-time {
-  font-size: 12px !important;
+#route_calendar .fc-basicDay-view .fc-day-grid-event .time-badge-text {
+  font-size: 12.5px !important;
 }
 
 /* Clickable Day Numbers in Month View */
@@ -4197,11 +4190,11 @@ table.dataTable td.text-center {
   display: none !important;
 }
 
-/* Day cell heights in month view to accommodate multi-line cards without clipping */
+/* Day cell heights in month view */
 #route_calendar .fc-row,
 #route_calendar .fc-row.fc-rigid,
 #route_calendar .fc-basic-view .fc-body .fc-row {
-  min-height: 125px !important;
+  min-height: 110px !important;
   height: auto !important;
   overflow: visible !important;
 }
@@ -4237,106 +4230,38 @@ table.dataTable td.text-center {
   text-decoration: none !important;
 }
 
-/* Multi-Line Structured Event Card */
-.calendar-event-card {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 3px !important;
-  line-height: 1.25 !important;
-  color: #ffffff !important;
-}
-
-.event-card-top {
+/* Compact Time-Only Event Badge */
+.calendar-time-badge {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.02em !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.22) !important;
-  padding-bottom: 3px !important;
-  margin-bottom: 2px !important;
-}
-
-.event-card-time {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  font-size: 11px !important;
-}
-
-.event-card-type {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 3px !important;
-  text-transform: uppercase !important;
-  font-size: 9.5px !important;
-  letter-spacing: 0.04em !important;
-  background: rgba(0, 0, 0, 0.24) !important;
-  padding: 1px 6px !important;
-  border-radius: 4px !important;
-}
-
-.event-card-mid {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 1px !important;
-}
-
-.event-card-order {
-  font-size: 12px !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.02em !important;
+  gap: 6px !important;
+  line-height: 1.2 !important;
   color: #ffffff !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  width: 100% !important;
 }
 
-.event-card-customer {
+.time-badge-main {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
   font-size: 11.5px !important;
-  font-weight: 600 !important;
-  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
 }
 
-.event-card-bot {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  font-size: 10px !important;
-  margin-top: 2px !important;
+.time-badge-main i {
+  font-size: 10.5px !important;
+  opacity: 0.92 !important;
 }
 
-.event-card-status {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 3px !important;
-  padding: 1px 6px !important;
-  border-radius: 4px !important;
-  font-weight: 600 !important;
-}
-
-.event-card-status.status-done {
-  background: rgba(16, 185, 129, 0.35) !important;
+.time-badge-done-icon {
+  font-size: 11px !important;
   color: #ecfdf5 !important;
-  border: 1px solid rgba(16, 185, 129, 0.5) !important;
-}
-
-.event-card-status.status-wait {
-  background: rgba(0, 0, 0, 0.22) !important;
-  color: #fff7ed !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-
-.event-card-zero-badge {
-  font-size: 9px !important;
-  font-weight: 700 !important;
-  background: rgba(239, 68, 68, 0.32) !important;
-  border: 1px solid rgba(239, 68, 68, 0.5) !important;
-  color: #fee2e2 !important;
-  padding: 1px 5px !important;
-  border-radius: 3px !important;
+  flex-shrink: 0 !important;
 }
 
 /* Popover styling when +more is clicked */
@@ -4474,4 +4399,4 @@ table.dataTable td.text-center {
 [data-theme-version="dark"] #route_calendar .fc-axis {
   color: #94a3b8 !important;
 }
-
+

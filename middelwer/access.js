@@ -137,19 +137,30 @@ verifyData.forEach((key) => {
     const plac = masterstore[0].currency_placement;
     const thousands_separator = masterstore[0].thousands_separator;
 
-    let notification_data = []
-    if(mutibranch === true && logas == 'master'){
+    let notification_data = [];
+    if (logas === "master") {
       notification_data = await mySqlQury(
-      `SELECT * FROM tbl_notification ORDER BY id DESC LIMIT 5`
-    );
-    }else if((mutibranch === false && logas == 'master') || (logas== 'store')){
-    notification_data = await mySqlQury(
-      `SELECT * FROM tbl_notification WHERE received = '${topbardata[0].store_ID}' ORDER BY id DESC LIMIT 5`
-    );
-    }else{
+        `SELECT tbl_notification.*, tbl_order.id AS order_primary_id
+         FROM tbl_notification
+         LEFT JOIN tbl_order ON tbl_notification.invoice = tbl_order.order_id
+         ORDER BY tbl_notification.id DESC LIMIT 5`
+      );
+    } else if (logas === "store") {
       notification_data = await mySqlQury(
-      `SELECT * FROM tbl_notification WHERE received = '${topbardata[0].id}' ORDER BY id DESC LIMIT 5`
-    );
+        `SELECT tbl_notification.*, tbl_order.id AS order_primary_id
+         FROM tbl_notification
+         LEFT JOIN tbl_order ON tbl_notification.invoice = tbl_order.order_id
+         WHERE tbl_notification.received = '${topbardata[0].store_ID}'
+         ORDER BY tbl_notification.id DESC LIMIT 5`
+      );
+    } else {
+      notification_data = await mySqlQury(
+        `SELECT tbl_notification.*, tbl_order.id AS order_primary_id
+         FROM tbl_notification
+         LEFT JOIN tbl_order ON tbl_notification.invoice = tbl_order.order_id
+         WHERE tbl_notification.received = '${topbardata[0].id}'
+         ORDER BY tbl_notification.id DESC LIMIT 5`
+      );
     }
 // console.log("topbardata[0].id",topbardata[0].id);
 

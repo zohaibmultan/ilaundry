@@ -1,0 +1,2135 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+  <!-- meta and links start -->
+  <%- include('templet/meta')-%>
+  <link rel="stylesheet" href="/css/pos-compact.css?v=5">
+</head>
+
+<body class="pos-screen-layout">
+  <% const isEditMode = (typeof isEdit !== 'undefined' && isEdit) || (typeof cart !== 'undefined' && cart && cart.isEdit); %>
+  <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+  <!--********** Content body start **********-->
+
+  <div class="content-body pos-content-body">
+
+    <div class="container-fluid" style="min-height: 100vh;">
+      <!-- Mobile / Tablet Segmented View Switcher (<992px) -->
+      <div class="pos-responsive-segmented-bar d-lg-none">
+        <button type="button" class="pos-segmented-btn active" id="posBtnShowCatalog" onclick="switchPosMobileTab('catalog')">
+          <i class="fas fa-tshirt"></i>
+          <span><%= language.Services || 'Services' %></span>
+        </button>
+        <button type="button" class="pos-segmented-btn" id="posBtnShowCart" onclick="switchPosMobileTab('cart')">
+          <i class="fas fa-shopping-cart"></i>
+          <span><%= language.Order_Cart || 'Cart & Checkout' %></span>
+          <span class="badge bg-primary text-white ms-1 rounded-pill" id="posMobileCartBadge"><%= cart.order_item ? cart.order_item.length : 0 %></span>
+        </button>
+      </div>
+
+      <div class="row pos-main-row">
+
+        <!-- left side service list part -->
+        <div class="d-none">
+          <input type="hiden" name="sym" value="<%= accessdata.symbol %>">
+          <input type="hiden" name="pls" value="<%= accessdata.plac %>">
+          <input type="hiden" name="thousands_separator" value="<%= accessdata.thousands_separator %>">
+          <% if (isEditMode) { %>
+          <input type="hidden" id="pos_mode" value="edit">
+          <input type="hidden" id="order_id" name="order_id" value="<%= cart.id %>">
+          <input type="hidden" id="customer_id" value="<%= cart.customer_id || 0 %>">
+          <% } else { %>
+          <input type="hidden" id="pos_mode" value="create">
+          <% } %>
+        </div>
+
+        <div class="col-xl-7 col-lg-6 pos-tab-panel-catalog" id="posCatalogColumn">
+          <!-- POS Top Compact Menu Bar -->
+          <div class="card pos-menu-bar border-0 shadow-sm rounded-3 mb-2">
+            <div class="card-body p-1.5 px-2 d-flex align-items-center justify-content-between">
+              <!-- Left Section: Sidebar Toggle & Navigation -->
+              <div class="d-flex align-items-center gap-2">
+                <!-- Sidebar Expand/Collapse Toggle Button -->
+                <button type="button" class="btn btn-sm pos-menu-btn d-flex align-items-center justify-content-center" id="pos_sidebar_toggle" title="Toggle Sidebar">
+                  <i class="fa fa-bars fs-14"></i>
+                </button>
+
+                <% if (isEditMode) { %>
+                <!-- Back to Order View Button -->
+                <a href="/order/view/<%= cart.id %>" class="btn btn-sm pos-menu-btn d-flex align-items-center gap-1.5 fw-semibold text-nowrap" title="<%= language.Back_to_Order || 'Back to Order' %>">
+                  <i class="fa fa-arrow-left fs-12 me-1"></i>
+                  <span class="d-none d-sm-inline fs-12"><%= language.Back || 'Back to Order' %></span>
+                </a>
+                <% } else { %>
+                <!-- Back to Dashboard Button -->
+                <a href="/index" class="btn btn-sm pos-menu-btn d-flex align-items-center gap-1.5 fw-semibold text-nowrap" title="<%= language.Back_to_Dashboard || 'Back to Dashboard' %>">
+                  <i class="fa fa-arrow-left fs-12 me-2"></i>
+                  <span class="d-none d-sm-inline fs-12"><%= language.Dashboard || 'Dashboard' %></span>
+                </a>
+                <% } %>
+              </div>
+
+              <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                  <i class="fa fa-store"></i>
+                </div>
+                <div>
+                  <strong class="text-dark fs-14"><%= assignedStoreName || 'Main Store' %></strong>
+                  <% if (isEditMode) { %>
+                  <span class="badge bg-warning text-dark ms-2 fw-bold"><i class="fas fa-edit me-1"></i>EDIT ORDER #<%= cart.order_id %></span>
+                  <% } %>
+                </div>
+              </div>
+
+              <!-- Right Section: Printer Status, Theme, Notifications & Profile -->
+              <div class="d-flex align-items-center gap-2">
+                <!-- Printing Server Live Status Badge Dropdown -->
+                <div class="dropdown pos-printer-dropdown">
+                  <button class="btn btn-sm pos-printer-badge-btn dropdown-toggle d-flex align-items-center gap-1" type="button" id="posPrinterStatusBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Printing Server Status">
+                    <span class="pos-printer-dot dot-checking" id="posPrinterStatusDot"></span>
+                    <span class="pos-printer-label d-none d-md-inline" id="posPrinterStatusText">Checking Printer...</span>
+                    <i class="fas fa-chevron-down ms-1" style="font-size: 8px; opacity: 0.7;"></i>
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-end pos-printer-popover p-3 shadow-lg" aria-labelledby="posPrinterStatusBtn" style="min-width: 290px; border-radius: 12px; z-index: 1060;">
+                    <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
+                      <strong style="font-size: 13px;"><i class="fas fa-print me-1 text-primary"></i> Silent Printing Service</strong>
+                      <span class="badge" id="posPopoverStatusBadge">Checking</span>
+                    </div>
+                    <div class="small mb-2">
+                      <div class="d-flex justify-content-between text-muted mb-1">
+                        <span>Server URL:</span>
+                        <span class="fw-semibold text-dark" id="posPopoverServerUrl">
+                          <%= accessdata?.masterstore?.printing_server_url || 'http://127.0.0.1:4321' %>
+                        </span>
+                      </div>
+                      <div class="d-flex justify-content-between text-muted mb-1">
+                        <span>Active Printer:</span>
+                        <span class="fw-semibold text-dark text-truncate" style="max-width: 150px;" id="posPopoverPrinterName">
+                          <%= accessdata?.masterstore?.invoice_printer_name || 'System Default' %>
+                        </span>
+                      </div>
+                      <div class="d-flex justify-content-between text-muted mb-1">
+                        <span>Format:</span>
+                        <span class="fw-semibold text-dark">
+                          <%= accessdata?.masterstore?.invoice_printer_format == 2
+                                                            ? '58mm Roll' :
+                                                            (accessdata?.masterstore?.invoice_printer_format == 0
+                                                            ? 'A4 Sheet' : '80mm Thermal' ) %>
+                        </span>
+                      </div>
+                      <div class="d-flex justify-content-between text-muted">
+                        <span>Mode:</span>
+                        <span class="fw-semibold" id="posPopoverModeText">Auto-detecting...</span>
+                      </div>
+                    </div>
+                    <div class="d-grid gap-2 pt-2 border-top">
+                      <button type="button" class="btn btn-outline-primary btn-xs w-100" onclick="pingPosPrintingServer(true)">
+                        <i class="fas fa-sync-alt me-1"></i> Check Connection Now
+                      </button>
+                      <% if (login === 'master') { %>
+                      <a href="/tool/setting" class="btn btn-light btn-xs text-center text-muted w-100">
+                        <i class="fas fa-cog me-1"></i> Hardware Settings
+                      </a>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Light/Dark Theme Switcher Button -->
+                <button type="button" class="btn btn-sm pos-header-icon-btn pos-theme-toggle" id="pos_theme_toggle" onclick="window.toggleAppTheme(event)" title="Toggle Dark/Light Mode">
+                  <div class="mode" data-id="dark">
+                    <svg class="lighticon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd" clip-rule="evenodd" d="M18.1377 13.7902C19.2217 14.8742 16.3477 21.0542 10.6517 21.0542C6.39771 21.0542 2.94971 17.6062 2.94971 13.3532C2.94971 8.05317 8.17871 4.66317 9.67771 6.16217C10.5407 7.02517 9.56871 11.0862 11.1167 12.6352C12.6647 14.1842 17.0537 12.7062 18.1377 13.7902Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                    <svg class="darkicon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.5"></circle>
+                      <path d="M12 2V4M12 20V22M4 12H2M22 12H20M19.07 4.93L17.66 6.34M6.34 17.66L4.93 19.07M19.07 19.07L17.66 17.66M6.34 6.34L4.93 4.93" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+                    </svg>
+                  </div>
+                </button>
+
+                <!-- Notifications Dropdown -->
+                <div class="dropdown pos-notification-dropdown">
+                  <button class="btn btn-sm pos-header-icon-btn position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="<%= language.Notifications || 'Notifications' %>">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <% if(accessdata?.notification_data?.length > 0){ %>
+                    <span class="header-badge-dot"></span>
+                    <% } %>
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-end notification-glass-menu shadow-lg">
+                    <div class="notif-header">
+                      <div class="d-flex align-items-center gap-2">
+                        <h6 class="mb-0 fw-bold"><%= language.Notifications || 'Notifications' %></h6>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1 fs-11">
+                          <%= accessdata?.notification_data ? accessdata.notification_data.length : 0 %>
+                        </span>
+                      </div>
+                      <a href="/admin/notification" class="fs-12 text-primary text-decoration-none fw-medium"><%= language.View_All || 'View All' %></a>
+                    </div>
+                    <div class="widget-media dz-scroll" style="max-height: 320px; overflow-y: auto; overflow-x: hidden;">
+                      <% if(accessdata?.notification_data?.length > 0){ %>
+                      <% accessdata.notification_data.forEach((data) => { %>
+                      <a href="/admin/notification" class="notif-item">
+                        <div class="bg-primary-subtle text-primary rounded-circle notif-item-icon">
+                          <i class="fa fa-bell fs-12"></i>
+                        </div>
+                        <div class="notif-item-body">
+                          <div class="notif-item-text"><%= data.notification %></div>
+                          <div class="notif-item-time">
+                            <i class="fa fa-clock fs-10"></i>
+                            <span><%= data.date %></span>
+                          </div>
+                        </div>
+                      </a>
+                      <% }) %>
+                      <% } else { %>
+                      <div class="text-center py-4 text-muted">
+                        <i class="fa fa-bell-slash fs-2 mb-2 d-block text-secondary opacity-50"></i>
+                        <span class="fs-12"><%= language.No_Notifications_Found || 'No notifications found' %></span>
+                      </div>
+                      <% } %>
+                    </div>
+                    <div class="notif-footer">
+                      <a href="/admin/notification" class="d-flex align-items-center justify-content-center gap-1">
+                        <span><%= language.Check_All_Notification || 'Check All Notifications' %></span>
+                        <i class="fas fa-chevron-right fs-10"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- User Profile Dropdown -->
+                <% 
+                                        let userDisplayName = accessdata?.topbardata?.name || 'Administrator';
+                                        let userRoleName = accessdata?.roll?.roll || '';
+                                        let defaultAvatar = accessdata?.logas === 'custmor' ? '/images/profile-default.png' : '/images/default.png';
+                                        let userAvatarImg = (accessdata?.topbardata?.img && accessdata.topbardata.img.trim() !== '' && accessdata.topbardata.img !== 'default.png')
+                                            ? ('/uploads/' + accessdata.topbardata.img)
+                                            : defaultAvatar;
+
+                                        if (accessdata?.logas === 'custmor') {
+                                            userRoleName = userRoleName || 'Customer';
+                                        } else if (accessdata?.topbardata?.is_staff != 0) {
+                                            userRoleName = userRoleName || 'Staff';
+                                        } else if (accessdata?.isstore === true || accessdata?.logas === 'store') {
+                                            userRoleName = userRoleName || 'Store Manager';
+                                        } else {
+                                            userRoleName = userRoleName || 'Master Admin';
+                                        }
+                                    %>
+                <div class="dropdown header-profile pos-profile-dropdown">
+                  <a class="nav-link p-0 d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="<%= userDisplayName %>">
+                    <img class="img-fluid rounded-circle" style="width: 32px; height: 32px; object-fit: cover; border: 2px solid rgba(0, 129, 238, 0.35);" src="<%= userAvatarImg %>" onerror="this.onerror=null;this.src='<%= defaultAvatar %>';" alt="avatar">
+                  </a>
+                  <div class="dropdown-menu dropdown-menu-end profile-glass-menu shadow-lg">
+                    <div class="profile-card-header">
+                      <div class="profile-header-avatar">
+                        <img src="<%= userAvatarImg %>" onerror="this.onerror=null;this.src='<%= defaultAvatar %>';" alt="avatar">
+                      </div>
+                      <div class="profile-header-meta">
+                        <h6 class="profile-user-name mb-0"><%= userDisplayName %></h6>
+                        <span class="profile-role-badge"><%= userRoleName %></span>
+                      </div>
+                    </div>
+                    <div class="profile-menu-divider"></div>
+                    <div class="profile-menu-items">
+                      <a href="/profile" class="profile-menu-link">
+                        <div class="profile-menu-icon profile-icon-primary">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                          </svg>
+                        </div>
+                        <span class="profile-menu-text"><%= language.Profile || 'My Profile' %></span>
+                        <i class="fas fa-chevron-right profile-chevron"></i>
+                      </a>
+                      <% if (login === 'master') { %>
+                      <a href="/tool/master_setting" class="profile-menu-link">
+                        <div class="profile-menu-icon profile-icon-info">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                          </svg>
+                        </div>
+                        <span class="profile-menu-text"><%= language.Master_Settings || 'Master Settings' %></span>
+                        <i class="fas fa-chevron-right profile-chevron"></i>
+                      </a>
+                      <% } %>
+                      <a href="/logout" class="profile-menu-link profile-menu-logout">
+                        <div class="profile-menu-icon profile-icon-danger">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                          </svg>
+                        </div>
+                        <span class="profile-menu-text"><%= language.Logout || 'Logout' %></span>
+                        <i class="fas fa-sign-out-alt profile-chevron"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pos-card">
+            <div class="pos-card-body">
+              <div class="pos-search-box w-100 mb-2">
+                <i class="fa fa-search pos-search-icon"></i>
+                <input type="text" class="form-control pos-search-input" id="service_pos_search" placeholder="Search services..." autocomplete="off">
+                <span class="pos-search-clear" id="pos_search_clear" style="display:none;" title="Clear search">
+                  <i class="fa fa-times"></i>
+                </span>
+              </div>
+
+              <!-- Category & Subcategory Filter Tabs -->
+              <div class="pos-category-filter-container mb-2">
+                <!-- Primary Category Pills -->
+                <div class="d-flex align-items-center gap-1 overflow-auto pb-1" id="pos_category_pills" style="scrollbar-width: thin; -webkit-overflow-scrolling: touch;">
+                  <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1 pos-cat-pill active text-nowrap fw-semibold" data-cat-id="all">
+                    <i class="fas fa-layer-group me-1"></i> All
+                  </button>
+                  <% if (typeof categoryList !== 'undefined' && categoryList && categoryList.length > 0) { %>
+                  <% categoryList.forEach(function(cat) { %>
+                  <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 pos-cat-pill text-nowrap" data-cat-id="<%= cat.id %>">
+                    <%= cat.name %>
+                  </button>
+                  <% }) %>
+                  <% } %>
+                </div>
+
+                <!-- Secondary Subcategory Pills -->
+                <div class="d-flex align-items-center gap-1 overflow-auto pt-1 pb-1 d-none" id="pos_subcategory_pills" style="scrollbar-width: thin; -webkit-overflow-scrolling: touch;">
+                  <button type="button" class="btn btn-xs btn-primary rounded-pill px-2 py-0 pos-subcat-pill active text-nowrap" data-subcat-id="all">
+                    All Subcategories
+                  </button>
+                  <% if (typeof subcategoryList !== 'undefined' && subcategoryList && subcategoryList.length > 0) { %>
+                  <% subcategoryList.forEach(function(sub) { %>
+                  <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-0 pos-subcat-pill text-nowrap" data-subcat-id="<%= sub.id %>" data-parent-cat-id="<%= sub.category_id %>" style="display: none;">
+                    <%= sub.name %>
+                  </button>
+                  <% }) %>
+                  <% } %>
+                </div>
+              </div>
+
+              <div class="pos-services-grid mt-2" id="pos_service">
+                <% if(service_list.length < 1 && login=='master' && cart.store_id==0){ %>
+                <div class="p-3 text-center w-100">
+                  <h5>
+                    <%= language.Please_Select_Store %>
+                  </h5>
+                </div>
+                <% }else if(service_list.length < 1){ %>
+                <div class="p-3 text-center w-100">
+
+                  <h5 class="text-center text-danger">
+                    <%= language.Not_listed_any_services_yet %>
+                  </h5>
+                </div>
+                <% }else{ %>
+                <% service_list.forEach(function(data){ %>
+                <a href="#" class="pos-service-item services text-decoration-none" data-name="<%= (data.name || '').toLowerCase() %>" data-category-id="<%= data.category_id || '' %>" data-subcategory-id="<%= data.subcategory_id || '' %>" data-bs-toggle="modal" data-bs-target="#service_type_model" data-id="<%= data.id %>">
+                  <div class="card h-100 shadow-sm border rounded-3 text-center overflow-hidden pos-service-card position-relative">
+                    <% if (data.no_of_items && parseInt(data.no_of_items) > 1) { %>
+                    <span class="position-absolute top-0 end-0 badge bg-primary text-white m-1 rounded-pill shadow-sm" style="z-index: 2; font-size: 0.7rem;">
+                      <%= data.no_of_items %> Pcs
+                    </span>
+                    <% } %>
+                    <div class="ratio ratio-1x1 bg-light position-relative">
+                      <img src="../../uploads/<%= data.image %>" class="card-img-top w-100 h-100" style="object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none'); this.nextElementSibling.classList.add('d-flex');" alt="<%= data.name %>">
+                      <div class="pos-service-fallback-icon position-absolute top-0 start-0 w-100 h-100 align-items-center justify-content-center text-primary fs-3 d-none">
+                        <i class="fa fa-tshirt"></i>
+                      </div>
+                    </div>
+                    <div class="card-body p-2 d-flex align-items-center justify-content-center">
+                      <h6 class="card-title m-0 fw-bold fs-7 pos-service-name" title="<%= data.name %>">
+                        <%= data.name %>
+                      </h6>
+                    </div>
+                  </div>
+                </a>
+                <% }) %>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- right side pos part -->
+        <div class="col-xl-5 col-lg-6 pos-tab-panel-cart pos-panel-hidden" id="posCartColumn">
+          <div class="pos-card pos-cart-card">
+            <div class="pos-card-body">
+              <div class="row g-2 mb-2 pos-cart-header-row">
+                <!-- Column 1: Order & Customer Intake (col-12 col-md-6) -->
+                <div class="col-12 col-md-6">
+                  <!-- Customer Selector -->
+                  <% if (isEditMode) { %>
+                  <div class="pos-date-group mb-1.5">
+                    <label class="pos-field-label mb-0"><%= language.Customer || 'Customer' %></label>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-light-subtle border-end-0 py-0 px-2 text-primary">
+                        <i class="fa fa-user"></i>
+                      </span>
+                      <input type="text" class="form-control pos-input-sm border-start-0 ps-1 fw-semibold text-dark" value="<%= (typeof order_date !== 'undefined' && order_date[0] && order_date[0].customer_name) ? order_date[0].customer_name : ((customerList.find(c => c.id == cart.customer_id) || {}).name || 'Customer') %>" readonly>
+                    </div>
+                    <input type="hidden" id="single-select" name="customer" value="<%= cart.customer_id %>">
+                    <input type="hidden" id="customer_id" value="<%= cart.customer_id %>">
+                    <input type="hidden" name="store" id="pos_store_id" value="<%= cart.store_id %>">
+                    <input type="hidden" id="pos_staff_store_id" value="<%= cart.store_id %>">
+                  </div>
+                  <% } else if (login === 'customer') { %>
+                  <div class="pos-date-group mb-1.5">
+                    <label class="pos-field-label mb-0"><%= language.Customer || 'Customer' %></label>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-light-subtle border-end-0 py-0 px-2 text-primary">
+                        <i class="fa fa-user"></i>
+                      </span>
+                      <input type="text" class="form-control pos-input-sm border-start-0 ps-1 fw-semibold text-dark" value="<%= (customerList && customerList[0] && customerList[0].name) ? customerList[0].name : 'Customer' %>" readonly>
+                    </div>
+                  </div>
+                  <input type="hidden" name="store" id="pos_store_id" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
+                  <input type="hidden" id="pos_staff_store_id" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
+                  <input type="hidden" id="single-select" name="customer" value="<%= (customerList && customerList[0]) ? customerList[0].id : (cart.customer_id || 0) %>">
+                  <% } else { %>
+                  <% if (typeof showStoreSelect !== 'undefined' && showStoreSelect) { %>
+                  <div class="pos-date-group mb-1.5">
+                    <label class="pos-field-label mb-0"><%= language.Select_Store || 'Select Store' %> <span class="text-danger">*</span></label>
+                    <select class="default-select wide w-100" name="store" id="pos_store_id" data-live-search="true" required>
+                      <option value="0" <%=(!cart.store_id || cart.store_id==0) ? 'selected' : '' %> disabled><%= language.Select_Store || 'Select Store' %> *</option>
+                      <% storeList.forEach(function(x){ %>
+                      <option value="<%= x.id %>" <%=(cart.store_id==x.id) ? 'selected' : '' %>><%= x.name %></option>
+                      <% }) %>
+                    </select>
+                  </div>
+                  <% } else { %>
+                  <input type="hidden" name="store" id="pos_store_id" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
+                  <input type="hidden" id="pos_staff_store_id" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
+                  <% } %>
+
+                  <div class="pos-date-group mb-1.5">
+                    <div class="d-flex justify-content-between align-items-center mb-0.5">
+                      <label class="pos-field-label mb-0">
+                        <i class="fa fa-user text-primary me-1 fs-11"></i><%= language.Select_Customer || 'Select Customer' %> <span class="text-danger">*</span>
+                      </label>
+                      <a href="javascript:void(0)" class="btn btn-xs btn-primary-subtle text-primary border rounded-pill px-2 py-0 fw-semibold d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#addcustomer" style="font-size: 11px;">
+                        <i class="fa fa-plus fs-10"></i> <%= language.Add || 'Add' %>
+                      </a>
+                    </div>
+                    <select id="single-select" name="customer" class="default-select wide w-100" data-live-search="true" required <%= (typeof showStoreSelect !== 'undefined' && showStoreSelect && (!cart.store_id || cart.store_id==0)) ? 'disabled' : '' %>>
+                      <option value="0" disabled <%= (!cart.customer_id || cart.customer_id==0) ? 'selected' : '' %>>
+                        <%= (typeof showStoreSelect !== 'undefined' && showStoreSelect && (!cart.store_id || cart.store_id==0)) ? (language.Select_Store_First || 'Select Store First') + ' *' : (language.Select_Customer || 'Select Customer') + ' *' %>
+                      </option>
+                      <% customerList.forEach(function(x) { %>
+                      <% let showExtra="" ; %>
+                      <% if ((x.username=='' || x.username==null) && (x.email==null || x.email=='' ) && (x.number==null || x.number=='' )) { %>
+                      <% if (accessdata.logas !='store' ) { showExtra=x.store_name; } %>
+                      <% } else { %>
+                      <% showExtra=x.number; %>
+                      <% } %>
+                      <% let isWalkIn=(x.username=='' || x.username==null || (x.name && x.name.toLowerCase().includes('walkin')));
+                                                            let selected=(cart.customer_id==x.id || ((typeof isDefaultCustomerEnabled === 'undefined' || isDefaultCustomerEnabled) && (typeof showStoreSelect !== 'undefined' && !showStoreSelect) && (!cart.customer_id || cart.customer_id==0) && isWalkIn)) ? 'selected' : '' ;
+                                                        %>
+                      <option value="<%= x.id %>" data-customer-type="<%= x.customer_type || 'Counter & Counter' %>" data-address="<%= x.address || '' %>" data-city="<%= x.city || '' %>" data-state="<%= x.state || '' %>" data-zipcode="<%= x.zipcode || '' %>" <%=selected %>>
+                        <%= x.name %><% if (showExtra) { %> (<%= showExtra %>)<% } %>
+                      </option>
+                      <% }); %>
+                    </select>
+                  </div>
+                  <% } %>
+
+                  <!-- Customer Type Dropdown -->
+                  <div class="pos-date-group mb-1.5">
+                    <label class="pos-field-label mb-0" for="<%= isEditMode ? 'edit_pos_order_type' : 'pos_order_type' %>">
+                      <i class="fa fa-exchange-alt text-secondary me-1 fs-11"></i><%= language.Customer_Type || 'Customer Type' %>
+                    </label>
+                    <select class="form-select form-select-sm pos-input-sm w-100" id="<%= isEditMode ? 'edit_pos_order_type' : 'pos_order_type' %>" name="<%= isEditMode ? 'edit_pos_order_type' : 'order_type' %>" <%=login==='customer' ? 'disabled' : '' %>>
+                      <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
+                      <% customer_types.forEach(function(ct, idx) { %>
+                      <option value="<%= ct.name %>" data-code="<%= ct.code || '' %>" title="<%= ct.name %><%= ct.description ? ' - ' + ct.description : '' %>" <%= (cart.order_type === ct.name || cart.order_type === ct.code || (!cart.order_type && (ct.name === 'Counter & Counter' || ct.code === 'C & C' || idx === 0))) ? 'selected' : '' %>><%= ct.name || ct.code %></option>
+                      <% }); %>
+                      <% } else { %>
+                      <option value="Counter & Counter" data-code="C & C" title="Counter & Counter - Customer will drop-off and customer will pickup" <%= (!cart.order_type || cart.order_type === 'Counter & Counter' || cart.order_type === 'C & C' || cart.order_type === 'Customer drop-off & Customer pick-up') ? 'selected' : '' %>>C & C</option>
+                      <option value="Counter & Route" data-code="C & R" title="Counter & Route - Customer will drop-off and store will deliver" <%= (cart.order_type === 'Counter & Route' || cart.order_type === 'C & R' || cart.order_type === 'Counter & Delivery' || cart.order_type === 'Customer drop-off & Store delivery') ? 'selected' : '' %>>C & R</option>
+                      <option value="Route & Route" data-code="R & R" title="Route & Route - Store will pickup and store will deliver" <%= (cart.order_type === 'Route & Route' || cart.order_type === 'R & R' || cart.order_type === 'Pick-up & Delivery' || cart.order_type === 'Store collection & Store delivery') ? 'selected' : '' %>>R & R</option>
+                      <option value="Route & Counter" data-code="R & C" title="Route & Counter - Store will pickup and customer will pickup" <%= (cart.order_type === 'Route & Counter' || cart.order_type === 'R & C' || cart.order_type === 'Pick-up & Counter' || cart.order_type === 'Store collection & Customer pick-up') ? 'selected' : '' %>>R & C</option>
+                      <% } %>
+                    </select>
+                  </div>
+
+                  <!-- Row with Order No and Order Date -->
+                  <div class="row g-1 mb-1.5">
+                    <div class="col-6">
+                      <div class="pos-date-group">
+                        <label class="pos-field-label mb-0">
+                          <i class="fa fa-hashtag text-muted me-1 fs-11"></i><%= language.Order_No || 'Order #' %>
+                        </label>
+                        <input type="text" id="pos_order_id" class="form-control pos-input-sm w-100 fw-bold text-dark" value="<%= cart.order_id %>" readonly title="Order ID">
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="pos-date-group">
+                        <label class="pos-field-label mb-0">
+                          <i class="fa fa-calendar-alt text-muted me-1 fs-11"></i><%= language.Order_Date || 'Order Date' %>
+                        </label>
+                        <% let new_date=new Date(cart.order_date) %>
+                        <% let year=new_date.getFullYear() %>
+                        <% let new_day=(new_date.getDate() < 10 ? '0' : '' ) + new_date.getDate() %>
+                        <% let new_month=((new_date.getMonth()+1) < 10 ? '0' : '' ) + (new_date.getMonth()+1) %>
+                        <% let fullDate=`${year}-${new_month}-${new_day}` %>
+                        <input type="date" class="form-control pos-input-sm w-100" id="<%= isEditMode ? 'edit_POS_order_date' : 'POS_order_date' %>" value="<%=fullDate %>" title="<%= language.Order_Date || 'Order Date' %>" <%=login==='customer' ? 'readonly' : '' %>>
+                      </div>
+                    </div>
+                  </div>
+
+                  <% 
+                    let currentOrderType = cart.order_type || 'Counter & Counter';
+                    let isRoutePickup = currentOrderType === 'Route & Route' || currentOrderType === 'Route & Counter' || currentOrderType === 'R & R' || currentOrderType === 'R & C' || currentOrderType === 'Store collection & Store delivery' || currentOrderType === 'Pick-up & Delivery' || currentOrderType === 'Pick-up & Counter';
+                    let isRouteDelivery = currentOrderType === 'Route & Route' || currentOrderType === 'Counter & Route' || currentOrderType === 'R & R' || currentOrderType === 'C & R' || currentOrderType === 'Counter & Delivery' || currentOrderType === 'Pick-up & Delivery' || currentOrderType === 'Customer drop-off & Store delivery' || currentOrderType === 'Store collection & Store delivery';
+
+                    let ready_raw = cart.ready_date || cart.delivery_date || cart.order_date;
+                    let ready_date = new Date(ready_raw);
+                    let ready_year = ready_date.getFullYear();
+                    let ready_day = (ready_date.getDate() < 10 ? '0' : '') + ready_date.getDate();
+                    let ready_month = ((ready_date.getMonth()+1) < 10 ? '0' : '') + (ready_date.getMonth()+1);
+                    let ready_fullDate = `${ready_year}-${ready_month}-${ready_day}`;
+                    let ready_hours = (ready_date.getHours() < 10 ? '0' : '') + ready_date.getHours();
+                    let ready_mins = (ready_date.getMinutes() < 10 ? '0' : '') + ready_date.getMinutes();
+                    let ready_time = (ready_hours !== '00' || ready_mins !== '00') ? `${ready_hours}:${ready_mins}` : '16:00';
+
+                    let pick_raw = cart.pickup_date || cart.order_date;
+                    let pick_date = new Date(pick_raw);
+                    let pick_year = pick_date.getFullYear();
+                    let pick_day = (pick_date.getDate() < 10 ? '0' : '') + pick_date.getDate();
+                    let pick_month = ((pick_date.getMonth()+1) < 10 ? '0' : '') + (pick_date.getMonth()+1);
+                    let pick_fullDate = `${pick_year}-${pick_month}-${pick_day}`;
+                    let pick_hours = (pick_date.getHours() < 10 ? '0' : '') + pick_date.getHours();
+                    let pick_mins = (pick_date.getMinutes() < 10 ? '0' : '') + pick_date.getMinutes();
+                    let pick_time = (pick_hours !== '00' || pick_mins !== '00') ? `${pick_hours}:${pick_mins}` : '10:00';
+
+                    let del_raw = cart.delivery_date || cart.ready_date || cart.order_date;
+                    let del_date = new Date(del_raw);
+                    let del_year = del_date.getFullYear();
+                    let del_day = (del_date.getDate() < 10 ? '0' : '') + del_date.getDate();
+                    let del_month = ((del_date.getMonth()+1) < 10 ? '0' : '') + (del_date.getMonth()+1);
+                    let del_fullDate = `${del_year}-${del_month}-${del_day}`;
+                    let del_hours = (del_date.getHours() < 10 ? '0' : '') + del_date.getHours();
+                    let del_mins = (del_date.getMinutes() < 10 ? '0' : '') + del_date.getMinutes();
+                    let del_time = (del_hours !== '00' || del_mins !== '00') ? `${del_hours}:${del_mins}` : '16:00';
+                  %>
+
+                  <!-- Route Pick-up Date & Time -->
+                  <div class="pos-date-group pos-sched-card pos-sched-pickup mb-1" id="<%= isEditMode ? 'edit_pos_pickup_date_group' : 'pos_pickup_date_group' %>" style="<%= !isRoutePickup ? 'display: none;' : '' %>">
+                    <div class="d-flex align-items-center justify-content-between mb-0.5">
+                      <label class="pos-field-label mb-0">
+                        <i class="fa fa-truck text-primary me-1"></i><%= language.Route_Pickup_Date || 'Route Pick-up Schedule' %>
+                      </label>
+                    </div>
+                    <div class="input-group input-group-sm">
+                      <input type="date" class="form-control pos-input-sm" id="<%= isEditMode ? 'edit_POS_pickup_date' : 'POS_pickup_date' %>" name="<%= isEditMode ? 'edit_pos_pickup_date' : 'pos_pickup_date' %>" value="<%= pick_fullDate %>" min="<%= fullDate %>" title="<%= language.Route_Pickup_Date || 'Route Pick-up Date' %>" <%=login==='customer' ? 'readonly' : '' %>>
+                      <input type="time" class="form-control pos-input-sm" id="<%= isEditMode ? 'edit_POS_pickup_time' : 'POS_pickup_time' %>" name="<%= isEditMode ? 'edit_pos_pickup_time' : 'pos_pickup_time' %>" value="<%= pick_time %>" style="max-width: 50%;" title="Pick-up Time" <%=login==='customer' ? 'readonly' : '' %>>
+                    </div>
+                  </div>
+
+                  <!-- Ready Schedule (Always Visible for All Order Types) -->
+                  <div class="pos-date-group pos-sched-card pos-sched-ready mb-1" id="<%= isEditMode ? 'edit_pos_ready_date_group' : 'pos_ready_date_group' %>">
+                    <div class="d-flex align-items-center justify-content-between mb-0.5">
+                      <label class="pos-field-label mb-0">
+                        <i class="fa fa-check-circle text-success me-1"></i><%= language.Ready_Schedule || 'Ready Schedule' %>
+                      </label>
+                      <button type="button" class="btn btn-outline-primary py-0 px-1.5 border-0 btn-auto-ready-sched" id="<%= isEditMode ? 'btn_auto_edit_ready_schedule' : 'btn_auto_ready_schedule' %>" title="Reset to automated ready schedule" style="font-size: 11px;">
+                        <i class="fas fa-magic me-1"></i>Auto
+                      </button>
+                    </div>
+                    <div class="input-group input-group-sm">
+                      <input type="date" class="form-control pos-input-sm" id="<%= isEditMode ? 'edit_POS_ready_date' : 'POS_ready_date' %>" name="<%= isEditMode ? 'edit_pos_ready_date' : 'pos_ready_date' %>" value="<%= ready_fullDate %>" min="<%= fullDate %>" title="<%= language.Ready_Schedule || 'Ready Schedule Date' %>" <%=login==='customer' ? 'readonly' : '' %>>
+                      <input type="time" class="form-control pos-input-sm" id="<%= isEditMode ? 'edit_POS_ready_time' : 'POS_ready_time' %>" name="<%= isEditMode ? 'edit_pos_ready_time' : 'pos_ready_time' %>" value="<%= ready_time %>" style="max-width: 50%;" title="Ready Time" <%=login==='customer' ? 'readonly' : '' %>>
+                    </div>
+                  </div>
+
+                  <!-- Route Delivery Date & Time -->
+                  <div class="pos-date-group pos-sched-card pos-sched-delivery mb-1" id="<%= isEditMode ? 'edit_pos_delivery_date_group' : 'pos_delivery_date_group' %>" style="<%= !isRouteDelivery ? 'display: none;' : '' %>">
+                    <div class="d-flex align-items-center justify-content-between mb-0.5">
+                      <label class="pos-field-label mb-0">
+                        <i class="fa fa-home text-info me-1"></i><%= language.Route_Delivery_Date || 'Route Delivery Schedule' %>
+                      </label>
+                    </div>
+                    <div class="input-group input-group-sm">
+                      <input type="date" class="form-control pos-input-sm" id="<%= isEditMode ? 'edit_POS_delivery_date' : 'POS_delivery_date' %>" name="<%= isEditMode ? 'edit_pos_delivery_date' : 'pos_delivery_date' %>" value="<%= del_fullDate %>" min="<%= fullDate %>" title="<%= language.Route_Delivery_Date || 'Route Delivery Date' %>" <%=login==='customer' ? 'readonly' : '' %>>
+                      <input type="time" class="form-control pos-input-sm" id="<%= isEditMode ? 'edit_POS_delivery_time' : 'POS_delivery_time' %>" name="<%= isEditMode ? 'edit_pos_delivery_time' : 'pos_delivery_time' %>" value="<%= del_time %>" style="max-width: 50%;" title="Delivery Time" <%=login==='customer' ? 'readonly' : '' %>>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Column 2: Customer Intelligence & Memo (col-12 col-md-6) -->
+                <div class="col-12 col-md-6 d-flex flex-column justify-content-between">
+                  <!-- 3 Compact Stat Tiles (Horizontal Row) -->
+                  <div>
+                    <div class="pos-cust-stats-row mb-1.5">
+                      <!-- Total Orders -->
+                      <div class="pos-cust-stat-tile tile-total" title="Total Lifetime Orders">
+                        <div class="stat-icon"><i class="fa fa-shopping-bag"></i></div>
+                        <div class="stat-meta">
+                          <span class="stat-num" id="pos_cust_stat_total">0</span>
+                          <span class="stat-lbl">Total Orders</span>
+                        </div>
+                      </div>
+
+                      <!-- Unpaid Orders Count -->
+                      <div class="pos-cust-stat-tile tile-unpaid" title="Orders Unpaid / Partially Paid">
+                        <div class="stat-icon"><i class="fa fa-clock"></i></div>
+                        <div class="stat-meta">
+                          <span class="stat-num" id="pos_cust_stat_unpaid">0</span>
+                          <span class="stat-lbl">Unpaid Orders</span>
+                        </div>
+                      </div>
+
+                      <!-- Unpaid Balance Amount -->
+                      <div class="pos-cust-stat-tile tile-balance" title="Total Outstanding Balance">
+                        <div class="stat-icon"><i class="fa fa-exclamation-triangle"></i></div>
+                        <div class="stat-meta">
+                          <span class="stat-num" id="pos_cust_stat_balance"><%= accessdata.symbol %> 0.00</span>
+                          <span class="stat-lbl">Total Due</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Customer Memo Card with Quick-Edit -->
+                    <div class="pos-cust-memo-card">
+                      <div class="memo-header d-flex align-items-center justify-content-between pb-1 border-bottom">
+                        <span class="memo-title d-flex align-items-center gap-1">
+                          <i class="fa fa-sticky-note text-warning"></i>
+                          <strong><%= language.Customer_Memo || 'Customer Memo' %></strong>
+                        </span>
+                        <button type="button" class="btn btn-xs btn-link p-0 text-primary text-decoration-none" id="btn_toggle_pos_memo_edit" title="Edit Memo">
+                          <i class="fas fa-pencil-alt fs-11"></i> <span class="fs-11">Edit</span>
+                        </button>
+                      </div>
+
+                      <!-- View Mode -->
+                      <div class="memo-view-mode pt-1" id="pos_memo_view_container">
+                        <p class="memo-text mb-0 text-muted" id="pos_cust_memo_text">
+                          <em>Select a customer to view memo/notes.</em>
+                        </p>
+                      </div>
+
+                      <!-- Quick Edit Mode (Hidden by default) -->
+                      <div class="memo-edit-mode pt-1 d-none" id="pos_memo_edit_container">
+                        <textarea class="form-control form-control-sm mb-1 pos-memo-textarea" id="pos_cust_memo_input" rows="2" placeholder="Add laundry preferences, allergies, or special notes..."></textarea>
+                        <div class="d-flex align-items-center justify-content-end gap-1">
+                          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" id="btn_cancel_pos_memo">
+                            Cancel
+                          </button>
+                          <button type="button" class="btn btn-xs btn-primary py-0 px-2" id="btn_save_pos_memo">
+                            <i class="fa fa-check me-1"></i>Save Note
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pos-table-scroll">
+                <table class="pos-cart-table table-bordered verticle-middle text-center mb-0 <%= (cartservice && cartservice.length > 0) ? '' : 'd-none' %>" id="pos_cart_main_table">
+                  <thead>
+                    <tr>
+                      <th style="text-align: left; padding-left: 8px !important;">
+                        <%= language.Service %>
+                      </th>
+                      <th style="width: 65px !important; text-align: center;">
+                        <%= language.Color %>
+                      </th>
+                      <th style="width: 120px !important; text-align: center;">
+                        <%= language.Rate %>
+                      </th>
+                      <th style="width: 110px !important; text-align: center;">
+                        <%= language.Qty %>
+                      </th>
+                      <th style="width: 35px !important; text-align: center;"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="POS_service_added_list">
+                    <% cartservice.forEach(function(x){ %>
+                    <tr>
+                      <td>
+                        <div class="pos-cart-service-info">
+                          <span class="pos-cart-item-title" title="<%= x.service_name %>">
+                            <%= x.service_name %>
+                            <% if (x.no_of_items && parseInt(x.no_of_items) > 1) { %>
+                            <span class="badge bg-secondary text-white ms-1" style="font-size:0.75rem;"><%= x.no_of_items %> Pcs</span>
+                            <% } %>
+                          </span>
+                          <span class="pos-cart-item-badge">[<%= x.service_type_name %>]</span>
+                        </div>
+                      </td>
+                      <td class="text-center">
+                        <input type="color" class="pos-color-circle" value="<%= x.service_color %>" id="POS_service_color" data-id="<%= x.id %>">
+                      </td>
+                      <td class="text-center">
+                        <div class="pos-stepper pos-stepper-rate <%= (login=='master' || login=='store') ? '' : 'is-readonly' %>">
+                          <button type="button" class="pos-stepper-btn pos-stepper-btn-minus" <%= (login=='master' || login=='store') ? '' : 'disabled' %> tabindex="-1"></button>
+                          <input type="number" class="pos-stepper-input pos-table-input-price" value="<%= x.service_type_price %>" name="service_type_price" id="<%= isEditMode ? 'edit_POSservice_type_price' : 'POSservice_type_price' %>" data-id="<%= x.id %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> min="0" step="0.25" <%=login=='master' || login=='store' ? '' : 'readonly' %>>
+                          <button type="button" class="pos-stepper-btn pos-stepper-btn-plus" <%= (login=='master' || login=='store') ? '' : 'disabled' %> tabindex="-1"></button>
+                        </div>
+                      </td>
+                      <td class="text-center">
+                        <div class="pos-stepper pos-stepper-qty">
+                          <button type="button" class="pos-stepper-btn pos-stepper-btn-minus" tabindex="-1"></button>
+                          <input type="number" class="pos-stepper-input pos-table-input-qty" id="<%= isEditMode ? 'edit_POSservice_type_quntity' : 'POSservice_type_quntity' %>" value="<%= x.service_quntity %>" min="1" step="1" data-id="<%= x.id %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %>>
+                          <button type="button" class="pos-stepper-btn pos-stepper-btn-plus" tabindex="-1"></button>
+                        </div>
+                      </td>
+                      <td class="text-center">
+                        <a class="pos-btn-del" id="<%= isEditMode ? 'edit_remove_service_list' : 'remove_service_list' %>" data-id="<%= x.id %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> title="Delete">
+                          <i class="fa fa-trash"></i>
+                        </a>
+                      </td>
+                    </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+
+                <!-- Modern Empty Cart State (hidden when cart has items) -->
+                <div class="pos-empty-cart-state d-flex flex-column align-items-center justify-content-center text-center <%= (cartservice && cartservice.length > 0) ? 'd-none' : '' %>" id="pos_empty_cart_indicator">
+                  <div class="pos-empty-icon-wrap mb-2">
+                    <i class="fa fa-shopping-basket"></i>
+                  </div>
+                  <div class="fw-bold text-dark fs-13 mb-0.5">Your cart is empty</div>
+                  <p class="text-muted fs-11 mb-0" style="max-width: 220px;">Select laundry services from the catalog to build this order</p>
+                </div>
+              </div>
+
+              <!-- Bottom Actions & Financial Summary Area -->
+              <div class="pos-bottom-section">
+                <div class="row g-1 align-items-center">
+                  <div class="col-5">
+                    <div class="<%= (accessdata.logas == 'custmor' && accessdata.roll.pos.includes('write'))|| accessdata.roll.pos.includes('write') ? 'd-block' : 'd-none' %>">
+                      <% if (isEditMode) { %>
+                      <div class="pos-actions-grid">
+                        <button type="button" class="btn btn-primary pos-btn-mini" data-bs-toggle="modal" data-bs-target="#addons">
+                          <i class="fa fa-plus-circle me-1"></i><%= language.Addons %>
+                        </button>
+                        <button type="button" class="btn btn-primary pos-btn-mini" id="edit_POS_coupon_model_show">
+                          <i class="fa fa-tag me-1"></i><%= language.Coupon %>
+                        </button>
+                        <button type="button" class="btn btn-success pos-btn-mini" id="edit_direct_save_btn">
+                          <i class="fa fa-save me-1"></i><%= language.Save || 'Save' %>
+                        </button>
+                        <a class="btn btn-outline-danger pos-btn-mini" href="/order/view/<%= cart.id %>">
+                          <i class="fa fa-arrow-left me-1"></i><%= language.Back || 'Back' %>
+                        </a>
+                      </div>
+                      <button type="button" class="btn btn-info text-white pos-btn-pay-primary shadow-sm" id="edit_POS_payment_model_show">
+                        <i class="fa fa-credit-card me-1"></i> <span>Save & Payment</span> <i class="fas fa-arrow-right ms-1"></i>
+                      </button>
+                      <% } else { %>
+                      <div class="pos-actions-grid">
+                        <button type="button" class="btn btn-primary pos-btn-mini" data-bs-toggle="modal" data-bs-target="#addons">
+                          <i class="fa fa-plus-circle me-1"></i><%= language.Addons %>
+                        </button>
+                        <button type="button" class="btn btn-primary pos-btn-mini" id="POS_coupon_model_show">
+                          <i class="fa fa-tag me-1"></i><%= language.Coupon %>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger pos-btn-mini" id="POS_clear">
+                          <i class="fa fa-trash-alt me-1"></i><%= language.ClearAll %>
+                        </button>
+                        <button type="button" class="btn btn-light pos-btn-mini" style="visibility: hidden;">
+                        </button>
+                      </div>
+                      <button type="button" class="btn btn-success pos-btn-pay-primary shadow-sm" id="POS_payment_model_show">
+                        <span><%= language.Payment || 'Payment' %></span> <i class="fas fa-arrow-right ms-2"></i>
+                      </button>
+                      <% } %>
+                    </div>
+                  </div>
+                  <div class="col-7">
+                    <div class="pos-totals-container">
+                      <div class="pos-total-row">
+                        <span class="pos-total-label"><%= language.Sub_Total %>:</span>
+                        <span class="pos-total-value symbol possymbol" id="POS_sub_total"><%= (Number(cart.sub_total) || 0).toFixed(2) %></span>
+                      </div>
+                      <div class="pos-total-row">
+                        <span class="pos-total-label"><%= language.Addon_Total %>:</span>
+                        <span class="pos-total-value symbol possymbol" id="POS_addon_total"><%= (Number(cart.addon_price) || 0).toFixed(2) %></span>
+                      </div>
+                      <div class="pos-total-row text-success">
+                        <span class="pos-total-label text-success"><%= language.Coupon_Discount %>:</span>
+                        <span class="pos-total-value text-success symbol possymbol" id="POS_coupon_total"><%= (Number(cart.coupon_discount) || 0).toFixed(2) %></span>
+                      </div>
+                      <div class="pos-total-row">
+                        <span class="pos-total-label" id="POS_tax_percent"><%= language.TAX %> (<%=cart.tax%> %):</span>
+                        <span class="pos-total-value symbol possymbol" id="POS_tax_total"><%= (Number(cart.tax_amount) || 0).toFixed(2) %></span>
+                      </div>
+                      <div class="pos-total-row pos-total-row-gross">
+                        <span class="pos-total-label"><%= language.Gross_Total %>:</span>
+                        <span class="pos-total-value symbol possymbol" id="POS_gross_total"><%= (Number(cart.gross_total) || 0).toFixed(2) %></span>
+                      </div>
+                      <% if (isEditMode) { %>
+                      <div class="pos-total-row">
+                        <span class="pos-total-label"><%= language.Paid_Amount || 'Paid Amount' %>:</span>
+                        <span class="pos-total-value symbol possymbol" id="POS_paid_amount"><%= (Number(cart.paid_amount) || 0).toFixed(2) %></span>
+                      </div>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!--********** Content body end **********-->
+
+    <!-- Modal payment -->
+    <div class="modal fade" id="POS_payment_model" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down modal-lg" role="document">
+        <% if (isEditMode) { %>
+        <form id="pyment_POS_cart" method="post" class="modal-content need-validation">
+          <input type="hidden" id="pos_order_id" name="order_id" value="<%= cart.id %>">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <%= language.Make_Payment %>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+
+          <div class="modal-body p-3 p-md-4" id="payment_sum">
+            <div class="row g-3">
+              <!-- Left Column: Inputs -->
+              <div class="col-12 col-lg-7">
+                <div class="row g-3 align-items-start mb-3">
+                  <input type="hidden" name="order_type" id="edit_modal_order_type" value="<%= cart.order_type || 'Counter & Counter' %>">
+
+                  <!-- Route Pick-up Date & Time in Edit Payment Modal -->
+                  <div class="col-12 col-sm-4" id="edit_modal_pickup_group" style="<%= !isRoutePickup ? 'display: none;' : '' %>">
+                    <div class="pos-modal-field-header">
+                      <label class="form-label mb-0" for="edit_pickupdate">
+                        <i class="fa fa-truck text-primary me-1"></i><%= language.Route_Pickup_Date || 'Pick-up Schedule' %>
+                      </label>
+                    </div>
+                    <div class="input-group input-group-sm">
+                      <input type="date" class="form-control me-1" name="pickupdate" id="edit_pickupdate" value="<%= pick_fullDate %>">
+                      <input type="time" class="form-control" name="pickuptime" id="edit_pickuptime" value="<%= pick_time %>" style="max-width: 105px;">
+                    </div>
+                    <input type="date" class="form-control" name="pickupdate_hidden" id="edit_pickupdate_hidden" hidden>
+                  </div>
+
+                  <!-- Ready Schedule in Edit Payment Modal (Always Visible) -->
+                  <div class="col-12 col-sm-4" id="edit_modal_ready_group">
+                    <div class="pos-modal-field-header">
+                      <label class="form-label mb-0" for="edit_readydate">
+                        <i class="fa fa-check-circle text-success me-1"></i><%= language.Ready_Schedule || 'Ready Schedule' %>
+                      </label>
+                    </div>
+                    <div class="input-group input-group-sm">
+                      <input type="date" class="form-control me-1" name="readydate" id="edit_readydate" value="<%= ready_fullDate %>">
+                      <input type="time" class="form-control" name="readytime" id="edit_readytime" value="<%= ready_time %>" style="max-width: 105px;">
+                    </div>
+                  </div>
+
+                  <!-- Route Delivery Date & Time in Edit Payment Modal -->
+                  <div class="col-12 col-sm-4" id="edit_modal_delivery_group" style="<%= !isRouteDelivery ? 'display: none;' : '' %>">
+                    <div class="pos-modal-field-header">
+                      <label class="form-label mb-0" for="deliverydate">
+                        <i class="fa fa-home text-info me-1"></i><%= language.Route_Delivery_Date || 'Delivery Schedule' %>
+                      </label>
+                    </div>
+                    <div class="input-group input-group-sm">
+                      <input type="date" class="form-control me-1" name="deliverydate" id="deliverydate" value="<%= del_fullDate %>">
+                      <input type="time" class="form-control" name="deliverytime" id="deliverytime" value="<%= del_time %>" style="max-width: 105px;">
+                    </div>
+                    <input type="date" class="form-control" name="deliverydate_hidden" id="deliverydate_hidden" hidden>
+                  </div>
+
+                  <input type="hidden" id="POS_gross_order" value="" name="gross">
+                  <input type="hidden" id="POS_subtotal_order" value="" name="sub">
+                  <div class="col-12 col-sm-6">
+                    <div class="pos-modal-field-header">
+                      <label class="form-label mb-0" for="edit_POS_extra_discount_order">
+                        <%= language.Extra_Discount %>
+                      </label>
+                      <div class="pos-discount-type-group" role="group" aria-label="Discount Type">
+                        <input type="radio" class="btn-check" name="edit_discount_type" id="edit_pos_disc_type_fixed" value="fixed" checked autocomplete="off">
+                        <label class="pos-disc-btn active" for="edit_pos_disc_type_fixed" id="edit_pos_disc_btn_fixed" title="Fixed Amount">Fix (<%= accessdata?.symbol || '$' %>)</label>
+
+                        <input type="radio" class="btn-check" name="edit_discount_type" id="edit_pos_disc_type_percent" value="percent" autocomplete="off">
+                        <label class="pos-disc-btn" for="edit_pos_disc_type_percent" id="edit_pos_disc_btn_percent" title="Percentage">% Percent</label>
+                      </div>
+                    </div>
+                    <div class="input-group pos-discount-input-group">
+                      <span class="input-group-text pos-discount-prefix" id="edit_pos_discount_prefix"><%= accessdata?.symbol || '$' %></span>
+                      <input type="number" id="edit_POS_extra_discount_order" class="form-control" placeholder="0.00" min="0" step="any" autocomplete="off">
+                    </div>
+                    <input type="hidden" name="extradiscount" id="edit_POS_extradiscount_hidden" value="0">
+                    <input type="hidden" id="edit_POS_extra_discount_order_hidden" value="0">
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label">
+                      <%= language.Paid_Amount %>
+                    </label>
+                    <input type="number" class="form-control" placeholder="Enter Amount" name="paid_amount" id="edit_paid_amount" min="0" required>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label">
+                      <%= language.Payment_Type %>
+                    </label>
+                    <select class="form-control wide" name="payment_type" id="POS_payment_type_list" required>
+                      <option value disabled>Choose Payment Type</option>
+                      <option value="cash">Cash</option>
+                      <option value="upi">UPI</option>
+                      <option value="card">Card</option>
+                      <option value="cheque">Cheque</option>
+                      <option value="bank_transfer">Bank Transfer</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-12">
+                    <label class="form-label" for="edit_POS_reference_number">
+                      <%= language.Reference_Number || 'Reference / Transaction No.' %> <span class="text-muted font-weight-normal text-xs">(<%= language.Optional || 'Optional' %>)</span>
+                    </label>
+                    <input type="text" class="form-control" placeholder="Enter Reference / Transaction No. (Optional)" name="reference_number" id="edit_POS_reference_number">
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-2">
+                  <div class="col-12">
+                    <label class="form-label">
+                      <%= language.Notes %> / <%= language.Remarks %>
+                    </label>
+                    <input type="text" class="form-control" placeholder="Enter Notes" name="note">
+                  </div>
+                </div>
+
+                <small><span id="POS_worning" class="text-center text-danger d-block"></span></small>
+                <span id="POS_worning_paid" class="text-center text-danger d-block"></span>
+              </div>
+
+              <!-- Right Column: Order Bill Breakdown Card -->
+              <div class="col-12 col-lg-5">
+                <div class="card border rounded-3 p-3 bg-light h-100 shadow-none">
+                  <h6 class="fw-bold mb-3 border-bottom pb-2 text-primary">
+                    <i class="fa fa-receipt me-2"></i>Order Summary
+                  </h6>
+
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted"><%= language.Sub_Total %>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol" id="payment_subtotal">$ 0.00</span>
+                  </div>
+
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted"><%= language.Addon %>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol" id="payment_addons">$ 0.00</span>
+                  </div>
+
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted">
+                      <%= language.Extra_Discount %> <span id="edit_payment_extradiscount_percent_info" class="text-primary font-weight-bold"></span>:
+                    </span>
+                    <span class="text-sm fw-semibold payment_val paysymbol extsymbol text-danger" id="payment_extradiscount">$ 0.00</span>
+                  </div>
+
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted"><%= language.Coupon_Discount %>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol text-success" id="payment_coupondiscount">$ 0.00</span>
+                  </div>
+
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted" id="payment_text_perdent"><%= language.TAX %>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol" id="payment_text_amount">0.00</span>
+                  </div>
+
+                  <hr class="my-2">
+
+                  <div class="d-flex justify-content-between py-1 align-items-center">
+                    <span class="fw-bold text-dark"><%= language.Gross_Total %>:</span>
+                    <span class="fw-bold text-primary fs-5 paysymbol extsymbol" id="payment_grosstotal">0.00</span>
+                  </div>
+
+                  <hr class="my-2">
+
+                  <div class="d-flex justify-content-between py-1 align-items-center">
+                    <span class="fw-bold text-danger"><%= language.Balance %>:</span>
+                    <span class="fw-bold text-danger fs-5 paysymbol extsymbol pamtsymbol" id="POS_total_balance">0.00</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fa fa-times me-2"></i><%= language.Cancel %>
+            </button>
+            <button class="btn btn-primary" type="submit" value="submit" id="edit_cart_submit_for_order">
+              <i class="fa fa-save me-2"></i><%= language.Save %>
+            </button>
+          </div>
+        </form>
+        <% } else { %>
+        <form id="posprintform" action="/admin/posprint" method="post" class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <%= language.Make_Payment %>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+
+          <div class="modal-body p-3 p-md-4" id="payment_sum">
+            <div class="row g-3">
+              <!-- Left Column: Payment & Order Inputs -->
+              <div class="col-12 col-lg-8">
+                <div class="row g-3 align-items-start mb-3">
+                  <input type="hidden" name="order_type" id="modal_order_type" value="<%= cart.order_type || 'Counter & Counter' %>">
+                  <input type="hidden" name="customer_id" id="modal_customer_id" value="<%= cart.customer_id || '0' %>">
+                  <input type="hidden" name="store_id" id="modal_store_id" value="<%= cart.store_id || '' %>">
+
+                  <!-- Route Pick-up Date & Time in Payment Modal -->
+                  <div class="col-12 col-sm-4" id="modal_pickup_group" style="<%= !isRoutePickup ? 'display: none;' : '' %>">
+                    <div class="pos-modal-field-header">
+                      <label class="form-label mb-0" for="pickupdate">
+                        <i class="fa fa-truck text-primary me-1"></i><%= language.Route_Pickup_Date || 'Pick-up Schedule' %>
+                      </label>
+                    </div>
+                    <div class="input-group input-group-sm">
+                      <input type="date" class="form-control me-1" name="pickupdate" id="pickupdate" value="<%= pick_fullDate %>">
+                      <input type="time" class="form-control" name="pickuptime" id="pickuptime" value="<%= pick_time %>" style="max-width: 48%">
+                    </div>
+                    <input type="date" class="form-control" name="pickupdate_hidden" id="pickupdate_hidden" hidden>
+                  </div>
+
+                  <!-- Ready Schedule in Payment Modal (Always Visible) -->
+                  <div class="col-12 col-sm-4" id="modal_ready_group">
+                    <div class="pos-modal-field-header">
+                      <label class="form-label mb-0" for="readydate">
+                        <i class="fa fa-check-circle text-success me-1"></i><%= language.Ready_Schedule || 'Ready Schedule' %>
+                      </label>
+                    </div>
+                    <div class="input-group input-group-sm">
+                      <input type="date" class="form-control me-1" name="readydate" id="readydate" value="<%= ready_fullDate %>">
+                      <input type="time" class="form-control" name="readytime" id="readytime" value="<%= ready_time %>" style="max-width: 48%">
+                    </div>
+                  </div>
+
+                  <!-- Route Delivery Date & Time in Payment Modal -->
+                  <div class="col-12 col-sm-4" id="modal_delivery_group" style="<%= !isRouteDelivery ? 'display: none;' : '' %>">
+                    <div class="pos-modal-field-header">
+                      <label class="form-label mb-0" for="deliverydate">
+                        <i class="fa fa-home text-info me-1"></i><%= language.Route_Delivery_Date || 'Delivery Schedule' %>
+                      </label>
+                    </div>
+                    <div class="input-group input-group-sm">
+                      <input type="date" class="form-control me-1" name="deliverydate" id="deliverydate" value="<%= del_fullDate %>">
+                      <input type="time" class="form-control" name="deliverytime" id="deliverytime" value="<%= del_time %>" style="max-width: 48%">
+                    </div>
+                    <input type="date" class="form-control" name="deliverydate_hidden" id="deliverydate_hidden" hidden>
+                  </div>
+
+                  <input type="hidden" id="POS_gross_order" value="" name="gross">
+                  <input type="hidden" id="POS_subtotal_order" value="" name="sub">
+                  <div class="col-12 col-sm-6 <%= login === 'customer'? 'd-none': '' %>">
+                    <div class="pos-modal-field-header">
+                      <label class="form-label mb-0" for="POS_extra_discount_order">
+                        <%= language.Extra_Discount %>
+                      </label>
+                      <div class="pos-discount-type-group" role="group" aria-label="Discount Type">
+                        <input type="radio" class="btn-check" name="discount_type" id="pos_disc_type_fixed" value="fixed" checked autocomplete="off">
+                        <label class="pos-disc-btn active" for="pos_disc_type_fixed" style="padding-top: 3px !important;" id="pos_disc_btn_fixed" title="Fixed Amount">Fix (<%=
+                                                            accessdata?.symbol || '$' %>)</label>
+
+                        <input type="radio" class="btn-check" name="discount_type" id="pos_disc_type_percent" value="percent" autocomplete="off">
+                        <label class="pos-disc-btn" for="pos_disc_type_percent" style="padding-top: 3px !important;" id="pos_disc_btn_percent" title="Percentage">%
+                          Percent</label>
+                      </div>
+                    </div>
+                    <div class="input-group pos-discount-input-group">
+                      <span class="input-group-text pos-discount-prefix" id="pos_discount_prefix">
+                        <%= accessdata?.symbol || '$' %>
+                      </span>
+                      <input type="number" id="POS_extra_discount_order" class="form-control" placeholder="0.00" min="0" step="any" autocomplete="off">
+                    </div>
+                    <input type="hidden" name="extradiscount" id="POS_extradiscount_hidden" value="0">
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label">
+                      <%= language.Paid_Amount %>
+                    </label>
+                    <input type="number" class="form-control" placeholder="Enter Amount" name="paid_amount" id="paid_amount" min="0" step="0.01">
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label">
+                      <%= language.Payment_Type %>
+                    </label>
+                    <select class="form-control wide" name="payment_type" id="POS_payment_type_list">
+                      <option value="0" disabled selected>Choose Payment Type</option>
+                      <option value="cash">Cash</option>
+                      <option value="upi">UPI</option>
+                      <option value="card">Card</option>
+                      <option value="cheque">Cheque</option>
+                      <option value="bank_transfer">Bank Transfer</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-12">
+                    <label class="form-label" for="POS_reference_number">
+                      <%= language.Reference_Number || 'Reference / Transaction No.' %> <span class="text-muted font-weight-normal text-xs">(<%= language.Optional || 'Optional' %>)</span>
+                    </label>
+                    <input type="text" class="form-control" placeholder="Enter Reference / Transaction No. (Optional)" name="reference_number" id="POS_reference_number">
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-2">
+                  <div class="col-12">
+                    <label class="form-label">
+                      <%= language.Notes %> / <%= language.Remarks %>
+                    </label>
+                    <input type="text" class="form-control" placeholder="Enter Notes" name="note">
+                  </div>
+                </div>
+
+                <div class="row text-center my-2">
+                  <div id="show_pos_barcode"></div>
+                </div>
+                <small><span id="POS_worning" class="text-center text-danger d-block"></span></small>
+                <span id="POS_worning_paid" class="text-center text-danger d-block"></span>
+              </div>
+
+              <!-- Right Column: Order Bill Breakdown Card -->
+              <div class="col-12 col-lg-4">
+                <div class="card border rounded-3 p-3 bg-light h-100 shadow-none">
+                  <h6 class="fw-bold mb-3 border-bottom pb-2 text-primary">
+                    <i class="fa fa-receipt me-2"></i>Order Summary
+                  </h6>
+
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted"><%= language.Sub_Total %>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol" id="payment_subtotal">$ 0.00</span>
+                  </div>
+
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted"><%= language.Addon %>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol" id="payment_addons">$ 0.00</span>
+                  </div>
+
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted">
+                      <%= language.Extra_Discount %> <span id="payment_extradiscount_percent_info" class="text-primary font-weight-bold"></span>:
+                    </span>
+                    <span class="text-sm fw-semibold payment_val paysymbol extsymbol text-danger" id="payment_extradiscount">$ 0.00</span>
+                  </div>
+
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted"><%= language.Coupon_Discount %>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol text-success" id="payment_coupondiscount">$ 0.00</span>
+                  </div>
+
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted"><%= language.TAX %> <span id="payment_text_perdent"></span>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol" id="payment_text_amount">0.00</span>
+                  </div>
+
+                  <hr class="my-2">
+
+                  <div class="d-flex justify-content-between py-1 align-items-center">
+                    <span class="fw-bold text-dark"><%= language.Gross_Total %>:</span>
+                    <span class="fw-bold text-primary fs-5 paysymbol extsymbol" id="payment_grosstotal">21.00</span>
+                  </div>
+
+                  <hr class="my-2">
+
+                  <div class="d-flex justify-content-between py-1 align-items-center">
+                    <span class="fw-bold text-danger"><%= language.Balance %>:</span>
+                    <span class="fw-bold text-danger fs-5 paysymbol extsymbol pamtsymbol" id="POS_total_balance">0.00</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fa fa-times me-2"></i><%= language.Cancel %>
+            </button>
+            <button class="btn btn-primary" type="submit" value="submit" id="printcheck">
+              <i class="fa fa-print me-2"></i><%= language.Save %> & <%= language.Print %>
+            </button>
+          </div>
+        </form>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Modal add customer -->
+    <div class="modal fade" id="addcustomer" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg modal-fullscreen-sm-down" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <%= language.Add_Coustomer_Detail %>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <form action="/coustomer/register" method="post" class="need-validation">
+            <div class="modal-body">
+              <% if (typeof showStoreSelect !== 'undefined' && !showStoreSelect) { %>
+              <input type="hidden" name="storeid" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
+              <% } %>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">
+                    <%= language.Last_Name || 'Last Name' %> <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" name="last_name" placeholder="Enter last name" required>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">
+                    <%= language.First_Name || 'First Name' %> <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" name="first_name" placeholder="Enter first name" required>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">
+                    <%= language.Phone_Number %> <span class="text-danger">*</span>
+                  </label>
+                  <input type="number" class="form-control" name="number" id="pos_add_cust_number" placeholder="Enter phone number" required>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">
+                    <%= language.Email %> <span class="text-danger">*</span>
+                  </label>
+                  <input type="email" class="form-control" name="email" placeholder="Enter email address" required>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">
+                    <%= language.Customer_Type || 'Customer Type' %>
+                  </label>
+                  <select class="form-control form-select" name="customer_type">
+                    <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
+                    <% customer_types.forEach(function(ct, idx){ %>
+                    <option value="<%= ct.name %>" <%= idx === 0 ? 'selected' : '' %>><%= ct.name %><% if (ct.description) { %> - <%= ct.description %><% } %></option>
+                    <% }); %>
+                    <% } else { %>
+                    <option value="Counter & Counter" selected>Counter & Counter - Customer will drop-off and customer will pickup</option>
+                    <option value="Counter & Route">Counter & Route - Customer will drop-off and store will deliver</option>
+                    <option value="Route & Route">Route & Route - Store will pickup and store will deliver</option>
+                    <option value="Route & Counter">Route & Counter - Store will pickup and customer will pickup</option>
+                    <% } %>
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">
+                    <%= language.Username %>
+                  </label>
+                  <input type="text" class="form-control" name="username" id="pos_add_cust_username" placeholder="Defaults to phone number">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">
+                    <%= language.Password %>
+                  </label>
+                  <input type="password" class="form-control" name="password" id="pos_add_cust_password" placeholder="Defaults to phone number">
+                </div>
+
+                <% if (typeof showStoreSelect !== 'undefined' && showStoreSelect) { %>
+                <div class="col-md-12">
+                  <label class="form-label fw-bold">
+                    <%= language.Store_List || 'Store' %> <span class="text-danger">*</span>
+                  </label>
+                  <select class="form-control form-select" name="storeid" id="coupon_storlist_update" required>
+                    <option value="" disabled <%= (!cart.store_id || cart.store_id==0) ? 'selected' : '' %>>
+                      Select Store *
+                    </option>
+                    <% storeList.forEach(function(x){ %>
+                    <option value="<%= x.id %>" <%= (cart.store_id==x.id) ? 'selected' : '' %>>
+                      <%= x.name %>
+                    </option>
+                    <% }) %>
+                  </select>
+                </div>
+                <% } %>
+
+                <div class="col-md-12">
+                  <label class="form-label fw-bold">
+                    <%= language.Address || 'Address' %> <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" name="address" placeholder="Enter street address" required>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label fw-bold">
+                    <%= language.City || 'City' %> <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" name="city" placeholder="Enter city" required>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label fw-bold">
+                    <%= language.State || 'State' %> <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" name="state" placeholder="Enter state" required>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label fw-bold">
+                    <%= language.Zip_Code || 'Zip Code' %>
+                  </label>
+                  <input type="text" class="form-control" name="zipcode" placeholder="Enter zip code">
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label fw-bold">
+                    <%= language.Customer_Memo || 'Customer Memo / Note' %>
+                  </label>
+                  <textarea class="form-control" name="memo" rows="2" placeholder="Special instructions, preferences, laundry notes..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <i class="fa fa-times me-2"></i><%= language.Cancel %>
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <i class="fa fa-save me-2"></i><%= language.Save %>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal service type -->
+    <div class="modal fade" id="service_type_model">
+      <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-lg modal-fullscreen-sm-down" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <%= language.Select_Service_Type %>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <form id="add_service_pos_cart" method="post" class="need-validation">
+            <input type="hidden" id="POS_serviceid1" name="serviceid" value="5">
+            <% if (isEditMode) { %>
+            <input type="hidden" name="order_id" value="<%= cart.id %>">
+            <% } %>
+            <div class="modal-body" id="pos_servicetypeselect">
+
+
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <i class="fa fa-times me-2"></i><%= language.Cancel %>
+              </button>
+              <button type="submit" value="submit" id="<%= isEditMode ? 'edit_service_pos_cart_submit' : 'add_service_pos_cart_submit' %>" class="btn btn-primary">
+                <i class="fa fa-save me-2"></i><%= language.Save %>
+              </button>
+            </div>
+          </form>
+
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Modal addons -->
+    <div class="modal fade" id="addons">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <%= language.Add_Addons %>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form id="add_addons_pos_cart" method="post" class="need-validation">
+              <% if (isEditMode) { %>
+              <input type="hidden" name="order_id" value="<%= cart.id %>">
+              <% } %>
+              <div class="row" id="POS_addons">
+                <% if(addonlist.length < 1){ %>
+                <div class="p-2 center">
+                  <div class="card-body p-2 ">
+                    <h5 class="text-center  text-danger">
+                      <%= language.No_addon_List_Found %>
+                    </h5>
+                  </div>
+                </div>
+                <% } %>
+                <% addonlist.forEach(function(data){ %>
+                <label class="col-6 d-flex mb-3 addon-clickable" for="update_customer_read_<%= data.id %>" style="cursor:pointer;">
+                  <div class="col-12 d-flex mb-3">
+                    <div class="mx-3">
+                      <input class="form-check-input mt-3" type="checkbox" id="update_customer_read_<%= data.id %>" name="addon" value="<%= data.id %>" <%=cart.addon_id.includes(data.id) ? 'checked' : '' %>>
+                    </div>
+                    <div class="d-flex flex-column justify-content-between">
+                      <h5>
+                        <%= data.addon %>
+                      </h5>
+                      <h6 class="symbol">
+                        <%= data.price %>
+                      </h6>
+                    </div>
+
+                  </div>
+                </label>
+                <% }) %>
+              </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fa fa-times me-2"></i><%= language.Cancel %>
+            </button>
+            <button type="submit" value="submit" id="<%= isEditMode ? 'edit_addons_pos_cart_submit' : 'add_addons_pos_cart_submit' %>" class="btn btn-primary">
+              <i class="fa fa-save me-2"></i><%= language.Save %>
+            </button>
+          </div>
+          </form>
+
+
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal coupon -->
+    <div class="modal fade" id="POS_coupon_model">
+      <div class="modal-dialog modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <%= language.Add_Coupon %>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+
+          <div class="modal-body">
+
+            <div class="row mb-4 " id="coupon_search">
+              <div class="input-group mb-3">
+                <input type="text" class="form-control" placeholder="Enter Coupon Code" name="coupon_code">
+                <button class="btn btn-primary btn-sm" id="<%= isEditMode ? 'edit_POS_coupon_code' : 'POS_coupon_code' %>" type="button">
+                  <i class="fa fa-check me-2"></i><%= language.Apply %>
+                </button>
+              </div>
+            </div>
+
+            <div class="row" id="coupon_area">
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Modal invoice -->
+    <div class="modal fade bd-example-modal-sm" id="invoice">
+      <div class="modal-dialog modal-dialog-scrollable modal-sm" role="document">
+        <div class="modal-content">
+          <div class="modal-body">
+            <div class="invoice_page" id="invoice_page">
+              <div class="d-flex align-items-center" style="margin-left: 10px; margin-right: 10px;">
+                <div class="col-6 " id="invoice_header">
+                  <h3 class="text-uppercase"><span id="shop_name">Laundry</span></h3>
+                  <h6>
+                    <%= language.Phone_Number %> <span id="shop_no">+000123456789</span>
+                  </h6>
+                  <h6 class="mb-0">
+                    <%= language.Email %> <span id="shop_email">demo@amtech.com</span>
+                  </h6>
+                </div>
+                <div class="col-6 d-flex justify-content-end">
+                  <div id="show_pos_barcode_print">
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex border-top border-bottom pt-2 pb-2" style="margin-left: 10px; margin-right: 10px;">
+                <div class="col-6 ">
+                  <h5>
+                    <%= language.Order_ID %><span id="invoice_order_id"></span>
+                  </h5>
+                  <h5 class="mb-0">
+                    <%= language.Order_Status %> : Pending
+                  </h5>
+                </div>
+
+                <div class="col-6 text-end">
+                  <h5>
+                    <%= language.Order_Date %> : <span id="invoice_order_date">2022-11-04</span>
+                  </h5>
+                  <h5 class="mb-0">
+                    <%= language.Delivery_Date %><span id="invoice_delivery_date"></span>
+                  </h5>
+                </div>
+              </div>
+
+
+
+              <hr class="m-0">
+
+              <div class="table-responsive" style="margin-left: 10px; margin-right: 10px;">
+                <p class="mb-0">
+                  <%= language.Service_List %>
+                </p>
+                <table id="default-datatable" class="display table">
+                  <thead class="table_head">
+                    <tr>
+                      <th>#</th>
+                      <th>
+                        <%= language.Item %>
+                      </th>
+                      <th>
+                        <%= language.QTY %>
+                      </th>
+                      <th>
+                        <%= language.Price %>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="invoice_item" class="align-items-center">
+
+
+                  </tbody>
+                </table>
+              </div>
+
+              <hr class="m-0">
+
+              <div class="table-responsive m-3" id="POS_addon_invoice_item">
+                <p class="mb-0">
+                  <%= language.Addons_List %>
+                </p>
+                <table id="default-datatable" class="display table mb-0">
+                  <thead class="table_head">
+                    <tr>
+                      <th>#</th>
+                      <th>
+                        <%= language.Addons %>
+                      </th>
+                      <th>
+                        <%= language.Price %>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="addon_item" class="align-items-center">
+
+
+                  </tbody>
+                </table>
+                <hr class="m-0">
+              </div>
+
+              <table class="table table-borderless px-4" style="margin-bottom: 0px;">
+                <tbody>
+                  <tr>
+                    <td class="py-0 ">
+                      <%= language.Item_Price %> :
+                    </td>
+                    <td class="py-0 text-end invosymbol" id="invoice_price"></td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Addons %> :
+                    </td>
+                    <td class="py-0 text-end invosymbol" id="invoice_addon"></td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.TAX %> :
+                    </td>
+                    <td class="py-0 text-end invosymbol" id="invoice_tax"></td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Discount %> :
+                    </td>
+                    <td class="py-0 text-end invosymbol" id="invoice_Discount"></td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Coupon %> :
+                    </td>
+                    <td class="py-0 text-end invosymbol" id="invoice_Coupon"></td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Total %> :
+                    </td>
+                    <td class="py-0 text-end invosymbol" id="invoice_gross"></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr class="m-0">
+
+              <div class="" style="margin-left: 10px; margin-right: 10px; margin-top: 8px;">
+                <div class="d-flex justify-content-between align-items-center">
+                  <h5>
+                    <%= language.Payment_Method %> : <span id="invoice_paid_method"></span>
+                  </h5>
+                  <div>
+                    <h5>
+                      <%= language.Paid_Amount %> : <span class="invosymbol" id="invoice_paid_amount"></span>
+                    </h5>
+                    <h5>
+                      <%= language.Due_Amount %> : <span class="invosymbol" id="invoice_due_amount"></span>
+                    </h5>
+                  </div>
+                </div>
+              </div>
+
+              <hr class="last_hr m-0">
+
+              <p class="Invoice_To mb-0 px-4">
+                <%= language.Invoice_To %>
+              </p>
+              <table class="table table-borderless px-4 customer_details mb-0">
+                <tbody>
+                  <tr>
+                    <td class="py-0 ">
+                      <%= language.Name %> :
+                    </td>
+                    <td class="py-0 text-end" id="invoice_Name_customer"></td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Number %> :
+                    </td>
+                    <td class="py-0 text-end" id="invoice_Number_customer"></td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Email %> :
+                    </td>
+                    <td class="py-0 text-end" id="invoice_Email_customer"></td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Address %> :
+                    </td>
+                    <td class="py-0 text-end" id="invoice_Address_customer"></td>
+                  </tr>
+                  <tr>
+                    <td class="py-0">
+                      <%= language.Tax_ID %> :
+                    </td>
+                    <td class="py-0 text-end" id="invoice_Tax_customer"></td>
+                  </tr>
+                </tbody>
+              </table>
+
+
+              <hr class="m-0">
+
+              <div class="d-flex justify-content-start px-4" id="order_note">
+
+
+              </div>
+
+              <hr class="mt-0">
+
+              <div class="d-flex justify-content-center">
+                ******** <%= language.Thank_You %> ********
+              </div>
+
+              <hr class="m-0">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <footer class="m-3 d-flex justify-content-end gap-2">
+              <button type="button" class="btn btn-info" id="pri_invo">
+                <i class="fa fa-print me-2"></i><%= language.Print_Invoice %>
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="location.reload()">
+                <i class="fa fa-arrow-left me-2"></i><%= language.Go_Back %>
+              </button>
+            </footer>
+          </div>
+
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+  <!--**********************************
+            Footer start
+        ***********************************-->
+  <%- include('templet/footer')-%>
+  <!--**********************************
+            Footer end
+        ***********************************-->
+
+  </div>
+
+  <!--********** Main wrapper end **********-->
+  <%- include('templet/script')-%>
+  <script>
+    $('#POS_payment_model').on('shown.bs.modal', function() {
+      if ($('#POS_payment_type_list').hasClass("select2-hidden-accessible")) {
+        $('#POS_payment_type_list').select2('destroy');
+      }
+      $('#POS_payment_type_list').select2({
+        dropdownParent: $('#POS_payment_model'),
+        placeholder: 'Choose Payment Type',
+        width: '100%',
+        allowClear: false
+      });
+    });
+  </script>
+
+  <script>
+    $('#addcustomer').on('show.bs.modal', function() {
+      const posStore = $('#pos_store_id').val();
+      if ($('#coupon_storlist_update').length && posStore && posStore != '0') {
+        $('#coupon_storlist_update').val(posStore).trigger('change');
+      }
+    });
+    $('#addcustomer').on('shown.bs.modal', function() {
+      if ($('#coupon_storlist_update').length) {
+        $('#coupon_storlist_update').select2({
+          dropdownParent: $('#addcustomer'),
+          placeholder: 'Select Store *',
+          width: '100%',
+          allowClear: false
+        });
+      }
+    });
+
+    // Automatically set customer phone number as default username and password
+    $('#pos_add_cust_number').on('input', function() {
+      const phoneVal = $(this).val();
+      const $u = $('#pos_add_cust_username');
+      const $p = $('#pos_add_cust_password');
+      if (!$u.data('manual-edit') || $u.val() === '') {
+        $u.val(phoneVal);
+      }
+      if (!$p.data('manual-edit') || $p.val() === '') {
+        $p.val(phoneVal);
+      }
+    });
+
+    $('#pos_add_cust_username').on('input', function() {
+      $(this).data('manual-edit', true);
+    });
+
+    $('#pos_add_cust_password').on('input', function() {
+      $(this).data('manual-edit', true);
+    });
+
+    $('#addcustomer').on('show.bs.modal', function() {
+      $('#pos_add_cust_username').removeData('manual-edit');
+      $('#pos_add_cust_password').removeData('manual-edit');
+    });
+  </script>
+  <script>
+    $('#posprintform').on('submit', function(e) {
+      e.preventDefault();
+      const paidAmount = parseFloat($('#paid_amount').val()) || 0;
+      const paymentType = $('#POS_payment_type_list').val();
+
+      if (paidAmount > 0 && (!paymentType || paymentType === '0')) {
+        if (typeof toastr !== 'undefined') {
+          toastr.warning('Please select a payment type for the paid amount.');
+        } else {
+          alert('Please select a payment type.');
+        }
+        if ($('#POS_payment_type_list').data('select2')) {
+          $('#POS_payment_type_list').select2('open');
+        } else {
+          $('#POS_payment_type_list').focus();
+        }
+        return false;
+      }
+
+      // Prevent multiple submissions
+      const $submitBtn = $('#printcheck');
+      $submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-2"></i><%= language.Saving || "Saving..." %>');
+
+      const formData = $(this).serialize();
+
+      $.ajax({
+        url: '/admin/save_order',
+        type: 'POST',
+        data: formData,
+        dataType: 'json',
+        success: function(res) {
+          if (res && res.success) {
+            window.location.href = '/admin/posprint?id=' + encodeURIComponent(res.id || res.order_id);
+          } else {
+            $submitBtn.prop('disabled', false).html('<i class="fa fa-print me-2"></i><%= language.Save %> & <%= language.Print %>');
+            const errMsg = (res && res.message) ? res.message : 'Error placing order. Please try again.';
+            if (typeof toastr !== 'undefined') {
+              toastr.error(errMsg);
+            } else {
+              alert(errMsg);
+            }
+          }
+        },
+        error: function(xhr) {
+          $submitBtn.prop('disabled', false).html('<i class="fa fa-print me-2"></i><%= language.Save %> & <%= language.Print %>');
+          let errMsg = 'Server error placing order. Please try again.';
+          try {
+            const parsed = JSON.parse(xhr.responseText);
+            if (parsed && parsed.message) errMsg = parsed.message;
+          } catch (e) {}
+          if (typeof toastr !== 'undefined') {
+            toastr.error(errMsg);
+          } else {
+            alert(errMsg);
+          }
+        }
+      });
+      return false;
+    });
+  </script>
+  <script src="/js/pos-print-client.js"></script>
+  <script>
+    (function() {
+      const serverUrl = "<%= (typeof storePrinterConfig !== 'undefined' && storePrinterConfig && storePrinterConfig.printing_server_url) ? storePrinterConfig.printing_server_url : (accessdata?.masterstore?.printing_server_url || 'http://127.0.0.1:4321') %>";
+      const silentEnabled = <%= ((typeof storePrinterConfig !== 'undefined' && storePrinterConfig && storePrinterConfig.silent_print_enabled !== null && storePrinterConfig.silent_print_enabled !== undefined) ? (storePrinterConfig.silent_print_enabled != 0) : (accessdata?.masterstore?.silent_print_enabled !== 0)) ? 'true' : 'false' %>;
+      const targetPrinter = "<%= (typeof storePrinterConfig !== 'undefined' && storePrinterConfig && storePrinterConfig.invoice_printer_name) ? storePrinterConfig.invoice_printer_name : (accessdata?.masterstore?.invoice_printer_name || '') %>";
+      const posClient = new POSPrintClient({
+        baseUrl: serverUrl,
+        timeout: 4000
+      });
+
+      async function pingPosPrintingServer(isManual) {
+        const btn = document.getElementById('posPrinterStatusBtn');
+        const dot = document.getElementById('posPrinterStatusDot');
+        const text = document.getElementById('posPrinterStatusText');
+        const popBadge = document.getElementById('posPopoverStatusBadge');
+        const popMode = document.getElementById('posPopoverModeText');
+
+        if (isManual && typeof toastr !== 'undefined') {
+          toastr.info('Checking printing server at ' + serverUrl + '...', 'Connecting');
+        }
+
+        try {
+          const health = await posClient.request('/health');
+          if (health && health.status === 'running') {
+            if (dot) dot.className = 'pos-printer-dot dot-online';
+            if (text) {
+              const shortName = targetPrinter ? (targetPrinter.length > 15 ? targetPrinter.substring(0, 15) + '...' : targetPrinter) : 'Ready';
+              text.textContent = 'Silent Print: Online (' + shortName + ')';
+            }
+            if (btn) {
+              btn.classList.remove('btn-outline-danger', 'btn-outline-secondary');
+              btn.classList.add('btn-outline-success');
+            }
+            if (popBadge) {
+              popBadge.className = 'badge bg-success text-white';
+              popBadge.textContent = 'Online';
+            }
+            if (popMode) {
+              popMode.className = 'fw-semibold text-success';
+              popMode.textContent = silentEnabled ? 'Silent Zero-Click Spooler' : 'Silent Disabled (Native Print)';
+            }
+            if (isManual && typeof toastr !== 'undefined') {
+              toastr.success('Printing Server is online! Ready for silent receipts.', 'Hardware Connected');
+            }
+          } else {
+            throw new Error('Server offline');
+          }
+        } catch (e) {
+          if (dot) dot.className = 'pos-printer-dot dot-offline';
+          if (text) text.textContent = 'Silent Print: Offline';
+          if (btn) {
+            btn.classList.remove('btn-outline-success', 'btn-outline-secondary');
+            btn.classList.add('btn-outline-danger');
+          }
+          if (popBadge) {
+            popBadge.className = 'badge bg-danger text-white';
+            popBadge.textContent = 'Offline';
+          }
+          if (popMode) {
+            popMode.className = 'fw-semibold text-danger';
+            popMode.textContent = 'Native Browser Dialog (Ctrl+P)';
+          }
+          if (isManual && typeof toastr !== 'undefined') {
+            toastr.warning('Printing server is offline. Standard browser print dialog will be used.', 'Native Fallback Active');
+          }
+        }
+      }
+
+      window.pingPosPrintingServer = pingPosPrintingServer;
+
+      // Responsive Mobile/Tablet Segmented View Switcher
+      function switchPosMobileTab(tab) {
+        const catalogCol = document.getElementById('posCatalogColumn');
+        const cartCol = document.getElementById('posCartColumn');
+        const btnCatalog = document.getElementById('posBtnShowCatalog');
+        const btnCart = document.getElementById('posBtnShowCart');
+
+        if (tab === 'catalog') {
+          catalogCol?.classList.remove('pos-panel-hidden');
+          cartCol?.classList.add('pos-panel-hidden');
+          btnCatalog?.classList.add('active');
+          btnCart?.classList.remove('active');
+        } else {
+          catalogCol?.classList.add('pos-panel-hidden');
+          cartCol?.classList.remove('pos-panel-hidden');
+          btnCart?.classList.add('active');
+          btnCatalog?.classList.remove('active');
+        }
+      }
+      window.switchPosMobileTab = switchPosMobileTab;
+
+      // Update mobile cart badge count and empty cart state automatically
+      function updatePosMobileCartBadge() {
+        const cartList = document.getElementById('POS_service_added_list');
+        const badge = document.getElementById('posMobileCartBadge');
+        const emptyIndicator = document.getElementById('pos_empty_cart_indicator');
+        const cartTable = document.getElementById('pos_cart_main_table');
+        const count = cartList ? cartList.querySelectorAll('tr').length : 0;
+
+        if (badge) {
+          badge.textContent = count;
+        }
+
+        if (emptyIndicator) {
+          if (count === 0) {
+            emptyIndicator.classList.remove('d-none');
+            emptyIndicator.classList.add('d-flex');
+            if (cartTable) cartTable.classList.add('d-none');
+          } else {
+            emptyIndicator.classList.add('d-none');
+            emptyIndicator.classList.remove('d-flex');
+            if (cartTable) cartTable.classList.remove('d-none');
+          }
+        }
+
+        if (typeof updatePosCheckoutBtnState === 'function') {
+          updatePosCheckoutBtnState();
+        }
+      }
+      window.updatePosMobileCartBadge = updatePosMobileCartBadge;
+
+
+      window.POS_READY_SCHEDULE = <%- JSON.stringify((typeof readySchedule !== 'undefined' && readySchedule) ? readySchedule : (typeof locals !== 'undefined' && locals.readySchedule ? locals.readySchedule : {})) %>;
+      window.POS_INITIAL_CATEGORIES = <%- JSON.stringify((typeof categoryList !== 'undefined' && categoryList) ? categoryList : []) %>;
+      window.POS_INITIAL_SUBCATEGORIES = <%- JSON.stringify((typeof subcategoryList !== 'undefined' && subcategoryList) ? subcategoryList : []) %>;
+
+      // Customer Intelligence & Memo UI Update Helper
+      window.updatePosCustomerIntelligence = function(stats) {
+        if (!stats) stats = {
+          total_orders: 0,
+          unpaid_orders: 0,
+          unpaid_amount: 0,
+          memo: ''
+        };
+        const sym = document.querySelector('input[name="sym"]')?.value || '$';
+        const elTotal = document.getElementById('pos_cust_stat_total');
+        const elUnpaid = document.getElementById('pos_cust_stat_unpaid');
+        const elBalance = document.getElementById('pos_cust_stat_balance');
+        const elMemoText = document.getElementById('pos_cust_memo_text');
+        const elMemoInput = document.getElementById('pos_cust_memo_input');
+
+        if (elTotal) elTotal.textContent = stats.total_orders || 0;
+        if (elUnpaid) elUnpaid.textContent = stats.unpaid_orders || 0;
+        if (elBalance) {
+          const amt = parseFloat(stats.unpaid_amount || 0).toFixed(2);
+          elBalance.textContent = sym + ' ' + amt;
+        }
+
+        const cleanMemo = (stats.memo && stats.memo.trim() !== '') ? stats.memo.trim() : '';
+        if (elMemoText) {
+          if (cleanMemo) {
+            elMemoText.textContent = cleanMemo;
+            elMemoText.classList.remove('text-muted');
+          } else {
+            elMemoText.innerHTML = '<em>No notes recorded for this customer.</em>';
+            elMemoText.classList.add('text-muted');
+          }
+        }
+        if (elMemoInput) {
+          elMemoInput.value = cleanMemo;
+        }
+      };
+
+      function fetchCurrentCustomerStats(customerId) {
+        if (!customerId || customerId === '0' || customerId === 'null') {
+          window.updatePosCustomerIntelligence({
+            total_orders: 0,
+            unpaid_orders: 0,
+            unpaid_amount: 0,
+            memo: ''
+          });
+          return;
+        }
+        fetch('/admin/customer-stats/' + encodeURIComponent(customerId))
+          .then(r => r.json())
+          .then(data => {
+            if (data && data.success && data.stats) {
+              window.updatePosCustomerIntelligence(data.stats);
+            }
+          })
+          .catch(err => console.error('Error fetching customer stats:', err));
+      }
+      window.fetchCurrentCustomerStats = fetchCurrentCustomerStats;
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // Auto-collapse sidebar to mini-icon mode for large POS workstation view
+        const mainWrapper = document.getElementById('main-wrapper');
+        if (mainWrapper) {
+          mainWrapper.classList.add('menu-toggle');
+        }
+        const hamburger = document.querySelector('.hamburger');
+        if (hamburger) {
+          hamburger.classList.add('is-active');
+        }
+
+        // POS Sidebar Expand/Collapse Toggle Button
+        const posSidebarBtn = document.getElementById('pos_sidebar_toggle');
+        if (posSidebarBtn) {
+          posSidebarBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const navControl = document.querySelector('.nav-control');
+            if (navControl) {
+              navControl.click();
+            } else {
+              if (mainWrapper) mainWrapper.classList.toggle('menu-toggle');
+              if (hamburger) hamburger.classList.toggle('is-active');
+            }
+          });
+        }
+
+        // Initial customer intelligence stats population
+        const custSelect = document.getElementById('single-select');
+        if (custSelect && custSelect.value && custSelect.value !== '0') {
+          fetchCurrentCustomerStats(custSelect.value);
+        }
+
+        if (typeof window.updatePosCheckoutBtnState === 'function') {
+          window.updatePosCheckoutBtnState();
+        }
+
+
+        // Quick memo editing interactions
+        const btnEditMemo = document.getElementById('btn_toggle_pos_memo_edit');
+        const btnCancelMemo = document.getElementById('btn_cancel_pos_memo');
+        const btnSaveMemo = document.getElementById('btn_save_pos_memo');
+        const memoViewContainer = document.getElementById('pos_memo_view_container');
+        const memoEditContainer = document.getElementById('pos_memo_edit_container');
+        const memoInput = document.getElementById('pos_cust_memo_input');
+
+        if (btnEditMemo && memoViewContainer && memoEditContainer) {
+          btnEditMemo.addEventListener('click', (e) => {
+            e.preventDefault();
+            memoViewContainer.classList.add('d-none');
+            memoEditContainer.classList.remove('d-none');
+            if (memoInput) memoInput.focus();
+          });
+        }
+
+        if (btnCancelMemo && memoViewContainer && memoEditContainer) {
+          btnCancelMemo.addEventListener('click', (e) => {
+            e.preventDefault();
+            memoEditContainer.classList.add('d-none');
+            memoViewContainer.classList.remove('d-none');
+          });
+        }
+
+        if (btnSaveMemo) {
+          btnSaveMemo.addEventListener('click', (e) => {
+            e.preventDefault();
+            const custId = custSelect ? custSelect.value : null;
+            if (!custId || custId === '0') {
+              if (typeof toastr !== 'undefined') toastr.warning('Please select a customer first');
+              return;
+            }
+            const newMemo = memoInput ? memoInput.value : '';
+            btnSaveMemo.disabled = true;
+            btnSaveMemo.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving...';
+
+            fetch('/coustomer/update-memo', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  customer_id: custId,
+                  memo: newMemo
+                })
+              })
+              .then(r => r.json())
+              .then(res => {
+                btnSaveMemo.disabled = false;
+                btnSaveMemo.innerHTML = '<i class="fa fa-check me-1"></i>Save Note';
+                if (res && res.success) {
+                  if (memoEditContainer) memoEditContainer.classList.add('d-none');
+                  if (memoViewContainer) memoViewContainer.classList.remove('d-none');
+                  const elMemoText = document.getElementById('pos_cust_memo_text');
+                  if (elMemoText) {
+                    if (newMemo && newMemo.trim()) {
+                      elMemoText.textContent = newMemo.trim();
+                      elMemoText.classList.remove('text-muted');
+                    } else {
+                      elMemoText.innerHTML = '<em>No notes recorded for this customer.</em>';
+                      elMemoText.classList.add('text-muted');
+                    }
+                  }
+                  if (typeof toastr !== 'undefined') toastr.success('Customer memo updated successfully');
+                } else {
+                  if (typeof toastr !== 'undefined') toastr.error(res?.message || 'Failed to update memo');
+                }
+              })
+              .catch(err => {
+                btnSaveMemo.disabled = false;
+                btnSaveMemo.innerHTML = '<i class="fa fa-check me-1"></i>Save Note';
+                if (typeof toastr !== 'undefined') toastr.error('Failed to update memo');
+              });
+          });
+        }
+
+        pingPosPrintingServer(false);
+        setInterval(() => pingPosPrintingServer(false), 25000);
+
+        // Observe cart items list to update mobile badge automatically
+        const cartList = document.getElementById('POS_service_added_list');
+        if (cartList && window.MutationObserver) {
+          const observer = new MutationObserver(() => updatePosMobileCartBadge());
+          observer.observe(cartList, {
+            childList: true
+          });
+        }
+        updatePosMobileCartBadge();
+      });
+    })();
+  </script>
+</body>
+
+
+
+</html>

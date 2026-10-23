@@ -165,9 +165,7 @@
             <li class="nav-item dropdown notification_dropdown me-2">
               <a class="header-icon-btn" href="#" role="button" data-bs-toggle="dropdown" title="<%= language.Notifications || 'Notifications' %>">
                 <i class="fa fa-bell fs-5"></i>
-                <% if(accessdata?.notification_data?.length> 0){ %>
-                <span class="header-badge-dot"></span>
-                <% } %>
+                <span id="topbar_notif_dot" class="header-badge-dot <%= (accessdata?.notification_data?.length > 0) ? '' : 'd-none' %>"></span>
               </a>
               <div class="dropdown-menu dropdown-menu-end notification-glass-menu shadow-lg">
                 <div class="notif-header">
@@ -175,7 +173,7 @@
                     <h6 class="mb-0 fw-bold">
                       <%= language.Notifications || 'Notifications' %>
                     </h6>
-                    <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1 fs-11">
+                    <span id="topbar_notif_count" class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1 fs-11">
                       <%= accessdata?.notification_data ? accessdata.notification_data.length : 0 %>
                     </span>
                   </div>
@@ -183,10 +181,10 @@
                     <%= language.View_All || 'View All' %>
                   </a>
                 </div>
-                <div class="widget-media dz-scroll" style="max-height: 340px; overflow-y: auto; overflow-x: hidden;">
+                <div id="topbar_notif_list" class="widget-media dz-scroll" style="max-height: 340px; overflow-y: auto; overflow-x: hidden;">
                   <% if(accessdata?.notification_data?.length> 0){ %>
                   <% accessdata.notification_data.forEach((data)=> { %>
-                  <a href="/admin/notification" class="notif-item">
+                  <a href="<%= data.order_primary_id ? ('/order/view/' + data.order_primary_id) : '/admin/notification' %>" class="notif-item">
                     <div class="bg-primary-subtle text-primary rounded-circle notif-item-icon">
                       <i class="fa fa-bell fs-12"></i>
                     </div>
@@ -204,7 +202,7 @@
                   </a>
                   <% }) %>
                   <% } else { %>
-                  <div class="text-center py-4 text-muted">
+                  <div id="topbar_notif_empty" class="text-center py-4 text-muted">
                     <i class="fa fa-bell-slash fs-2 mb-2 d-block text-secondary opacity-50"></i>
                     <span class="fs-12">
                       <%= language.No_Notifications_Found || 'No notifications found' %>
@@ -329,7 +327,7 @@
         <li><a href="/order/calendar" class="has-arrow ai-icon" aria-expanded="false">
             <i class="fa fa-calendar-alt"></i>
             <span class="nav-text">
-              <%= language.Route_Calendar || 'Route Calendar' %>
+              <%= language.Route_Calendar || 'Calendar' %>
             </span>
           </a>
         </li>
@@ -599,3 +597,153 @@
   </div>
 
   <!--*********** Sidebar end *************-->
+  <%
+    const isAdminNotifRecipient = (
+      accessdata?.logas === 'master' ||
+      (accessdata?.logas === 'store' && String(accessdata?.topbardata?.is_staff) === '0')
+    );
+    const adminScopeIsMaster = (accessdata?.logas === 'master');
+    const adminScopeStoreId = String(accessdata?.topbardata?.store_ID || '');
+  %>
+  <% if (isAdminNotifRecipient) { %>
+  <script>
+    (function () {
+      if (window.__ADMIN_ROUTE_NOTIF_ACTIVE) return;
+      window.__ADMIN_ROUTE_NOTIF_ACTIVE = true;
+
+      var isMasterAdmin = <%= adminScopeIsMaster ? 'true' : 'false' %>;
+      var currentAdminStoreId = "<%= adminScopeStoreId %>";
+
+      function playRouteOrderAlertSound() {
+        try {
+          var AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtx) return;
+          var ctx = new AudioCtx();
+          var now = ctx.currentTime;
+
+          // Crisp two-tone notification chime (A5 -> D6)
+          var notes = [
+            { freq: 880, start: 0, duration: 0.14 },
+            { freq: 1174.66, start: 0.15, duration: 0.24 }
+          ];
+
+          notes.forEach(function (n) {
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(n.freq, now + n.start);
+            gain.gain.setValueAtTime(0.001, now + n.start);
+            gain.gain.exponentialRampToValueAtTime(0.28, now + n.start + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + n.start + n.duration);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + n.start);
+            osc.stop(now + n.start + n.duration + 0.02);
+          });
+        } catch (err) {
+          console.warn('Could not play notification sound:', err);
+        }
+      }
+
+      function escapeHtmlStr(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function startAdminRouteOrderStream() {
+        if (!window.EventSource) return;
+        var sse = new EventSource('/order/calendar/stream');
+
+        sse.onmessage = function (e) {
+          try {
+            var data = JSON.parse(e.data);
+            if (!data || data.action !== 'order_created' || !data.is_route_order_alert) return;
+
+            if (!isMasterAdmin && currentAdminStoreId && String(data.store_id) !== String(currentAdminStoreId)) {
+              return;
+            }
+
+            playRouteOrderAlertSound();
+
+            var targetUrl = data.order_id ? ('/order/view/' + data.order_id) : '/admin/notification';
+            var notifText = data.notification_text || ('New Route Order #' + (data.order_code || '') + ' placed');
+            var dateText = data.date || new Date().toISOString().slice(0, 10);
+
+            // 1. Update Topbar Notification Bell Live
+            var dotEl = document.getElementById('topbar_notif_dot');
+            if (dotEl) dotEl.classList.remove('d-none');
+
+            var countEl = document.getElementById('topbar_notif_count');
+            if (countEl) {
+              var cur = parseInt(countEl.textContent, 10) || 0;
+              countEl.textContent = String(cur + 1);
+            }
+
+            var emptyEl = document.getElementById('topbar_notif_empty');
+            if (emptyEl && emptyEl.parentNode) {
+              emptyEl.parentNode.removeChild(emptyEl);
+            }
+
+            var listEl = document.getElementById('topbar_notif_list');
+            if (listEl) {
+              var itemHtml =
+                '<a href="' + escapeHtmlStr(targetUrl) + '" class="notif-item">' +
+                  '<div class="bg-primary-subtle text-primary rounded-circle notif-item-icon">' +
+                    '<i class="fa fa-bell fs-12"></i>' +
+                  '</div>' +
+                  '<div class="notif-item-body">' +
+                    '<div class="notif-item-text">' + escapeHtmlStr(notifText) + '</div>' +
+                    '<div class="notif-item-time">' +
+                      '<i class="fa fa-clock fs-10"></i>' +
+                      '<span>' + escapeHtmlStr(dateText) + '</span>' +
+                    '</div>' +
+                  '</div>' +
+                '</a>';
+              listEl.insertAdjacentHTML('afterbegin', itemHtml);
+            }
+
+            // 2. Refresh notification DataTable if open
+            if (window.jQuery && jQuery.fn.DataTable && jQuery('#server_notification_table').length) {
+              try {
+                jQuery('#server_notification_table').DataTable().ajax.reload(null, false);
+              } catch (dtErr) {}
+            }
+
+            // 3. Trigger Clickable Real-Time Toast
+            if (typeof toastr !== 'undefined') {
+              var title = '🚚 New Route Order #' + (data.order_code || '');
+              var bodyMsg =
+                (data.order_type ? ('[' + data.order_type + '] ') : '') +
+                'By ' + (data.placed_by_role || 'Staff/Customer') +
+                (data.placed_by_name ? (' (' + data.placed_by_name + ')') : '') +
+                ' for ' + (data.customer_name || 'Customer') +
+                (data.schedule_summary ? (' — ' + data.schedule_summary) : '');
+
+              toastr.info(bodyMsg, title, {
+                timeOut: 9000,
+                extendedTimeOut: 4000,
+                closeButton: true,
+                progressBar: true,
+                onclick: function () {
+                  window.location.href = targetUrl;
+                }
+              });
+            }
+          } catch (err) {
+            console.error('Admin route notification stream parse error:', err);
+          }
+        };
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startAdminRouteOrderStream);
+      } else {
+        startAdminRouteOrderStream();
+      }
+    })();
+  </script>
+  <% } %>

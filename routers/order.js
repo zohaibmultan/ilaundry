@@ -164,7 +164,7 @@ async function buildOrderListQuery(
     LEFT JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id 
     LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id
     ${whereClause} 
-    ORDER BY tbl_order.order_date DESC, tbl_order.id DESC 
+    ORDER BY tbl_order.id DESC, tbl_order.order_id DESC 
     LIMIT ${limit} OFFSET ${offset}
   `;
 
@@ -332,14 +332,14 @@ router.get("/list/data", auth, async (req, res) => {
       ],
       baseWhere: scopeConditions,
       filterWhere: filterConditions,
-      defaultOrder: "tbl_order.order_date DESC, tbl_order.id DESC",
+      defaultOrder: 'tbl_order.id DESC, tbl_order.order_id DESC',
       columnMap: {
-        0: "tbl_order.id",
-        1: "tbl_customer.name",
-        2: "tbl_order.gross_total",
-        3: "tbl_order.order_status",
-        4: "tbl_order.paid_amount",
-        5: "tbl_store.name",
+        0: 'tbl_order.id',
+        1: 'tbl_order.order_date',
+        2: 'tbl_customer.name',
+        3: 'tbl_order.gross_total',
+        4: 'tbl_order.paid_amount',
+        5: 'tbl_order.order_status',
       },
       postProcess: async (rows) => {
         return rows.map((order) => {
@@ -1468,54 +1468,31 @@ router.get("/liststattus", auth, handleListStatus);
 // REAL-TIME ROUTE PICK-UP & DELIVERY CALENDAR
 // ==========================================
 
-// 1. View Route: Render Calendar Page
-router.get("/calendar", auth, async (req, res) => {
+const jwt = require("jsonwebtoken");
+
+const optionalAuth = async (req, res, next) => {
   try {
-    const accessdata = await access(req.user);
-    if (
-      accessdata?.logas === "custmor" &&
-      (!accessdata?.roll?.orders || !accessdata.roll.orders.includes("read"))
-    ) {
-      req.flash("error", "You Are Not Authorized For this");
-      return res.redirect("/");
+    const token = req.cookies && req.cookies.webtoken;
+    if (token) {
+      const decode = await jwt.verify(token, process.env.TOKEN_KEY);
+      if (decode) {
+        req.user = decode;
+      }
     }
-
-    const { id, store, loginas } = req.user;
-    const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
-
-    const storeList = await DataFind(
-      "SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0"
-    );
-
-    res.render("order_calendar", {
-      titel: req.language_data?.Route_Calendar || "Route Calendar",
-      accessdata,
-      storeList: storeList || [],
-      isStaff,
-      staffStoreId,
-      currentStoreId: isStaff ? staffStoreId : store,
-      language: req.language_data,
-      language_name: req.language_name,
-    });
-  } catch (error) {
-    console.error("Error in /order/calendar:", error);
-    req.flash("error", "Error loading route calendar");
-    res.redirect("/order/list");
+  } catch (err) {
+    req.user = null;
   }
-});
+  next();
+};
 
-// 2. Real-Time SSE Stream Endpoint
-router.get("/calendar/stream", auth, (req, res) => {
+// 1. Real-Time SSE Stream Endpoint (Accessible with or without login)
+router.get("/calendar/stream", optionalAuth, (req, res) => {
   addClient(req, res);
 });
 
-// 3. FullCalendar Events JSON Feed
-router.get("/calendar/events", auth, async (req, res) => {
+// 2. FullCalendar Events JSON Feed (Accessible with or without login)
+router.get("/calendar/events", optionalAuth, async (req, res) => {
   try {
-    const { id, store, loginas } = req.user;
-    const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
-    const accessdata = await access(req.user);
-
     const {
       search,
       event_type = "all", // 'all' | 'pickup' | 'delivery'
@@ -1524,12 +1501,26 @@ router.get("/calendar/events", auth, async (req, res) => {
     } = req.query;
 
     let storeCondition = "";
-    if (isStaff && staffStoreId) {
-      storeCondition = `AND o.store_id = '${staffStoreId}'`;
-    } else if (accessdata.login === "store") {
-      storeCondition = `AND o.store_id = '${store}'`;
-    } else if (store_id && store_id !== "all" && store_id !== "") {
-      storeCondition = `AND o.store_id = '${String(store_id).replace(/'/g, "\\'")}'`;
+
+    if (!req.user) {
+      // Guest mode: require a specific store_id selected from the dropdown / URL
+      const cleanGuestStore = store_id ? String(store_id).trim() : "";
+      if (!cleanGuestStore || cleanGuestStore === "all") {
+        return res.json([]);
+      }
+      storeCondition = `AND o.store_id = '${cleanGuestStore.replace(/'/g, "\\'")}'`;
+    } else {
+      const { id, store, loginas } = req.user;
+      const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
+      const accessdata = await access(req.user);
+
+      if (isStaff && staffStoreId) {
+        storeCondition = `AND o.store_id = '${staffStoreId}'`;
+      } else if (accessdata.login === "store") {
+        storeCondition = `AND o.store_id = '${store}'`;
+      } else if (store_id && store_id !== "all" && store_id !== "") {
+        storeCondition = `AND o.store_id = '${String(store_id).replace(/'/g, "\\'")}'`;
+      }
     }
 
     let searchCondition = "";
@@ -1662,11 +1653,14 @@ router.get("/calendar/events", auth, async (req, res) => {
 
           const pickupStart = toLocalISOString(ord.pickup_date);
           if (includeStatus && pickupStart) {
+            const pickupTs = new Date(ord.pickup_date).getTime() || 0;
             events.push({
               id: `pickup_${ord.id}`,
               title: `📦 Pick-up: #${ord.order_id} - ${customerName}`,
               start: pickupStart,
-              color: isDone ? "#b45309" : "#ea580c",
+              startTimestamp: pickupTs,
+              eventTypeOrder: 1,
+              color: isDone ? "#16a34a" : "#ea580c",
               textColor: "#ffffff",
               className: `fc-event-pickup status-${isDone ? "completed" : "pending"}`,
               ...commonDetails,
@@ -1675,6 +1669,8 @@ router.get("/calendar/events", auth, async (req, res) => {
               statusLabel: isDone ? "Picked Up" : "Pending Pick-up",
               extendedProps: {
                 ...commonDetails,
+                startTimestamp: pickupTs,
+                eventTypeOrder: 1,
                 eventType: "pickup",
                 eventCategoryLabel: "Pick-up Schedule",
                 statusLabel: isDone ? "Picked Up" : "Pending Pick-up",
@@ -1694,10 +1690,13 @@ router.get("/calendar/events", auth, async (req, res) => {
 
           const deliveryStart = toLocalISOString(ord.delivery_date);
           if (includeStatus && deliveryStart) {
+            const deliveryTs = new Date(ord.delivery_date).getTime() || 0;
             events.push({
               id: `delivery_${ord.id}`,
               title: `🚚 Delivery: #${ord.order_id} - ${customerName}`,
               start: deliveryStart,
+              startTimestamp: deliveryTs,
+              eventTypeOrder: 2,
               color: isDone ? "#16a34a" : "#2563eb",
               textColor: "#ffffff",
               className: `fc-event-delivery status-${isDone ? "completed" : "pending"}`,
@@ -1707,6 +1706,8 @@ router.get("/calendar/events", auth, async (req, res) => {
               statusLabel: isDone ? "Delivered" : "Pending Delivery",
               extendedProps: {
                 ...commonDetails,
+                startTimestamp: deliveryTs,
+                eventTypeOrder: 2,
                 eventType: "delivery",
                 eventCategoryLabel: "Delivery Schedule",
                 statusLabel: isDone ? "Delivered" : "Pending Delivery",
@@ -1715,6 +1716,17 @@ router.get("/calendar/events", auth, async (req, res) => {
           }
         }
       }
+    });
+
+    // Sort events chronologically by start time ascending (same-date events sorted by time, then pickup before delivery, then orderId)
+    events.sort((a, b) => {
+      if (a.startTimestamp !== b.startTimestamp) {
+        return a.startTimestamp - b.startTimestamp;
+      }
+      if (a.eventTypeOrder !== b.eventTypeOrder) {
+        return a.eventTypeOrder - b.eventTypeOrder;
+      }
+      return (Number(a.orderId) || 0) - (Number(b.orderId) || 0);
     });
 
     res.json(events);
@@ -1840,6 +1852,74 @@ router.post("/calendar/toggle-status", auth, async (req, res) => {
     return res
       .status(500)
       .json({ success: false, message: "Server error updating status." });
+  }
+});
+
+// 5. View Route: Render Calendar Page (With or Without Login, optional :storeId)
+router.get(["/calendar", "/calendar/:storeId"], optionalAuth, async (req, res) => {
+  try {
+    const urlStoreId = req.params.storeId ? String(req.params.storeId).trim() : "";
+    const storeList = await DataFind(
+      "SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0"
+    );
+
+    if (!req.user) {
+      const masterRows = await DataFind("SELECT * FROM tbl_master_shop WHERE id=1");
+      const masterstore = (masterRows && masterRows[0]) ? masterRows[0] : { app_name: "iCleaners", app_logo: "", app_favicon: "" };
+      const accessdata = {
+        masterstore,
+        login: "guest",
+        logas: "guest",
+        roll: {},
+        topbardata: {},
+      };
+
+      return res.render("order_calendar", {
+        titel: req.language_data?.Route_Calendar || "Route Calendar",
+        accessdata,
+        storeList: storeList || [],
+        isGuest: true,
+        isStaff: false,
+        staffStoreId: null,
+        currentStoreId: urlStoreId,
+        selectedStoreId: urlStoreId,
+        language: req.language_data || res.locals.language || {},
+        language_name: req.language_name || res.locals.language_name || "en",
+      });
+    }
+
+    const accessdata = await access(req.user);
+    if (
+      accessdata?.logas === "custmor" &&
+      (!accessdata?.roll?.orders || !accessdata.roll.orders.includes("read"))
+    ) {
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect("/");
+    }
+
+    const { id, store, loginas } = req.user;
+    const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
+    const effectiveStoreId = isStaff ? staffStoreId : store;
+    const selectedStoreId = accessdata?.login === "master"
+      ? (urlStoreId || "all")
+      : String(effectiveStoreId || "");
+
+    return res.render("order_calendar", {
+      titel: req.language_data?.Route_Calendar || "Route Calendar",
+      accessdata,
+      storeList: storeList || [],
+      isGuest: false,
+      isStaff,
+      staffStoreId,
+      currentStoreId: effectiveStoreId,
+      selectedStoreId,
+      language: req.language_data,
+      language_name: req.language_name,
+    });
+  } catch (error) {
+    console.error("Error in /order/calendar:", error);
+    req.flash("error", "Error loading route calendar");
+    return res.redirect("/");
   }
 });
 

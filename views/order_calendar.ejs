@@ -8,10 +8,17 @@
 </head>
 
 <body>
-  <%- include('templet/preloder_topbar_sidebar', { titel: titel || 'Route Calendar' }) -%>
-
-  <div class="content-body">
-    <div class="container-fluid" style="min-height: 100vh;">
+  <%
+    const isGuestView = (typeof isGuest !== 'undefined' && isGuest);
+    const activeSelectedStoreId = (typeof selectedStoreId !== 'undefined' && selectedStoreId) ? String(selectedStoreId) : '';
+  %>
+  <% if (!isGuestView) { %>
+    <%- include('templet/preloder_topbar_sidebar', { titel: titel || 'Route Calendar' }) -%>
+    <div class="content-body">
+      <div class="container-fluid" style="min-height: 100vh;">
+  <% } else { %>
+    <div class="container-fluid py-4 px-3 px-md-4" style="min-height: 100vh;">
+  <% } %>
 
       <!-- Header Control Card -->
       <div class="card border-0 shadow-sm rounded-3 mb-3">
@@ -26,21 +33,49 @@
             </small>
           </div>
 
-          <!-- Real-Time Sync Indicator -->
-          <div class="d-flex align-items-center gap-3">
+          <!-- Real-Time Sync Indicator & Actions -->
+          <div class="d-flex align-items-center gap-2 gap-md-3">
             <div id="live_sync_pill" class="d-flex align-items-center gap-2 py-1 px-3 rounded-pill bg-success-subtle text-success border border-success-subtle">
               <span class="live-dot pulse-success" id="live_sync_dot"></span>
               <small class="fw-bold" id="live_sync_label">Live Sync Active</small>
             </div>
+            <% if (isGuestView) { %>
+            <a class="header-icon-btn" id="guest_theme_toggle" href="javascript:void(0);" onclick="window.toggleAppTheme(event)" role="button" title="Toggle Dark/Light Mode">
+              <div class="mode" data-id="dark">
+                <i class="fa fa-moon lighticon fs-6"></i>
+                <i class="fa fa-sun darkicon fs-6"></i>
+              </div>
+            </a>
+            <a href="/" class="btn btn-sm btn-outline-primary">
+              <i class="fa fa-sign-in-alt me-1"></i> <%= language.Login || 'Login' %>
+            </a>
+            <% } else { %>
             <a href="/admin/pos" class="btn btn-sm btn-primary">
               <i class="fa fa-plus me-1"></i> <%= language.Add_New_Orders || 'New Order' %>
             </a>
+            <% } %>
           </div>
         </div>
 
         <div class="card-body p-4">
           <!-- Filters Bar -->
           <div class="row g-2 align-items-center mb-3">
+            <!-- Store Selector (For Guest or Master / Multibranch) -->
+            <% if ((isGuestView || accessdata?.login === 'master') && typeof storeList !== 'undefined' && storeList.length > 0) { %>
+            <div class="col-12 col-sm-6 col-md-3 col-lg-3">
+              <select class="form-select fw-semibold border-primary-subtle" id="calendar_store_filter">
+                <% if (isGuestView) { %>
+                <option value="" <%= !activeSelectedStoreId ? 'selected' : '' %>>-- <%= language.Select_Store || 'Select Store' %> --</option>
+                <% } else { %>
+                <option value="all" <%= (!activeSelectedStoreId || activeSelectedStoreId === 'all') ? 'selected' : '' %>><%= language.All_Stores || 'All Stores' %></option>
+                <% } %>
+                <% storeList.forEach(function (st) { %>
+                <option value="<%= st.id %>" <%= String(st.id) === activeSelectedStoreId ? 'selected' : '' %>><%= st.name %></option>
+                <% }) %>
+              </select>
+            </div>
+            <% } %>
+
             <!-- Search Box -->
             <div class="col-12 col-md-4 col-lg-3">
               <div class="input-group">
@@ -67,18 +102,6 @@
               </select>
             </div>
 
-            <!-- Store Selector (For Master / Multibranch) -->
-            <% if (accessdata?.login === 'master' && typeof storeList !== 'undefined' && storeList.length > 0) { %>
-            <div class="col-12 col-sm-6 col-md-3 col-lg-2">
-              <select class="form-select" id="calendar_store_filter">
-                <option value="all" selected><%= language.All_Stores || 'All Stores' %></option>
-                <% storeList.forEach(function (st) { %>
-                <option value="<%= st.id %>"><%= st.name %></option>
-                <% }) %>
-              </select>
-            </div>
-            <% } %>
-
             <!-- Legend Items -->
             <div class="col-12 col-lg d-flex align-items-center justify-content-lg-end flex-wrap gap-2 pt-2 pt-lg-0">
               <span class="badge bg-warning text-white border py-2 px-2 d-inline-flex align-items-center gap-1">
@@ -93,6 +116,13 @@
             </div>
           </div>
 
+          <% if (isGuestView && !activeSelectedStoreId) { %>
+          <div class="alert alert-info d-flex align-items-center gap-2 mb-3 py-2 px-3 rounded-3" id="guest_select_store_notice">
+            <i class="fas fa-store text-primary"></i>
+            <span>Please select a store from the dropdown above to view its Route Pick-up &amp; Delivery Calendar.</span>
+          </div>
+          <% } %>
+
           <!-- Calendar Glass Container -->
           <div class="calendar-glass-card p-3 p-md-4">
             <div id="route_calendar"></div>
@@ -100,8 +130,12 @@
         </div>
       </div>
 
+  <% if (!isGuestView) { %>
+      </div>
     </div>
-  </div>
+  <% } else { %>
+    </div>
+  <% } %>
 
   <!-- Order Event Details & Live Action Modal -->
   <div class="modal fade" id="orderEventModal" tabindex="-1" aria-labelledby="orderEventModalLabel" aria-hidden="true">
@@ -186,6 +220,7 @@
               <small class="text-muted d-block"><%= language.Balance || 'Balance' %></small>
               <span class="fw-bold fs-6" id="modal_balance_val">$0.00</span>
             </div>
+            <% if (!isGuestView) { %>
             <div class="col-12 col-sm-6 col-md-3 text-sm-end">
               <a href="#" id="modal_view_link" target="_blank" class="btn btn-sm btn-outline-primary me-1">
                 <i class="fa fa-eye"></i> View
@@ -194,6 +229,7 @@
                 <i class="fa fa-receipt"></i> Print
               </a>
             </div>
+            <% } %>
           </div>
 
           <!-- Interactive Status Toggle Controls (Core Feature) -->
@@ -207,7 +243,7 @@
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
                   <div class="form-check form-switch fs-5 mb-0">
-                    <input class="form-check-input" type="checkbox" role="switch" id="pickup_status_toggle" style="cursor: pointer;">
+                    <input class="form-check-input" type="checkbox" role="switch" id="pickup_status_toggle" <%= isGuestView ? 'disabled' : '' %> style="cursor: pointer;">
                   </div>
                   <div>
                     <label class="form-check-label fw-bold text-dark mb-0" for="pickup_status_toggle" style="cursor: pointer;">
@@ -225,7 +261,7 @@
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
                   <div class="form-check form-switch fs-5 mb-0">
-                    <input class="form-check-input" type="checkbox" role="switch" id="delivery_status_toggle" style="cursor: pointer;">
+                    <input class="form-check-input" type="checkbox" role="switch" id="delivery_status_toggle" <%= isGuestView ? 'disabled' : '' %> style="cursor: pointer;">
                   </div>
                   <div>
                     <label class="form-check-label fw-bold text-dark mb-0" for="delivery_status_toggle" style="cursor: pointer;">
@@ -260,6 +296,8 @@
 
   <script>
     $(document).ready(function() {
+      const isGuestMode = <%= isGuestView ? 'true' : 'false' %>;
+      const initialStoreId = "<%= activeSelectedStoreId %>";
       let activeOrderData = null;
       let currentOpenOrderId = null;
 
@@ -285,7 +323,8 @@
         navLinks: true,
         navLinkDayClick: 'basicDay',
         editable: false,
-        eventLimit: 4,
+        eventLimit: 6,
+        eventOrder: 'start,startTimestamp,eventTypeOrder,orderId',
         timeFormat: 'h:mm a',
         minTime: '06:00:00',
         maxTime: '22:00:00',
@@ -341,13 +380,22 @@
           }
         },
         events: function(start, end, timezone, callback) {
+          const selectedStore = $('#calendar_store_filter').length
+            ? ($('#calendar_store_filter').val() || '')
+            : initialStoreId;
+
+          if (isGuestMode && (!selectedStore || selectedStore === 'all')) {
+            callback([]);
+            return;
+          }
+
           const params = {
             start: start.toISOString(),
             end: end.toISOString(),
             search: $('#calendar_search_input').val() || '',
             event_type: $('#calendar_event_type').val() || 'all',
             status_filter: $('#calendar_status_filter').val() || 'all',
-            store_id: $('#calendar_store_filter').length ? ($('#calendar_store_filter').val() || 'all') : ''
+            store_id: selectedStore || 'all'
           };
 
           $.ajax({
@@ -356,7 +404,16 @@
             dataType: 'json',
             data: params,
             success: function(events) {
-              callback(events);
+              const sortedEvents = Array.isArray(events) ? events.slice().sort(function(a, b) {
+                const tsA = a.startTimestamp || (a.start ? new Date(a.start).getTime() : 0) || 0;
+                const tsB = b.startTimestamp || (b.start ? new Date(b.start).getTime() : 0) || 0;
+                if (tsA !== tsB) return tsA - tsB;
+                const typeA = a.eventTypeOrder || (a.eventType === 'pickup' ? 1 : 2);
+                const typeB = b.eventTypeOrder || (b.eventType === 'pickup' ? 1 : 2);
+                if (typeA !== typeB) return typeA - typeB;
+                return (Number(a.orderId) || 0) - (Number(b.orderId) || 0);
+              }) : [];
+              callback(sortedEvents);
             },
             error: function(xhr, status, error) {
               console.error('Error fetching calendar events:', error);
@@ -371,8 +428,6 @@
           }
         },
         eventRender: function(event, element, view) {
-          element.attr('title', event.title || '');
-
           const ext = event.extendedProps || {};
           const orderCode = event.orderCode || ext.orderCode || (event.orderId ? String(event.orderId) : '');
           const customerName = event.customerName || ext.customerName || 'Walk-in Customer';
@@ -394,8 +449,10 @@
           const isPickup = (eventType === 'pickup');
           const typeLabel = isPickup ? 'Pick-up' : 'Delivery';
           const typeIcon = isPickup ? 'fa-box' : 'fa-truck';
-          const statusText = isDone ? (isPickup ? 'Picked Up' : 'Delivered') : (isPickup ? 'Pending' : 'Pending');
+          const statusText = isDone ? (isPickup ? 'Picked Up' : 'Delivered') : 'Pending';
           const formattedOrderCode = orderCode ? (orderCode.startsWith('#') ? orderCode : ('#' + orderCode)) : '';
+
+          element.attr('title', `${typeLabel} (${timeStr}): ${formattedOrderCode} - ${customerName} [${statusText}]`);
 
           if (view && view.name === 'listWeek') {
             const $titleEl = element.find('.fc-list-item-title a');
@@ -410,30 +467,21 @@
             return;
           }
 
-          const cardHtml = `
-                        <div class="calendar-event-card">
-                            <div class="event-card-top">
-                                <span class="event-card-time"><i class="far fa-clock me-1"></i>${timeStr}</span>
-                                <span class="event-card-type"><i class="fas ${typeIcon} me-1"></i>${typeLabel}</span>
-                            </div>
-                            <div class="event-card-mid">
-                                <div class="event-card-order">${formattedOrderCode}</div>
-                                <div class="event-card-customer text-truncate" title="${customerName}">${customerName}</div>
-                            </div>
-                            <div class="event-card-bot">
-                                <span class="event-card-status status-${isDone ? 'done' : 'wait'}">
-                                    <i class="fas ${isDone ? 'fa-check-circle' : 'fa-clock'} me-1"></i>${statusText}
-                                </span>
-                                ${isZeroItem ? '<span class="event-card-zero-badge" title="0-Item Manifest Order">0-Item</span>' : ''}
-                            </div>
-                        </div>
-                    `;
+          const badgeHtml = `
+            <div class="calendar-time-badge">
+              <span class="time-badge-main">
+                <i class="fas ${typeIcon}"></i>
+                <span class="time-badge-text">${timeStr}</span>
+              </span>
+              ${isDone ? `<i class="fas fa-check-circle time-badge-done-icon" title="${statusText}"></i>` : ''}
+            </div>
+          `;
 
           const $content = element.find('.fc-content');
           if ($content.length) {
-            $content.html(cardHtml);
+            $content.html(badgeHtml);
           } else {
-            element.html(cardHtml);
+            element.html(badgeHtml);
           }
         }
       });
@@ -556,6 +604,10 @@
         } else {
           $('#delivery_toggle_container').addClass('d-none');
         }
+
+        if (isGuestMode) {
+          $('#pickup_status_toggle, #delivery_status_toggle').prop('disabled', true);
+        }
       }
 
       // 4. Handle Pick-up Toggle Click
@@ -653,8 +705,17 @@
         }, 350);
       });
 
-      $('#calendar_event_type, #calendar_status_filter, #calendar_store_filter').on('change', function() {
+      $('#calendar_event_type, #calendar_status_filter').on('change', function() {
         $('#route_calendar').fullCalendar('refetchEvents');
+      });
+
+      $('#calendar_store_filter').on('change', function() {
+        const selectedId = $(this).val();
+        if (selectedId && selectedId !== 'all') {
+          window.location.href = '/order/calendar/' + encodeURIComponent(selectedId);
+        } else {
+          window.location.href = '/order/calendar';
+        }
       });
 
       // 8. Server-Sent Events (SSE) Real-Time Synchronization

@@ -227,7 +227,7 @@ router.get("/pos", auth, async (req, res) => {
       let taxValue =
         storeDetails.length > 0 ? storeDetails[0].tax_percent || 0 : 0;
       storeList = await DataFind(
-        "SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0",
+        "SELECT id, name, override_rate_percent FROM tbl_store WHERE status=1 AND delete_flage=0",
       );
 
       // 4. Cart management and synchronization
@@ -366,7 +366,7 @@ router.get("/pos", auth, async (req, res) => {
       );
       ismulty = multiy[0].type == 1;
       storeList = await DataFind(
-        "SELECT id,name FROM tbl_store WHERE status=1 AND delete_flage=0",
+        "SELECT id, name, override_rate_percent FROM tbl_store WHERE status=1 AND delete_flage=0",
       );
 
       targetStoreId = 0;
@@ -525,11 +525,17 @@ router.get("/pos", auth, async (req, res) => {
 
     const readySchedule = await getEffectiveReadySchedule(targetStoreId);
     let storePrinterConfig = null;
+    let overrideRatePercent = 10;
     if (targetStoreId) {
       const spRows = await DataFind(
-        `SELECT printing_server_url, invoice_printer_name, invoice_printer_format, tag_printer_name, tag_printer_format, silent_print_enabled, printer_auto_cut, printer_open_cash_drawer, printer_copies FROM tbl_store WHERE id = '${targetStoreId}' LIMIT 1`,
+        `SELECT printing_server_url, invoice_printer_name, invoice_printer_format, tag_printer_name, tag_printer_format, silent_print_enabled, printer_auto_cut, printer_open_cash_drawer, printer_copies, override_rate_percent FROM tbl_store WHERE id = '${targetStoreId}' LIMIT 1`,
       );
-      if (spRows.length > 0) storePrinterConfig = spRows[0];
+      if (spRows.length > 0) {
+        storePrinterConfig = spRows[0];
+        if (spRows[0].override_rate_percent !== undefined && spRows[0].override_rate_percent !== null) {
+          overrideRatePercent = parseFloat(spRows[0].override_rate_percent);
+        }
+      }
     }
 
     let categoryList = [];
@@ -574,6 +580,7 @@ router.get("/pos", auth, async (req, res) => {
 
     res.render("pos", {
       storePrinterConfig,
+      overrideRatePercent,
       login,
       storeList,
       customer_types,
@@ -691,11 +698,17 @@ router.get("/edit/:id", auth, async (req, res) => {
     );
 
     let storePrinterConfig = null;
+    let overrideRatePercent = 10;
     if (targetStoreId) {
       const spRows = await DataFind(
-        `SELECT printing_server_url, invoice_printer_name, invoice_printer_format, tag_printer_name, tag_printer_format, silent_print_enabled, printer_auto_cut, printer_open_cash_drawer, printer_copies FROM tbl_store WHERE id = '${targetStoreId}' LIMIT 1`,
+        `SELECT printing_server_url, invoice_printer_name, invoice_printer_format, tag_printer_name, tag_printer_format, silent_print_enabled, printer_auto_cut, printer_open_cash_drawer, printer_copies, override_rate_percent FROM tbl_store WHERE id = '${targetStoreId}' LIMIT 1`,
       );
-      if (spRows.length > 0) storePrinterConfig = spRows[0];
+      if (spRows.length > 0) {
+        storePrinterConfig = spRows[0];
+        if (spRows[0].override_rate_percent !== undefined && spRows[0].override_rate_percent !== null) {
+          overrideRatePercent = parseFloat(spRows[0].override_rate_percent);
+        }
+      }
     }
 
     let categoryList = [];
@@ -717,7 +730,7 @@ router.get("/edit/:id", auth, async (req, res) => {
 
     const customerList = await getStoreScopedCustomers(targetStoreId, true);
     const storeList = await DataFind(
-      "SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0",
+      "SELECT id, name, override_rate_percent FROM tbl_store WHERE status=1 AND delete_flage=0",
     );
 
     const cart = {
@@ -737,6 +750,7 @@ router.get("/edit/:id", auth, async (req, res) => {
 
     res.render("pos", {
       storePrinterConfig,
+      overrideRatePercent,
       login: loginas == 0 ? "master" : (loginas == "staff" ? "staff" : "store"),
       storeList,
       customer_types,
@@ -869,9 +883,13 @@ router.get("/addonlist/:id", auth, async (req, res) => {
     );
 
     var tax = await DataFind(
-      "SELECT tax_percent FROM tbl_store WHERE id=" + safeStoreId + "",
+      "SELECT tax_percent, override_rate_percent FROM tbl_store WHERE id=" + safeStoreId + "",
     );
     const taxVal = tax.length > 0 ? tax[0].tax_percent : 0;
+    const overrideRatePercent =
+      tax.length > 0 && tax[0].override_rate_percent !== undefined && tax[0].override_rate_percent !== null
+        ? parseFloat(tax[0].override_rate_percent)
+        : 10;
 
     let defaultCustSql = "";
     if (!isMaster) {
@@ -895,7 +913,7 @@ router.get("/addonlist/:id", auth, async (req, res) => {
       " SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
     );
 
-    res.status(200).json({ addon_list, cart: cart[0] });
+    res.status(200).json({ addon_list, cart: cart[0], override_rate_percent: overrideRatePercent });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -1030,8 +1048,8 @@ router.post("/addservicelist", auth, async (req, res) => {
 
     const servicelist = await DataInsert(
       "tbl_cart_servicelist",
-      "service_id, service_type_id, service_type_price, service_quntity, service_color, service_name, service_type_name, service_img, no_of_items",
-      `${serviceid}, ${servicetypeid}, ${servicetypeprice}, 1, '#000000', '${safeServiceName}', '${safeServiceTypeName}', '${serviceimage}', ${servicePieces}`,
+      "service_id, service_type_id, service_type_price, original_rate, item_value, service_quntity, service_color, service_name, service_type_name, service_img, no_of_items",
+      `${serviceid}, ${servicetypeid}, ${servicetypeprice}, ${servicetypeprice}, 0, 1, '#000000', '${safeServiceName}', '${safeServiceTypeName}', '${serviceimage}', ${servicePieces}`,
       req.hostname,
       req.protocol,
     );
@@ -1121,8 +1139,8 @@ router.post("/editservicelist", auth, async (req, res) => {
 
     const servicelist = await DataInsert(
       `tbl_cart_servicelist`,
-      `service_id,service_type_id,service_type_price,service_quntity,service_color,service_name,service_type_name,service_img,no_of_items`,
-      `${serviceid},${servicetypeid},${servicetypeprice},1,'#000000','${safeServiceName}','${safeServiceTypeName}','${serviceimage}',${servicePieces}`,
+      `service_id,service_type_id,service_type_price,original_rate,item_value,service_quntity,service_color,service_name,service_type_name,service_img,no_of_items`,
+      `${serviceid},${servicetypeid},${servicetypeprice},${servicetypeprice},0,1,'#000000','${safeServiceName}','${safeServiceTypeName}','${serviceimage}',${servicePieces}`,
       req.hostname,
       req.protocol,
     );
@@ -2066,6 +2084,501 @@ router.get("/clearcart", auth, async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
+});
+
+// Helper to resolve the original catalog rate of a cart/order service line item
+async function resolveOriginalServiceRate(serviceRow) {
+  if (!serviceRow) return 0;
+  const storedOrig = parseFloat(serviceRow.original_rate);
+  if (!isNaN(storedOrig) && storedOrig > 0) {
+    return storedOrig;
+  }
+  try {
+    if (serviceRow.service_id) {
+      const svcRows = await DataFind(
+        `SELECT services_type_id, services_type_price FROM tbl_services WHERE id = '${serviceRow.service_id}' LIMIT 1`,
+      );
+      if (svcRows && svcRows.length > 0) {
+        const types = String(svcRows[0].services_type_id || "")
+          .split(",")
+          .map((t) => t.trim());
+        const prices = String(svcRows[0].services_type_price || "")
+          .split(",")
+          .map((p) => p.trim());
+        const idx = types.indexOf(String(serviceRow.service_type_id || "").trim());
+        if (idx !== -1 && prices[idx] !== undefined) {
+          const catPrice = parseFloat(prices[idx]);
+          if (!isNaN(catPrice) && catPrice >= 0) {
+            return catPrice;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Error resolving original service rate:", e);
+  }
+  return parseFloat(serviceRow.service_type_price) || 0;
+}
+
+// change service value (overrides rate to store's override_rate_percent of value, or resets to original_rate)
+router.post("/changevalue", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const { id: serviceid, item_value, reset } = req.body;
+
+    const service = await DataFind(
+      `SELECT * FROM tbl_cart_servicelist WHERE id=${serviceid}`,
+    );
+    if (!service || service.length === 0) {
+      return res.status(404).json({ error: "Service item not found" });
+    }
+
+    const cartCheck = await DataFind(
+      "SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
+    );
+    const storeId =
+      cartCheck && cartCheck.length > 0 && cartCheck[0].store_id
+        ? cartCheck[0].store_id
+        : store;
+    const storeRows = storeId
+      ? await DataFind(
+          `SELECT override_rate_percent FROM tbl_store WHERE id='${storeId}' LIMIT 1`,
+        )
+      : [];
+    const overridePercent =
+      storeRows &&
+      storeRows.length > 0 &&
+      storeRows[0].override_rate_percent !== undefined &&
+      storeRows[0].override_rate_percent !== null
+        ? parseFloat(storeRows[0].override_rate_percent)
+        : 10;
+
+    const origRate = await resolveOriginalServiceRate(service[0]);
+    const isReset =
+      reset === true ||
+      reset === "true" ||
+      reset === 1 ||
+      reset === "1" ||
+      item_value === "" ||
+      item_value === null ||
+      item_value === undefined ||
+      isNaN(parseFloat(item_value)) ||
+      parseFloat(item_value) <= 0;
+
+    const finalItemValue = isReset
+      ? 0
+      : parseFloat(parseFloat(item_value).toFixed(2));
+    const finalPrice = isReset
+      ? origRate
+      : parseFloat(((finalItemValue * overridePercent) / 100).toFixed(2));
+
+    const amount_diff =
+      parseFloat(finalPrice) * parseFloat(service[0].service_quntity) -
+      parseFloat(service[0].service_type_price) *
+        parseFloat(service[0].service_quntity);
+
+    const updateservice = await DataUpdate(
+      `tbl_cart_servicelist`,
+      `service_type_price=${finalPrice}, item_value=${finalItemValue}, original_rate=${origRate}, brand_id=0, brand_label='', brand_category='', brand_upcharge_percent=0, brand_price_multiplier=1`,
+      `id=${serviceid}`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (updateservice == -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
+
+    const cartupdate = await DataUpdate(
+      `tbl_cart`,
+      `
+        coupon_id='0',
+        coupon_discount='0',
+        sub_total = ROUND(sub_total + ${amount_diff}, 2),
+        tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount) * tax / 100, 2),
+        gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
+        balance = ROUND(gross_total - paid_amount, 2)
+      `,
+      `created_by='${loginas},${id}'`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (cartupdate == -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
+
+    const cart = await DataFind(
+      "SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
+    );
+    const cartservice = await DataFind(
+      "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
+        cart[0].service_list_id +
+        "')",
+    );
+
+    return res.status(200).json({
+      cart: cart[0],
+      cartservice,
+      loginas,
+      override_rate_percent: overridePercent,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// edit mode change service value (overrides rate to store's override_rate_percent of value, or resets to original_rate)
+router.post("/edit_changevalue", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const { id: serviceid, item_value, reset, order_id } = req.body;
+
+    const service = await DataFind(
+      `SELECT * FROM tbl_cart_servicelist WHERE id=${serviceid}`,
+    );
+    if (!service || service.length === 0) {
+      return res.status(404).json({ error: "Service item not found" });
+    }
+
+    const old_order_date = await DataFind(
+      `SELECT * FROM tbl_order WHERE id = '${order_id}'`,
+    );
+    if (!old_order_date || old_order_date.length === 0) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    const store_data = await DataFind(
+      `SELECT * FROM tbl_store WHERE id = '${old_order_date[0].store_id}'`,
+    );
+    const overridePercent =
+      store_data &&
+      store_data.length > 0 &&
+      store_data[0].override_rate_percent !== undefined &&
+      store_data[0].override_rate_percent !== null
+        ? parseFloat(store_data[0].override_rate_percent)
+        : 10;
+
+    const origRate = await resolveOriginalServiceRate(service[0]);
+    const isReset =
+      reset === true ||
+      reset === "true" ||
+      reset === 1 ||
+      reset === "1" ||
+      item_value === "" ||
+      item_value === null ||
+      item_value === undefined ||
+      isNaN(parseFloat(item_value)) ||
+      parseFloat(item_value) <= 0;
+
+    const finalItemValue = isReset
+      ? 0
+      : parseFloat(parseFloat(item_value).toFixed(2));
+    const finalPrice = isReset
+      ? origRate
+      : parseFloat(((finalItemValue * overridePercent) / 100).toFixed(2));
+
+    const amount_diff =
+      parseFloat(finalPrice) * parseFloat(service[0].service_quntity) -
+      parseFloat(service[0].service_type_price) *
+        parseFloat(service[0].service_quntity);
+
+    const updateservice = await DataUpdate(
+      `tbl_cart_servicelist`,
+      `service_type_price = ${finalPrice}, item_value = ${finalItemValue}, original_rate = ${origRate}, brand_id = 0, brand_label = '', brand_category = '', brand_upcharge_percent = 0, brand_price_multiplier = 1`,
+      `id = ${serviceid}`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (updateservice === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
+
+    const shopCommission =
+      store_data && store_data[0] ? store_data[0].shop_commission || 0 : 0;
+
+    const updateOrder = await DataUpdate(
+      `tbl_order`,
+      ` coupon_id = '0',
+        coupon_discount = '0',
+        sub_total = ROUND(sub_total + ${amount_diff}, 2),
+        tax_amount = ROUND((sub_total + addon_price - coupon_discount) * tax / 100, 2),
+        gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
+        balance_amount = ROUND(gross_total - paid_amount, 2),
+        master_comission = ROUND((gross_total * ${shopCommission}) / 100, 2)
+      `,
+      `id = '${order_id}'`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (updateOrder === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
+
+    const order_date = await DataFind(
+      "SELECT * FROM tbl_order WHERE id = '" + order_id + "'",
+    );
+    const cartservice = await DataFind(
+      "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
+        order_date[0].service_list +
+        "')",
+    );
+
+    return res.status(200).json({
+      order_date: order_date[0],
+      cartservice,
+      loginas,
+      override_rate_percent: overridePercent,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// search garment brands by pos_search_key (and brand_label)
+router.get("/search_brands", auth, async (req, res) => {
+  try {
+    const rawQ = String(req.query.q || "").trim();
+    const safeQ = rawQ.replace(/'/g, "''");
+    const normKey = rawQ
+      .toUpperCase()
+      .replace(/[^A-Z0-9\s]/g, "")
+      .trim()
+      .replace(/'/g, "''");
+
+    let sql = "";
+    if (!rawQ) {
+      sql = `SELECT id, brand_label, category, upcharge_percent, price_multiplier, garment_specialty_note, manager_approval, classification_status, pos_search_key 
+             FROM tbl_garment_brands 
+             ORDER BY brand_label ASC 
+             LIMIT 100`;
+    } else {
+      const searchCond = normKey
+        ? `(pos_search_key LIKE '%${normKey}%' OR pos_search_key LIKE '%${safeQ}%' OR brand_label LIKE '%${safeQ}%')`
+        : `(pos_search_key LIKE '%${safeQ}%' OR brand_label LIKE '%${safeQ}%')`;
+      const prefixKey = normKey || safeQ.toUpperCase();
+      sql = `SELECT id, brand_label, category, upcharge_percent, price_multiplier, garment_specialty_note, manager_approval, classification_status, pos_search_key 
+             FROM tbl_garment_brands 
+             WHERE ${searchCond}
+             ORDER BY (CASE WHEN pos_search_key = '${prefixKey}' THEN 0 WHEN pos_search_key LIKE '${prefixKey}%' THEN 1 ELSE 2 END), brand_label ASC 
+             LIMIT 150`;
+    }
+
+    const brands = await DataFind(sql);
+    return res.status(200).json({ success: true, brands: brands || [] });
+  } catch (error) {
+    console.error("Error in /admin/search_brands:", error);
+    return res.status(500).json({ success: false, brands: [], error: error.message });
+  }
+});
+
+// apply or clear garment brand on POS cart item
+router.post("/changebrand", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const { id: serviceid, brand_id } = req.body;
+
+    const service = await DataFind(
+      `SELECT * FROM tbl_cart_servicelist WHERE id=${serviceid}`,
+    );
+    if (!service || service.length === 0) {
+      return res.status(404).json({ error: "Service item not found" });
+    }
+
+    const origRate = await resolveOriginalServiceRate(service[0]);
+    let finalPrice = origRate;
+    let bId = 0;
+    let bLabel = "";
+    let bCategory = "";
+    let bUpcharge = 0;
+    let bMultiplier = 1;
+
+    if (brand_id && parseInt(brand_id) > 0) {
+      const brandRows = await DataFind(
+        `SELECT * FROM tbl_garment_brands WHERE id = ${parseInt(brand_id)} LIMIT 1`,
+      );
+      if (brandRows && brandRows.length > 0) {
+        const b = brandRows[0];
+        bId = parseInt(b.id) || 0;
+        bLabel = String(b.brand_label || "").replace(/'/g, "''");
+        bCategory = String(b.category || "").replace(/'/g, "''");
+        bUpcharge = parseFloat(b.upcharge_percent) || 0;
+        bMultiplier = parseFloat(b.price_multiplier) || 1;
+        finalPrice = parseFloat((origRate * bMultiplier).toFixed(2));
+      }
+    }
+
+    const amount_diff =
+      parseFloat(finalPrice) * parseFloat(service[0].service_quntity) -
+      parseFloat(service[0].service_type_price) *
+        parseFloat(service[0].service_quntity);
+
+    const updateservice = await DataUpdate(
+      `tbl_cart_servicelist`,
+      `service_type_price=${finalPrice}, item_value=0, original_rate=${origRate}, brand_id=${bId}, brand_label='${bLabel}', brand_category='${bCategory}', brand_upcharge_percent=${bUpcharge}, brand_price_multiplier=${bMultiplier}`,
+      `id=${serviceid}`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (updateservice == -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
+
+    const cartupdate = await DataUpdate(
+      `tbl_cart`,
+      `
+        coupon_id='0',
+        coupon_discount='0',
+        sub_total = ROUND(sub_total + ${amount_diff}, 2),
+        tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount) * tax / 100, 2),
+        gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
+        balance = ROUND(gross_total - paid_amount, 2)
+      `,
+      `created_by='${loginas},${id}'`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (cartupdate == -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
+
+    const cart = await DataFind(
+      "SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
+    );
+    const cartservice = await DataFind(
+      "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
+        cart[0].service_list_id +
+        "')",
+    );
+
+    return res.status(200).json({
+      cart: cart[0],
+      cartservice,
+      loginas,
+    });
+  } catch (error) {
+    console.error("Error in /admin/changebrand:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// apply or clear garment brand on Edit Order cart item
+router.post("/edit_changebrand", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const { id: serviceid, brand_id, order_id } = req.body;
+
+    const service = await DataFind(
+      `SELECT * FROM tbl_cart_servicelist WHERE id=${serviceid}`,
+    );
+    if (!service || service.length === 0) {
+      return res.status(404).json({ error: "Service item not found" });
+    }
+
+    const old_order_date = await DataFind(
+      `SELECT * FROM tbl_order WHERE id = '${order_id}'`,
+    );
+    if (!old_order_date || old_order_date.length === 0) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    const origRate = await resolveOriginalServiceRate(service[0]);
+    let finalPrice = origRate;
+    let bId = 0;
+    let bLabel = "";
+    let bCategory = "";
+    let bUpcharge = 0;
+    let bMultiplier = 1;
+
+    if (brand_id && parseInt(brand_id) > 0) {
+      const brandRows = await DataFind(
+        `SELECT * FROM tbl_garment_brands WHERE id = ${parseInt(brand_id)} LIMIT 1`,
+      );
+      if (brandRows && brandRows.length > 0) {
+        const b = brandRows[0];
+        bId = parseInt(b.id) || 0;
+        bLabel = String(b.brand_label || "").replace(/'/g, "''");
+        bCategory = String(b.category || "").replace(/'/g, "''");
+        bUpcharge = parseFloat(b.upcharge_percent) || 0;
+        bMultiplier = parseFloat(b.price_multiplier) || 1;
+        finalPrice = parseFloat((origRate * bMultiplier).toFixed(2));
+      }
+    }
+
+    const amount_diff =
+      parseFloat(finalPrice) * parseFloat(service[0].service_quntity) -
+      parseFloat(service[0].service_type_price) *
+        parseFloat(service[0].service_quntity);
+
+    const updateservice = await DataUpdate(
+      `tbl_cart_servicelist`,
+      `service_type_price = ${finalPrice}, item_value = 0, original_rate = ${origRate}, brand_id = ${bId}, brand_label = '${bLabel}', brand_category = '${bCategory}', brand_upcharge_percent = ${bUpcharge}, brand_price_multiplier = ${bMultiplier}`,
+      `id = ${serviceid}`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (updateservice === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
+
+    const store_data = await DataFind(
+      `SELECT * FROM tbl_store WHERE id = '${old_order_date[0].store_id}'`,
+    );
+    const shopCommission =
+      store_data && store_data[0] ? store_data[0].shop_commission || 0 : 0;
+
+    const updateOrder = await DataUpdate(
+      `tbl_order`,
+      ` coupon_id = '0',
+        coupon_discount = '0',
+        sub_total = ROUND(sub_total + ${amount_diff}, 2),
+        tax_amount = ROUND((sub_total + addon_price - coupon_discount) * tax / 100, 2),
+        gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
+        balance_amount = ROUND(gross_total - paid_amount, 2),
+        master_comission = ROUND((gross_total * ${shopCommission}) / 100, 2)
+      `,
+      `id = '${order_id}'`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (updateOrder === -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.redirect("/valid_license");
+    }
+
+    const order_date = await DataFind(
+      "SELECT * FROM tbl_order WHERE id = '" + order_id + "'",
+    );
+    const cartservice = await DataFind(
+      "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
+        order_date[0].service_list +
+        "')",
+    );
+
+    return res.status(200).json({
+      order_date: order_date[0],
+      cartservice,
+      loginas,
+    });
+  } catch (error) {
+    console.error("Error in /admin/edit_changebrand:", error);
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -3659,6 +4172,119 @@ router.post("/edit_order_direct", auth, async (req, res) => {
   }
 });
 
+async function buildRouteOrderNotificationPayload({
+  orderPrimaryId,
+  orderCode,
+  orderType,
+  orderFullDate,
+  pickupDate,
+  deliveryDate,
+  customerId,
+  storeId,
+  user,
+  accessdata,
+}) {
+  const isRouteOrder =
+    Boolean(orderType) &&
+    orderType !== "Counter & Counter" &&
+    orderType !== "Customer drop-off & Store collection";
+  const isCustomerCreator =
+    String(user?.loginas) === "0" || accessdata?.logas === "custmor";
+  const isStaffCreator =
+    !isCustomerCreator && String(accessdata?.topbardata?.is_staff) !== "0";
+  const shouldAlertAdmin =
+    isRouteOrder && (isCustomerCreator || isStaffCreator);
+
+  const custRows = customerId
+    ? await DataFind(
+        `SELECT first_name, last_name, name FROM tbl_customer WHERE id = '${customerId}' LIMIT 1`,
+      )
+    : [];
+  const custObj = custRows && custRows[0] ? custRows[0] : {};
+  const customerName =
+    custObj.last_name || custObj.first_name
+      ? `${custObj.last_name || ""}, ${custObj.first_name || ""}`
+          .trim()
+          .replace(/^,\s*|,\s*$/g, "")
+      : custObj.name || "Customer";
+
+  const creatorRole = isCustomerCreator
+    ? "Customer"
+    : isStaffCreator
+      ? "Staff"
+      : "Admin";
+  const creatorName = accessdata?.topbardata?.name || creatorRole;
+
+  const hasPickup =
+    orderType === "Route & Route" ||
+    orderType === "Route & Counter" ||
+    orderType === "R & R" ||
+    orderType === "R & C" ||
+    orderType === "Pick-up & Delivery" ||
+    orderType === "Pick-up & Counter" ||
+    orderType === "Store collection & Store delivery";
+  const hasDelivery =
+    orderType === "Route & Route" ||
+    orderType === "Counter & Route" ||
+    orderType === "R & R" ||
+    orderType === "C & R" ||
+    orderType === "Pick-up & Delivery" ||
+    orderType === "Counter & Delivery" ||
+    orderType === "Customer drop-off & Store delivery" ||
+    orderType === "Store collection & Store delivery";
+
+  const fmtDT = (dt) => {
+    if (!dt) return "";
+    const d = new Date(dt);
+    if (isNaN(d.getTime())) return String(dt);
+    return d.toLocaleString("en-US", {
+      month: "short",
+      day: "2-digit",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const scheduleParts = [];
+  if (hasPickup && pickupDate) {
+    scheduleParts.push(`Pick-up: ${fmtDT(pickupDate)}`);
+  }
+  if (hasDelivery && deliveryDate) {
+    scheduleParts.push(`Delivery: ${fmtDT(deliveryDate)}`);
+  }
+  const scheduleSummary = scheduleParts.join(" | ");
+
+  const rawNotificationMsg = isRouteOrder
+    ? `Route Order #${orderCode} (${orderType}) placed by ${creatorRole} (${creatorName}) for ${customerName}${scheduleSummary ? " — " + scheduleSummary : ""}`
+    : `There is a new order registered, please check it orderid ${orderCode}.`;
+
+  return {
+    isRouteOrder,
+    shouldAlertAdmin,
+    creatorRole,
+    creatorName,
+    customerName,
+    scheduleSummary,
+    notificationMsg: rawNotificationMsg.replace(/'/g, "\\'"),
+    rawNotificationMsg,
+    broadcastPayload: {
+      action: "order_created",
+      order_id: orderPrimaryId,
+      order_code: orderCode,
+      store_id: storeId,
+      is_route_order_alert: shouldAlertAdmin,
+      order_type: orderType,
+      placed_by_role: creatorRole,
+      placed_by_name: creatorName,
+      customer_name: customerName,
+      schedule_summary: scheduleSummary,
+      notification_text: rawNotificationMsg,
+      date: orderFullDate,
+    },
+  };
+}
+
 //save order
 router.post("/order", auth, async (req, res) => {
   try {
@@ -3759,9 +4385,18 @@ router.post("/order", auth, async (req, res) => {
       return res.redirect("/valid_license");
     }
 
-    // await DataFind(
-    //   `INSERT INTO tbl_notification (invoice, date, sender, received, notification) VALUE ('${orderid}', '${order_fullDate}', '${accessdata.topbardata.id}', '${cart[0].customer_id}', 'There is a new order registered, please check it orderid ${orderid}. ')`
-    // );
+    const notifMeta = await buildRouteOrderNotificationPayload({
+      orderPrimaryId: order.insertId,
+      orderCode: orderid,
+      orderType: order_type,
+      orderFullDate: order_fullDate,
+      pickupDate: finalPickupDate,
+      deliveryDate: finalDeliveryDate,
+      customerId: cart[0].customer_id,
+      storeId: cart[0].store_id,
+      user: req.user,
+      accessdata,
+    });
 
     const custnofication = await DataInsert(
       `tbl_notification`,
@@ -3776,14 +4411,10 @@ router.post("/order", auth, async (req, res) => {
       return res.redirect("/valid_license");
     }
 
-    // await DataFind(
-    //   `INSERT INTO tbl_notification (invoice, date, sender, received, notification) VALUE ('${orderid}', '${order_fullDate}', '${accessdata.topbardata.id}', '${cart[0].store_id}', 'There is a new order registered, please check it orderid ${orderid}.')`
-    // );
-
     const storenotification = await DataInsert(
       `tbl_notification`,
       `invoice, date, sender, received, notification`,
-      `${orderid}', '${order_fullDate}', '${accessdata.topbardata.id}', '${cart[0].store_id}', 'There is a new order registered, please check it orderid ${orderid}.'`,
+      `'${orderid}', '${order_fullDate}', '${accessdata.topbardata.id}', '${cart[0].store_id}', '${notifMeta.notificationMsg}'`,
       req.hostname,
       req.protocol,
     );
@@ -4133,12 +4764,7 @@ router.post("/order", auth, async (req, res) => {
     }
 
     if (orderdata && orderdata.length > 0) {
-      broadcastCalendarChange({
-        action: "order_created",
-        order_id: orderdata[0].id,
-        order_code: orderdata[0].order_id,
-        store_id: orderdata[0].store_id,
-      });
+      broadcastCalendarChange(notifMeta.broadcastPayload);
     }
 
     res.status(200).json({
@@ -4286,6 +4912,19 @@ router.post("/save_order", auth, async (req, res) => {
       });
     }
 
+    const notifMeta = await buildRouteOrderNotificationPayload({
+      orderPrimaryId: order.insertId,
+      orderCode: orderid,
+      orderType: order_type,
+      orderFullDate: order_fullDate,
+      pickupDate: finalPickupDate,
+      deliveryDate: finalDeliveryDate,
+      customerId,
+      storeId,
+      user: req.user,
+      accessdata,
+    });
+
     const custnotifiction = await DataInsert(
       `tbl_notification`,
       `invoice, date, sender, received, notification`,
@@ -4297,7 +4936,7 @@ router.post("/save_order", auth, async (req, res) => {
     const storenotifiction = await DataInsert(
       `tbl_notification`,
       `invoice, date, sender, received, notification`,
-      `'${orderid}', '${order_fullDate}', '${accessdata.topbardata.id}', '${storeId}', 'There is a new order registered, please check it orderid ${orderid}.'`,
+      `'${orderid}', '${order_fullDate}', '${accessdata.topbardata.id}', '${storeId}', '${notifMeta.notificationMsg}'`,
       req.hostname,
       req.protocol,
     );
@@ -4555,12 +5194,7 @@ router.post("/save_order", auth, async (req, res) => {
       sendNotification(customer_message);
     }
 
-    broadcastCalendarChange({
-      action: "order_created",
-      order_id: order.insertId,
-      order_code: orderid,
-      store_id: cart[0].store_id,
-    });
+    broadcastCalendarChange(notifMeta.broadcastPayload);
 
     return res.status(200).json({
       success: true,
@@ -4851,12 +5485,9 @@ router.get("/notification/data", auth, async (req, res) => {
     const accessdata = await access(req.user);
 
     let scopeConditions = [];
-    if (accessdata.mutibranch === true && accessdata.logas == "master") {
-      // master multi-branch sees all
-    } else if (
-      (accessdata.mutibranch === false && accessdata.logas == "master") ||
-      accessdata.logas == "store"
-    ) {
+    if (accessdata.logas == "master") {
+      // master admin sees all store notifications
+    } else if (accessdata.logas == "store") {
       scopeConditions.push(
         `tbl_notification.received = '${accessdata.topbardata.store_ID}'`,
       );

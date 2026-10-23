@@ -112,16 +112,12 @@
 
 .pos-input-sm {
   height: 32px !important;
-  font-size: 14.5px !important;
+  font-size: 16px !important;
   padding: 3px 8px !important;
   border-radius: 7px !important;
   border: 1px solid #cbd5e1 !important;
   color: #1e293b !important;
   background-color: #ffffff !important;
-}
-
-.pos-input-sm[type="date"] {
-  padding: 2px 6px !important;
 }
 
 .pos-input-sm:focus {
@@ -274,7 +270,7 @@
 .col-xl-5>.pos-card {
   display: flex !important;
   flex-direction: column !important;
-  height: calc(100vh - 72px) !important;
+  height: calc(100vh - 19px) !important;
   min-height: 0 !important;
 }
 
@@ -303,8 +299,8 @@
   overflow-x: hidden !important;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  margin-top: 4px !important;
-  margin-bottom: 5px !important;
+  margin-bottom: 10px !important;
+  margin-top: 10px !important;
 }
 
 .pos-bottom-section {
@@ -321,7 +317,7 @@
 .pos-cart-table thead th {
   background: #f8fafc;
   color: #475569;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -413,6 +409,14 @@
   border: 1px solid #cbd5e1 !important;
   color: #1e293b !important;
   background: #ffffff !important;
+  appearance: textfield !important;
+  -moz-appearance: textfield !important;
+}
+
+.pos-table-input::-webkit-outer-spin-button,
+.pos-table-input::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
 }
 
 .pos-table-input:focus {
@@ -603,8 +607,8 @@
   justify-content: center;
   border-radius: 5px;
   color: #ef4444;
-  background: #fef2f2;
-  border: 1px solid #fee2e2;
+  /* background: #fef2f2; */
+  border: 1px solid #ff6f6f;
   cursor: pointer;
   padding: 0;
   transition: all 0.15s ease;
@@ -630,10 +634,7 @@
    Bottom Area: 2x2 Action Buttons & Compact Totals
    ========================================================================== */
 
-.pos-bottom-section {
-  padding-top: 5px;
-  border-top: 1px solid #e2e8f0;
-}
+
 
 /* 2x2 Action Button Grid */
 .pos-actions-grid {
@@ -682,19 +683,19 @@
   justify-content: space-between;
   align-items: center;
   padding: 1px 0;
-  font-size: 11.5px;
+  font-size: 12px;
   color: #475569;
 }
 
 .pos-total-row .pos-total-label {
-  font-size: 11px;
+  font-size: 12px;
   color: #64748b;
 }
 
 .pos-total-row .pos-total-value {
   font-weight: 600;
   color: #1e293b;
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .pos-total-row-gross {
@@ -704,13 +705,13 @@
 }
 
 .pos-total-row-gross .pos-total-label {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 800;
   color: #0f172a;
 }
 
 .pos-total-row-gross .pos-total-value {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 800;
   color: #0f172a;
 }
@@ -1550,13 +1551,13 @@
   }
   .pos-cust-stat-tile {
     min-height: 32px !important;
-    padding: 2px 4px !important;
+    padding: 10px 10px !important;
   }
   .pos-cust-stat-tile .stat-num {
-    font-size: 10.5px !important;
+    font-size: 18px !important;
   }
   .pos-cust-stat-tile .stat-lbl {
-    font-size: 8px !important;
+    font-size: 10px !important;
   }
   .pos-cust-memo-card {
     padding: 3px 6px !important;
@@ -1564,16 +1565,16 @@
   }
   .pos-cust-memo-card .memo-text {
     max-height: 30px !important;
-    font-size: 10.5px !important;
+    font-size: 11px !important;
   }
   .pos-table-scroll {
     min-height: 45px !important;
-    margin-top: 2px !important;
-    margin-bottom: 4px !important;
+    margin-top: 10px !important;
+    margin-bottom: 10px !important;
   }
   .pos-cart-table thead th {
     padding: 3px 5px !important;
-    font-size: 10px !important;
+    font-size: 12px !important;
   }
   .pos-cart-table tbody td {
     padding: 3px 5px !important;
@@ -1581,10 +1582,10 @@
   }
   .pos-stepper-btn {
     width: 20px !important;
-    height: 20px !important;
+    /* height: 20px !important; */
   }
   .pos-stepper-input {
-    height: 20px !important;
+    /* height: 20px !important; */
     font-size: 10.5px !important;
   }
   .pos-actions-grid {
@@ -1600,18 +1601,18 @@
     font-size: 12px !important;
   }
   .pos-total-row {
-    font-size: 10.5px !important;
+    font-size: 11px !important;
     padding: 0.5px 0 !important;
   }
   .pos-total-row .pos-total-label {
-    font-size: 10px !important;
+    font-size: 12px !important;
   }
   .pos-total-row .pos-total-value {
-    font-size: 10.5px !important;
+    font-size: 12px !important;
   }
   .pos-total-row-gross .pos-total-label,
   .pos-total-row-gross .pos-total-value {
-    font-size: 12px !important;
+    font-size: 14px !important;
   }
 }
 
@@ -1855,21 +1856,22 @@ body.pos-screen-layout .pos-content-body .container-fluid {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
-  padding: 3px 5px;
+  padding: 5px 10px !important;
   display: flex;
   align-items: center;
-  gap: 4px;
+  /* gap: 4px; */
   transition: all 0.15s ease;
   min-height: 36px;
 }
 
 .pos-cust-stat-tile .stat-icon {
-  font-size: 12px;
+  font-size: 20px;
   opacity: 0.85;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-right: 10px;
 }
 
 .pos-cust-stat-tile .stat-meta {
@@ -1879,7 +1881,7 @@ body.pos-screen-layout .pos-content-body .container-fluid {
 }
 
 .pos-cust-stat-tile .stat-num {
-  font-size: 11.5px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.1;
   white-space: nowrap;
@@ -1888,7 +1890,7 @@ body.pos-screen-layout .pos-content-body .container-fluid {
 }
 
 .pos-cust-stat-tile .stat-lbl {
-  font-size: 8.5px;
+  font-size: 10px;
   color: #64748b;
   font-weight: 600;
   white-space: nowrap;
@@ -1938,6 +1940,7 @@ body.pos-screen-layout .pos-content-body .container-fluid {
   border-radius: 6px;
   padding: 4px 8px;
   margin-top: 3px;
+  height: 44px;
 }
 
 .pos-cust-memo-card .memo-title {

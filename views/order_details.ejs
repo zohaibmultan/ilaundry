@@ -309,7 +309,13 @@
                         <%= language.Service_Name %>
                       </th>
                       <th>
+                        <%= language.Brand || 'Brand' %>
+                      </th>
+                      <th>
                         <%= language.Color %>
+                      </th>
+                      <th>
+                        <%= language.Value || 'Value' %>
                       </th>
                       <th>
                         <%= language.Rate %>
@@ -345,7 +351,22 @@
                           </div>
                         </div>
                       </td>
+                      <td>
+                        <% if (data.brand_label && String(data.brand_label).trim()) { %>
+                        <span class="badge bg-primary-subtle text-primary border px-2 py-1">
+                          <i class="fa fa-tag me-1"></i><%= data.brand_label %>
+                        </span>
+                        <% if (data.brand_category) { %>
+                        <div class="text-muted small mt-1"><%= data.brand_category %> (<%= data.brand_price_multiplier || 1 %>x)</div>
+                        <% } %>
+                        <% } else { %>
+                        <span class="text-muted">—</span>
+                        <% } %>
+                      </td>
                       <td><input type="color" class="p-1 w-75" value="<%= data.service_color %>" disabled></td>
+                      <td class="<%= (data.item_value && parseFloat(data.item_value) > 0) ? 'symbol' : 'text-muted' %>">
+                        <%= (data.item_value && parseFloat(data.item_value) > 0) ? parseFloat(data.item_value).toFixed(2) : '—' %>
+                      </td>
                       <td class="symbol">
                         <%= data.service_type_price.toFixed(2) %>
                       </td>
@@ -360,7 +381,7 @@
                     <% }) %>
                     <% } else { %>
                     <tr>
-                      <td colspan="6" class="text-center py-4 text-muted">
+                      <td colspan="8" class="text-center py-4 text-muted">
                         <div class="mb-1"><i class="fa fa-clipboard-list fa-2x text-muted opacity-50"></i></div>
                         <strong>No service items recorded for this order yet.</strong>
                         <div class="small">Items can be added by editing the order.</div>

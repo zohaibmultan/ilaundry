@@ -1,5 +1,6 @@
 {
     "en": {
+        "Route_Calendar": "Calendar",
         "Profile": "Profile",
         "Logout": "Logout",
         "Dashboard": "Dashboard",
@@ -17,7 +18,7 @@
         "Services_List": "Services Items",
         "Services_Types": "Services Types",
         "Addons": "Addons",
-        "Cash_Management": "Payment Methods",
+        "Cash_Management": "Payments",
         "Account_List": "Account List",
         "Transaction_List": "Transaction List",
         "Branch": "Branch",

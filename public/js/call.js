@@ -1072,6 +1072,9 @@
          success: function (res) {
             $('#POS_addons').html('')
             $('#POS_tax_percent').html('<p class="mb-0 mx-2 " id="POS_tax_percent"><small> Tax (' + res.cart.tax + ' %) : </small></p>')
+            if (res.override_rate_percent !== undefined && res.override_rate_percent !== null) {
+               $('#pos_override_rate_percent').val(res.override_rate_percent);
+            }
 
             if (res.addon_list.length < 1) {
                $('#POS_addons').html('<div class="p-2 center"><div class=""><div class="card-body p-2 "> <h3 class="text-center text-danger">No addon List Found</h3> </div></div></div>')
@@ -1346,10 +1349,12 @@
    });
 
    function renderCartRowHTML(value, isEdit, orderId, loginas) {
-      var isRateDisabled = (loginas === 0);
+      var isRateDisabled = (loginas === 0 || loginas === '0');
       var rateReadonly = isRateDisabled ? 'readonly' : '';
       var rateDisabledAttr = isRateDisabled ? 'disabled' : '';
       var rateStepperClass = isRateDisabled ? 'pos-stepper is-readonly' : 'pos-stepper';
+      var valueId = isEdit ? 'edit_POSservice_item_value' : 'POSservice_item_value';
+      var resetClass = isEdit ? 'edit_reset_service_rate' : 'reset_service_rate';
       var priceId = isEdit ? 'edit_POSservice_type_price' : 'POSservice_type_price';
       var qtyId = isEdit ? 'edit_POSservice_type_quntity' : 'POSservice_type_quntity';
       var delId = isEdit ? 'edit_remove_service_list' : 'remove_service_list';
@@ -1357,6 +1362,19 @@
       var pcsBadge = (value.no_of_items && parseInt(value.no_of_items) > 1)
          ? (' <span class="badge bg-secondary text-white ms-1" style="font-size:0.75rem;">' + value.no_of_items + ' Pcs</span>')
          : '';
+      var itemValDisplay = (value.item_value && parseFloat(value.item_value) > 0) ? value.item_value : '';
+      var origRate = (value.original_rate && parseFloat(value.original_rate) > 0) ? value.original_rate : value.service_type_price;
+      var resetBtnHtml = isRateDisabled ? '' : (
+         '<button type="button" class="btn btn-outline-secondary p-0 d-inline-flex align-items-center justify-content-center ' + resetClass + '" style="width: 26px; height: 30px;" data-id="' + value.id + '" data-original-rate="' + origRate + '"' + orderAttr + ' title="Reset to original rate (' + parseFloat(origRate || 0).toFixed(2) + ')">' +
+         '<i class="fa fa-undo" style="font-size: 11px;"></i>' +
+         '</button>'
+      );
+      var brandLabel = (value.brand_label && String(value.brand_label).trim()) ? String(value.brand_label).trim() : '';
+      var brandBtnClass = brandLabel ? 'btn-primary' : 'btn-outline-secondary';
+      var brandBtnText = brandLabel || 'Brand';
+      var brandTitle = brandLabel
+         ? (brandLabel + ' (' + (value.brand_category || '') + ' +' + (value.brand_upcharge_percent || 0) + '% / ' + (value.brand_price_multiplier || 1) + 'x)')
+         : 'Select Brand';
 
       return '<tr>' +
          '<td>' +
@@ -1366,7 +1384,18 @@
          '</div>' +
          '</td>' +
          '<td class="text-center">' +
+         '<button type="button" class="btn btn-xs ' + brandBtnClass + ' px-2 py-1 text-truncate pos-btn-brand" style="max-width: 85px; font-size: 11px;" data-id="' + value.id + '" data-brand-id="' + (value.brand_id || 0) + '" data-brand-label="' + brandLabel.replace(/"/g, '&quot;') + '" data-original-rate="' + origRate + '"' + orderAttr + ' title="' + brandTitle.replace(/"/g, '&quot;') + '" ' + rateDisabledAttr + '>' +
+         '<i class="fa fa-tag me-1"></i>' + brandBtnText +
+         '</button>' +
+         '</td>' +
+         '<td class="text-center">' +
          '<input type="color" class="pos-color-circle" value="' + (value.service_color || '#000000') + '" id="POS_service_color" data-id="' + value.id + '">' +
+         '</td>' +
+         '<td class="text-center">' +
+         '<div class="d-inline-flex align-items-center justify-content-center gap-1">' +
+         '<input type="number" class="form-control pos-table-input" style="width: 72px; height: 30px !important;" value="' + itemValDisplay + '" placeholder="0.00" name="item_value" id="' + valueId + '" data-id="' + value.id + '" data-original-rate="' + origRate + '"' + orderAttr + ' min="0" step="0.25" ' + rateReadonly + '>' +
+         resetBtnHtml +
+         '</div>' +
          '</td>' +
          '<td class="text-center">' +
          '<div class="' + rateStepperClass + ' pos-stepper-rate">' +
@@ -2199,6 +2228,484 @@
       }
 
       $input.trigger("change");
+   });
+
+   // =========================================================================
+   // POS Garment Brand Lookup & Multi-Camera Stream Modal
+   // =========================================================================
+   var posBrandCameraStream = null;
+   var posBrandCameraFrozen = false;
+   var posBrandSearchDebounce = null;
+   var posBrandCurrentList = [];
+
+   function stopPosBrandCamera() {
+      if (posBrandCameraStream) {
+         try {
+            posBrandCameraStream.getTracks().forEach(function (track) {
+               track.stop();
+            });
+         } catch (e) {}
+         posBrandCameraStream = null;
+      }
+      var videoEl = document.getElementById('pos_brand_camera_video');
+      if (videoEl) {
+         videoEl.srcObject = null;
+      }
+      posBrandCameraFrozen = false;
+      $('#pos_brand_camera_canvas').addClass('d-none');
+      $('#btn_pos_freeze_camera').removeClass('btn-primary').addClass('btn-outline-primary')
+         .html('<i class="fa fa-snowflake me-1"></i><span>Freeze Frame</span>');
+   }
+
+   async function populatePosCameraDevices(preferredId) {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+         $('#pos_brand_camera_select').html('<option value="">Camera API not supported</option>');
+         return [];
+      }
+      try {
+         var devices = await navigator.mediaDevices.enumerateDevices();
+         var videoDevices = devices.filter(function (d) { return d.kind === 'videoinput'; });
+         var $select = $('#pos_brand_camera_select');
+         $select.empty();
+
+         if (videoDevices.length === 0) {
+            $select.append('<option value="">No camera detected</option>');
+            return [];
+         }
+
+         var savedId = preferredId || localStorage.getItem('pos_preferred_camera_id') || '';
+         videoDevices.forEach(function (dev, idx) {
+            var label = dev.label || ('Camera ' + (idx + 1));
+            var isSelected = (savedId && dev.deviceId === savedId) || (!savedId && idx === 0);
+            $select.append(
+               $('<option>', {
+                  value: dev.deviceId,
+                  text: label,
+                  selected: isSelected
+               })
+            );
+         });
+         return videoDevices;
+      } catch (err) {
+         $('#pos_brand_camera_select').html('<option value="">Unable to list cameras</option>');
+         return [];
+      }
+   }
+
+   async function startPosBrandCamera(specificDeviceId) {
+      stopPosBrandCamera();
+      var $status = $('#pos_brand_camera_status');
+      var $statusText = $('#pos_brand_camera_status_text');
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+         $status.removeClass('d-none');
+         $statusText.text('Camera streaming is not supported in this browser.');
+         return;
+      }
+
+      $status.removeClass('d-none');
+      $statusText.text('Starting camera stream...');
+
+      var targetDeviceId = specificDeviceId !== undefined
+         ? specificDeviceId
+         : ($('#pos_brand_camera_select').val() || localStorage.getItem('pos_preferred_camera_id') || '');
+
+      var constraints = {
+         audio: false,
+         video: targetDeviceId ? { deviceId: { exact: targetDeviceId } } : { width: { ideal: 1280 }, height: { ideal: 720 } }
+      };
+
+      try {
+         posBrandCameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (firstErr) {
+         // Fallback to default camera if preferred deviceId is disconnected
+         try {
+            posBrandCameraStream = await navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+         } catch (fallbackErr) {
+            $status.removeClass('d-none');
+            $statusText.text('No camera accessible (' + (fallbackErr.message || 'Check camera connection/permissions') + ')');
+            await populatePosCameraDevices();
+            return;
+         }
+      }
+
+      var videoEl = document.getElementById('pos_brand_camera_video');
+      if (videoEl && posBrandCameraStream) {
+         videoEl.srcObject = posBrandCameraStream;
+         try {
+            await videoEl.play();
+         } catch (e) {}
+         $status.addClass('d-none');
+
+         var activeTrack = posBrandCameraStream.getVideoTracks()[0];
+         var activeDeviceId = (activeTrack && activeTrack.getSettings) ? (activeTrack.getSettings().deviceId || targetDeviceId) : targetDeviceId;
+         if (activeDeviceId) {
+            localStorage.setItem('pos_preferred_camera_id', activeDeviceId);
+         }
+         await populatePosCameraDevices(activeDeviceId);
+      }
+   }
+
+   function getBrandCategoryBadgeClass(cat) {
+      var c = String(cat || '').toUpperCase();
+      if (c === 'BESPOKE') return 'bg-danger text-white';
+      if (c === 'HIGH-END') return 'bg-warning text-dark';
+      if (c === 'DESIGNER') return 'bg-info text-dark';
+      return 'bg-secondary text-white';
+   }
+
+   function updatePosBrandPreview() {
+      var selectedId = parseInt($('#pos_brand_modal_selected_id').val()) || 0;
+      var origRate = parseFloat($('#pos_brand_modal_original_rate').val()) || 0;
+      var brandObj = posBrandCurrentList.find(function (b) { return parseInt(b.id) === selectedId; });
+
+      if (!brandObj) {
+         $('#pos_brand_preview_text').text('Select a brand from the list above to preview rate override.');
+         $('#pos_brand_preview_rate').text('');
+         return;
+      }
+
+      var mult = parseFloat(brandObj.price_multiplier) || 1;
+      var upcharge = parseFloat(brandObj.upcharge_percent) || 0;
+      var newRate = (origRate * mult).toFixed(2);
+      $('#pos_brand_preview_text').html(
+         'Selected: <strong>' + brandObj.brand_label + '</strong> <span class="badge ' + getBrandCategoryBadgeClass(brandObj.category) + ' ms-1">' + brandObj.category + '</span> (+' + upcharge + '% / ' + mult + 'x)'
+      );
+      $('#pos_brand_preview_rate').html(
+         'Orig: ' + origRate.toFixed(2) + ' &rarr; <span class="text-primary">New Rate: ' + newRate + '</span>'
+      );
+   }
+
+   function renderPosBrandRows(brands) {
+      posBrandCurrentList = brands || [];
+      var $tbody = $('#pos_brand_results_tbody');
+      $tbody.empty();
+
+      if (!posBrandCurrentList.length) {
+         $tbody.html('<tr><td colspan="5" class="text-center py-4 text-muted">No matching brands found in POS Search Key.</td></tr>');
+         return;
+      }
+
+      var selectedId = parseInt($('#pos_brand_modal_selected_id').val()) || 0;
+      posBrandCurrentList.forEach(function (b) {
+         var isChecked = (parseInt(b.id) === selectedId);
+         var badgeClass = getBrandCategoryBadgeClass(b.category);
+         var mgrBadge = (String(b.manager_approval).toUpperCase() === 'YES')
+            ? '<span class="badge bg-danger-subtle text-danger ms-1" style="font-size:10px;">Mgr Approval</span>'
+            : '';
+         var rowHtml = '<tr class="pos-brand-select-row ' + (isChecked ? 'table-primary' : '') + '" style="cursor:pointer;" data-brand-id="' + b.id + '">' +
+            '<td class="text-center">' +
+            '<input type="radio" class="form-check-input pos-brand-radio" name="pos_brand_radio" value="' + b.id + '" ' + (isChecked ? 'checked' : '') + '>' +
+            '</td>' +
+            '<td>' +
+            '<div class="fw-bold text-dark fs-13">' + b.brand_label + mgrBadge + '</div>' +
+            '<div class="text-muted" style="font-size:11px;">Key: <code>' + (b.pos_search_key || '') + '</code>' + (b.garment_specialty_note ? (' &bull; ' + b.garment_specialty_note) : '') + '</div>' +
+            '</td>' +
+            '<td class="text-center"><span class="badge ' + badgeClass + '">' + (b.category || 'REGULAR') + '</span></td>' +
+            '<td class="text-center fw-bold text-primary">+' + (parseFloat(b.upcharge_percent) || 0) + '%</td>' +
+            '<td class="text-center fw-bold">' + (parseFloat(b.price_multiplier) || 1).toFixed(2) + 'x</td>' +
+            '</tr>';
+         $tbody.append(rowHtml);
+      });
+      updatePosBrandPreview();
+   }
+
+   function searchPosBrands(query) {
+      var baseUrl = window.location.origin;
+      $.ajax({
+         type: 'GET',
+         url: baseUrl + '/admin/search_brands',
+         data: { q: query || '' },
+         dataType: 'json',
+         success: function (res) {
+            renderPosBrandRows((res && res.brands) ? res.brands : []);
+         },
+         error: function () {
+            $('#pos_brand_results_tbody').html('<tr><td colspan="5" class="text-center py-4 text-danger">Failed to load brands.</td></tr>');
+         }
+      });
+   }
+
+   $(document).on('click', '.pos-btn-brand', function () {
+      var serviceId = $(this).attr('data-id');
+      var orderId = $(this).attr('data-order_id') || $('#pos_order_id').val() || $('#order_id').val() || $('input[name=order_id]').val() || '';
+      var isEdit = ($(this).attr('data-order_id') || $('#pos_mode').val() === 'edit') ? '1' : '0';
+      var origRate = parseFloat($(this).attr('data-original-rate')) || 0;
+      var currentBrandId = parseInt($(this).attr('data-brand-id')) || 0;
+
+      $('#pos_brand_modal_service_id').val(serviceId);
+      $('#pos_brand_modal_order_id').val(orderId);
+      $('#pos_brand_modal_is_edit').val(isEdit);
+      $('#pos_brand_modal_original_rate').val(origRate);
+      $('#pos_brand_modal_selected_id').val(currentBrandId);
+      $('#pos_brand_search_input').val('');
+
+      $('#pos_brand_modal').modal('show');
+      searchPosBrands('');
+      startPosBrandCamera();
+      setTimeout(function () {
+         $('#pos_brand_search_input').trigger('focus');
+      }, 300);
+   });
+
+   $('#pos_brand_modal').on('hidden.bs.modal', function () {
+      stopPosBrandCamera();
+   });
+
+   $(document).on('change', '#pos_brand_camera_select', function () {
+      var devId = $(this).val();
+      if (devId) {
+         localStorage.setItem('pos_preferred_camera_id', devId);
+      }
+      startPosBrandCamera(devId);
+   });
+
+   $(document).on('click', '#btn_pos_refresh_cameras', function () {
+      startPosBrandCamera($('#pos_brand_camera_select').val());
+   });
+
+   $(document).on('click', '#btn_pos_freeze_camera', function () {
+      var videoEl = document.getElementById('pos_brand_camera_video');
+      var canvasEl = document.getElementById('pos_brand_camera_canvas');
+      if (!videoEl || !canvasEl) return;
+
+      if (!posBrandCameraFrozen) {
+         canvasEl.width = videoEl.videoWidth || 640;
+         canvasEl.height = videoEl.videoHeight || 480;
+         var ctx = canvasEl.getContext('2d');
+         if (ctx) {
+            ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+         }
+         $('#pos_brand_camera_canvas').removeClass('d-none');
+         posBrandCameraFrozen = true;
+         $(this).removeClass('btn-outline-primary').addClass('btn-primary')
+            .html('<i class="fa fa-play me-1"></i><span>Unfreeze Frame</span>');
+      } else {
+         $('#pos_brand_camera_canvas').addClass('d-none');
+         posBrandCameraFrozen = false;
+         $(this).removeClass('btn-primary').addClass('btn-outline-primary')
+            .html('<i class="fa fa-snowflake me-1"></i><span>Freeze Frame</span>');
+      }
+   });
+
+   $(document).on('click', '#btn_pos_toggle_camera', function () {
+      if (posBrandCameraStream) {
+         stopPosBrandCamera();
+         $('#pos_brand_camera_status').removeClass('d-none');
+         $('#pos_brand_camera_status_text').text('Camera paused. Click power button to resume.');
+      } else {
+         startPosBrandCamera($('#pos_brand_camera_select').val());
+      }
+   });
+
+   $(document).on('input keyup', '#pos_brand_search_input', function () {
+      var q = $(this).val();
+      if (posBrandSearchDebounce) clearTimeout(posBrandSearchDebounce);
+      posBrandSearchDebounce = setTimeout(function () {
+         searchPosBrands(q);
+      }, 200);
+   });
+
+   $(document).on('click', '#btn_pos_brand_search_clear', function () {
+      $('#pos_brand_search_input').val('').trigger('input').trigger('focus');
+   });
+
+   $(document).on('click', '.pos-brand-select-row', function () {
+      var bId = $(this).attr('data-brand-id');
+      $('.pos-brand-select-row').removeClass('table-primary');
+      $(this).addClass('table-primary');
+      $(this).find('.pos-brand-radio').prop('checked', true);
+      $('#pos_brand_modal_selected_id').val(bId);
+      updatePosBrandPreview();
+   });
+
+   function applyPosBrandSelection(brandIdToApply) {
+      var baseUrl = window.location.origin;
+      var serviceId = $('#pos_brand_modal_service_id').val();
+      var orderId = $('#pos_brand_modal_order_id').val();
+      var isEdit = $('#pos_brand_modal_is_edit').val() === '1';
+
+      if (!serviceId) return;
+
+      var endpoint = isEdit ? (baseUrl + '/admin/edit_changebrand') : (baseUrl + '/admin/changebrand');
+      var payload = isEdit
+         ? { id: serviceId, brand_id: brandIdToApply, order_id: orderId }
+         : { id: serviceId, brand_id: brandIdToApply };
+
+      $.ajax({
+         type: 'POST',
+         url: endpoint,
+         data: payload,
+         dataType: 'json',
+         success: function (res) {
+            if (isEdit) {
+               if (res == 400) {
+                  toastr.error('gross_total Less-than paid_amount');
+                  return;
+               }
+               $('#POS_paid_amount').html(res.order_date.paid_amount.toFixed(2));
+               $('#POS_gross_total').html(res.order_date.gross_total.toFixed(2));
+               $('#POS_sub_total').html(res.order_date.sub_total.toFixed(2));
+               $('#POS_addon_total').html(res.order_date.addon_price.toFixed(2));
+               $('#POS_coupon_total').html(res.order_date.coupon_discount.toFixed(2));
+               $('#POS_tax_total').html(res.order_date.tax_amount.toFixed(2));
+               $('#POS_service_added_list').html(' ');
+               $.each(res.cartservice, function (index, value) {
+                  $('#POS_service_added_list').append(renderCartRowHTML(value, true, res.order_date.id, res.loginas));
+               });
+            } else {
+               $('#POS_gross_total').html(res.cart.gross_total.toFixed(2));
+               $('#POS_sub_total').html(res.cart.sub_total.toFixed(2));
+               $('#POS_addon_total').html(res.cart.addon_price.toFixed(2));
+               $('#POS_coupon_total').html(res.cart.coupon_discount.toFixed(2));
+               $('#POS_tax_total').html(res.cart.tax_amount.toFixed(2));
+               $('#POS_service_added_list').html(' ');
+               $.each(res.cartservice, function (index, value) {
+                  $('#POS_service_added_list').append(renderCartRowHTML(value, false, null, res.loginas));
+               });
+            }
+            if (res.loginas == 0) {
+               $('input[name=service_type_price]').prop('readonly', true);
+            }
+            poscurrency();
+            $('#pos_brand_modal').modal('hide');
+         }
+      });
+   }
+
+   $(document).on('click', '#btn_pos_apply_brand', function () {
+      var selectedBrandId = parseInt($('#pos_brand_modal_selected_id').val()) || 0;
+      if (!selectedBrandId) {
+         toastr.warning('Please select a brand from the list first.');
+         return;
+      }
+      applyPosBrandSelection(selectedBrandId);
+   });
+
+   $(document).on('click', '#btn_pos_clear_brand', function () {
+      applyPosBrandSelection(0);
+   });
+
+   $(document).on("change", "#POSservice_item_value", function () {
+      var baseUrl = window.location.origin;
+      var item_value = $(this).val();
+      var id = $(this).attr('data-id');
+
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/changevalue",
+         data: { id: id, item_value: item_value },
+         dataType: 'json',
+         success: function (res) {
+            $('#POS_gross_total').html(res.cart.gross_total.toFixed(2));
+            $('#POS_sub_total').html(res.cart.sub_total.toFixed(2));
+            $('#POS_addon_total').html(res.cart.addon_price.toFixed(2));
+            $('#POS_coupon_total').html(res.cart.coupon_discount.toFixed(2));
+            $('#POS_tax_total').html(res.cart.tax_amount.toFixed(2));
+            $('#POS_service_added_list').html(' ');
+            $.each(res.cartservice, function (index, value) {
+               $('#POS_service_added_list').append(renderCartRowHTML(value, false, null, res.loginas));
+            });
+            if (res.loginas == 0) {
+               $('input[name=service_type_price]').prop('readonly', true);
+            }
+            poscurrency();
+         }
+      });
+   });
+
+   $(document).on("click", ".reset_service_rate", function () {
+      var baseUrl = window.location.origin;
+      var id = $(this).attr('data-id');
+
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/changevalue",
+         data: { id: id, item_value: 0, reset: true },
+         dataType: 'json',
+         success: function (res) {
+            $('#POS_gross_total').html(res.cart.gross_total.toFixed(2));
+            $('#POS_sub_total').html(res.cart.sub_total.toFixed(2));
+            $('#POS_addon_total').html(res.cart.addon_price.toFixed(2));
+            $('#POS_coupon_total').html(res.cart.coupon_discount.toFixed(2));
+            $('#POS_tax_total').html(res.cart.tax_amount.toFixed(2));
+            $('#POS_service_added_list').html(' ');
+            $.each(res.cartservice, function (index, value) {
+               $('#POS_service_added_list').append(renderCartRowHTML(value, false, null, res.loginas));
+            });
+            if (res.loginas == 0) {
+               $('input[name=service_type_price]').prop('readonly', true);
+            }
+            poscurrency();
+         }
+      });
+   });
+
+   $(document).on("change", "#edit_POSservice_item_value", function () {
+      var baseUrl = window.location.origin;
+      var item_value = $(this).val();
+      var id = $(this).attr('data-id');
+      var order_id = $(this).attr('data-order_id') || $('#pos_order_id').val() || $('#order_id').val() || $('input[name=order_id]').val();
+
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/edit_changevalue",
+         data: { id: id, item_value: item_value, order_id: order_id },
+         dataType: 'json',
+         success: function (res) {
+            if (res == 400) {
+               toastr.error('gross_total Less-than paid_amount');
+               return;
+            }
+            $('#POS_paid_amount').html(res.order_date.paid_amount.toFixed(2));
+            $('#POS_gross_total').html(res.order_date.gross_total.toFixed(2));
+            $('#POS_sub_total').html(res.order_date.sub_total.toFixed(2));
+            $('#POS_addon_total').html(res.order_date.addon_price.toFixed(2));
+            $('#POS_coupon_total').html(res.order_date.coupon_discount.toFixed(2));
+            $('#POS_tax_total').html(res.order_date.tax_amount.toFixed(2));
+            $('#POS_service_added_list').html(' ');
+            $.each(res.cartservice, function (index, value) {
+               $('#POS_service_added_list').append(renderCartRowHTML(value, true, res.order_date.id, res.loginas));
+            });
+            if (res.loginas == 0) {
+               $('input[name=service_type_price]').prop('readonly', true);
+            }
+            poscurrency();
+         }
+      });
+   });
+
+   $(document).on("click", ".edit_reset_service_rate", function () {
+      var baseUrl = window.location.origin;
+      var id = $(this).attr('data-id');
+      var order_id = $(this).attr('data-order_id') || $('#pos_order_id').val() || $('#order_id').val() || $('input[name=order_id]').val();
+
+      $.ajax({
+         type: 'post',
+         url: baseUrl + "/admin/edit_changevalue",
+         data: { id: id, item_value: 0, reset: true, order_id: order_id },
+         dataType: 'json',
+         success: function (res) {
+            if (res == 400) {
+               toastr.error('gross_total Less-than paid_amount');
+               return;
+            }
+            $('#POS_paid_amount').html(res.order_date.paid_amount.toFixed(2));
+            $('#POS_gross_total').html(res.order_date.gross_total.toFixed(2));
+            $('#POS_sub_total').html(res.order_date.sub_total.toFixed(2));
+            $('#POS_addon_total').html(res.order_date.addon_price.toFixed(2));
+            $('#POS_coupon_total').html(res.order_date.coupon_discount.toFixed(2));
+            $('#POS_tax_total').html(res.order_date.tax_amount.toFixed(2));
+            $('#POS_service_added_list').html(' ');
+            $.each(res.cartservice, function (index, value) {
+               $('#POS_service_added_list').append(renderCartRowHTML(value, true, res.order_date.id, res.loginas));
+            });
+            if (res.loginas == 0) {
+               $('input[name=service_type_price]').prop('readonly', true);
+            }
+            poscurrency();
+         }
+      });
    });
 
    $(document).on("change", "#POSservice_type_price", function () {
