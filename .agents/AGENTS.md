@@ -73,10 +73,11 @@ This document establishes the universal rules and constraints for the **iCleaner
 ### F. Pure Bootstrap UI Standard & Custom CSS Prohibition
 1. **Always Use Bootstrap Components**:
    * All UI layouts, forms, buttons, cards, modals, tables, badges, and alerts must be constructed exclusively with standard Bootstrap components and classes.
-2. **Custom CSS Restriction (Two Established Files Only)**:
-   * The application has exactly **two** maintained CSS files for custom styling:
+2. **Custom CSS Restriction (Three Established Files Only)**:
+   * The application has **three** maintained CSS files for custom styling:
      * `public/css/liquid-glass-theme.css` — Global glassmorphism design system, dark theme adaptations, component-level styling (header, notifications, reports, calendar icons, frosted menus).
      * `public/css/server-datatable.css` — Server-side DataTables unified design system (badge pills, action buttons, pagination).
+     * `public/css/pos-compact.css` — POS compact cart layout, input sizing, and numeric spin-arrow suppression (`.no-spin-arrows`).
    * ❌ Do **not** create any additional `.css` files.
    * ❌ Do **not** write `<style>` blocks in EJS view files.
    * ❌ Do **not** use inline `style="..."` attributes for layout, colors, margins, or padding (minimal exceptions allowed for fixed-dimension elements like icons or avatars where Bootstrap utilities are insufficient).
@@ -243,12 +244,12 @@ This document establishes the universal rules and constraints for the **iCleaner
 1. **Parity Between Orders Page & Dashboard Tables**:
    * The Recent Orders list on both the Main Dashboard (`views/index.ejs`) and Staff Dashboard (`views/staff_dashboard.ejs`) must maintain 100% visual, structural, and functional parity with the main Orders list (`views/order.ejs`).
 2. **Standard 7-Column Layout**:
-   * **Col 1 (Order Info)**: Order ID link (`/order/view/:id`), Order Type badge (`badge bg-light text-dark border py-1 px-2`), Order Date, and dynamic Pick-up/Delivery Date.
-   * **Col 2 (Customer)**: Customer Name (`Last Name, First Name` or Walk In Customer) and customer phone number with telephone icon.
-   * **Col 3 (Order Amount)**: Gross total formatted to 2 decimals with `.symbol font-w600`.
-   * **Col 4 (Status)**: Status pill `.badge-status-pill ${data.statusClass}` (`status-pending`, `status-processing`, `status-ready`, `status-delivered`, `status-returned`, `status-cancelled`).
+   * **Col 1 (Order Number)**: Order ID link (`/order/view/:id`) and Order Type badge (`badge bg-light text-dark border py-1 px-2`).
+   * **Col 2 (Order Date)**: Formatted Order Date and dynamic Pick-up/Delivery schedule dates.
+   * **Col 3 (Customer Name)**: Customer Name (`Last Name, First Name` or Walk In Customer) and customer phone number with telephone icon.
+   * **Col 4 (Order Amount)**: Gross total formatted to 2 decimals with `.symbol font-w600`.
    * **Col 5 (Payment)**: Secondary breakdown (`Total: gross | Paid: paid`), plus interactive `Add Payment` button calling `open_patment_model(id)` if balance > 0, or `Fully Paid` badge if settled.
-   * **Col 6 (Store Name)**: Store badge (`badge bg-light text-dark fw-bold border`), visible for master admin when `mutibranch === true`.
+   * **Col 6 (Status)**: Status pill `.badge-status-pill ${data.statusClass}` (`status-pending`, `status-processing`, `status-ready`, `status-delivered`, `status-returned`, `status-cancelled`) plus `0 Items (Pending Intake)` badge when applicable.
    * **Col 7 (Actions)**: Standard `.server-dt-actions` with `.btn-dt-action` toolbar:
      - 👁️ View (`.btn-view` to `/order/view/:id`)
      - ✏️ Edit (`.btn-edit` to `/admin/edit/:id` if `canEdit` and not cancelled)
@@ -317,7 +318,7 @@ This document establishes the universal rules and constraints for the **iCleaner
 1. **Default Ordering Protocol**:
    - All order tables—including Server-Side DataTables (`/order/list`, `/order/list/data`), Dashboard Recent Orders (`views/index.ejs`, `views/staff_dashboard.ejs`), and Customer Portal order views—must sort with the most recent orders on top by default:
      ```sql
-     ORDER BY tbl_order.order_date DESC, tbl_order.id DESC
+     ORDER BY tbl_order.id DESC, tbl_order.order_id DESC
      ```
 2. **Consistent User Experience**:
    - Never sort order lists in ascending order by default, as cashiers and store managers expect newly created orders to appear immediately at row 1.
@@ -341,16 +342,22 @@ This document establishes the universal rules and constraints for the **iCleaner
 1. **Order Type Filtering Rules**:
    - **Counter & Counter (`C & C`)**: Strictly excluded from the Route Calendar (no route events).
    - **Route & Route (`R & R`)**: Generates two distinct calendar events:
-     - **Pick-up Event**: Amber (`#f59e0b`, `fa-box`).
-     - **Delivery Event**: Primary Blue (`#0081EE`, `fa-truck`).
+     - **Pick-up Event**: Pending in Orange (`#ea580c`, `fa-box`); Completed in Green (`#16a34a`).
+     - **Delivery Event**: Pending in Blue (`#2563eb`, `fa-truck`); Completed in Green (`#16a34a`).
    - **Counter & Route (`C & R`)**: Generates only the Route Delivery event.
    - **Route & Counter (`R & C`)**: Generates only the Route Pick-up event.
-2. **Pick-up Before Delivery Gating Invariant**:
+2. **Compact Time-Badge Display & Same-Date Chronological Sorting**:
+   - Calendar day cells render each event as a compact single-line pill badge displaying only the icon, formatted time (`hh:mm A`), and completion checkmark (`✓`), with `eventLimit: 6` (`+N more` popover).
+   - Events on the same date are sorted chronologically by time (`sortTime` in minutes from midnight, then `eventTypeRank`, then `title`).
+3. **Public Guest Access & URL Store Selector (`/order/calendar/:storeId`)**:
+   - `/order/calendar` and `/order/calendar/:storeId` use `optionalAuth` middleware.
+   - Unauthenticated visitors see a standalone guest view with a store selector dropdown that navigates directly to `/order/calendar/<id>`, and read-only event inspection modals (status toggle controls hidden).
+4. **Pick-up Before Delivery Gating Invariant**:
    - For `Route & Route` orders, the delivery switch/status is strictly locked until pick-up is confirmed (`is_picked_up === '1'`).
    - If an existing pick-up is unchecked, the backend cascades a reset to delivery (`is_delivered = '0'`) to preserve logical state consistency.
-3. **Real-Time Multi-Client Synchronization (SSE)**:
+5. **Real-Time Multi-Client Synchronization (SSE) & Route Order Admin Alerts**:
    - Calendar events, status toggles, and dispatch actions must broadcast updates via Server-Sent Events (`/order/calendar/stream`).
-   - Connected calendar clients and order details pages must listen to this stream and update event states instantly without requiring manual page reloads.
+   - When a customer or staff member places an order with a pick-up or delivery route (`Pick-up & Delivery`, `Pick-up & Counter`, `Counter & Delivery`), the backend inserts an alert in `tbl_notification` and broadcasts `new_route_order` via SSE so Admin and Store Manager sessions receive an immediate clickable toast alert, Web Audio chime, and live topbar bell badge increment.
 
 ### AA. Order Details Lifecycle Tracking & Complete Timeline Invariant
 1. **Dispatch & Route Tracking Cards**:
@@ -367,4 +374,28 @@ This document establishes the universal rules and constraints for the **iCleaner
      5. **Payment Milestones**: Chronological breakdown of each recorded payment (amount, date, account).
 3. **Optimistic AJAX & Dynamic DOM Updates**:
    * Toggling pick-up or delivery must execute an AJAX POST to `/order/calendar/toggle-status`, update status badges and timeline milestone dots dynamically without a full page reload, and display toast feedback.
+
+### AB. POS Declared Garment Value & Store Override Rate (%) Invariant
+1. **Store-Level Override Rate Configuration**:
+   * `tbl_store.override_rate_percent` (`DECIMAL(5,2) NOT NULL DEFAULT 10.00`) defines the percentage of a garment's declared value charged as the cleaning rate (configurable in Store Settings, Master Store Settings, and Add Store).
+2. **POS & Order Edit `Value` Column**:
+   * Cart rows in `views/pos.ejs` include a numeric `Value` input (`item_value`, spin arrows hidden via `.no-spin-arrows`) and an inline Reset (`↺`) button.
+   * `tbl_cart_servicelist` persists both `item_value` (`DECIMAL(10,2) DEFAULT 0.00`) and `original_rate` (`DECIMAL(10,2) DEFAULT 0.00`).
+   * Entering `item_value > 0` overrides `service_price` to `+(item_value * (override_rate_percent / 100)).toFixed(2)`.
+   * Clicking Reset (`↺`) or setting `Value` to `0` clears `item_value` and restores `original_rate * (brand_multiplier || 1)`.
+3. **Order Details & Thermal Receipt Display**:
+   * Display the declared garment value in `views/order_details.ejs` and as an indented sub-line (`Declared Value: $X.XX`) on thermal receipts (`views/pos_print.ejs`) whenever `item_value > 0`.
+
+### AC. Garment Brand Master Catalog & POS Multi-Camera Brand Modal Invariant
+1. **Master Brand Table (`tbl_garment_brands`)**:
+   * Stores 1,236+ garment brands with `brand_label`, `category` (`REGULAR`, `DESIGNER`, `HIGH-END`, `BESPOKE`), `upcharge_note`, `price_multiplier` (`DECIMAL(5,2)`), and indexed `pos_search_key`.
+2. **POS & Order Edit `Brand` Column & Inspection Modal (`#pos_brand_modal`)**:
+   * Cart rows in `views/pos.ejs` include a `Brand` column between `Service` and `Color`.
+   * Clicking the brand button opens `#pos_brand_modal`, which provides:
+     - **Live Brand Search**: Debounced query against `/admin/search_brands` matching `pos_search_key`, displaying Brand Label, Category badge, Upcharges, and Price Multiplier.
+     - **Multi-Camera Live Stream**: WebRTC camera preview (`navigator.mediaDevices.enumerateDevices()` + `getUserMedia()`) with a camera switcher dropdown (persisted in `localStorage.pos_brand_camera_id`), Freeze/Capture toggle, and automatic media track release on modal close (`hidden.bs.modal`).
+3. **Brand Rate Override Precedence**:
+   * Applying a brand persists `brand_id`, `brand_name`, `brand_category`, and `brand_multiplier` in `tbl_cart_servicelist`.
+   * When `item_value === 0`, the unit rate is overridden to `+(original_rate * brand_multiplier).toFixed(2)`. If `item_value > 0`, the declared value percentage takes precedence until `item_value` is reset.
+
 

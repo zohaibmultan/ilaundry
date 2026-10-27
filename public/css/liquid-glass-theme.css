@@ -1683,7 +1683,7 @@ table.dataTable .form-check.form-switch {
 .table .form-check-input,
 table.dataTable .form-check-input {
   width: 28px !important;
-  height: 16px !important;
+  height: 28px !important;
   margin-top: 0 !important;
   cursor: pointer !important;
 }
