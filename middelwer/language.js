@@ -5,6 +5,16 @@ const jwt = require('jsonwebtoken');
 // Load languages dictionary
 const languagesPath = path.join(__dirname, '../public/language/languages.json');
 let languages = {};
+const langJsonCache = new Map();
+
+function getLangJson(langCode) {
+  const code = langCode || 'en';
+  if (!langJsonCache.has(code)) {
+    langJsonCache.set(code, JSON.stringify(languages[code] || languages.en || {}));
+  }
+  return langJsonCache.get(code);
+}
+
 try {
   languages = JSON.parse(fs.readFileSync(languagesPath, 'utf8'));
 } catch (err) {
@@ -16,6 +26,7 @@ try {
 function reloadLanguages() {
   try {
     languages = JSON.parse(fs.readFileSync(languagesPath, 'utf8'));
+    langJsonCache.clear();
     return true;
   } catch (err) {
     console.error('❌ Error reloading languages.json:', err.message);
@@ -119,7 +130,7 @@ const languageMiddleware = async (req, res, next) => {
     res.locals.language_name = activeLang;
     res.locals.isRTL = (activeLang === 'ae');
     res.locals.multi_language_enabled = isMultiLang;
-    res.locals.langJson = JSON.stringify(languages[activeLang] || languages.en || {});
+    res.locals.langJson = getLangJson(activeLang);
     res.locals.t = (key, fallback) => langProxy[key] || fallback || (key ? String(key).replace(/_/g, ' ') : '');
 
     next();
@@ -134,5 +145,6 @@ module.exports = {
   reloadLanguages,
   getMultiLanguageEnabled,
   invalidateMultiLanguageCache,
+  getLangJson,
   languages
 };

@@ -1,4 +1,4 @@
-const { DataFind, DataUpdate } = require('../middelwer/databaseQurey');
+const { DataFind, DataUpdate } = require('../../middelwer/databaseQurey');
 
 async function migrateCustomerAddressSplit() {
   console.log('🚀 Checking columns in tbl_customer...');

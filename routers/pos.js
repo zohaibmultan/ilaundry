@@ -173,16 +173,13 @@ router.get("/pos", auth, async (req, res) => {
       );
 
       if (customerInsert == -1) {
-        req.flash("errors", process.env.dataerror);
-        return res.redirect("/some_error_page");
+        req.flash("error", process.env.dataerror || "Failed to initialize default customer");
+        return res.redirect("/dashboard");
       }
     }
 
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
-
-    console.log(accessdata);
-    console.log(req.user);
 
     var orderid = await idfororder();
 
@@ -1056,7 +1053,6 @@ router.get("/customerlist/:id", auth, async (req, res) => {
 router.post("/addservicelist", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
-    console.log(11111, req.body);
     const serviceid = req.body.serviceid.split(",")[0];
     const rawServiceName = req.body.serviceid.split(",")[1] || "";
     const serviceimage = req.body.serviceid.split(",")[2] || "";
@@ -1088,7 +1084,7 @@ router.post("/addservicelist", auth, async (req, res) => {
 
     if (servicelist === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     // const cartupdate = await DataFind(
@@ -1119,7 +1115,7 @@ router.post("/addservicelist", auth, async (req, res) => {
 
     if (cartupdate == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     var cart = await DataFind(
@@ -1130,7 +1126,6 @@ router.post("/addservicelist", auth, async (req, res) => {
         cart[0].service_list_id +
         "')",
     );
-    console.log("cartservice", cartservice);
 
     res.status(200).json({ cart: cart[0], cartservice, loginas });
   } catch (error) {
@@ -1179,7 +1174,7 @@ router.post("/editservicelist", auth, async (req, res) => {
 
     if (servicelist == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const store_data = await DataFind(
@@ -1222,7 +1217,7 @@ router.post("/editservicelist", auth, async (req, res) => {
 
     if (updateOrder == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     // const cartupdate = await DataFind("UPDATE tbl_cart SET service_list_id=CONCAT(service_list_id,',"+servicelist.insertId+"'),sub_total= ROUND(sub_total + "+servicetypeprice+",2), tax_amount =ROUND((sub_total + addon_price - coupon_discount - extra_discount) * (tax/ 100),2), gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2), balance = ROUND(gross_total - paid_amount,2)  WHERE created_by='"+loginas+','+id+"'");
@@ -1236,11 +1231,11 @@ router.post("/editservicelist", auth, async (req, res) => {
         order_date[0].service_list +
         "')",
     );
-    console.log("cartservice", cartservice);
 
     res.status(200).json({ order_date: order_date[0], cartservice, loginas });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -1248,34 +1243,28 @@ router.post("/editservicelist", auth, async (req, res) => {
 router.post("/edit_removeservicelist", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
-    console.log(99999, req.body);
 
     const service = await DataFind(
       `SELECT * FROM tbl_cart_servicelist WHERE ID=${req.body.service_id} `,
     );
-    console.log(1111, service);
 
     const diff =
       parseFloat(service[0].service_type_price) *
       parseFloat(service[0].service_quntity);
-    console.log("diff", diff);
 
     const old_order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`,
     );
-    console.log("old_order_date", old_order_date);
 
     const sub_total = (
       parseFloat(old_order_date[0].sub_total) - parseFloat(diff)
     ).toFixed(2);
-    console.log("sub_total", sub_total);
     const tax_amount = (
       (parseFloat(sub_total) +
         parseFloat(old_order_date[0].addon_price) -
         parseFloat(old_order_date[0].coupon_discount)) *
       (parseFloat(old_order_date[0].tax) / 100)
     ).toFixed(2);
-    console.log("tax_amount", tax_amount);
     const gross_total = (
       parseFloat(sub_total) +
       parseFloat(tax_amount) +
@@ -1283,7 +1272,6 @@ router.post("/edit_removeservicelist", auth, async (req, res) => {
       parseFloat(old_order_date[0].coupon_discount) -
       parseFloat(old_order_date[0].extra_discount)
     ).toFixed(2);
-    console.log("gross_total", gross_total);
 
     let currentList = (old_order_date[0].service_list || "")
       .toString()
@@ -1318,7 +1306,7 @@ router.post("/edit_removeservicelist", auth, async (req, res) => {
 
     if (orderupdate == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     // const cartupdate = await DataFind("UPDATE tbl_cart SET service_list_id=REPLACE(service_list_id,',"+serviceid+"',''),sub_total= ROUND(sub_total - "+ diff+",2), tax_amount =ROUND((sub_total + addon_price - coupon_discount - extra_discount)*tax / 100,2), gross_total =ROUND( sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2), balance =ROUND( gross_total - paid_amount,2) WHERE created_by='"+loginas+','+id+"'");
@@ -1336,7 +1324,7 @@ router.post("/edit_removeservicelist", auth, async (req, res) => {
       )) == -1
     ) {
       req.flash("error", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const order_date = await DataFind(
@@ -1348,11 +1336,10 @@ router.post("/edit_removeservicelist", auth, async (req, res) => {
         order_date[0].service_list +
         "')",
     );
-
-    console.log(1111, "order_date", order_date);
     res.status(200).json({ order_date: order_date[0], cartservice, loginas });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -1400,7 +1387,7 @@ router.get("/removeservicelist/:id", auth, async (req, res) => {
 
     if (cartupdate == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     // const deletservice = await DataFind(
@@ -1416,7 +1403,7 @@ router.get("/removeservicelist/:id", auth, async (req, res) => {
       )) == -1
     ) {
       req.flash("error", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     var cart = await DataFind(
@@ -1430,7 +1417,8 @@ router.get("/removeservicelist/:id", auth, async (req, res) => {
 
     res.status(200).json({ cart: cart[0], cartservice, loginas });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -1530,7 +1518,7 @@ router.get("/newcustomerid/:id", auth, async (req, res) => {
 
     if (cart == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const cleanCustomerId = String(customerid).trim().replace(/'/g, "\\'");
@@ -1651,7 +1639,7 @@ router.post("/color", auth, async (req, res) => {
 
       if (cart == -1) {
         req.flash("errors", process.env.dataerror);
-        return res.redirect("/valid_license");
+        return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
       }
     }
 
@@ -1701,7 +1689,7 @@ router.post("/date", auth, async (req, res) => {
 
     if (cart == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     res.status(200).json({ status: 200, date, delivery_date });
@@ -1732,7 +1720,7 @@ router.post("/delivery_date", auth, async (req, res) => {
 
     if (cart == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     res.status(200).json({ status: 200, delivery_date: fullDelivery });
@@ -1776,7 +1764,7 @@ router.post("/pos_order_type", auth, async (req, res) => {
 
       if (cart == -1) {
         req.flash("errors", process.env.dataerror);
-        return res.redirect("/valid_license");
+        return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
       }
     }
 
@@ -1808,7 +1796,7 @@ router.post("/pickup_date", auth, async (req, res) => {
 
     if (cart == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     return res.status(200).json({ status: 200, pickup_date: fullPickup });
@@ -1848,7 +1836,7 @@ router.post("/ready_date", auth, async (req, res) => {
 
     if (cart == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     return res.status(200).json({ status: 200, ready_date: fullReady });
@@ -1895,7 +1883,7 @@ router.post("/edit_date", auth, async (req, res) => {
 
     if (orderUpdate == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     res.status(200).json({ status: 200, date, delivery_date });
@@ -1926,7 +1914,7 @@ router.post("/edit_delivery_date", auth, async (req, res) => {
 
     if (orderUpdate == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     res.status(200).json({ status: 200, delivery_date: fullDelivery });
@@ -1970,7 +1958,7 @@ router.post("/edit_pos_order_type", auth, async (req, res) => {
 
       if (orderUpdate == -1) {
         req.flash("errors", process.env.dataerror);
-        return res.redirect("/valid_license");
+        return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
       }
     }
 
@@ -2002,7 +1990,7 @@ router.post("/edit_pickup_date", auth, async (req, res) => {
 
     if (orderUpdate == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     return res.status(200).json({ status: 200, pickup_date: fullPickup });
@@ -2042,7 +2030,7 @@ router.post("/edit_ready_date", auth, async (req, res) => {
 
     if (orderUpdate == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     return res.status(200).json({ status: 200, ready_date: fullReady });
@@ -2062,7 +2050,6 @@ router.get("/clearcart", auth, async (req, res) => {
     );
     const storeId = (cart && cart.length > 0) ? cart[0].store_id : store;
     var orderid = await idfororder(storeId);
-    console.log(cart);
 
     var tax = await DataFind(
       "SELECT tax_percent FROM tbl_store WHERE id=" + cart[0].store_id + "",
@@ -2080,7 +2067,7 @@ router.get("/clearcart", auth, async (req, res) => {
             )) == -1
           ) {
             req.flash("error", process.env.dataerror);
-            return res.redirect("/valid_license");
+            return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
           }
         }),
       );
@@ -2115,7 +2102,7 @@ router.get("/clearcart", auth, async (req, res) => {
 
       if (cartReset == -1) {
         req.flash("errors", process.env.dataerror);
-        return res.redirect("/valid_license");
+        return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
       }
 
       var cartdata = await DataFind(
@@ -2456,7 +2443,7 @@ router.post("/changevalue", auth, async (req, res) => {
 
     if (updateservice == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const cartupdate = await DataUpdate(
@@ -2476,7 +2463,7 @@ router.post("/changevalue", auth, async (req, res) => {
 
     if (cartupdate == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const cart = await DataFind(
@@ -2565,7 +2552,7 @@ router.post("/edit_changevalue", auth, async (req, res) => {
 
     if (updateservice === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const shopCommission =
@@ -2588,7 +2575,7 @@ router.post("/edit_changevalue", auth, async (req, res) => {
 
     if (updateOrder === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const order_date = await DataFind(
@@ -2847,7 +2834,7 @@ router.post("/changebrand", auth, async (req, res) => {
 
     if (updateservice == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const cartupdate = await DataUpdate(
@@ -2867,7 +2854,7 @@ router.post("/changebrand", auth, async (req, res) => {
 
     if (cartupdate == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const cart = await DataFind(
@@ -2969,7 +2956,7 @@ router.post("/edit_changebrand", auth, async (req, res) => {
 
     if (updateservice === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const store_data = await DataFind(
@@ -2995,7 +2982,7 @@ router.post("/edit_changebrand", auth, async (req, res) => {
 
     if (updateOrder === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const order_date = await DataFind(
@@ -3060,7 +3047,7 @@ router.post("/changeamount", auth, async (req, res) => {
 
     if (updateservice == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     let cartupdate = await DataUpdate(
@@ -3080,7 +3067,7 @@ router.post("/changeamount", auth, async (req, res) => {
 
     if (cartupdate == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     var cart = await DataFind(
@@ -3094,7 +3081,8 @@ router.post("/changeamount", auth, async (req, res) => {
 
     res.status(200).json({ cart: cart[0], cartservice, loginas });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -3108,7 +3096,6 @@ router.post("/edit_changeamount", auth, async (req, res) => {
     const service = await DataFind(
       `SELECT * FROM tbl_cart_servicelist WHERE id=${serviceid}`,
     );
-    console.log("service", service);
 
     const amount_diff =
       parseFloat(price) * parseFloat(service[0].service_quntity) -
@@ -3118,19 +3105,16 @@ router.post("/edit_changeamount", auth, async (req, res) => {
     const old_order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`,
     );
-    console.log("old_order_date", old_order_date);
 
     const sub_total = (
       parseFloat(old_order_date[0].sub_total) + parseFloat(amount_diff)
     ).toFixed(2);
-    console.log("sub_total", sub_total);
     const tax_amount = (
       (parseFloat(sub_total) +
         parseFloat(old_order_date[0].addon_price) -
         parseFloat(old_order_date[0].coupon_discount)) *
       (parseFloat(old_order_date[0].tax) / 100)
     ).toFixed(2);
-    console.log("tax_amount", tax_amount);
     const gross_total = (
       parseFloat(sub_total) +
       parseFloat(tax_amount) +
@@ -3138,7 +3122,6 @@ router.post("/edit_changeamount", auth, async (req, res) => {
       parseFloat(old_order_date[0].coupon_discount) -
       parseFloat(old_order_date[0].extra_discount)
     ).toFixed(2);
-    console.log("gross_total", gross_total);
     // allow price modification freely
 
     // const updateservice = await DataFind(
@@ -3159,7 +3142,7 @@ router.post("/edit_changeamount", auth, async (req, res) => {
 
     if (updateservice === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const store_data = await DataFind(
@@ -3192,7 +3175,7 @@ router.post("/edit_changeamount", auth, async (req, res) => {
 
     if (updateOrder === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     // const cartupdate = await DataFind("UPDATE tbl_cart SET sub_total= ROUND(sub_total + "+amount_diff+",2) , tax_amount =ROUND((sub_total + addon_price - coupon_discount - extra_discount)*tax / 100,2), gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2), balance = ROUND(gross_total - paid_amount,2)  WHERE created_by='"+loginas+','+id+"'");
@@ -3200,7 +3183,6 @@ router.post("/edit_changeamount", auth, async (req, res) => {
     const order_date = await DataFind(
       " SELECT * FROM tbl_order WHERE id = '" + order_id + "'",
     );
-    console.log("order_date", order_date);
     const cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
         order_date[0].service_list +
@@ -3209,7 +3191,8 @@ router.post("/edit_changeamount", auth, async (req, res) => {
 
     res.status(200).json({ order_date: order_date[0], cartservice, loginas });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -3231,19 +3214,16 @@ router.post("/edit_changequntity", auth, async (req, res) => {
     const old_order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`,
     );
-    console.log("old_order_date", old_order_date);
 
     const sub_total = (
       parseFloat(old_order_date[0].sub_total) + parseFloat(amount_diff)
     ).toFixed(2);
-    console.log("sub_total", sub_total);
     const tax_amount = (
       (parseFloat(sub_total) +
         parseFloat(old_order_date[0].addon_price) -
         parseFloat(old_order_date[0].coupon_discount)) *
       (parseFloat(old_order_date[0].tax) / 100)
     ).toFixed(2);
-    console.log("tax_amount", tax_amount);
     const gross_total = (
       parseFloat(sub_total) +
       parseFloat(tax_amount) +
@@ -3251,7 +3231,6 @@ router.post("/edit_changequntity", auth, async (req, res) => {
       parseFloat(old_order_date[0].coupon_discount) -
       parseFloat(old_order_date[0].extra_discount)
     ).toFixed(2);
-    console.log("gross_total", gross_total);
     // allow quantity modification freely
 
     // const updateservice = await DataFind(
@@ -3272,7 +3251,7 @@ router.post("/edit_changequntity", auth, async (req, res) => {
 
     if (updateServiceQty === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const store_data = await DataFind(
@@ -3307,7 +3286,7 @@ router.post("/edit_changequntity", auth, async (req, res) => {
 
     if (updateOrder === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     // const cartupdate = await DataFind("UPDATE tbl_cart SET sub_total= ROUND(sub_total + "+amount_diff+",2) , tax_amount =ROUND((sub_total + addon_price - coupon_discount - extra_discount) * (tax / 100),2) , gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2) , balance = ROUND(gross_total - paid_amount,2)   WHERE created_by='"+loginas+','+id+"'");
@@ -3323,7 +3302,8 @@ router.post("/edit_changequntity", auth, async (req, res) => {
 
     res.status(200).json({ order_date: order_date[0], cartservice, loginas });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -3360,7 +3340,7 @@ router.post("/changequntity", auth, async (req, res) => {
 
     if (updateservice === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     // const cartupdate = await DataFind(
@@ -3388,7 +3368,7 @@ router.post("/changequntity", auth, async (req, res) => {
 
     if (cartupdate === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     var cart = await DataFind(
@@ -3402,7 +3382,8 @@ router.post("/changequntity", auth, async (req, res) => {
 
     res.status(200).json({ cart: cart[0], cartservice, loginas });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -3459,7 +3440,7 @@ router.post("/addonsadd", auth, async (req, res) => {
 
     if (cartupdate === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     var cart = await DataFind(
@@ -3473,7 +3454,8 @@ router.post("/addonsadd", auth, async (req, res) => {
 
     res.status(200).json({ cart: cart[0], cartservice, loginas });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -3504,15 +3486,12 @@ router.post("/edit_onsadd", auth, async (req, res) => {
         }
       }),
     );
-    console.log(price);
 
     const old_order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`,
     );
-    console.log("old_order_date", old_order_date);
 
     const sub_total = parseFloat(old_order_date[0].sub_total);
-    console.log("sub_total", sub_total);
 
     const tax_amount = (
       (parseFloat(sub_total) +
@@ -3520,7 +3499,6 @@ router.post("/edit_onsadd", auth, async (req, res) => {
         parseFloat(old_order_date[0].coupon_discount)) *
       (parseFloat(old_order_date[0].tax) / 100)
     ).toFixed(2);
-    console.log("tax_amount", tax_amount);
 
     const gross_total = (
       parseFloat(sub_total) +
@@ -3529,7 +3507,6 @@ router.post("/edit_onsadd", auth, async (req, res) => {
       parseFloat(old_order_date[0].coupon_discount) -
       parseFloat(old_order_date[0].extra_discount)
     ).toFixed(2);
-    console.log("gross_total", gross_total);
 
     if (gross_total < old_order_date[0].paid_amount) {
       req.flash("error", "gross_total Less-than paid_amount");
@@ -3567,7 +3544,7 @@ router.post("/edit_onsadd", auth, async (req, res) => {
 
     if (updateOrder === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     // const cartupdate = await DataFind("UPDATE tbl_cart SET addon_id='"+addon+"', addon_price="+price+", tax_amount =ROUND((sub_total + addon_price - coupon_discount - extra_discount)*tax / 100,2), gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2), balance = ROUND(gross_total - paid_amount,2)  WHERE created_by='"+loginas+','+id+"'");
@@ -3575,7 +3552,6 @@ router.post("/edit_onsadd", auth, async (req, res) => {
     var order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`,
     );
-    console.log("order_date", order_date);
     // var cart = await DataFind(" SELECT * FROM tbl_cart WHERE created_by='"+loginas+','+id+"'");
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
@@ -3585,7 +3561,8 @@ router.post("/edit_onsadd", auth, async (req, res) => {
 
     res.status(200).json({ order_date: order_date[0], cartservice, loginas });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -3593,14 +3570,12 @@ router.post("/edit_onsadd", auth, async (req, res) => {
 router.get("/couponlist/:id", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
-    console.log("loginas", loginas);
     const accessdata = await access(req.user);
 
     const couid = req.params.id;
     const customer = await DataFind(
       "SELECT store_ID From tbl_customer WHERE id=" + couid + "",
     );
-    console.log("customer", customer);
     var customer_order = await DataFind(
       "SELECT * From tbl_order WHERE customer_id=" + couid + "",
     );
@@ -3608,8 +3583,6 @@ router.get("/couponlist/:id", auth, async (req, res) => {
     var cart = await DataFind(
       " SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
     );
-
-    console.log("customer_order", customer_order);
 
     if (customer_order.length > 0) {
       if (
@@ -3664,10 +3637,10 @@ router.get("/couponlist/:id", auth, async (req, res) => {
     }
 
     console.log("cart", cart);
-    console.log("couponlist", couponlist);
     res.status(200).json({ cart: cart[0], couponlist });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -3675,16 +3648,13 @@ router.get("/couponlist/:id", auth, async (req, res) => {
 router.post("/edit_couponlist", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
-    console.log("loginas", loginas);
     const couid = req.body.customer;
-    console.log("couid", couid);
 
     const accessdata = await access(req.user);
 
     const customer = await DataFind(
       "SELECT store_ID From tbl_customer WHERE id=" + couid + "",
     );
-    console.log("customer", customer);
     var customer_order = await DataFind(
       "SELECT * From tbl_order WHERE customer_id=" + couid + "",
     );
@@ -3692,10 +3662,6 @@ router.post("/edit_couponlist", auth, async (req, res) => {
     const order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`,
     );
-
-    console.log("order_date", order_date);
-
-    console.log("customer_order", customer_order);
     if (customer_order.length > 0) {
       if (
         customer[0].store_ID == "" ||
@@ -3706,7 +3672,6 @@ router.post("/edit_couponlist", auth, async (req, res) => {
             order_date[0].store_id +
             "',store_list_id) AND coupon_type=1",
         );
-        console.log("couponlist1", couponlist);
       } else {
         var couponlist = await DataFind(
           "select * from tbl_coupon where start_date <=date(now()) AND end_date >=date(now()) AND status=0 AND find_in_set('" +
@@ -3716,9 +3681,6 @@ router.post("/edit_couponlist", auth, async (req, res) => {
       }
 
       var usedcoupon = customer_order.map((data) => data.coupon_id);
-
-      console.log("usedcoupon", usedcoupon);
-      console.log("couponlist", couponlist);
     } else {
       if (
         customer[0].store_ID == "" ||
@@ -3737,12 +3699,10 @@ router.post("/edit_couponlist", auth, async (req, res) => {
         );
       }
     }
-
-    console.log("couponlist", couponlist);
-    console.log("order_date", order_date);
     res.status(200).json({ order_date: order_date[0], couponlist });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -3785,7 +3745,7 @@ router.get("/couponadd/:id", auth, async (req, res) => {
 
     if (updateCart === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     var cart = await DataFind(
@@ -3799,7 +3759,8 @@ router.get("/couponadd/:id", auth, async (req, res) => {
 
     res.status(200).json({ cart: cart[0], cartservice, loginas });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -3841,7 +3802,7 @@ router.get("/removecoupon/:id", auth, async (req, res) => {
 
     if (cartupdate === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     var cart = await DataFind(
@@ -3855,7 +3816,8 @@ router.get("/removecoupon/:id", auth, async (req, res) => {
 
     res.status(200).json({ cart: cart[0], cartservice, loginas });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -3864,7 +3826,6 @@ router.post("/edit_couponadd", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
     var couponid = req.body.couponid;
-    console.log(1111, req.body);
 
     // var cart = await DataFind(" SELECT * FROM tbl_cart WHERE created_by='"+loginas+','+id+"'");
 
@@ -3875,17 +3836,14 @@ router.post("/edit_couponadd", auth, async (req, res) => {
     const old_order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`,
     );
-    console.log("old_order_date", old_order_date);
 
     const sub_total = parseFloat(old_order_date[0].sub_total);
-    console.log("sub_total", sub_total);
     const tax_amount = (
       (parseFloat(sub_total) +
         parseFloat(old_order_date[0].addon_price) -
         parseFloat(coupon[0].discount)) *
       (parseFloat(old_order_date[0].tax) / 100)
     ).toFixed(2);
-    console.log("tax_amount", tax_amount);
     const gross_total = (
       parseFloat(sub_total) +
       parseFloat(tax_amount) +
@@ -3893,7 +3851,6 @@ router.post("/edit_couponadd", auth, async (req, res) => {
       parseFloat(coupon[0].discount) -
       parseFloat(old_order_date[0].extra_discount)
     ).toFixed(2);
-    console.log("gross_total", gross_total);
 
     if (gross_total < old_order_date[0].paid_amount) {
       req.flash("error", "gross_total Less-than paid_amount");
@@ -3931,7 +3888,7 @@ router.post("/edit_couponadd", auth, async (req, res) => {
 
     if (orderUpdate === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     // const cartupdate = await DataFind("UPDATE tbl_cart SET coupon_id='"+couponid+"', coupon_discount="+coupon[0].discount+", tax_amount =ROUND((sub_total + addon_price - coupon_discount - extra_discount)*tax / 100,2), gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2), balance = ROUND(gross_total - paid_amount ,2) WHERE created_by='"+loginas+','+id+"'");
@@ -3948,7 +3905,8 @@ router.post("/edit_couponadd", auth, async (req, res) => {
 
     res.status(200).json({ order_date: order_date[0], cartservice, loginas });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -3956,7 +3914,6 @@ router.post("/edit_couponremove/", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
     var couponid = req.body.couponid;
-    console.log(1111, req.body);
 
     // var cart = await DataFind(" SELECT * FROM tbl_cart WHERE created_by='"+loginas+','+id+"'");
 
@@ -3967,17 +3924,14 @@ router.post("/edit_couponremove/", auth, async (req, res) => {
     const old_order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`,
     );
-    console.log("old_order_date", old_order_date);
 
     const sub_total = parseFloat(old_order_date[0].sub_total);
-    console.log("sub_total", sub_total);
     const tax_amount = (
       (parseFloat(sub_total) +
         parseFloat(old_order_date[0].addon_price) -
         parseFloat(coupon[0].discount)) *
       (parseFloat(old_order_date[0].tax) / 100)
     ).toFixed(2);
-    console.log("tax_amount", tax_amount);
     const gross_total = (
       parseFloat(sub_total) +
       parseFloat(tax_amount) +
@@ -3985,7 +3939,6 @@ router.post("/edit_couponremove/", auth, async (req, res) => {
       parseFloat(coupon[0].discount) -
       parseFloat(old_order_date[0].extra_discount)
     ).toFixed(2);
-    console.log("gross_total", gross_total);
 
     if (gross_total < old_order_date[0].paid_amount) {
       req.flash("error", "gross_total Less-than paid_amount");
@@ -4019,7 +3972,7 @@ router.post("/edit_couponremove/", auth, async (req, res) => {
 
     if (orderUpdate === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     // const cartupdate = await DataFind("UPDATE tbl_cart SET coupon_id='"+couponid+"', coupon_discount="+coupon[0].discount+", tax_amount =ROUND((sub_total + addon_price - coupon_discount - extra_discount)*tax / 100,2), gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2), balance = ROUND(gross_total - paid_amount ,2) WHERE created_by='"+loginas+','+id+"'");
@@ -4036,7 +3989,8 @@ router.post("/edit_couponremove/", auth, async (req, res) => {
 
     res.status(200).json({ order_date: order_date[0], cartservice, loginas });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -4119,7 +4073,7 @@ router.get("/manualcoupon/:id", auth, async (req, res) => {
 
     if (cartupdate === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     var cart = await DataFind(
@@ -4133,7 +4087,8 @@ router.get("/manualcoupon/:id", auth, async (req, res) => {
 
     res.status(200).json({ cart: cart[0], cartservice, loginas });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -4142,7 +4097,6 @@ router.post("/edit_manualcoupon", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
     var couponcode = req.body.code.toUpperCase();
-    console.log(2222, req.body);
 
     //  var cart = await DataFind(" SELECT * FROM tbl_cart WHERE created_by='"+loginas+','+id+"'");
     const old_order_date = await DataFind(
@@ -4153,17 +4107,13 @@ router.post("/edit_manualcoupon", auth, async (req, res) => {
       "select * from tbl_coupon where code='" + couponcode + "'",
     );
 
-    console.log("old_order_date", old_order_date);
-
     const sub_total = parseFloat(old_order_date[0].sub_total);
-    console.log("sub_total", sub_total);
     const tax_amount = (
       (parseFloat(sub_total) +
         parseFloat(old_order_date[0].addon_price) -
         parseFloat(coupon[0].discount)) *
       (parseFloat(old_order_date[0].tax) / 100)
     ).toFixed(2);
-    console.log("tax_amount", tax_amount);
     const gross_total = (
       parseFloat(sub_total) +
       parseFloat(tax_amount) +
@@ -4171,7 +4121,6 @@ router.post("/edit_manualcoupon", auth, async (req, res) => {
       parseFloat(coupon[0].discount) -
       parseFloat(old_order_date[0].extra_discount)
     ).toFixed(2);
-    console.log("gross_total", gross_total);
 
     if (gross_total < old_order_date[0].paid_amount) {
       req.flash("error", "gross_total Less-than paid_amount");
@@ -4254,7 +4203,7 @@ router.post("/edit_manualcoupon", auth, async (req, res) => {
 
     if (orderUpdate === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     // const cartupdate = await DataFind("UPDATE tbl_cart SET coupon_id='"+coupon[0].id+"', coupon_discount="+coupon[0].discount+", tax_amount =ROUND((sub_total + addon_price - coupon_discount - extra_discount)*tax / 100,2), gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2), balance = ROUND(gross_total - paid_amount,2)  WHERE created_by='"+loginas+','+id+"'");
@@ -4271,7 +4220,8 @@ router.post("/edit_manualcoupon", auth, async (req, res) => {
 
     res.status(200).json({ order_date: order_date[0], cartservice, loginas });
   } catch (error) {
-    console.log(error);
+    console.error("Route error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -4818,7 +4768,7 @@ router.post("/order", auth, async (req, res) => {
 
     if (order == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const notifMeta = await buildRouteOrderNotificationPayload({
@@ -4844,7 +4794,7 @@ router.post("/order", auth, async (req, res) => {
 
     if (custnofication == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const storenotification = await DataInsert(
@@ -4857,7 +4807,7 @@ router.post("/order", auth, async (req, res) => {
 
     if (storenotification == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     // await DataFind(
@@ -4879,7 +4829,7 @@ router.post("/order", auth, async (req, res) => {
 
     if (paymentdata == -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     // const updateorder = await DataFind(
@@ -4896,7 +4846,7 @@ router.post("/order", auth, async (req, res) => {
 
     if (updateorder === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     const customer_data = await DataFind(
@@ -4927,7 +4877,7 @@ router.post("/order", auth, async (req, res) => {
 
         if (updateAccount === -1) {
           req.flash("errors", process.env.dataerror);
-          return res.redirect("/valid_license");
+          return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
         }
 
         var abc = await DataInsert(
@@ -4942,7 +4892,7 @@ router.post("/order", auth, async (req, res) => {
 
         if (abc == -1) {
           req.flash("errors", process.env.dataerror);
-          return res.redirect("/valid_license");
+          return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
         }
       }
     }
@@ -4987,7 +4937,7 @@ router.post("/order", auth, async (req, res) => {
 
     if (updateCart === -1) {
       req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     // data for invoice
@@ -5038,12 +4988,9 @@ router.post("/order", auth, async (req, res) => {
       "SELECT * From tbl_customer WHERE id=" + orderdata[0].customer_id + "",
     );
 
-    console.log("orderdata[0]", orderdata[0]);
-
     const data = await DataFind(
       "SELECT * FROM tbl_email WHERE store_id=" + cart[0].store_id + "",
     );
-    console.log(111, "data", data);
     if (
       data.length > 0 &&
       coust.length > 0 &&
@@ -5118,8 +5065,6 @@ router.post("/order", auth, async (req, res) => {
         });
       }
     }
-
-    console.log(333, coust);
     if (coust[0].name != "Walk in customer") {
       // ========= sms ============ //
 
@@ -5213,7 +5158,8 @@ router.post("/order", auth, async (req, res) => {
       customer: coust[0],
     });
   } catch (error) {
-    console.log("error", error);
+    console.error("Error in POST /order:", error);
+    return res.status(500).json({ status: "error", message: error.message });
   }
 });
 
@@ -5902,7 +5848,9 @@ router.get("/notification", auth, async (req, res) => {
       language_name: req.language_name,
     });
   } catch (error) {
-    console.log(error);
+    console.error("Error loading notification page:", error);
+    req.flash("error", "Failed to load notifications page");
+    return res.redirect("/dashboard");
   }
 });
 

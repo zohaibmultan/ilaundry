@@ -1,4 +1,4 @@
-const { mySqlQury } = require('../middelwer/db');
+const { mySqlQury } = require('../../middelwer/db');
 
 async function migrateRouteScheduling() {
     console.log('🚀 Starting Route Scheduling & Ready Date Database Migration...');

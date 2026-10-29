@@ -1,5 +1,5 @@
-const { DataFind, DataUpdate } = require("../middelwer/databaseQurey");
-const { conn } = require("../middelwer/db");
+const { DataFind, DataUpdate } = require("../../middelwer/databaseQurey");
+const { conn } = require("../../middelwer/db");
 
 async function migrate() {
   try {
