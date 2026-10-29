@@ -847,6 +847,20 @@
                 </span>
                 <% if (item.service_type_name) { %>
                   <span class="item-subtext">[<%= item.service_type_name %>]</span>
+                <% 
+                  const colorParts = [];
+                  if (item.primary_color) colorParts.push(item.primary_color);
+                  if (item.secondary_color) colorParts.push(item.secondary_color);
+                  if (item.garment_pattern && item.garment_pattern !== 'Solid') colorParts.push(item.garment_pattern);
+                  const colorStr = colorParts.join(' / ');
+                %>
+                <% if (item.brand_label || colorStr) { %>
+                  <div style="font-size: 8.5px; color: #475569; margin-top: 1px; line-height: 1.2;">
+                    <% if (item.brand_label) { %><b><%= item.brand_label %></b><% } %>
+                    <% if (item.brand_label && colorStr) { %> &bull; <% } %>
+                    <% if (colorStr) { %><span><%= colorStr %></span><% } %>
+                  </div>
+                <% } %>
                   <% } %>
               </td>
               <td class="text-center">
@@ -1291,6 +1305,14 @@
                   <span><b>${pieceIndex}/${totalPieces}</b></span>
                 </div>
                 <div class="tag-order-row">${custName}</div>
+                ${(() => {
+                  const meta = [];
+                  if (item.brand_label) meta.push(item.brand_label);
+                  if (item.primary_color) meta.push(item.primary_color);
+                  if (item.secondary_color) meta.push(item.secondary_color);
+                  if (item.garment_pattern && item.garment_pattern !== 'Solid') meta.push(item.garment_pattern);
+                  return meta.length > 0 ? `<div class="tag-order-row" style="font-size: 8px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${meta.join(' • ')}</div>` : '';
+                })()}
                 <div class="tag-order-row"><b>${readyDate}${tagDateSuffix}</b></div>
               </div>
             `;

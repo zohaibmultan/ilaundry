@@ -2436,6 +2436,7 @@ router.post(
           printer_open_cash_drawer,
           printer_copies,
           multi_language_enabled,
+          ocr_server_url,
         } = req.body;
 
         console.log("req.body.fromStore", req.body.fromStore);
@@ -2492,6 +2493,7 @@ router.post(
           multi_language_enabled === "on"
             ? 1
             : 0;
+        let ocrServerUrl = (ocr_server_url || "http://127.0.0.1:5000/api/scan").trim().replace(/'/g, "\\'");
 
         if (req.files.favicon) {
           console.log("favicon", req.files.favicon);
@@ -2580,7 +2582,8 @@ router.post(
    ready_cutoff_time='${curCutoff}',
    ready_time='${curReadyTime}',
    ready_working_days='${curWorkingDays}',
-   multi_language_enabled=${multiLangEnabled}`,
+   multi_language_enabled=${multiLangEnabled},
+   ocr_server_url='${ocrServerUrl}'`,
           `1=1`,
           req.hostname,
           req.protocol,
@@ -2946,7 +2949,9 @@ router.get("/printersetting", auth, async (req, res) => {
       invoice_barcode_enabled: (storeData && storeData.invoice_barcode_enabled !== null && storeData.invoice_barcode_enabled !== undefined)
         ? storeData.invoice_barcode_enabled : (ms.invoice_barcode_enabled !== undefined ? ms.invoice_barcode_enabled : 1),
       tag_barcode_enabled: (storeData && storeData.tag_barcode_enabled !== null && storeData.tag_barcode_enabled !== undefined)
-        ? storeData.tag_barcode_enabled : (ms.tag_barcode_enabled !== undefined ? ms.tag_barcode_enabled : 1)
+        ? storeData.tag_barcode_enabled : (ms.tag_barcode_enabled !== undefined ? ms.tag_barcode_enabled : 1),
+      ocr_server_url: (storeData && storeData.ocr_server_url) 
+        ? storeData.ocr_server_url : (ms.ocr_server_url || 'http://127.0.0.1:5000/api/scan')
     };
 
     const hasEditPermission = rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("edit");
@@ -3021,7 +3026,8 @@ router.post("/printersetting/:id", auth, async (req, res) => {
       printer_open_cash_drawer,
       printer_copies,
       invoice_barcode_enabled,
-      tag_barcode_enabled
+      tag_barcode_enabled,
+      ocr_server_url
     } = req.body;
 
     const invFormat = parseInt(invoice_printer_format) || 1;
@@ -3029,6 +3035,7 @@ router.post("/printersetting/:id", auth, async (req, res) => {
     const tagFormat = parseInt(tag_printer_format) || 1;
     const tagName = (tag_printer_name || "").trim().replace(/'/g, "\\'");
     const printServerUrl = (printing_server_url || "http://127.0.0.1:4321").trim().replace(/'/g, "\\'");
+    const ocrUrl = (ocr_server_url || "").trim().replace(/'/g, "\\'");
     const silentPrint = (silent_print_enabled === "1" || silent_print_enabled === 1 || silent_print_enabled === "on") ? 1 : 0;
     const autoCut = (printer_auto_cut === "1" || printer_auto_cut === 1 || printer_auto_cut === "on") ? 1 : 0;
     const cashDrawer = (printer_open_cash_drawer === "1" || printer_open_cash_drawer === 1 || printer_open_cash_drawer === "on") ? 1 : 0;
@@ -3042,6 +3049,7 @@ router.post("/printersetting/:id", auth, async (req, res) => {
       tag_printer_format=${tagFormat},
       tag_printer_name='${tagName}',
       printing_server_url='${printServerUrl}',
+      ocr_server_url=${ocrUrl ? `'${ocrUrl}'` : 'NULL'},
       silent_print_enabled=${silentPrint},
       printer_auto_cut=${autoCut},
       printer_open_cash_drawer=${cashDrawer},

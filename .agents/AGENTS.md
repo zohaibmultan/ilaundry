@@ -4,12 +4,19 @@ This document establishes the universal rules and constraints for the **iCleaner
 
 ---
 
-## 1. Tech Stack Overview
-* **Runtime**: Node.js (Express framework), running on port 5000 in Laragon / Windows.
-* **Database**: MySQL via connection pool (`DataFind`, `DataInsert`, `DataUpdate`, `DataDelete` helpers).
-* **View Engine**: EJS templates located in `views/` with custom partials (`views/header.ejs`, `views/sidebar.ejs`, etc.).
-* **Frontend**: Vanilla JavaScript, jQuery, Bootstrap, DataTables (server-side), JsBarcode, Chart.js.
-* **Hardware / Printing**: POS Thermal Printer (80mm / 58mm) & Garment Wash Tag Printer (75mm / 50mm) communicating via local printing server (`http://127.0.0.1:4321`).
+## 1. Tech Stack & Multi-Project Ecosystem Overview
+The iCleaners platform is organized as a unified multi-project monorepo containing three specialized services:
+* **`laundry-cms` (Core Web Application & ERP)**:
+  * **Runtime**: Node.js (Express framework), running on port 5000 in Laragon / Windows.
+  * **Database**: MySQL via connection pool (`DataFind`, `DataInsert`, `DataUpdate`, `DataDelete` helpers).
+  * **View Engine**: EJS templates located in `views/` with custom partials (`views/header.ejs`, `views/sidebar.ejs`, etc.).
+  * **Frontend**: Vanilla JavaScript, jQuery, Bootstrap 5 + Liquid Glass theme, DataTables (server-side), JsBarcode, Chart.js.
+* **`printing-server` (Local Hardware Printing Daemon)**:
+  * **Runtime**: Hybrid Electron & Node.js Express server (`server.js`, `main.js`), running on port 4321.
+  * **Hardware / Printing**: POS Thermal Printer (80mm / 58mm) & Garment Wash Tag Printer (75mm / 50mm) communicating via local printing server (`http://127.0.0.1:4321`) with physical paper-cutter sequencing and cash drawer kicking.
+* **`brand-reader-ocr` (Garment Brand & Tag OCR Recognition Microservice)**:
+  * **Runtime**: Python 3 (Flask), WSGI Phusion Passenger compatible (`passenger_wsgi.py`), running on port 5050 / local/cPanel WSGI.
+  * **Computer Vision / AI**: OpenCV (`opencv-python-headless`) + RapidOCR ONNX (`rapidocr-onnxruntime`) + RapidFuzz fuzzy brand matching (`brands.xlsx` / `tbl_garment_brands`).
 
 ---
 
@@ -89,9 +96,10 @@ This document establishes the universal rules and constraints for the **iCleaner
    * **Components**: `.btn`, `.btn-primary`, `.btn-outline-secondary`, `.btn-sm`, `.card`, `.card-body`, `.badge`, `.alert`, `.modal`.
 4. **Thermal Printer Exemption**:
    * Physical printer media queries and page dimensions (`@page { size: 80mm auto; margin: 0; }`) for 80mm / 58mm thermal receipts and 75mm / 50mm garment wash tags are exempt from this restriction.
-5. **Dark Theme Completeness & Ban on Hardcoded `bg-light`**:
-   * Never use unadapted Bootstrap `bg-light` on interactive elements, badges, or checkbox wrappers inside views that support dark theme.
+5. **Dark Theme Completeness & Ban on Hardcoded `bg-light` / `btn-light`**:
+   * Never use unadapted Bootstrap `bg-light` or `btn-light .text-dark` on interactive elements, badges, buttons, or checkbox wrappers inside views that support dark theme.
    * Use `.ready-day-pill`, `.settings-toggle-row`, or dedicated dark-adapted classes (`bg-light-subtle`, `border-subtle`).
+   * Interactive buttons in the POS cart (`.pos-btn-color.has-color`) must have explicit dark theme styles in `pos-compact.css`: `#1e293b` background, `#475569` border, and high-contrast `#f8fafc` text. Circular swatch dots must include a subtle `1px solid rgba(255, 255, 255, 0.35)` outline so dark swatches (Black, Charcoal, Navy) stand out crisply against dark backgrounds.
    * Custom banner headers (e.g. `.settings-banner`), cards, and badges must provide explicit `[data-theme-version="dark"]` rules with high-contrast text (`#f8fafc` titles, `#94a3b8` subtitles) and translucent colored glass borders.
 
 ### G. Express Route Response Guarantee (Critical)
@@ -399,3 +407,62 @@ This document establishes the universal rules and constraints for the **iCleaner
    * When `item_value === 0`, the unit rate is overridden to `+(original_rate * brand_multiplier).toFixed(2)`. If `item_value > 0`, the declared value percentage takes precedence until `item_value` is reset.
 
 
+
+### AD. Local Printing Server (Port 4321) & Hardware Daemon Architecture Invariant
+1. **Core Architecture & Daemon Management**:
+   * The local printing server (`printing-server/`) runs as a hybrid Electron & Node.js Express server (`server.js`, `main.js`) on default port 4321 (configured in `config.json` and `config.js`). Always handle `EADDRINUSE` gracefully.
+   * Electron operates as a background daemon minimized to the Windows system tray (`tray/`). Background operation must remain unbroken during lifecycle events.
+2. **CORS & Private Network Access (PNA) Invariants**:
+   * **PNA Header**: Modern Chromium browsers require `Access-Control-Allow-Private-Network: true` when public HTTPS sites (e.g. `https://icleanders.com`) communicate with local loopback endpoints (`http://127.0.0.1:4321`). Never remove or bypass this middleware.
+   * **Preflight Handling**: Route all preflight OPTIONS requests with `app.options("*", cors(corsOptions))` so browser preflight queries resolve with 200/204 before print payloads are dispatched.
+   * **Origin Whitelist**: Keep `allowedOrigins` in `config.json` and `$env:USERPROFILE\.pos-printing-server\config.json` aligned with production domains.
+3. **Printer & ESC/POS Protocol Constraints**:
+   * Thermal ESC/POS commands (`escposService.js`) write raw binary buffers. Always validate printer status and wrap socket/USB writes in `try/catch`.
+   * Never send raw binary print commands without paper-cut or feed safety delimiters. Keep `printerService.js` and `escposService.js` decoupled from Express route handlers.
+4. **Logging & Diagnostic Workflows**:
+   * Use `logger.js` for operational and print event logging instead of unformatted `console.log`.
+   * Utilize `.agents/skills/printer-diagnostics/` workflows for health checks, PNA testing, and packaging via `npm run build:win`.
+
+### AE. Garment Brand OCR Service & Tag Recognition Microservice Invariant
+1. **Core Architecture & Passenger Compatibility**:
+   * The garment brand recognition microservice (`brand-reader-ocr/`) runs as a lightweight Flask application with Phusion Passenger WSGI compatibility (`passenger_wsgi.py`, `application = app`).
+   * **Single-Thread Environment Limits**: To prevent thread starvation and memory spikes on cPanel shared hosting, single-thread environment variables (`OMP_NUM_THREADS="1"`, `OPENBLAS_NUM_THREADS="1"`, `MKL_NUM_THREADS="1"`, `VECLIB_MAXIMUM_THREADS="1"`, `NUMEXPR_NUM_THREADS="1"`) must be defined before importing NumPy, OpenCV, or ONNX Runtime.
+   * **Lazy Engine Initialization**: The ONNX OCR engine (`NeckTagOCRPipeline`) must be lazy-loaded on the first `/api/scan` request protected by a thread lock (`threading.Lock()`), avoiding Passenger worker boot timeouts.
+2. **Unified Image Decoding & Request Contract**:
+   * `/api/scan` accepts three flexible image inputs:
+     1. Multipart file upload (`request.files["image"]`).
+     2. Sample filename (`data["sample"]`) loaded safely from `samples/`.
+     3. Base64-encoded image string (`data["image_base64"]`), supporting both raw base64 and data-URI prefixes (`data:image/...;base64,...`).
+3. **Threshold Scoring & Brand Catalog Synchronization**:
+   * OCR text candidates are fuzzy-matched against the 1,236+ brand catalog via RapidFuzz with configurable confidence threshold (default 80.0%).
+   * Candidate rankings return `pos_search_key`, `brand_label`, `category`, and `match_score` for seamless pairing with the POS modal (`#pos_brand_modal`).
+   * Updates to brand classifications in MySQL `tbl_garment_brands` must be mirrored in `brand-reader-ocr/brands.xlsx`.
+
+### AF. Multi-Project Monorepo Structure & Unified Agent Discovery
+1. **Single Source of Truth**:
+   * All agent rules ([`.agents/rules/`](file:///e:/Products/Laragon_Laundary/www/.agents/rules/)), skills ([`.agents/skills/`](file:///e:/Products/Laragon_Laundary/www/.agents/skills/)), plugins ([`.agents/plugins/`](file:///e:/Products/Laragon_Laundary/www/.agents/plugins/)), and master standards ([`.agents/AGENTS.md`](file:///e:/Products/Laragon_Laundary/www/.agents/AGENTS.md)) reside strictly at the workspace root (`E:\Products\Laragon_Laundary\www\.agents`).
+2. **Subproject Isolation**:
+   * Subprojects (`laundry-cms/`, `printing-server/`, `brand-reader-ocr/`) must **never** maintain isolated or duplicate `.agents/` folders.
+   * All tools, build scripts, and diagnostic runbooks for any service are centralized in the root `.agents` directory for unified discovery across agent sessions.
+
+### AG. Garment Inspection Color & Pattern Catalog Invariant
+1. **Catalog Definitions (23 Colors, 21 Patterns)**:
+   * **23 Standard Colors**: Black (`#000000`), White (`#FFFFFF`, border), Gray (`#808080`), Charcoal (`#36454F`), Navy (`#000080`), Blue (`#2563EB`), Light Blue (`#93C5FD`), Red (`#DC2626`), Burgundy (`#800020`), Pink (`#F472B6`), Purple (`#800080`), Lavender (`#E6E6FA`, border), Green (`#16A34A`), Olive (`#808000`), Yellow (`#EAB308`), Orange (`#F97316`), Brown (`#8B4513`), Beige (`#F5F5DC`, border), Cream (`#FFFDD0`, border), Khaki (`#C3B091`), Multi-Color (rainbow gradient), Other (`#94A3B8`), Unknown (`#64748B`).
+   * **21 Garment Patterns**: Solid (default), Striped, Pinstripe, Plaid, Checkered, Gingham, Houndstooth, Herringbone, Polka Dot, Floral, Paisley, Geometric, Animal Print, Camouflage, Abstract / Graphic, Embroidered, Printed, Textured, Color Block, Other, Unknown.
+2. **Modal Inspection UI & Persistence**:
+   * `#pos_brand_modal` displays 3 Select2 dropdowns: Primary Color, Secondary Color (optional), and Garment Pattern.
+   * Persisted in `tbl_cart_servicelist`: `primary_color` (`VARCHAR(50)`), `secondary_color` (`VARCHAR(50)`), `garment_pattern` (`VARCHAR(50) DEFAULT 'Solid'`), and `service_color` (hex value of primary color).
+3. **Minimalist Display Rule**:
+   * In cart rows, order details, and receipts:
+     - Secondary color is displayed with `/` only when present (`Primary / Secondary`).
+     - Garment pattern is badged/printed only when `garment_pattern !== 'Solid'`.
+4. **Simultaneous Modal Clear**:
+   * Clicking `#btn_pos_clear_brand` resets Brand (to 0 and restores original rate), Primary Color (`""`), Secondary Color (`""`), Pattern (`'Solid'`), and resets `service_color` to `'#000000'`.
+
+### AH. POS Hourly Time-Slot Scheduling Invariant
+1. **Discrete 1-Hour Time Slots**:
+   * In `views/pos.ejs`, Route Pick-up (`#POS_pickup_time`) and Route Delivery (`#POS_delivery_time`) inputs accept **Date and Hour only**.
+   * Replaces arbitrary minute inputs (`<input type="time">`) with a `<select class="form-select pos-input-sm">` populated with 24 hourly increments (`00:00` to `23:00`), labeled in 12-hour format with AM/PM (e.g. `09:00 AM`, `02:00 PM`).
+2. **Sync & Normalization**:
+   * Automatic event listeners normalize existing timestamps (e.g. `10:30` -> `10:00`) when populating from cart state or radio selections.
+   * Persisted as standard MySQL timestamps (`YYYY-MM-DD HH:00:00`).

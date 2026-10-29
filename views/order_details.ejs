@@ -19,6 +19,20 @@
                     const isMaster = (accessdata?.logas === 'master' || (accessdata?.roll && accessdata.roll.rollType === 'master'));
                     const canEditOrder = accessdata?.logas != 'custmor' && (isMaster || (accessdata?.roll?.orders && accessdata.roll.orders.includes('edit')));
                     const canDeleteOrder = accessdata?.logas != 'custmor' && (isMaster || (accessdata?.roll?.orders && accessdata.roll.orders.includes('delete')));
+
+                    const getColorHex = (name) => {
+                      if (!name) return '#000000';
+                      const map = {
+                        'black': '#000000', 'white': '#FFFFFF', 'gray': '#808080', 'charcoal': '#36454F',
+                        'navy': '#000080', 'blue': '#2563EB', 'light blue': '#93C5FD', 'red': '#DC2626',
+                        'burgundy': '#800020', 'pink': '#F472B6', 'purple': '#800080', 'lavender': '#E6E6FA',
+                        'green': '#16A34A', 'olive': '#808000', 'yellow': '#EAB308', 'orange': '#F97316',
+                        'brown': '#8B4513', 'beige': '#F5F5DC', 'cream': '#FFFDD0', 'khaki': '#C3B091',
+                        'multi-color': 'linear-gradient(135deg, #ef4444, #eab308, #22c55e, #3b82f6)',
+                        'other': '#94A3B8', 'unknown': '#64748B'
+                      };
+                      return map[String(name).trim().toLowerCase()] || (name.startsWith('#') ? name : '#000000');
+                    };
                 %>
       <div class="row">
         <div class="col-xl-9">
@@ -312,7 +326,7 @@
                         <%= language.Brand || 'Brand' %>
                       </th>
                       <th>
-                        <%= language.Color %>
+                        <%= language.Color || 'Color & Pattern' %>
                       </th>
                       <th>
                         <%= language.Value || 'Value' %>
@@ -363,7 +377,29 @@
                         <span class="text-muted">—</span>
                         <% } %>
                       </td>
-                      <td><input type="color" class="p-1 w-75" value="<%= data.service_color %>" disabled></td>
+                      <td>
+                        <% if (data.primary_color) { %>
+                          <div class="d-inline-flex align-items-center gap-1 rounded py-1 px-2 fs-12 pos-badge-color">
+                            <span class="rounded-circle d-inline-block border flex-shrink-0" style="width: 12px; height: 12px; background: <%= getColorHex(data.primary_color) %>;"></span>
+                            <% if (data.secondary_color) { %>
+                              <span class="rounded-circle d-inline-block border flex-shrink-0" style="width: 10px; height: 10px; margin-left: -5px; background: <%= getColorHex(data.secondary_color) %>;"></span>
+                            <% } %>
+                            <span class="fw-semibold"><%= data.primary_color %></span>
+                            <% if (data.secondary_color) { %>
+                              <span class="text-muted">/ <%= data.secondary_color %></span>
+                            <% } %>
+                            <% if (data.garment_pattern && data.garment_pattern !== 'Solid') { %>
+                              <span class="badge bg-secondary text-white py-0 px-1 ms-1" style="font-size: 9px;"><%= data.garment_pattern %></span>
+                            <% } %>
+                          </div>
+                        <% } else if (data.service_color && data.service_color !== '#000000') { %>
+                          <div class="d-inline-flex align-items-center gap-1">
+                            <span class="rounded-circle d-inline-block border" style="width: 14px; height: 14px; background: <%= data.service_color %>;"></span>
+                          </div>
+                        <% } else { %>
+                          <span class="text-muted fs-12">—</span>
+                        <% } %>
+                      </td>
                       <td class="<%= (data.item_value && parseFloat(data.item_value) > 0) ? 'symbol' : 'text-muted' %>">
                         <%= (data.item_value && parseFloat(data.item_value) > 0) ? parseFloat(data.item_value).toFixed(2) : '—' %>
                       </td>

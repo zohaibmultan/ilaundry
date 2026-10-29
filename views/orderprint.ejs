@@ -325,6 +325,18 @@
                 </span>
                 <% if (item.service_type_name) { %>
                   <span class="item-subtext">[<%= item.service_type_name %>]</span>
+                <% 
+                  const printMeta = [];
+                  if (item.brand_label) printMeta.push(item.brand_label);
+                  if (item.primary_color) printMeta.push(item.primary_color);
+                  if (item.secondary_color) printMeta.push(item.secondary_color);
+                  if (item.garment_pattern && item.garment_pattern !== 'Solid') printMeta.push(item.garment_pattern);
+                %>
+                <% if (printMeta.length > 0) { %>
+                  <div style="font-size: 11px; color: #475569; margin-top: 2px;">
+                    <%= printMeta.join(' • ') %>
+                  </div>
+                <% } %>
                   <% } %>
               </td>
               <td class="text-end">

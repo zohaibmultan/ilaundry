@@ -230,6 +230,8 @@
         "Total_Orders_Amount": "Total Orders Amount",
         "Order_List": "Order List",
         "Add_New_Orders": "Add New Orders",
+        "New_Order": "New Order",
+        "Void": "Void",
         "No_Order_List_Found": "No Order List Found",
         "Total_Amount": "Total Amount",
         "Pending": "Pending",

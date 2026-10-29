@@ -202,6 +202,9 @@
                                                                 var paid = parseFloat(order.paid_amount || 0).toFixed(2);
                                                                 var balance = parseFloat(order.balance_amount !== undefined ? order.balance_amount : (order.gross_total - order.paid_amount));
                                                             %>
+                                                            <% if (String(order.order_status) === '6' || Number(order.order_status) === 6) { %>
+                                                                <div class="symbol fw-bold font-w600"><%= gross %></div>
+                                                            <% } else { %>
                                                             <div class="server-dt-secondary-text mb-1">
                                                                 <span class="me-1">Total:</span><span class="symbol fw-bold"><%= gross %></span>
                                                                 | <span class="me-1">Paid:</span><span class="symbol text-success"><%= paid %></span>
@@ -219,6 +222,7 @@
                                                                     <span class="badge badge-dark light btn-xxs"><%= language.Fully_Paid || 'Fully Paid' %></span>
                                                                 <% } %>
                                                             </div>
+                                                            <% } %>
                                                         </td>
                                                         <td>
                                                             <span class="badge-status-pill <%= order.statusClass %>">

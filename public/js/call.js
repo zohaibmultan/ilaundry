@@ -1348,6 +1348,38 @@
       }
    });
 
+   window.GARMENT_COLOR_HEX_MAP = {
+      'black': '#000000',
+      'white': '#FFFFFF',
+      'gray': '#808080',
+      'charcoal': '#36454F',
+      'navy': '#000080',
+      'blue': '#2563EB',
+      'light blue': '#93C5FD',
+      'red': '#DC2626',
+      'burgundy': '#800020',
+      'pink': '#F472B6',
+      'purple': '#800080',
+      'lavender': '#E6E6FA',
+      'green': '#16A34A',
+      'olive': '#808000',
+      'yellow': '#EAB308',
+      'orange': '#F97316',
+      'brown': '#8B4513',
+      'beige': '#F5F5DC',
+      'cream': '#FFFDD0',
+      'khaki': '#C3B091',
+      'multi-color': 'linear-gradient(135deg, #ef4444, #eab308, #22c55e, #3b82f6)',
+      'other': '#94A3B8',
+      'unknown': '#64748B'
+   };
+
+   window.getGarmentColorHex = function (name) {
+      if (!name) return null;
+      var lower = String(name).trim().toLowerCase();
+      return window.GARMENT_COLOR_HEX_MAP[lower] || (name.startsWith('#') ? name : null);
+   };
+
    function renderCartRowHTML(value, isEdit, orderId, loginas) {
       var isRateDisabled = (loginas === 0 || loginas === '0');
       var rateReadonly = isRateDisabled ? 'readonly' : '';
@@ -1376,6 +1408,33 @@
          ? (brandLabel + ' (' + (value.brand_category || '') + ' +' + (value.brand_upcharge_percent || 0) + '% / ' + (value.brand_price_multiplier || 1) + 'x)')
          : 'Select Brand';
 
+      var primColor = (value.primary_color && String(value.primary_color).trim()) ? String(value.primary_color).trim() : '';
+      var secColor = (value.secondary_color && String(value.secondary_color).trim()) ? String(value.secondary_color).trim() : '';
+      var pattern = (value.garment_pattern && String(value.garment_pattern).trim()) ? String(value.garment_pattern).trim() : 'Solid';
+
+      var colorTitle = primColor
+         ? (primColor + (secColor ? (' / ' + secColor) : '') + (pattern && pattern !== 'Solid' ? (' • ' + pattern) : ''))
+         : 'Select Color & Pattern';
+
+      var colorBtnClass = primColor ? 'has-color' : '';
+      var primHex = window.getGarmentColorHex(primColor) || (value.service_color || '#000000');
+      var secHex = window.getGarmentColorHex(secColor);
+
+      var colorSwatchesHtml = '';
+      if (primColor) {
+         colorSwatchesHtml = '<span class="rounded-circle d-inline-block border flex-shrink-0" style="width: 12px; height: 12px; background: ' + primHex + ';"></span>';
+         if (secColor && secHex) {
+            colorSwatchesHtml += '<span class="rounded-circle d-inline-block border flex-shrink-0" style="width: 10px; height: 10px; margin-left: -5px; background: ' + secHex + ';"></span>';
+         }
+         colorSwatchesHtml += '<span class="pos-color-label text-truncate ms-1" style="max-width: 58px;">' + primColor + '</span>';
+      } else {
+         colorSwatchesHtml = '<i class="fa fa-palette me-1"></i><span class="pos-color-label">Color</span>';
+      }
+
+      var colorBtnHtml = '<button type="button" class="btn btn-xs pos-btn-color ' + colorBtnClass + ' px-2 py-1 text-truncate d-inline-flex align-items-center" style="max-width: 105px; font-size: 11px;" data-id="' + value.id + '" data-primary-color="' + primColor.replace(/"/g, '&quot;') + '" data-secondary-color="' + secColor.replace(/"/g, '&quot;') + '" data-pattern="' + pattern.replace(/"/g, '&quot;') + '" data-brand-id="' + (value.brand_id || 0) + '" data-brand-label="' + brandLabel.replace(/"/g, '&quot;') + '" data-original-rate="' + origRate + '"' + orderAttr + ' title="' + colorTitle.replace(/"/g, '&quot;') + '" ' + rateDisabledAttr + '>' +
+         colorSwatchesHtml +
+         '</button>';
+
       return '<tr>' +
          '<td>' +
          '<div class="pos-cart-service-info">' +
@@ -1384,12 +1443,12 @@
          '</div>' +
          '</td>' +
          '<td class="text-center">' +
-         '<button type="button" class="btn btn-xs ' + brandBtnClass + ' px-2 py-1 text-truncate pos-btn-brand" style="max-width: 85px; font-size: 11px;" data-id="' + value.id + '" data-brand-id="' + (value.brand_id || 0) + '" data-brand-label="' + brandLabel.replace(/"/g, '&quot;') + '" data-original-rate="' + origRate + '"' + orderAttr + ' title="' + brandTitle.replace(/"/g, '&quot;') + '" ' + rateDisabledAttr + '>' +
+         '<button type="button" class="btn btn-xs ' + brandBtnClass + ' px-2 py-1 text-truncate pos-btn-brand" style="max-width: 85px; font-size: 11px;" data-id="' + value.id + '" data-brand-id="' + (value.brand_id || 0) + '" data-brand-label="' + brandLabel.replace(/"/g, '&quot;') + '" data-primary-color="' + primColor.replace(/"/g, '&quot;') + '" data-secondary-color="' + secColor.replace(/"/g, '&quot;') + '" data-pattern="' + pattern.replace(/"/g, '&quot;') + '" data-original-rate="' + origRate + '"' + orderAttr + ' title="' + brandTitle.replace(/"/g, '&quot;') + '" ' + rateDisabledAttr + '>' +
          '<i class="fa fa-tag me-1"></i>' + brandBtnText +
          '</button>' +
          '</td>' +
          '<td class="text-center">' +
-         '<input type="color" class="pos-color-circle" value="' + (value.service_color || '#000000') + '" id="POS_service_color" data-id="' + value.id + '">' +
+         colorBtnHtml +
          '</td>' +
          '<td class="text-center">' +
          '<div class="d-inline-flex align-items-center justify-content-center gap-1">' +
@@ -1704,7 +1763,14 @@
       // 1. Instantaneous local calculation for 0ms visual feedback
       let localCalc = calculateClientReadySchedule(orderDateVal, window.POS_READY_SCHEDULE);
       $(targetDateInput).val(localCalc.readyDate);
-      $(targetTimeInput).val(localCalc.readyTime);
+      if ($(targetTimeInput).is('select')) {
+         let h = (localCalc.readyTime && localCalc.readyTime.includes(':'))
+            ? (localCalc.readyTime.split(':')[0].padStart(2, '0') + ':00')
+            : localCalc.readyTime;
+         $(targetTimeInput).val(h);
+      } else {
+         $(targetTimeInput).val(localCalc.readyTime);
+      }
 
       if (isReady) {
          $('input[name=readydate]').val(localCalc.readyDate);
@@ -1735,7 +1801,14 @@
             if (res && res.success && res.result) {
                if (res.schedule) window.POS_READY_SCHEDULE = res.schedule;
                $(targetDateInput).val(res.result.readyDate);
-               $(targetTimeInput).val(res.result.readyTime);
+               if ($(targetTimeInput).is('select')) {
+                  let h = (res.result.readyTime && res.result.readyTime.includes(':'))
+                     ? (res.result.readyTime.split(':')[0].padStart(2, '0') + ':00')
+                     : res.result.readyTime;
+                  $(targetTimeInput).val(h);
+               } else {
+                  $(targetTimeInput).val(res.result.readyTime);
+               }
                if (isReady) {
                   $('input[name=readydate]').val(res.result.readyDate);
                   $('input[name=readytime]').val(res.result.readyTime);
@@ -2110,11 +2183,20 @@
 
    $(document).on("change", "input[name=deliverytime]", function () {
       let val = $(this).val();
+      let hourVal = (val && val.includes(':')) ? (val.split(':')[0].padStart(2, '0') + ':00') : val;
       if ($('#POS_delivery_time').length) {
-         $('#POS_delivery_time').val(val).trigger('change');
+         if ($('#POS_delivery_time').is('select')) {
+            $('#POS_delivery_time').val(hourVal).trigger('change');
+         } else {
+            $('#POS_delivery_time').val(val).trigger('change');
+         }
       }
       if ($('#edit_POS_delivery_time').length) {
-         $('#edit_POS_delivery_time').val(val).trigger('change');
+         if ($('#edit_POS_delivery_time').is('select')) {
+            $('#edit_POS_delivery_time').val(hourVal).trigger('change');
+         } else {
+            $('#edit_POS_delivery_time').val(val).trigger('change');
+         }
       }
    });
 
@@ -2130,24 +2212,135 @@
 
    $(document).on("change", "input[name=pickuptime]", function () {
       let val = $(this).val();
+      let hourVal = (val && val.includes(':')) ? (val.split(':')[0].padStart(2, '0') + ':00') : val;
       if ($('#POS_pickup_time').length) {
-         $('#POS_pickup_time').val(val).trigger('change');
+         if ($('#POS_pickup_time').is('select')) {
+            $('#POS_pickup_time').val(hourVal).trigger('change');
+         } else {
+            $('#POS_pickup_time').val(val).trigger('change');
+         }
       }
       if ($('#edit_POS_pickup_time').length) {
-         $('#edit_POS_pickup_time').val(val).trigger('change');
+         if ($('#edit_POS_pickup_time').is('select')) {
+            $('#edit_POS_pickup_time').val(hourVal).trigger('change');
+         } else {
+            $('#edit_POS_pickup_time').val(val).trigger('change');
+         }
       }
    });
 
+   // Void Order Confirmation Trigger
+   $(document).on("click", "#btn_pos_void, #edit_btn_pos_void", function () {
+      var isEdit = ($(this).attr('id') === 'edit_btn_pos_void' || $('#pos_mode').val() === 'edit') ? '1' : '0';
+      var orderId = isEdit === '1'
+         ? ($('#order_id').val() || $('#pos_order_id').val() || '')
+         : ($('#pos_order_id').val() || '');
 
-   $(document).on("change", "input[name=pickuptime]", function () {
-      let val = $(this).val();
-      if ($('#POS_pickup_time').length) {
-         $('#POS_pickup_time').val(val).trigger('change');
-      }
-      if ($('#edit_POS_pickup_time').length) {
-         $('#edit_POS_pickup_time').val(val).trigger('change');
+      $('#pos_void_target_order_id').val(orderId);
+      $('#pos_void_is_edit').val(isEdit);
+      $('#pos_void_modal_order_id_text').text(orderId);
+      $('#pos_void_reason_select').val('Customer declined price / service charge');
+      $('#pos_void_notes_input').val('');
+      $('#pos_void_confirm_modal').modal('show');
+   });
+
+   // Execute Void Order on Confirmation
+   $(document).on("click", "#btn_pos_confirm_void_submit", function () {
+      var $btn = $(this);
+      var orderId = $('#pos_void_target_order_id').val();
+      var isEdit = $('#pos_void_is_edit').val();
+      var reason = $('#pos_void_reason_select').val();
+      var note = $('#pos_void_notes_input').val();
+
+      $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i>Voiding...');
+
+      $.ajax({
+         type: 'POST',
+         url: window.location.origin + '/admin/void_order',
+         data: {
+            order_id: orderId,
+            reason: reason,
+            note: note,
+            is_edit: isEdit
+         },
+         dataType: 'json',
+         success: function (res) {
+            $('#pos_void_confirm_modal').modal('hide');
+            if (res && res.success) {
+               if (typeof toastr !== 'undefined') {
+                  toastr.success(res.message || ('Order #' + orderId + ' has been voided.'), 'Order Voided');
+               }
+               setTimeout(function () {
+                  if (isEdit === '1') {
+                     window.location.href = '/order';
+                  } else {
+                     window.location.href = '/admin/pos';
+                  }
+               }, 600);
+            } else {
+               if (typeof toastr !== 'undefined') {
+                  toastr.error((res && res.message) || 'Failed to void order.', 'Error');
+               }
+            }
+         },
+         error: function (xhr) {
+            var msg = (xhr && xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error voiding order.';
+            if (typeof toastr !== 'undefined') {
+               toastr.error(msg, 'Error');
+            }
+         },
+         complete: function () {
+            $btn.prop('disabled', false).html('<i class="fa fa-ban me-1"></i>Confirm Void Order');
+         }
+      });
+   });
+
+   // Start New Order Button Click
+   $(document).on("click", "#btn_pos_new_order", function () {
+      var rowCount = $('#POS_service_added_list tr').length;
+      var hasItems = rowCount > 0 && !$('#POS_service_added_list').text().includes('Your cart is empty');
+      var currentOrderId = $('#pos_order_id').val() || '';
+
+      if (hasItems) {
+         $('#pos_new_order_active_id').text(currentOrderId);
+         $('#pos_new_order_confirm_modal').modal('show');
+      } else {
+         executeStartNewOrder();
       }
    });
+
+   $(document).on("click", "#btn_pos_new_order_void_first", function () {
+      $('#pos_new_order_confirm_modal').modal('hide');
+      setTimeout(function () {
+         $('#btn_pos_void').trigger('click');
+      }, 300);
+   });
+
+   $(document).on("click", "#btn_pos_new_order_discard_fresh", function () {
+      $('#pos_new_order_confirm_modal').modal('hide');
+      executeStartNewOrder();
+   });
+
+   function executeStartNewOrder() {
+      $.ajax({
+         type: 'POST',
+         url: window.location.origin + '/admin/new_order',
+         dataType: 'json',
+         success: function (res) {
+            if (res && res.success) {
+               if (typeof toastr !== 'undefined') {
+                  toastr.info('Started New Order #' + (res.new_order_id || ''), 'New Order');
+               }
+               setTimeout(function () {
+                  window.location.href = '/admin/pos';
+               }, 300);
+            }
+         },
+         error: function () {
+            window.location.href = '/admin/pos';
+         }
+      });
+   }
 
    $(document).on("click", "#POS_clear", function () {
       clearcart();
@@ -2410,7 +2603,7 @@
       updatePosBrandPreview();
    }
 
-   function searchPosBrands(query) {
+   function searchPosBrands(query, onComplete) {
       var baseUrl = window.location.origin;
       $.ajax({
          type: 'GET',
@@ -2418,20 +2611,30 @@
          data: { q: query || '' },
          dataType: 'json',
          success: function (res) {
-            renderPosBrandRows((res && res.brands) ? res.brands : []);
+            var brands = (res && res.brands) ? res.brands : [];
+            renderPosBrandRows(brands);
+            if (typeof onComplete === 'function') {
+               onComplete(brands);
+            }
          },
          error: function () {
             $('#pos_brand_results_tbody').html('<tr><td colspan="5" class="text-center py-4 text-danger">Failed to load brands.</td></tr>');
+            if (typeof onComplete === 'function') {
+               onComplete([]);
+            }
          }
       });
    }
 
-   $(document).on('click', '.pos-btn-brand', function () {
-      var serviceId = $(this).attr('data-id');
-      var orderId = $(this).attr('data-order_id') || $('#pos_order_id').val() || $('#order_id').val() || $('input[name=order_id]').val() || '';
-      var isEdit = ($(this).attr('data-order_id') || $('#pos_mode').val() === 'edit') ? '1' : '0';
-      var origRate = parseFloat($(this).attr('data-original-rate')) || 0;
-      var currentBrandId = parseInt($(this).attr('data-brand-id')) || 0;
+   function openPosBrandModalForElement($btn) {
+      var serviceId = $btn.attr('data-id');
+      var orderId = $btn.attr('data-order_id') || $('#pos_order_id').val() || $('#order_id').val() || $('input[name=order_id]').val() || '';
+      var isEdit = ($btn.attr('data-order_id') || $('#pos_mode').val() === 'edit') ? '1' : '0';
+      var origRate = parseFloat($btn.attr('data-original-rate')) || 0;
+      var currentBrandId = parseInt($btn.attr('data-brand-id')) || 0;
+      var primaryColor = $btn.attr('data-primary-color') || '';
+      var secondaryColor = $btn.attr('data-secondary-color') || '';
+      var pattern = $btn.attr('data-pattern') || 'Solid';
 
       $('#pos_brand_modal_service_id').val(serviceId);
       $('#pos_brand_modal_order_id').val(orderId);
@@ -2439,6 +2642,16 @@
       $('#pos_brand_modal_original_rate').val(origRate);
       $('#pos_brand_modal_selected_id').val(currentBrandId);
       $('#pos_brand_search_input').val('');
+      $('#pos_brand_camera_canvas').addClass('d-none');
+      $('#pos_brand_ocr_overlay').addClass('d-none').removeClass('d-flex');
+      posBrandCameraFrozen = false;
+      $('#btn_pos_scan_cloth').removeClass('btn-outline-primary').addClass('btn-primary').prop('disabled', false)
+         .html('<i class="fa fa-camera-retro me-1"></i><span id="btn_pos_scan_cloth_text">Scan Cloth Details</span>');
+
+      // Populate Color & Pattern dropdowns
+      $('#pos_modal_primary_color').val(primaryColor).trigger('change');
+      $('#pos_modal_secondary_color').val(secondaryColor).trigger('change');
+      $('#pos_modal_pattern').val(pattern).trigger('change');
 
       $('#pos_brand_modal').modal('show');
       searchPosBrands('');
@@ -2446,10 +2659,19 @@
       setTimeout(function () {
          $('#pos_brand_search_input').trigger('focus');
       }, 300);
+   }
+
+   $(document).on('click', '.pos-btn-brand, .pos-btn-color', function () {
+      openPosBrandModalForElement($(this));
    });
 
    $('#pos_brand_modal').on('hidden.bs.modal', function () {
       stopPosBrandCamera();
+      $('#pos_brand_camera_canvas').addClass('d-none');
+      $('#pos_brand_ocr_overlay').addClass('d-none').removeClass('d-flex');
+      posBrandCameraFrozen = false;
+      $('#btn_pos_scan_cloth').removeClass('btn-outline-primary').addClass('btn-primary').prop('disabled', false)
+         .html('<i class="fa fa-camera-retro me-1"></i><span id="btn_pos_scan_cloth_text">Scan Cloth Details</span>');
    });
 
    $(document).on('change', '#pos_brand_camera_select', function () {
@@ -2464,28 +2686,147 @@
       startPosBrandCamera($('#pos_brand_camera_select').val());
    });
 
-   $(document).on('click', '#btn_pos_freeze_camera', function () {
+   $(document).on('click', '#btn_pos_scan_cloth, #btn_pos_freeze_camera', function () {
       var videoEl = document.getElementById('pos_brand_camera_video');
       var canvasEl = document.getElementById('pos_brand_camera_canvas');
       if (!videoEl || !canvasEl) return;
 
-      if (!posBrandCameraFrozen) {
-         canvasEl.width = videoEl.videoWidth || 640;
-         canvasEl.height = videoEl.videoHeight || 480;
-         var ctx = canvasEl.getContext('2d');
-         if (ctx) {
-            ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
-         }
-         $('#pos_brand_camera_canvas').removeClass('d-none');
-         posBrandCameraFrozen = true;
-         $(this).removeClass('btn-outline-primary').addClass('btn-primary')
-            .html('<i class="fa fa-play me-1"></i><span>Unfreeze Frame</span>');
-      } else {
+      // If already frozen / displaying scan results, click unfreezes back to live camera
+      if (posBrandCameraFrozen) {
          $('#pos_brand_camera_canvas').addClass('d-none');
+         $('#pos_brand_ocr_overlay').addClass('d-none').removeClass('d-flex');
          posBrandCameraFrozen = false;
-         $(this).removeClass('btn-primary').addClass('btn-outline-primary')
-            .html('<i class="fa fa-snowflake me-1"></i><span>Freeze Frame</span>');
+         $('#btn_pos_scan_cloth').removeClass('btn-outline-primary').addClass('btn-primary').prop('disabled', false)
+            .html('<i class="fa fa-camera-retro me-1"></i><span id="btn_pos_scan_cloth_text">Scan Cloth Details</span>');
+         if (!posBrandCameraStream) {
+            startPosBrandCamera($('#pos_brand_camera_select').val());
+         }
+         return;
       }
+
+      // Check if camera is streaming
+      if (!posBrandCameraStream || videoEl.videoWidth === 0) {
+         if (typeof toastr !== 'undefined') {
+            toastr.warning('Please wait for camera stream to start or select an active camera.', 'Camera Not Ready');
+         }
+         return;
+      }
+
+      // Capture frame to canvas
+      canvasEl.width = videoEl.videoWidth || 640;
+      canvasEl.height = videoEl.videoHeight || 480;
+      var ctx = canvasEl.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+
+      // Display frozen canvas and scanning overlay
+      $('#pos_brand_camera_canvas').removeClass('d-none');
+      $('#pos_brand_ocr_overlay').removeClass('d-none').addClass('d-flex');
+      posBrandCameraFrozen = true;
+
+      var $btn = $('#btn_pos_scan_cloth');
+      $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i><span>Scanning Tag...</span>');
+
+      // Export canvas frame as Blob and dispatch to OCR Proxy
+      canvasEl.toBlob(function (blob) {
+         if (!blob) {
+            $('#pos_brand_ocr_overlay').addClass('d-none').removeClass('d-flex');
+            $btn.prop('disabled', false).html('<i class="fa fa-camera-retro me-1"></i><span>Scan Cloth Details</span>');
+            posBrandCameraFrozen = false;
+            if (typeof toastr !== 'undefined') toastr.error('Failed to capture frame from video.');
+            return;
+         }
+
+         var formData = new FormData();
+         formData.append('image', blob, 'tag_frame.jpg');
+         formData.append('threshold', '80');
+
+         var targetStoreId = $('#pos_store_id').val() || '';
+         if (targetStoreId) {
+            formData.append('store_id', targetStoreId);
+         }
+
+         $.ajax({
+            type: 'POST',
+            url: window.location.origin + '/admin/scan_ocr',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            timeout: 15000,
+            success: function (res) {
+               // Render annotated bounding box image if provided by OCR pipeline
+               if (res && res.ocr && res.ocr.annotated_image_b64) {
+                  var annotatedImg = new Image();
+                  annotatedImg.onload = function () {
+                     ctx.drawImage(annotatedImg, 0, 0, canvasEl.width, canvasEl.height);
+                  };
+                  annotatedImg.src = 'data:image/jpeg;base64,' + res.ocr.annotated_image_b64;
+               }
+
+               var primaryText = (res && res.ocr && res.ocr.primary_brand_text) ? res.ocr.primary_brand_text.trim() : '';
+               var posMatch = (res && res.pos_match) ? res.pos_match : {};
+               var topCandidate = (posMatch.top_candidates && posMatch.top_candidates.length > 0) ? posMatch.top_candidates[0] : null;
+
+               if (posMatch.is_matched && topCandidate) {
+                  var searchKey = topCandidate.pos_search_key || topCandidate.brand_label;
+                  $('#pos_brand_search_input').val(searchKey);
+                  searchPosBrands(searchKey, function (brands) {
+                     var match = brands.find(function (b) {
+                        return (topCandidate.id && parseInt(b.id) === parseInt(topCandidate.id)) ||
+                               (b.brand_name && b.brand_name.toLowerCase() === (topCandidate.brand_label || '').toLowerCase()) ||
+                               (b.pos_search_key && b.pos_search_key.toLowerCase() === (searchKey || '').toLowerCase());
+                     });
+                     if (match) {
+                        $('#pos_brand_modal_selected_id').val(match.id);
+                        $('.pos-brand-select-row').removeClass('table-primary');
+                        var $r = $('.pos-brand-select-row[data-brand-id="' + match.id + '"]');
+                        $r.addClass('table-primary');
+                        $r.find('.pos-brand-radio').prop('checked', true);
+                        updatePosBrandPreview();
+                     }
+                  });
+                  if (typeof toastr !== 'undefined') {
+                     toastr.success('Matched brand <b>' + (topCandidate.brand_label || searchKey) + '</b> (' + Math.round(posMatch.match_score || 0) + '% score)', 'Tag Recognized', { timeOut: 4000, escapeHtml: false });
+                  }
+               } else if (topCandidate && (posMatch.match_score >= 60)) {
+                  var searchKey = topCandidate.pos_search_key || topCandidate.brand_label;
+                  $('#pos_brand_search_input').val(searchKey);
+                  searchPosBrands(searchKey);
+                  if (typeof toastr !== 'undefined') {
+                     toastr.info('Suggested brand <b>' + (topCandidate.brand_label || searchKey) + '</b> (' + Math.round(posMatch.match_score) + '% score). Please verify.', 'OCR Candidate', { timeOut: 4500, escapeHtml: false });
+                  }
+               } else if (primaryText) {
+                  $('#pos_brand_search_input').val(primaryText);
+                  searchPosBrands(primaryText);
+                  if (typeof toastr !== 'undefined') {
+                     toastr.warning('Detected text: "<b>' + primaryText + '</b>", but no brand catalog match found.', 'OCR Scanned', { timeOut: 5000, escapeHtml: false });
+                  }
+               } else {
+                  if (typeof toastr !== 'undefined') {
+                     toastr.warning('No legible brand text detected on tag. Try adjusting lighting or tag position.', 'Tag OCR Notice', { timeOut: 4500 });
+                  }
+               }
+            },
+            error: function (xhr, status) {
+               var errMsg = 'OCR scan failed.';
+               if (xhr && xhr.responseJSON && xhr.responseJSON.error) {
+                  errMsg = xhr.responseJSON.error;
+               } else if (status === 'timeout') {
+                  errMsg = 'OCR Microservice request timed out. Please check if Python Flask service is running.';
+               }
+               if (typeof toastr !== 'undefined') {
+                  toastr.error(errMsg, 'OCR Error', { timeOut: 5000 });
+               }
+            },
+            complete: function () {
+               $('#pos_brand_ocr_overlay').addClass('d-none').removeClass('d-flex');
+               $btn.prop('disabled', false)
+                  .removeClass('btn-primary').addClass('btn-outline-primary')
+                  .html('<i class="fa fa-sync-alt me-1"></i><span id="btn_pos_scan_cloth_text">Scan Again</span>');
+            }
+         });
+      }, 'image/jpeg', 0.92);
    });
 
    $(document).on('click', '#btn_pos_toggle_camera', function () {
@@ -2519,18 +2860,21 @@
       updatePosBrandPreview();
    });
 
-   function applyPosBrandSelection(brandIdToApply) {
+   function applyPosBrandSelection(brandIdToApply, explicitPrimaryColor, explicitSecondaryColor, explicitPattern) {
       var baseUrl = window.location.origin;
       var serviceId = $('#pos_brand_modal_service_id').val();
       var orderId = $('#pos_brand_modal_order_id').val();
       var isEdit = $('#pos_brand_modal_is_edit').val() === '1';
+      var primaryColor = (typeof explicitPrimaryColor !== 'undefined') ? explicitPrimaryColor : ($('#pos_modal_primary_color').val() || '');
+      var secondaryColor = (typeof explicitSecondaryColor !== 'undefined') ? explicitSecondaryColor : ($('#pos_modal_secondary_color').val() || '');
+      var pattern = (typeof explicitPattern !== 'undefined') ? explicitPattern : ($('#pos_modal_pattern').val() || 'Solid');
 
       if (!serviceId) return;
 
       var endpoint = isEdit ? (baseUrl + '/admin/edit_changebrand') : (baseUrl + '/admin/changebrand');
       var payload = isEdit
-         ? { id: serviceId, brand_id: brandIdToApply, order_id: orderId }
-         : { id: serviceId, brand_id: brandIdToApply };
+         ? { id: serviceId, brand_id: brandIdToApply, order_id: orderId, primary_color: primaryColor, secondary_color: secondaryColor, garment_pattern: pattern }
+         : { id: serviceId, brand_id: brandIdToApply, primary_color: primaryColor, secondary_color: secondaryColor, garment_pattern: pattern };
 
       $.ajax({
          type: 'POST',
@@ -2575,15 +2919,18 @@
 
    $(document).on('click', '#btn_pos_apply_brand', function () {
       var selectedBrandId = parseInt($('#pos_brand_modal_selected_id').val()) || 0;
-      if (!selectedBrandId) {
-         toastr.warning('Please select a brand from the list first.');
-         return;
-      }
       applyPosBrandSelection(selectedBrandId);
    });
 
    $(document).on('click', '#btn_pos_clear_brand', function () {
-      applyPosBrandSelection(0);
+      $('#pos_modal_primary_color').val('').trigger('change');
+      $('#pos_modal_secondary_color').val('').trigger('change');
+      $('#pos_modal_pattern').val('Solid').trigger('change');
+      $('#pos_brand_modal_selected_id').val(0);
+      $('.pos-brand-select-row').removeClass('table-primary');
+      $('.pos-brand-radio').prop('checked', false);
+      updatePosBrandPreview();
+      applyPosBrandSelection(0, '', '', 'Solid');
    });
 
    $(document).on("change", "#POSservice_item_value", function () {

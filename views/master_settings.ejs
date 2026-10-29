@@ -274,6 +274,15 @@
                                             </div>
                                         </div>
 
+                                        <div class="col-12">
+                                            <label class="form-label fw-bold">
+                                                <i class="fas fa-robot text-primary me-1"></i> Global Garment Tag OCR Service URL
+                                            </label>
+                                            <input type="text" class="form-control" name="ocr_server_url" id="ocr_server_url"
+                                                value="<%= masterstore.ocr_server_url || 'http://127.0.0.1:5000/api/scan' %>"
+                                                placeholder="http://127.0.0.1:5000/api/scan">
+                                            <small class="text-muted">Master default endpoint for the Python Flask RapidOCR tag recognition service.</small>
+                                        </div>
                                         <div class="col-12 d-none">
                                             <label class="form-label"><%= language.Default_Store_Roll || 'Default Store Role' %></label>
                                             <select class="form-control" name="storeroll">

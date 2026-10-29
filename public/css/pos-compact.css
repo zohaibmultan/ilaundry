@@ -113,7 +113,7 @@
 .pos-input-sm {
   height: 32px !important;
   font-size: 16px !important;
-  padding: 3px 8px !important;
+  /* padding: 3px 8px !important; */
   border-radius: 7px !important;
   border: 1px solid #cbd5e1 !important;
   color: #1e293b !important;
@@ -123,6 +123,93 @@
 .pos-input-sm:focus {
   border-color: #3b82f6 !important;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15) !important;
+}
+
+select.pos-input-sm {
+  padding-right: 22px !important;
+  background-position: right 6px center !important;
+  background-size: 14px 10px !important;
+  cursor: pointer;
+}
+
+/* POS Color & Pattern button in Cart table */
+.pos-btn-color {
+  height: 28px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  cursor: pointer;
+  white-space: nowrap !important;
+  transition: all 0.15s ease-in-out !important;
+  text-decoration: none !important;
+}
+
+.pos-btn-color.has-color {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.pos-btn-color.has-color:hover {
+  background-color: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+.pos-btn-color.has-color .pos-color-label {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+.pos-btn-color:not(.has-color) {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #64748b !important;
+}
+
+.pos-btn-color:not(.has-color):hover {
+  background-color: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  color: #334155 !important;
+}
+
+.pos-btn-color:not(.has-color) .pos-color-label {
+  color: #64748b !important;
+}
+
+.pos-btn-color .rounded-circle {
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.pos-badge-color {
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+}
+
+#pos_brand_modal .select2-container .select2-selection--single {
+  height: 32px !important;
+  padding: 2px 6px !important;
+  font-size: 12.5px !important;
+  display: flex !important;
+  align-items: center !important;
+  border-radius: 6px !important;
+}
+
+#pos_brand_modal .select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 30px !important;
+}
+
+#pos_brand_modal .select2-dropdown {
+  z-index: 99999 !important;
+  font-size: 12.5px !important;
 }
 
 /* Store & Customer dropdowns compact styling */
@@ -758,6 +845,46 @@
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
 }
 
+[data-theme-version="dark"] select.pos-input-sm {
+  background-color: #101726 !important;
+  color: #f1f5f9 !important;
+  border-color: #2e3d5b !important;
+}
+
+[data-theme-version="dark"] select.pos-input-sm option {
+  background-color: #101726 !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme-version="dark"] #pos_brand_modal .select2-container--default .select2-selection--single {
+  background-color: #101726 !important;
+  border-color: #2e3d5b !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme-version="dark"] #pos_brand_modal .select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: #f1f5f9 !important;
+}
+
+[data-theme-version="dark"] #pos_brand_modal .select2-container--default .select2-selection--single .select2-selection__placeholder {
+  color: #94a3b8 !important;
+}
+
+[data-theme-version="dark"] #pos_brand_modal .select2-dropdown {
+  background-color: #101726 !important;
+  border-color: #2e3d5b !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme-version="dark"] #pos_brand_modal .select2-results__option {
+  color: #f1f5f9 !important;
+}
+
+[data-theme-version="dark"] #pos_brand_modal .select2-results__option--highlighted {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
 [data-theme-version="dark"] .pos-select-wrap .bootstrap-select .dropdown-toggle,
 [data-theme-version="dark"] .pos-select-wrap .form-control {
   background-color: #101726 !important;
@@ -842,6 +969,77 @@
 
 [data-theme-version="dark"] .pos-color-circle {
   border-color: #2e3d5b !important;
+}
+
+/* POS Color Button in Dark Mode */
+[data-theme-version="dark"] .pos-btn-color.has-color {
+  background-color: #1e293b !important;
+  border: 1px solid #475569 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme-version="dark"] .pos-btn-color.has-color:hover {
+  background-color: #334155 !important;
+  border-color: #64748b !important;
+  color: #ffffff !important;
+}
+
+[data-theme-version="dark"] .pos-btn-color.has-color .pos-color-label {
+  color: #f8fafc !important;
+  font-weight: 600 !important;
+}
+
+[data-theme-version="dark"] .pos-btn-color:not(.has-color) {
+  background-color: #101726 !important;
+  border: 1px solid #334155 !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme-version="dark"] .pos-btn-color:not(.has-color):hover {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] .pos-btn-color:not(.has-color) .pos-color-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme-version="dark"] .pos-btn-color .rounded-circle {
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme-version="dark"] .pos-badge-color {
+  background-color: #1e293b !important;
+  border: 1px solid #475569 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] .pos-inspection-top-card {
+  background-color: #101726 !important;
+  border-color: #2e3d5b !important;
+}
+
+[data-theme-version="dark"] #pos_brand_modal .pos-modal-label {
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] #pos_brand_modal .pos-modal-label.text-muted,
+[data-theme-version="dark"] #pos_brand_modal .pos-modal-label small {
+  color: #94a3b8 !important;
+}
+
+[data-theme-version="dark"] #pos_brand_modal .table-light {
+  background-color: #101726 !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme-version="dark"] #pos_brand_modal .table-light th {
+  background-color: #101726 !important;
+  color: #f1f5f9 !important;
+  border-bottom-color: #2e3d5b !important;
 }
 
 [data-theme-version="dark"] .pos-table-input {
@@ -1539,7 +1737,7 @@
   }
   .pos-input-sm {
     height: 26px !important;
-    font-size: 11px !important;
+    font-size: 16px !important;
     padding: 2px 6px !important;
   }
   .pos-date-group {

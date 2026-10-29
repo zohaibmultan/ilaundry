@@ -128,6 +128,46 @@
                         </div>
                     </div>    
 
+                    <!-- Garment Tag OCR Microservice Configuration Card -->
+                    <div class="col-12">
+                        <div class="settings-section-card mb-4">
+                            <div class="settings-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div class="d-flex align-items-center">
+                                    <div class="settings-icon-badge badge-ops-glass">
+                                        <i class="fas fa-camera"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="settings-card-title">Garment Tag OCR Service Endpoint</h5>
+                                        <p class="settings-card-subtitle">AI & computer vision tag recognition microservice for POS inspection modal</p>
+                                    </div>
+                                </div>
+                                <span class="badge" id="ocrServerStatusBadge">CHECKING</span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-12 col-lg-8">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-robot text-primary me-1"></i> OCR Scan API URL
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" name="ocr_server_url" id="ocr_server_url" 
+                                            value="<%= printerSettings.ocr_server_url || '' %>" 
+                                            placeholder="http://127.0.0.1:5000/api/scan" <%= !canEdit ? 'readonly' : '' %>>
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" id="btnCheckOcr" onclick="checkOcrServerHealth(true)">
+                                            <i class="fas fa-sync-alt" id="ocrPingIcon"></i> Check
+                                        </button>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">Default: <code>http://127.0.0.1:5000/api/scan</code> (Leave blank to inherit Master Setting).</small>
+                                </div>
+                                <div class="col-12 col-lg-4 d-flex align-items-center">
+                                    <div id="ocrStatusDetails" class="alert alert-secondary py-2 px-3 mb-0 small w-100">
+                                        <i class="fas fa-info-circle me-1"></i> Python Flask RapidOCR Microservice
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>    
+
                     <!-- 1. Customer Invoice Receipt Printer Card -->
                     <div class="col-12 col-xl-6">
                         <div class="settings-section-card mb-4">
@@ -505,8 +545,60 @@
             window.open(url, '_blank', 'width=450,height=600');
         }
 
+        async function checkOcrServerHealth(manual) {
+            const urlInput = document.getElementById('ocr_server_url');
+            const url = (urlInput ? urlInput.value.trim() : '') || 'http://127.0.0.1:5000/api/scan';
+            const badge = document.getElementById('ocrServerStatusBadge');
+            const details = document.getElementById('ocrStatusDetails');
+            const btn = document.getElementById('btnCheckOcr');
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Checking...';
+            }
+
+            try {
+                const response = await fetch('/admin/scan_ocr_health?url=' + encodeURIComponent(url));
+                const res = await response.json();
+                if (response.ok && res && res.ok) {
+                    if (badge) {
+                        badge.className = 'badge bg-success-subtle text-success';
+                        badge.textContent = 'ONLINE';
+                    }
+                    if (details) {
+                        const totalBrands = (res.data && res.data.total_brands !== undefined) ? res.data.total_brands : '';
+                        details.className = 'alert alert-success py-2 px-3 mb-0 small';
+                        details.innerHTML = '<i class="fas fa-check-circle me-1"></i> RapidOCR Microservice online (' + (totalBrands ? totalBrands + ' brands loaded' : 'healthy') + ') on <strong>' + (res.healthUrl || url) + '</strong>';
+                    }
+                    if (manual && typeof toastr !== 'undefined') {
+                        toastr.success('Connected to OCR Microservice on <b>' + url + '</b>', { timeOut: 3500, escapeHtml: false });
+                    }
+                } else {
+                    throw new Error((res && res.error) || 'Service returned status ' + response.status);
+                }
+            } catch (err) {
+                if (badge) {
+                    badge.className = 'badge bg-danger-subtle text-danger';
+                    badge.textContent = 'OFFLINE';
+                }
+                if (details) {
+                    details.className = 'alert alert-warning py-2 px-3 mb-0 small';
+                    details.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> OCR Microservice unreachable at <code>' + url + '</code>. Ensure Python Flask service is running.';
+                }
+                if (manual && typeof toastr !== 'undefined') {
+                    toastr.warning('Could not connect to OCR service on <b>' + url + '</b>', { timeOut: 4500, escapeHtml: false });
+                }
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sync-alt" id="ocrPingIcon"></i> Check';
+                }
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             checkBridgeServerHealth(false);
+            checkOcrServerHealth(false);
         });
     </script>
 </body>

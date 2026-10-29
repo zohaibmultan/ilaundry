@@ -97,3 +97,4 @@ When an order has Route Pick-up scheduled with 0 services / $0.00 gross (`views/
 ## References
 - See detailed protocol reference in [pos-print-api.md](./references/pos-print-api.md).
 
+- See server diagnostics, PNA testing, and packaging procedures in [printer-diagnostics](../printer-diagnostics/SKILL.md).

@@ -1,12 +1,17 @@
 {
   "name": "icleaners-suite",
-  "version": "1.0.0",
-  "description": "Custom developer kit and specialized agent suite for the iCleaners platform",
+  "version": "1.1.0",
+  "description": "Custom developer kit and specialized agent suite for the iCleaners multi-project platform",
   "agents": [
     {
       "name": "icleaners-developer",
       "description": "Specialized fullstack engineer for iCleaners POS, thermal printing, server DataTables, and Express/MySQL backend",
       "instructionFile": "./agents/icleaners-developer.md"
+    },
+    {
+      "name": "ocr-specialist",
+      "description": "Computer vision and brand recognition engineer for the Python RapidOCR/Flask microservice",
+      "instructionFile": "./agents/ocr-specialist.md"
     }
   ]
 }

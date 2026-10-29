@@ -368,6 +368,11 @@
                                         var paid = parseFloat(row.paid_amount || 0).toFixed(2);
                                         var balance = parseFloat(row.balance_amount || 0);
 
+                                        // On void orders, only display the total amount (omit Paid breakdown & Add Payment action)
+                                        if (String(row.order_status) === '6' || Number(row.order_status) === 6) {
+                                            return '<div class="symbol fw-bold font-w600">' + gross + '</div>';
+                                        }
+
                                         var paymentBtn = '';
                                         if (balance > 0) {
                                             if ('<%= accessdata.logas %>' === 'custmor') {

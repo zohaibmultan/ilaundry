@@ -54,6 +54,38 @@ function formatMySQLDateTime(d, fallbackTime = "16:00:00") {
   return String(d);
 }
 
+const GARMENT_COLOR_HEX_MAP = {
+  black: "#000000",
+  white: "#FFFFFF",
+  gray: "#808080",
+  charcoal: "#36454F",
+  navy: "#000080",
+  blue: "#2563EB",
+  "light blue": "#93C5FD",
+  red: "#DC2626",
+  burgundy: "#800020",
+  pink: "#F472B6",
+  purple: "#800080",
+  lavender: "#E6E6FA",
+  green: "#16A34A",
+  olive: "#808000",
+  yellow: "#EAB308",
+  orange: "#F97316",
+  brown: "#8B4513",
+  beige: "#F5F5DC",
+  cream: "#FFFDD0",
+  khaki: "#C3B091",
+  "multi-color": "#EF4444",
+  other: "#94A3B8",
+  unknown: "#64748B"
+};
+
+function resolveColorHex(colorName) {
+  if (!colorName) return null;
+  const lower = String(colorName).trim().toLowerCase();
+  return GARMENT_COLOR_HEX_MAP[lower] || (colorName.startsWith("#") ? colorName : null);
+}
+
 const { generateOrderId } = require("../middelwer/orderIdHelper");
 
 async function idfororder(storeId) {
@@ -1048,8 +1080,8 @@ router.post("/addservicelist", auth, async (req, res) => {
 
     const servicelist = await DataInsert(
       "tbl_cart_servicelist",
-      "service_id, service_type_id, service_type_price, original_rate, item_value, service_quntity, service_color, service_name, service_type_name, service_img, no_of_items",
-      `${serviceid}, ${servicetypeid}, ${servicetypeprice}, ${servicetypeprice}, 0, 1, '#000000', '${safeServiceName}', '${safeServiceTypeName}', '${serviceimage}', ${servicePieces}`,
+      "service_id, service_type_id, service_type_price, original_rate, item_value, service_quntity, service_color, service_name, service_type_name, service_img, no_of_items, garment_pattern",
+      `${serviceid}, ${servicetypeid}, ${servicetypeprice}, ${servicetypeprice}, 0, 1, '#000000', '${safeServiceName}', '${safeServiceTypeName}', '${serviceimage}', ${servicePieces}, 'Solid'`,
       req.hostname,
       req.protocol,
     );
@@ -1139,8 +1171,8 @@ router.post("/editservicelist", auth, async (req, res) => {
 
     const servicelist = await DataInsert(
       `tbl_cart_servicelist`,
-      `service_id,service_type_id,service_type_price,original_rate,item_value,service_quntity,service_color,service_name,service_type_name,service_img,no_of_items`,
-      `${serviceid},${servicetypeid},${servicetypeprice},${servicetypeprice},0,1,'#000000','${safeServiceName}','${safeServiceTypeName}','${serviceimage}',${servicePieces}`,
+      `service_id,service_type_id,service_type_price,original_rate,item_value,service_quntity,service_color,service_name,service_type_name,service_img,no_of_items,garment_pattern`,
+      `${serviceid},${servicetypeid},${servicetypeprice},${servicetypeprice},0,1,'#000000','${safeServiceName}','${safeServiceTypeName}','${serviceimage}',${servicePieces},'Solid'`,
       req.hostname,
       req.protocol,
     );
@@ -1586,32 +1618,47 @@ router.get("/customer-stats/:id", auth, async (req, res) => {
 //  POS Service Color change
 router.post("/color", auth, async (req, res) => {
   try {
-    var { id, color } = req.body;
-
-    // var cart = await DataFind(
-    //   "UPDATE tbl_cart_servicelist SET service_color='" +
-    //     color +
-    //     "' WHERE id=" +
-    //     id +
-    //     ""
-    // );
-
-    let cart = await DataUpdate(
-      `tbl_cart_servicelist`,
-      `service_color='${color}'`,
-      `id=${id}`,
-      req.hostname,
-      req.protocol,
-    );
-
-    if (cart == -1) {
-      req.flash("errors", process.env.dataerror);
-      return res.redirect("/valid_license");
+    var { id, color, primary_color, secondary_color, garment_pattern } = req.body;
+    let updates = [];
+    if (color) updates.push(`service_color='${color}'`);
+    if (typeof primary_color !== "undefined") {
+      const p = String(primary_color || "").replace(/'/g, "''");
+      updates.push(`primary_color='${p}'`);
+      const hex = resolveColorHex(p);
+      if (hex) {
+        updates.push(`service_color='${hex}'`);
+      } else if (!p) {
+        updates.push(`service_color='#000000'`);
+      }
+    }
+    if (typeof secondary_color !== "undefined") {
+      const s = String(secondary_color || "").replace(/'/g, "''");
+      updates.push(`secondary_color='${s}'`);
+    }
+    if (typeof garment_pattern !== "undefined") {
+      const pat = String(garment_pattern || "Solid").replace(/'/g, "''");
+      updates.push(`garment_pattern='${pat}'`);
     }
 
-    res.status(200).json({ status: 200 });
+    if (updates.length > 0) {
+      let cart = await DataUpdate(
+        `tbl_cart_servicelist`,
+        updates.join(", "),
+        `id=${id}`,
+        req.hostname,
+        req.protocol,
+      );
+
+      if (cart == -1) {
+        req.flash("errors", process.env.dataerror);
+        return res.redirect("/valid_license");
+      }
+    }
+
+    res.status(200).json({ status: 200, success: true });
   } catch (error) {
-    console.log(error);
+    console.error("Error in /admin/color:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -2081,9 +2128,230 @@ router.get("/clearcart", auth, async (req, res) => {
       );
 
       res.status(200).json({ cart: cartdata[0], cartservice, loginas });
+    } else {
+      return res.status(200).json({ cart: null, cartservice: [], loginas });
     }
   } catch (error) {
     console.log(error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// Void current POS cart or existing order with full audit trail
+router.post("/void_order", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const { order_id, reason, note, is_edit } = req.body;
+    const safeReason = (reason || "Customer requested void").trim().replace(/'/g, "\\'");
+    const safeNote = (note || "").trim().replace(/'/g, "\\'");
+    const voidActor = `${loginas === 0 ? "master" : (loginas === "staff" ? "staff" : "store")},${id}`;
+
+    // Case 1: Void an existing order (Edit mode or saved order)
+    if (String(is_edit) === "1" || String(is_edit) === "true") {
+      const existingOrder = await DataFind(
+        `SELECT * FROM tbl_order WHERE id = '${order_id}' OR order_id = '${order_id}' LIMIT 1`
+      );
+      if (!existingOrder || existingOrder.length === 0) {
+        return res.status(404).json({ success: false, message: "Order not found." });
+      }
+
+      const ord = existingOrder[0];
+      const combinedNote = (ord.note ? (ord.note + " | ") : "") + `[VOID: ${safeReason}${safeNote ? (' - ' + safeNote) : ''}]`;
+      const updateSql = `
+        order_status = 6,
+        commission_status = 0,
+        void_reason = '${safeReason}',
+        voided_by = '${voidActor}',
+        note = '${combinedNote.replace(/'/g, "\\'")}',
+        stutus_change_date = CURRENT_TIMESTAMP
+      `;
+
+      await DataUpdate("tbl_order", updateSql, `id = ${ord.id}`, req.hostname, req.protocol);
+
+      // Create notification for void
+      await DataInsert(
+        "tbl_notification",
+        "invoice, date, sender, received, notification",
+        `'${ord.order_id}', CURRENT_TIMESTAMP, '${id}', '${ord.store_id}', 'Order #${ord.order_id} has been VOIDED. Reason: ${safeReason}'`,
+        req.hostname,
+        req.protocol
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: `Order #${ord.order_id} has been voided successfully.`,
+        order_id: ord.order_id,
+        is_edit: true
+      });
+    }
+
+    // Case 2: Void an active intake cart in tbl_cart
+    const cart = await DataFind(
+      `SELECT * FROM tbl_cart WHERE created_by = '${loginas},${id}' LIMIT 1`
+    );
+
+    if (!cart || cart.length === 0) {
+      return res.status(400).json({ success: false, message: "No active cart found to void." });
+    }
+
+    const cartRow = cart[0];
+    const targetStoreId = cartRow.store_id || store || "1";
+    const currentOrderId = cartRow.order_id || (await idfororder(targetStoreId));
+
+    // Gather existing service line items from cart
+    let serviceListVal = cartRow.service_list_id || "0";
+    let combinedNote = `[VOID: ${safeReason}${safeNote ? (' - ' + safeNote) : ''}]`;
+
+    // Persist this active cart as a VOID record in tbl_order
+    await DataInsert(
+      "tbl_order",
+      "order_id, order_type, order_date, ready_date, delivery_date, pickup_date, order_status, service_list, customer_id, store_id, created_by, addon_data, addon_price, sub_total, tax, coupon_id, coupon_discount, extra_discount, gross_total, paid_amount, balance_amount, payment_data, tax_amount, note, void_reason, voided_by, commission_status, stutus_change_date",
+      `'${currentOrderId}',
+       '${(cartRow.order_type || "Counter & Counter").replace(/'/g, "\\'")}',
+       CURRENT_TIMESTAMP,
+       CURRENT_TIMESTAMP,
+       CURRENT_TIMESTAMP,
+       CURRENT_TIMESTAMP,
+       6,
+       '${serviceListVal}',
+       ${cartRow.customer_id || 0},
+       ${targetStoreId},
+       '${cartRow.created_by}',
+       '${cartRow.addon_id || "0"}',
+       ${cartRow.addon_price || 0},
+       ${cartRow.sub_total || 0},
+       '${cartRow.tax || 0}',
+       ${cartRow.coupon_id || 0},
+       ${cartRow.coupon_discount || 0},
+       ${cartRow.extra_discount || 0},
+       0,
+       0,
+       0,
+       '0',
+       ${cartRow.tax_amount || 0},
+       '${combinedNote.replace(/'/g, "\\'")}',
+       '${safeReason}',
+       '${voidActor}',
+       0,
+       CURRENT_TIMESTAMP`,
+      req.hostname,
+      req.protocol
+    );
+
+    // Record notification
+    await DataInsert(
+      "tbl_notification",
+      "invoice, date, sender, received, notification",
+      `'${currentOrderId}', CURRENT_TIMESTAMP, '${id}', '${targetStoreId}', 'Order #${currentOrderId} was VOIDED at intake. Reason: ${safeReason}'`,
+      req.hostname,
+      req.protocol
+    );
+
+    // Generate brand new next sequential order ID for this store
+    const nextOrderId = await idfororder(targetStoreId);
+
+    // Reset tbl_cart with the new order ID
+    const taxData = await DataFind(`SELECT tax_percent FROM tbl_store WHERE id = '${targetStoreId}'`);
+    const taxVal = taxData.length > 0 ? (taxData[0].tax_percent || 0) : 0;
+
+    await DataUpdate(
+      "tbl_cart",
+      `order_id = '${nextOrderId}',
+       order_date = CURRENT_TIMESTAMP,
+       service_list_id = '0',
+       addon_id = '0',
+       addon_price = 0,
+       sub_total = 0,
+       tax = ${taxVal},
+       tax_amount = 0,
+       extra_discount = 0,
+       coupon_id = 0,
+       coupon_discount = 0,
+       gross_total = 0,
+       paid_amount = 0,
+       balance = 0,
+       payment_type = 0,
+       notes = '',
+       customer_id = 0,
+       order_type = 'Counter & Counter'`,
+      `created_by = '${loginas},${id}'`,
+      req.hostname,
+      req.protocol
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Order #${currentOrderId} has been recorded as VOID.`,
+      voided_order_id: currentOrderId,
+      new_order_id: nextOrderId
+    });
+  } catch (error) {
+    console.error("Error in /admin/void_order:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Start a fresh new order session in POS
+router.post("/new_order", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const cart = await DataFind(
+      `SELECT * FROM tbl_cart WHERE created_by = '${loginas},${id}' LIMIT 1`
+    );
+
+    if (!cart || cart.length === 0) {
+      return res.status(200).json({ success: true, redirect: "/admin/pos" });
+    }
+
+    const cartRow = cart[0];
+    const targetStoreId = cartRow.store_id || store || "1";
+
+    // Clean up any unlinked items in tbl_cart_servicelist
+    if (cartRow.service_list_id && cartRow.service_list_id !== "0") {
+      const oldIds = cartRow.service_list_id.split(",").filter((x) => x && x !== "0").join(",");
+      if (oldIds) {
+        await DataDelete("tbl_cart_servicelist", `id IN (${oldIds})`, req.hostname, req.protocol);
+      }
+    }
+
+    // Generate new order ID
+    const nextOrderId = await idfororder(targetStoreId);
+    const taxData = await DataFind(`SELECT tax_percent FROM tbl_store WHERE id = '${targetStoreId}'`);
+    const taxVal = taxData.length > 0 ? (taxData[0].tax_percent || 0) : 0;
+
+    await DataUpdate(
+      "tbl_cart",
+      `order_id = '${nextOrderId}',
+       order_date = CURRENT_TIMESTAMP,
+       service_list_id = '0',
+       addon_id = '0',
+       addon_price = 0,
+       sub_total = 0,
+       tax = ${taxVal},
+       tax_amount = 0,
+       extra_discount = 0,
+       coupon_id = 0,
+       coupon_discount = 0,
+       gross_total = 0,
+       paid_amount = 0,
+       balance = 0,
+       payment_type = 0,
+       notes = '',
+       customer_id = 0,
+       order_type = 'Counter & Counter'`,
+      `created_by = '${loginas},${id}'`,
+      req.hostname,
+      req.protocol
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "New order session started.",
+      new_order_id: nextOrderId
+    });
+  } catch (error) {
+    console.error("Error in /admin/new_order:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -2381,11 +2649,137 @@ router.get("/search_brands", auth, async (req, res) => {
   }
 });
 
+// Check Garment Tag OCR Microservice health
+router.get("/scan_ocr_health", auth, async (req, res) => {
+  try {
+    const { store } = req.user;
+    let url = (req.query.url || "").trim();
+    if (!url) {
+      const targetStoreId = req.query.store_id || store || "";
+      let ocrServerUrl = "http://127.0.0.1:5000/api/scan";
+      if (targetStoreId) {
+        const storeRows = await DataFind(`SELECT ocr_server_url FROM tbl_store WHERE id='${targetStoreId}' LIMIT 1`);
+        if (storeRows && storeRows.length > 0 && storeRows[0].ocr_server_url) {
+          ocrServerUrl = storeRows[0].ocr_server_url.trim();
+        }
+      }
+      if (!ocrServerUrl || ocrServerUrl === "http://127.0.0.1:5000/api/scan") {
+        const masterRows = await DataFind(`SELECT ocr_server_url FROM tbl_master_shop LIMIT 1`);
+        if (masterRows && masterRows.length > 0 && masterRows[0].ocr_server_url) {
+          ocrServerUrl = masterRows[0].ocr_server_url.trim();
+        }
+      }
+      url = ocrServerUrl || "http://127.0.0.1:5000/api/scan";
+    }
+
+    let healthUrl = url;
+    if (healthUrl.endsWith("/api/scan")) {
+      healthUrl = healthUrl.replace(/\/api\/scan$/, "/health");
+    } else {
+      try {
+        const u = new URL(healthUrl);
+        healthUrl = `${u.origin}/health`;
+      } catch (e) {
+        healthUrl = url.replace(/\/+$/, "") + "/health";
+      }
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const healthRes = await fetch(healthUrl, { method: "GET", signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (healthRes.ok) {
+      const data = await healthRes.json();
+      return res.status(200).json({ ok: true, url, healthUrl, data });
+    } else {
+      return res.status(healthRes.status).json({ ok: false, url, healthUrl, status: healthRes.status });
+    }
+  } catch (err) {
+    return res.status(502).json({ ok: false, error: err.message });
+  }
+});
+
+// Scan garment cloth details via OCR Microservice proxy
+router.post("/scan_ocr", auth, upload.single("image"), async (req, res) => {
+  try {
+    const { store } = req.user;
+    const targetStoreId = req.body.store_id || store || "";
+    const threshold = req.body.threshold || "80";
+
+    // Resolve OCR server endpoint
+    let ocrServerUrl = "http://127.0.0.1:5000/api/scan";
+    if (targetStoreId) {
+      const storeRows = await DataFind(`SELECT ocr_server_url FROM tbl_store WHERE id='${targetStoreId}' LIMIT 1`);
+      if (storeRows && storeRows.length > 0 && storeRows[0].ocr_server_url) {
+        ocrServerUrl = storeRows[0].ocr_server_url.trim();
+      }
+    }
+    if (!ocrServerUrl || ocrServerUrl === "http://127.0.0.1:5000/api/scan") {
+      const masterRows = await DataFind(`SELECT ocr_server_url FROM tbl_master_shop LIMIT 1`);
+      if (masterRows && masterRows.length > 0 && masterRows[0].ocr_server_url) {
+        ocrServerUrl = masterRows[0].ocr_server_url.trim();
+      }
+    }
+    if (!ocrServerUrl) {
+      ocrServerUrl = process.env.OCR_SERVER_URL || "http://127.0.0.1:5000/api/scan";
+    }
+
+    let forwardFormData = new FormData();
+    forwardFormData.append("threshold", String(threshold));
+
+    if (req.file) {
+      const fileBytes = fs.readFileSync(req.file.path);
+      const blob = new Blob([fileBytes], { type: req.file.mimetype || "image/jpeg" });
+      forwardFormData.append("image", blob, req.file.originalname || "capture.jpg");
+      try { fs.unlinkSync(req.file.path); } catch (e) {}
+    } else if (req.body.image_base64) {
+      forwardFormData.append("image_base64", String(req.body.image_base64));
+    } else {
+      return res.status(400).json({ ok: false, error: "No image provided for OCR scan." });
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+    let ocrResponse;
+    try {
+      ocrResponse = await fetch(ocrServerUrl, {
+        method: "POST",
+        body: forwardFormData,
+        signal: controller.signal,
+      });
+    } catch (netErr) {
+      clearTimeout(timeoutId);
+      console.error("OCR Microservice connection error:", netErr.message);
+      return res.status(502).json({
+        ok: false,
+        error: `OCR Microservice unreachable at ${ocrServerUrl}. Please verify the Python service is running. (${netErr.message})`,
+      });
+    }
+    clearTimeout(timeoutId);
+
+    if (!ocrResponse.ok) {
+      const errText = await ocrResponse.text();
+      return res.status(ocrResponse.status).json({
+        ok: false,
+        error: `OCR service responded with status ${ocrResponse.status}: ${errText}`,
+      });
+    }
+
+    const ocrData = await ocrResponse.json();
+    return res.status(200).json(ocrData);
+  } catch (err) {
+    console.error("Error in /admin/scan_ocr:", err);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // apply or clear garment brand on POS cart item
 router.post("/changebrand", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
-    const { id: serviceid, brand_id } = req.body;
+    const { id: serviceid, brand_id, primary_color, secondary_color, garment_pattern } = req.body;
 
     const service = await DataFind(
       `SELECT * FROM tbl_cart_servicelist WHERE id=${serviceid}`,
@@ -2422,9 +2816,30 @@ router.post("/changebrand", auth, async (req, res) => {
       parseFloat(service[0].service_type_price) *
         parseFloat(service[0].service_quntity);
 
+    let extraFields = [];
+    if (typeof primary_color !== "undefined") {
+      const p = String(primary_color || "").replace(/'/g, "''");
+      extraFields.push(`primary_color='${p}'`);
+      const hex = resolveColorHex(p);
+      if (hex) {
+        extraFields.push(`service_color='${hex}'`);
+      } else if (!p) {
+        extraFields.push(`service_color='#000000'`);
+      }
+    }
+    if (typeof secondary_color !== "undefined") {
+      const s = String(secondary_color || "").replace(/'/g, "''");
+      extraFields.push(`secondary_color='${s}'`);
+    }
+    if (typeof garment_pattern !== "undefined") {
+      const pat = String(garment_pattern || "Solid").replace(/'/g, "''");
+      extraFields.push(`garment_pattern='${pat}'`);
+    }
+    const extraSql = extraFields.length > 0 ? `, ${extraFields.join(", ")}` : "";
+
     const updateservice = await DataUpdate(
       `tbl_cart_servicelist`,
-      `service_type_price=${finalPrice}, item_value=0, original_rate=${origRate}, brand_id=${bId}, brand_label='${bLabel}', brand_category='${bCategory}', brand_upcharge_percent=${bUpcharge}, brand_price_multiplier=${bMultiplier}`,
+      `service_type_price=${finalPrice}, item_value=0, original_rate=${origRate}, brand_id=${bId}, brand_label='${bLabel}', brand_category='${bCategory}', brand_upcharge_percent=${bUpcharge}, brand_price_multiplier=${bMultiplier}${extraSql}`,
       `id=${serviceid}`,
       req.hostname,
       req.protocol,
@@ -2479,7 +2894,7 @@ router.post("/changebrand", auth, async (req, res) => {
 router.post("/edit_changebrand", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
-    const { id: serviceid, brand_id, order_id } = req.body;
+    const { id: serviceid, brand_id, order_id, primary_color, secondary_color, garment_pattern } = req.body;
 
     const service = await DataFind(
       `SELECT * FROM tbl_cart_servicelist WHERE id=${serviceid}`,
@@ -2523,9 +2938,30 @@ router.post("/edit_changebrand", auth, async (req, res) => {
       parseFloat(service[0].service_type_price) *
         parseFloat(service[0].service_quntity);
 
+    let extraFields = [];
+    if (typeof primary_color !== "undefined") {
+      const p = String(primary_color || "").replace(/'/g, "''");
+      extraFields.push(`primary_color='${p}'`);
+      const hex = resolveColorHex(p);
+      if (hex) {
+        extraFields.push(`service_color='${hex}'`);
+      } else if (!p) {
+        extraFields.push(`service_color='#000000'`);
+      }
+    }
+    if (typeof secondary_color !== "undefined") {
+      const s = String(secondary_color || "").replace(/'/g, "''");
+      extraFields.push(`secondary_color='${s}'`);
+    }
+    if (typeof garment_pattern !== "undefined") {
+      const pat = String(garment_pattern || "Solid").replace(/'/g, "''");
+      extraFields.push(`garment_pattern='${pat}'`);
+    }
+    const extraSql = extraFields.length > 0 ? `, ${extraFields.join(", ")}` : "";
+
     const updateservice = await DataUpdate(
       `tbl_cart_servicelist`,
-      `service_type_price = ${finalPrice}, item_value = 0, original_rate = ${origRate}, brand_id = ${bId}, brand_label = '${bLabel}', brand_category = '${bCategory}', brand_upcharge_percent = ${bUpcharge}, brand_price_multiplier = ${bMultiplier}`,
+      `service_type_price = ${finalPrice}, item_value = 0, original_rate = ${origRate}, brand_id = ${bId}, brand_label = '${bLabel}', brand_category = '${bCategory}', brand_upcharge_percent = ${bUpcharge}, brand_price_multiplier = ${bMultiplier}${extraSql}`,
       `id = ${serviceid}`,
       req.hostname,
       req.protocol,

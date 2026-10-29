@@ -40,14 +40,64 @@
 
     const pick_fullDate = formatLocalDate(cart.pickup_date || cart.order_date) || fullDate;
     const pick_time = formatLocalTime(cart.pickup_date, '10:00');
+    const pick_hour = (pick_time && pick_time.includes(':')) ? (pick_time.split(':')[0].padStart(2, '0') + ':00') : '10:00';
 
     const del_fullDate = formatLocalDate(cart.delivery_date || cart.ready_date || cart.order_date) || ready_fullDate;
     const del_time = formatLocalTime(cart.delivery_date, '16:00');
+    const del_hour = (del_time && del_time.includes(':')) ? (del_time.split(':')[0].padStart(2, '0') + ':00') : '16:00';
+
+    const hourSlots = [];
+    for (let h = 0; h < 24; h++) {
+      const val = String(h).padStart(2, '0') + ':00';
+      const period = h >= 12 ? 'PM' : 'AM';
+      const displayH = h % 12 === 0 ? 12 : h % 12;
+      const label = `${String(displayH).padStart(2, '0')}:00 ${period}`;
+      hourSlots.push({ value: val, label });
+    }
 
     // Cart addon ids safe parsing
     const cartAddonIds = Array.isArray(cart?.addon_id)
       ? cart.addon_id.map(String)
       : String(cart?.addon_id || '').split(',').map(s => s.trim());
+
+    const GARMENT_COLORS = [
+      { name: 'Black', hex: '#000000' },
+      { name: 'White', hex: '#FFFFFF', border: true },
+      { name: 'Gray', hex: '#808080' },
+      { name: 'Charcoal', hex: '#36454F' },
+      { name: 'Navy', hex: '#000080' },
+      { name: 'Blue', hex: '#2563EB' },
+      { name: 'Light Blue', hex: '#93C5FD' },
+      { name: 'Red', hex: '#DC2626' },
+      { name: 'Burgundy', hex: '#800020' },
+      { name: 'Pink', hex: '#F472B6' },
+      { name: 'Purple', hex: '#800080' },
+      { name: 'Lavender', hex: '#E6E6FA', border: true },
+      { name: 'Green', hex: '#16A34A' },
+      { name: 'Olive', hex: '#808000' },
+      { name: 'Yellow', hex: '#EAB308' },
+      { name: 'Orange', hex: '#F97316' },
+      { name: 'Brown', hex: '#8B4513' },
+      { name: 'Beige', hex: '#F5F5DC', border: true },
+      { name: 'Cream', hex: '#FFFDD0', border: true },
+      { name: 'Khaki', hex: '#C3B091' },
+      { name: 'Multi-Color', hex: 'linear-gradient(135deg, #ef4444, #eab308, #22c55e, #3b82f6)', isGradient: true },
+      { name: 'Other', hex: '#94A3B8' },
+      { name: 'Unknown', hex: '#64748B' }
+    ];
+
+    const GARMENT_PATTERNS = [
+      'Solid', 'Striped', 'Pinstripe', 'Plaid', 'Checkered',
+      'Gingham', 'Houndstooth', 'Herringbone', 'Polka Dot', 'Floral',
+      'Paisley', 'Geometric', 'Animal Print', 'Camouflage', 'Abstract / Graphic',
+      'Embroidered', 'Printed', 'Textured', 'Color Block', 'Other', 'Unknown'
+    ];
+
+    const getColorHex = (name) => {
+      if (!name) return '#000000';
+      const c = GARMENT_COLORS.find(x => x.name.toLowerCase() === String(name).trim().toLowerCase());
+      return c ? c.hex : (name.startsWith('#') ? name : '#000000');
+    };
   %>
 
   <%- include('templet/preloder_topbar_sidebar', { titel: accessdata?.topbardata?.name }) -%>
@@ -546,25 +596,39 @@
                   </div>
                 </div>
 
-                <!-- Pick-up Date & Time -->
+                <!-- Pick-up Date & Hour -->
                 <div class="col-6" id="<%= isEditMode ? 'edit_pos_pickup_date_group' : 'pos_pickup_date_group' %>" style="<%= !isRoutePickup ? 'display: none;' : '' %>">
                   <label class="pos-field-label mb-0">
                     <%= language.Route_Pickup_Date || 'Route Pick-up Schedule' %>
                   </label>
                   <div class="input-group input-group-sm">
                     <input type="date" class="form-control pos-input-sm fw-bold" id="<%= isEditMode ? 'edit_POS_pickup_date' : 'POS_pickup_date' %>" name="<%= isEditMode ? 'edit_pos_pickup_date' : 'pos_pickup_date' %>" value="<%= pick_fullDate %>" min="<%= fullDate %>" title="<%= language.Route_Pickup_Date || 'Route Pick-up Date' %>" <%= login === 'customer' ? 'readonly' : '' %>>
-                    <input type="time" class="form-control pos-input-sm fw-bold" id="<%= isEditMode ? 'edit_POS_pickup_time' : 'POS_pickup_time' %>" name="<%= isEditMode ? 'edit_pos_pickup_time' : 'pos_pickup_time' %>" value="<%= pick_time %>" title="Pick-up Time" <%= login === 'customer' ? 'readonly' : '' %>>
+                    <select class="form-select pos-input-sm fw-bold" id="<%= isEditMode ? 'edit_POS_pickup_time' : 'POS_pickup_time' %>" name="<%= isEditMode ? 'edit_pos_pickup_time' : 'pos_pickup_time' %>" style="max-width: 50%;" title="Pick-up Hour" <%= login === 'customer' ? 'disabled' : '' %>>
+                      <% hourSlots.forEach(slot => { %>
+                        <option value="<%= slot.value %>" <%= (pick_hour === slot.value) ? 'selected' : '' %>><%= slot.label %></option>
+                      <% }); %>
+                    </select>
+                    <% if (login === 'customer') { %>
+                      <input type="hidden" name="<%= isEditMode ? 'edit_pos_pickup_time' : 'pos_pickup_time' %>" value="<%= pick_hour %>">
+                    <% } %>
                   </div>
                 </div>
       
-                <!-- Delivery Date & Time -->
+                <!-- Delivery Date & Hour -->
                 <div class="col-6" id="<%= isEditMode ? 'edit_pos_delivery_date_group' : 'pos_delivery_date_group' %>">
                   <label class="pos-field-label mb-0">
                     <%= language.Route_Delivery_Date || 'Route Delivery Schedule' %>
                   </label>
                   <div class="input-group input-group-sm">
                     <input type="date" class="form-control pos-input-sm fw-bold" id="<%= isEditMode ? 'edit_POS_delivery_date' : 'POS_delivery_date' %>" name="<%= isEditMode ? 'edit_pos_delivery_date' : 'pos_delivery_date' %>" value="<%= del_fullDate %>" min="<%= fullDate %>" title="<%= language.Route_Delivery_Date || 'Route Delivery Date' %>" <%=login==='customer' ? 'readonly' : '' %>>
-                    <input type="time" class="form-control pos-input-sm fw-bold" id="<%= isEditMode ? 'edit_POS_delivery_time' : 'POS_delivery_time' %>" name="<%= isEditMode ? 'edit_pos_delivery_time' : 'pos_delivery_time' %>" value="<%= del_time %>" style="max-width: 50%;" title="Delivery Time" <%=login==='customer' ? 'readonly' : '' %>>
+                    <select class="form-select pos-input-sm fw-bold" id="<%= isEditMode ? 'edit_POS_delivery_time' : 'POS_delivery_time' %>" name="<%= isEditMode ? 'edit_pos_delivery_time' : 'pos_delivery_time' %>" style="max-width: 50%;" title="Delivery Hour" <%=login==='customer' ? 'disabled' : '' %>>
+                      <% hourSlots.forEach(slot => { %>
+                        <option value="<%= slot.value %>" <%= (del_hour === slot.value) ? 'selected' : '' %>><%= slot.label %></option>
+                      <% }); %>
+                    </select>
+                    <% if (login === 'customer') { %>
+                      <input type="hidden" name="<%= isEditMode ? 'edit_pos_delivery_time' : 'pos_delivery_time' %>" value="<%= del_hour %>">
+                    <% } %>
                   </div>
                 </div>
               </div>
@@ -580,8 +644,8 @@
                       <th class="text-center" style="width: 88px;">
                         <%= language.Brand || 'Brand' %>
                       </th>
-                      <th class="text-center" style="width: 50px; height: 35px !important;">
-                        <%= language.Color %>
+                      <th class="text-center" style="width: 105px;">
+                        <%= language.Color || 'Color & Pattern' %>
                       </th>
                       <th class="text-center" style="width: 118px;">
                         <%= language.Value || 'Value' %>
@@ -610,12 +674,30 @@
                         </div>
                       </td>
                       <td class="text-center">
-                        <button type="button" class="btn btn-xs <%= (x.brand_label && String(x.brand_label).trim()) ? 'btn-primary' : 'btn-outline-secondary' %> px-2 py-1 text-truncate pos-btn-brand" style="max-width: 85px; font-size: 11px;" data-id="<%= x.id %>" data-brand-id="<%= x.brand_id || 0 %>" data-brand-label="<%= x.brand_label || '' %>" data-original-rate="<%= (x.original_rate && parseFloat(x.original_rate) > 0) ? x.original_rate : x.service_type_price %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> title="<%= (x.brand_label && String(x.brand_label).trim()) ? (x.brand_label + ' (' + (x.brand_category || '') + ' +' + (x.brand_upcharge_percent || 0) + '% / ' + (x.brand_price_multiplier || 1) + 'x)') : 'Select Brand' %>" <%= (login !== 'customer') ? '' : 'disabled' %>>
+                        <button type="button" class="btn btn-xs <%= (x.brand_label && String(x.brand_label).trim()) ? 'btn-primary' : 'btn-outline-secondary' %> px-2 py-1 text-truncate pos-btn-brand" style="max-width: 85px; font-size: 11px;" data-id="<%= x.id %>" data-brand-id="<%= x.brand_id || 0 %>" data-brand-label="<%= x.brand_label || '' %>" data-primary-color="<%= x.primary_color || '' %>" data-secondary-color="<%= x.secondary_color || '' %>" data-pattern="<%= x.garment_pattern || 'Solid' %>" data-original-rate="<%= (x.original_rate && parseFloat(x.original_rate) > 0) ? x.original_rate : x.service_type_price %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> title="<%= (x.brand_label && String(x.brand_label).trim()) ? (x.brand_label + ' (' + (x.brand_category || '') + ' +' + (x.brand_upcharge_percent || 0) + '% / ' + (x.brand_price_multiplier || 1) + 'x)') : 'Select Brand' %>" <%= (login !== 'customer') ? '' : 'disabled' %>>
                           <i class="fa fa-tag me-1"></i><%= (x.brand_label && String(x.brand_label).trim()) ? x.brand_label : (language.Brand || 'Brand') %>
                         </button>
                       </td>
                       <td class="text-center">
-                        <input type="color" class="pos-color-circle" value="<%= x.service_color %>" id="POS_service_color" data-id="<%= x.id %>">
+                        <% 
+                          const pColor = x.primary_color || '';
+                          const sColor = x.secondary_color || '';
+                          const pat = x.garment_pattern || 'Solid';
+                          const colTitle = pColor ? (pColor + (sColor ? ' / ' + sColor : '') + (pat && pat !== 'Solid' ? ' • ' + pat : '')) : 'Select Color & Pattern';
+                          const pHex = getColorHex(pColor) || (x.service_color || '#000000');
+                          const sHex = getColorHex(sColor);
+                        %>
+                        <button type="button" class="btn btn-xs pos-btn-color <%= pColor ? 'has-color' : '' %> px-2 py-1 text-truncate d-inline-flex align-items-center" style="max-width: 105px; font-size: 11px;" data-id="<%= x.id %>" data-primary-color="<%= pColor %>" data-secondary-color="<%= sColor %>" data-pattern="<%= pat %>" data-brand-id="<%= x.brand_id || 0 %>" data-brand-label="<%= x.brand_label || '' %>" data-original-rate="<%= (x.original_rate && parseFloat(x.original_rate) > 0) ? x.original_rate : x.service_type_price %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> title="<%= colTitle %>" <%= (login !== 'customer') ? '' : 'disabled' %>>
+                          <% if (pColor) { %>
+                            <span class="rounded-circle d-inline-block border flex-shrink-0" style="width: 12px; height: 12px; background: <%= pHex %>;"></span>
+                            <% if (sColor && sHex) { %>
+                              <span class="rounded-circle d-inline-block border flex-shrink-0" style="width: 10px; height: 10px; margin-left: -5px; background: <%= sHex %>;"></span>
+                            <% } %>
+                            <span class="pos-color-label text-truncate ms-1" style="max-width: 58px;"><%= pColor %></span>
+                          <% } else { %>
+                            <i class="fa fa-palette me-1"></i><span class="pos-color-label">Color</span>
+                          <% } %>
+                        </button>
                       </td>
                       <td class="text-center">
                         <div class="d-inline-flex align-items-center justify-content-center gap-1">
@@ -668,31 +750,36 @@
                     <div class="<%= ((accessdata.logas == 'custmor' && accessdata.roll?.pos?.includes('write')) || (accessdata.roll?.pos && accessdata.roll.pos.includes('write'))) ? 'd-block' : 'd-none' %>">
                       <% if (isEditMode) { %>
                       <div class="row g-2 mb-2">
-                        <div class="col-4">
+                        <div class="col">
                           <button type="button" class="btn btn-primary pos-btn-mini" style="width: 100% !important;" data-bs-toggle="modal" data-bs-target="#addons">
                             <i class="fa fa-plus-circle me-1"></i><%= language.Addons %>
                           </button>
                         </div>
-                        <div class="col-4">
+                        <div class="col">
                           <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_POS_coupon_model_show">
                             <i class="fa fa-tag me-1"></i><%= language.Coupon %>
                           </button>
                         </div>
-                        <div class="col-4">
+                        <div class="col">
                           <button type="button" class="btn btn-success pos-btn-mini w-100" id="edit_direct_save_btn">
                             <i class="fa fa-save me-1"></i><%= language.Save || 'Save' %>
                           </button>
                         </div>
                       </div>
                       <div class="row g-2">
-                        <div class="col-4">
-                          <a class="btn btn-outline-danger pos-btn-mini w-100" href="/order/view/<%= cart.id %>" style="height: 38px !important;">
-                            <i class="fa fa-arrow-left me-1"></i><%= language.Back || 'Back' %>
-                          </a>
+                        <div class="col">
+                          <button type="button" class="btn btn-danger pos-btn-mini w-100 fw-bold" id="edit_btn_pos_void" style="height: 38px !important;" title="Void this order">
+                            <i class="fa fa-ban me-1"></i><%= language.Void || 'Void' %>
+                          </button>
                         </div>
                         <div class="col">
-                          <button type="button" class="btn btn-info text-white pos-btn-pay-primary shadow-sm" id="edit_POS_payment_model_show">
-                            <i class="fa fa-credit-card me-1"></i> <span>Save & Payment</span> <i class="fas fa-arrow-right ms-1"></i>
+                          <a class="btn btn-secondary pos-btn-mini w-100 d-flex align-items-center justify-content-center" href="/admin/pos" style="height: 38px !important;" title="Start New Order">
+                            <i class="fa fa-plus me-1"></i><%= language.New || 'New' %>
+                          </a>
+                        </div>
+                        <div class="col-6">
+                          <button type="button" class="btn btn-info text-white pos-btn-pay-primary shadow-sm w-100" id="edit_POS_payment_model_show" style="height: 38px !important;">
+                            <i class="fa fa-credit-card me-1"></i> <span>Payment</span>
                           </button>
                         </div>
                       </div>
@@ -709,14 +796,19 @@
                           </button>
                         </div>
                         <div class="col-4">
-                          <button type="button" class="btn btn-outline-danger pos-btn-mini w-100" id="POS_clear">
-                            <i class="fa fa-trash-alt me-1"></i><%= language.ClearAll %>
+                          <button type="button" class="btn btn-danger pos-btn-mini w-100 fw-bold" id="btn_pos_void" title="Void current order">
+                            <i class="fa fa-ban me-1"></i><%= language.Void || 'Void' %>
                           </button>
                         </div>
                       </div>
-                      <button type="button" class="btn btn-success pos-btn-pay-primary shadow-sm" id="POS_payment_model_show">
-                        <span><%= language.Payment || 'Payment' %></span> <i class="fas fa-arrow-right ms-2"></i>
-                      </button>
+                      <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-primary pos-btn-new-order flex-grow-1 shadow-sm fw-bold d-flex align-items-center justify-content-center" id="btn_pos_new_order" style="height: 38px;">
+                          <i class="fa fa-plus me-1"></i><span><%= language.New_Order || 'New' %></span>
+                        </button>
+                        <button type="button" class="btn btn-success pos-btn-pay-primary flex-grow-1 shadow-sm fw-bold d-flex align-items-center justify-content-center" id="POS_payment_model_show" style="height: 38px;">
+                          <span><%= language.Payment || 'Payment' %></span> <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                      </div>
                       <% } %>
                     </div>
                   </div>
@@ -1496,8 +1588,8 @@
       <div class="modal-content">
         <div class="modal-header py-2 px-3">
           <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
-            <i class="fa fa-tags text-primary"></i>
-            <span><%= language.Select_Garment_Brand || 'Select Garment Brand & Label Inspection' %></span>
+            <i class="fa fa-tshirt text-primary"></i>
+            <span><%= language.Garment_Inspection_Title || 'Garment Brand, Color & Pattern Inspection' %></span>
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
@@ -1507,6 +1599,60 @@
           <input type="hidden" id="pos_brand_modal_is_edit" value="0">
           <input type="hidden" id="pos_brand_modal_original_rate" value="0">
           <input type="hidden" id="pos_brand_modal_selected_id" value="0">
+
+          <!-- Top Row: Garment Colors & Pattern Inspection Bar -->
+          <div class="card border rounded-3 mb-3 pos-inspection-top-card shadow-sm">
+            <div class="card-body p-2 px-3">
+              <div class="row g-2 align-items-center">
+                <!-- Primary Color -->
+                <div class="col-12 col-md-4">
+                  <label class="form-label fs-12 fw-bold pos-modal-label mb-1 d-flex align-items-center gap-1">
+                    <span class="rounded-circle bg-primary d-inline-block" style="width: 8px; height: 8px;"></span>
+                    <span>Primary Color</span>
+                  </label>
+                  <select id="pos_modal_primary_color" class="form-select form-select-sm pos-select2-color" style="width: 100%;">
+                    <option value="">-- Select Color --</option>
+                    <% GARMENT_COLORS.forEach(function(c) { %>
+                      <option value="<%= c.name %>" data-hex="<%= c.hex %>" <%= c.isGradient ? 'data-gradient="1"' : '' %> <%= c.border ? 'data-border="1"' : '' %>>
+                        <%= c.name %>
+                      </option>
+                    <% }); %>
+                  </select>
+                </div>
+
+                <!-- Secondary Color -->
+                <div class="col-12 col-md-4">
+                  <label class="form-label fs-12 fw-bold pos-modal-label text-muted mb-1 d-flex align-items-center gap-1">
+                    <span class="rounded-circle bg-secondary d-inline-block" style="width: 8px; height: 8px;"></span>
+                    <span>Secondary Color <small class="fw-normal text-muted">(Optional)</small></span>
+                  </label>
+                  <select id="pos_modal_secondary_color" class="form-select form-select-sm pos-select2-color" style="width: 100%;">
+                    <option value="" data-none="1">None</option>
+                    <% GARMENT_COLORS.forEach(function(c) { %>
+                      <option value="<%= c.name %>" data-hex="<%= c.hex %>" <%= c.isGradient ? 'data-gradient="1"' : '' %> <%= c.border ? 'data-border="1"' : '' %>>
+                        <%= c.name %>
+                      </option>
+                    <% }); %>
+                  </select>
+                </div>
+
+                <!-- Garment Pattern -->
+                <div class="col-12 col-md-4">
+                  <label class="form-label fs-12 fw-bold pos-modal-label mb-1 d-flex align-items-center gap-1">
+                    <i class="fa fa-th-large text-primary me-1" style="font-size: 11px;"></i>
+                    <span>Garment Pattern</span>
+                  </label>
+                  <select id="pos_modal_pattern" class="form-select form-select-sm pos-select2-pattern" style="width: 100%;">
+                    <% GARMENT_PATTERNS.forEach(function(p) { %>
+                      <option value="<%= p %>" <%= p === 'Solid' ? 'selected' : '' %>>
+                        <%= p %>
+                      </option>
+                    <% }); %>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div class="row g-3">
             <!-- Left Column: Multi-Camera View Box -->
@@ -1530,14 +1676,18 @@
                   <div class="ratio ratio-4x3 bg-dark rounded-3 overflow-hidden position-relative border">
                     <video id="pos_brand_camera_video" autoplay playsinline muted class="w-100 h-100" style="object-fit: cover;"></video>
                     <canvas id="pos_brand_camera_canvas" class="w-100 h-100 position-absolute top-0 start-0 d-none" style="object-fit: cover;"></canvas>
+                    <div id="pos_brand_ocr_overlay" class="position-absolute top-0 start-0 w-100 h-100 d-none flex-column align-items-center justify-content-center text-white text-center p-3" style="background: rgba(15, 23, 42, 0.75); z-index: 5;">
+                      <div class="spinner-border text-primary mb-2" role="status"></div>
+                      <span class="fs-12 fw-bold text-white">Analyzing tag with RapidOCR...</span>
+                    </div>
                     <div id="pos_brand_camera_status" class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-white text-center p-3" style="background: rgba(15, 23, 42, 0.75);">
                       <i class="fa fa-camera fs-2 mb-2 opacity-75"></i>
                       <span class="fs-12" id="pos_brand_camera_status_text">Initializing camera stream...</span>
                     </div>
                   </div>
                   <div class="d-flex align-items-center justify-content-between gap-2 mt-2">
-                    <button type="button" class="btn btn-sm btn-outline-primary flex-grow-1" id="btn_pos_freeze_camera">
-                      <i class="fa fa-snowflake me-1"></i><span>Freeze Frame</span>
+                    <button type="button" class="btn btn-sm btn-primary flex-grow-1 fw-bold" id="btn_pos_scan_cloth">
+                      <i class="fa fa-camera-retro me-1" id="btn_pos_scan_cloth_icon"></i><span id="btn_pos_scan_cloth_text">Scan Cloth Details</span>
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" id="btn_pos_toggle_camera" title="Start / Stop Camera">
                       <i class="fa fa-power-off"></i>
@@ -1589,7 +1739,7 @@
         </div>
         <div class="modal-footer py-2 px-3 d-flex justify-content-between">
           <button type="button" class="btn btn-outline-danger btn-sm" id="btn_pos_clear_brand">
-            <i class="fa fa-eraser me-1"></i>Clear Brand & Reset Rate
+            <i class="fa fa-eraser me-1"></i><%= language.Clear_Brand_Color_Pattern || 'Clear Brand, Color & Pattern' %>
           </button>
           <div class="d-flex gap-2">
             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
@@ -1599,6 +1749,96 @@
               <i class="fa fa-check me-1"></i>OK
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Void Order Confirmation Modal -->
+  <div class="modal fade" id="pos_void_confirm_modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-danger-subtle text-danger border-bottom">
+          <h5 class="modal-title fw-bold">
+            <i class="fa fa-exclamation-triangle text-danger me-2"></i>Void Order Confirmation
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <input type="hidden" id="pos_void_target_order_id" value="<%= isEditMode ? cart.id : cart.order_id %>">
+          <input type="hidden" id="pos_void_is_edit" value="<%= isEditMode ? '1' : '0' %>">
+          <div class="alert alert-danger py-2 px-3 mb-3 small">
+            <i class="fa fa-info-circle me-1"></i>
+            Are you sure you want to <strong>VOID</strong> Order #<strong id="pos_void_modal_order_id_text"><%= cart.order_id %></strong>?
+            This order will be permanently recorded in the database as <strong>VOID</strong> and excluded from revenue totals.
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label fw-bold fs-13 mb-1">
+              Reason for Voiding <span class="text-danger">*</span>
+            </label>
+            <select class="form-select" id="pos_void_reason_select">
+              <option value="Customer declined price / service charge" selected>Customer declined price / service charge</option>
+              <option value="Customer took garments back">Customer took garments back</option>
+              <option value="Customer cancelled pickup request">Customer cancelled pickup request</option>
+              <option value="Cashier entry error">Cashier entry error</option>
+              <option value="Duplicate order">Duplicate order</option>
+              <option value="Other">Other (specify below)</option>
+            </select>
+          </div>
+
+          <div class="mb-0">
+            <label class="form-label fw-bold fs-13 mb-1">
+              Additional Notes <span class="text-muted fw-normal">(Optional)</span>
+            </label>
+            <textarea class="form-control" id="pos_void_notes_input" rows="2" placeholder="Explain details or customer feedback..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-top d-flex justify-content-between">
+          <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">
+            <i class="fa fa-times me-1"></i>Cancel
+          </button>
+          <button type="button" class="btn btn-danger px-4 fw-bold" id="btn_pos_confirm_void_submit">
+            <i class="fa fa-ban me-1"></i>Confirm Void Order
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Order Confirmation Modal (when cart has items) -->
+  <div class="modal fade" id="pos_new_order_confirm_modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-primary-subtle text-primary border-bottom">
+          <h5 class="modal-title fw-bold">
+            <i class="fa fa-plus-circle text-primary me-2"></i>Start New Order?
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4 text-center">
+          <div class="mb-3">
+            <span class="badge bg-warning-subtle text-warning fs-4 p-3 rounded-circle">
+              <i class="fa fa-shopping-basket"></i>
+            </span>
+          </div>
+          <h6 class="fw-bold mb-2">Active Order In Progress (#<span id="pos_new_order_active_id"><%= cart.order_id %></span>)</h6>
+          <p class="text-muted fs-13 mb-3">
+            You currently have items in this order cart. To keep records accurate, would you like to <strong>Void</strong> this order with a reason, or discard and start fresh?
+          </p>
+          <div class="d-grid gap-2">
+            <button type="button" class="btn btn-outline-danger fw-bold py-2" id="btn_pos_new_order_void_first">
+              <i class="fa fa-ban me-1"></i>Void This Order First
+            </button>
+            <button type="button" class="btn btn-primary fw-bold py-2" id="btn_pos_new_order_discard_fresh">
+              <i class="fa fa-redo me-1"></i>Discard & Start Fresh Order
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-top justify-content-center">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+            <i class="fa fa-arrow-left me-1"></i>Stay on Current Order
+          </button>
         </div>
       </div>
     </div>
@@ -1921,6 +2161,58 @@
             width: '100%',
             allowClear: false
           });
+        });
+
+        // Garment Inspection Modal Select2 Dropdowns (Primary, Secondary Color & Pattern)
+        function formatColorSelect2Option(state) {
+          if (!state.id) return state.text;
+          var hex = $(state.element).data('hex');
+          var isGrad = $(state.element).data('gradient');
+          var isBorder = $(state.element).data('border');
+          var isNone = $(state.element).data('none');
+          if (isNone) {
+            return $('<span><i class="fa fa-ban text-muted me-2" style="font-size: 11px;"></i>' + state.text + '</span>');
+          }
+          if (!hex) return state.text;
+          var style = isGrad
+            ? 'background: ' + hex + '; width: 14px; height: 14px;'
+            : 'background-color: ' + hex + '; width: 14px; height: 14px;';
+          var borderClass = isBorder ? ' border' : '';
+          var $swatch = $('<span class="rounded-circle d-inline-block me-2 align-middle' + borderClass + '" style="' + style + '"></span>');
+          var $text = $('<span>' + state.text + '</span>');
+          return $('<span></span>').append($swatch).append($text);
+        }
+
+        $('#pos_brand_modal').on('shown.bs.modal', function() {
+          const $prim = $('#pos_modal_primary_color');
+          const $sec = $('#pos_modal_secondary_color');
+          const $pat = $('#pos_modal_pattern');
+
+          if (!$prim.hasClass("select2-hidden-accessible")) {
+            $prim.select2({
+              dropdownParent: $('#pos_brand_modal'),
+              placeholder: '-- Select Color --',
+              width: '100%',
+              templateResult: formatColorSelect2Option,
+              templateSelection: formatColorSelect2Option
+            });
+          }
+          if (!$sec.hasClass("select2-hidden-accessible")) {
+            $sec.select2({
+              dropdownParent: $('#pos_brand_modal'),
+              placeholder: 'None',
+              width: '100%',
+              templateResult: formatColorSelect2Option,
+              templateSelection: formatColorSelect2Option
+            });
+          }
+          if (!$pat.hasClass("select2-hidden-accessible")) {
+            $pat.select2({
+              dropdownParent: $('#pos_brand_modal'),
+              placeholder: 'Select Pattern',
+              width: '100%'
+            });
+          }
         });
 
         // Add Customer Modal Setup

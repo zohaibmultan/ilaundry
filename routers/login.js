@@ -937,7 +937,9 @@ function enrichRecentOrders(orders, accessdata, isMaster = false) {
     accessdata.roll.orders.includes("edit")
   );
 
-  return (orders || []).map((order) => {
+  return (orders || [])
+    .filter((order) => String(order.order_status) !== "6" && Number(order.order_status) !== 6)
+    .map((order) => {
     const oDate = order.order_date ? new Date(order.order_date) : null;
     let formattedOrderDate = "";
     if (oDate && !isNaN(oDate.getTime())) {
@@ -1100,6 +1102,7 @@ router.get("/index", auth, async (req, res) => {
         LEFT JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
         LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
         WHERE (tbl_order.created_by = '1,${id}' OR tbl_order.created_by = '${id}')
+          AND tbl_order.order_status != '6'
         ORDER BY tbl_order.id DESC, tbl_order.order_id DESC 
         LIMIT 10
       `);
@@ -1156,6 +1159,7 @@ router.get("/index", auth, async (req, res) => {
         LEFT JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
         LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
         WHERE tbl_order.store_id = '${activeStoreId}'
+          AND tbl_order.order_status != '6'
         ORDER BY tbl_order.id DESC, tbl_order.order_id DESC 
         LIMIT 10
       `);
@@ -1250,6 +1254,7 @@ router.get("/index", auth, async (req, res) => {
         LEFT JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id 
         LEFT JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
         LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
+        WHERE tbl_order.order_status != '6'
         ORDER BY tbl_order.id DESC, tbl_order.order_id DESC 
         LIMIT 10
       `);
