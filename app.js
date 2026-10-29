@@ -3,7 +3,6 @@ const compression = require("compression");
 const app = express();
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "config.env") });
-const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const { conn } = require("./middelwer/db");
 const session = require("express-session");
@@ -123,9 +122,8 @@ if (process.env.NODE_ENV !== "production" || process.env.ENABLE_DEV_RELOAD === "
   app.head("/dev-reload-stream", (req, res) => res.status(204).end());
 }
 
-app.use(express.json());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
 const { languageMiddleware } = require("./middelwer/language");
 app.use(languageMiddleware);
