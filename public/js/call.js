@@ -1413,8 +1413,10 @@
       var pattern = (value.garment_pattern && String(value.garment_pattern).trim()) ? String(value.garment_pattern).trim() : 'Solid';
 
       var colorTitle = primColor
-         ? (primColor + (secColor ? (' / ' + secColor) : '') + (pattern && pattern !== 'Solid' ? (' • ' + pattern) : ''))
-         : 'Select Color & Pattern';
+         ? (primColor + (secColor ? (' / ' + secColor) : '') + (pattern ? (' • ' + pattern) : ''))
+         : ('Select Color & Pattern: ' + pattern);
+
+      var colorAndPatternLabel = primColor ? (primColor + ' • ' + pattern) : ('Color • ' + pattern);
 
       var colorBtnClass = primColor ? 'has-color' : '';
       var primHex = window.getGarmentColorHex(primColor) || (value.service_color || '#000000');
@@ -1426,12 +1428,12 @@
          if (secColor && secHex) {
             colorSwatchesHtml += '<span class="rounded-circle d-inline-block border flex-shrink-0" style="width: 10px; height: 10px; margin-left: -5px; background: ' + secHex + ';"></span>';
          }
-         colorSwatchesHtml += '<span class="pos-color-label text-truncate ms-1" style="max-width: 58px;">' + primColor + '</span>';
+         colorSwatchesHtml += '<span class="pos-color-label text-truncate ms-1" style="max-width: 115px;">' + colorAndPatternLabel + '</span>';
       } else {
-         colorSwatchesHtml = '<i class="fa fa-palette me-1"></i><span class="pos-color-label">Color</span>';
+         colorSwatchesHtml = '<i class="fa fa-palette me-1"></i><span class="pos-color-label text-truncate" style="max-width: 115px;">' + colorAndPatternLabel + '</span>';
       }
 
-      var colorBtnHtml = '<button type="button" class="btn btn-xs pos-btn-color ' + colorBtnClass + ' px-2 py-1 text-truncate d-inline-flex align-items-center" style="max-width: 105px; font-size: 11px;" data-id="' + value.id + '" data-primary-color="' + primColor.replace(/"/g, '&quot;') + '" data-secondary-color="' + secColor.replace(/"/g, '&quot;') + '" data-pattern="' + pattern.replace(/"/g, '&quot;') + '" data-brand-id="' + (value.brand_id || 0) + '" data-brand-label="' + brandLabel.replace(/"/g, '&quot;') + '" data-original-rate="' + origRate + '"' + orderAttr + ' title="' + colorTitle.replace(/"/g, '&quot;') + '" ' + rateDisabledAttr + '>' +
+      var colorBtnHtml = '<button type="button" class="btn btn-xs pos-btn-color ' + colorBtnClass + ' px-2 py-1 text-truncate d-inline-flex align-items-center" style="max-width: 145px; font-size: 11px;" data-id="' + value.id + '" data-primary-color="' + primColor.replace(/"/g, '&quot;') + '" data-secondary-color="' + secColor.replace(/"/g, '&quot;') + '" data-pattern="' + pattern.replace(/"/g, '&quot;') + '" data-brand-id="' + (value.brand_id || 0) + '" data-brand-label="' + brandLabel.replace(/"/g, '&quot;') + '" data-original-rate="' + origRate + '"' + orderAttr + ' title="' + colorTitle.replace(/"/g, '&quot;') + '" ' + rateDisabledAttr + '>' +
          colorSwatchesHtml +
          '</button>';
 
@@ -2341,6 +2343,72 @@
          }
       });
    }
+
+   // Save Order as Draft
+   $(document).on("click", "#btn_pos_save_draft", function (e) {
+      e.preventDefault();
+      var rowCount = $('#POS_service_added_list tr').length;
+      var hasItems = rowCount > 0 && !$('#POS_service_added_list').text().includes('Your cart is empty');
+      if (!hasItems) {
+         if (typeof toastr !== 'undefined') {
+            toastr.warning('Your cart is empty. Please add services before saving draft.');
+         } else {
+            alert('Your cart is empty.');
+         }
+         return false;
+      }
+
+      var $btn = $(this);
+      $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i><span>Saving...</span>');
+
+      var customerId = $('#customer').val() || $('#POS_coustomer_id').val() || '0';
+      var orderType = $('#POS_order_type').val() || 'Counter & Counter';
+      var readyDate = $('#POS_ready_date').val() || '';
+      var deliveryDate = $('#POS_delivery_date').val() || '';
+      var pickupDate = $('#POS_pickup_date').val() || '';
+      var extraDiscount = $('#POS_extra_discount').val() || 0;
+      var notes = $('#notes').val() || '';
+
+      $.ajax({
+         type: 'POST',
+         url: window.location.origin + '/admin/save_draft_order',
+         data: {
+            customer_id: customerId,
+            order_type: orderType,
+            readydate: readyDate,
+            deliverydate: deliveryDate,
+            pickupdate: pickupDate,
+            extradiscount: extraDiscount,
+            note: notes
+         },
+         dataType: 'json',
+         success: function (res) {
+            if (res && res.success) {
+               if (typeof toastr !== 'undefined') {
+                  toastr.success(res.message || ('Draft order #' + res.order_id + ' saved successfully!'));
+               }
+               setTimeout(function () {
+                  window.location.href = '/admin/pos';
+               }, 400);
+            } else {
+               $btn.prop('disabled', false).html('<i class="fa fa-save me-1"></i><span>Save Draft</span>');
+               var msg = (res && res.message) ? res.message : 'Failed to save draft order.';
+               if (typeof toastr !== 'undefined') toastr.error(msg);
+               else alert(msg);
+            }
+         },
+         error: function (xhr) {
+            $btn.prop('disabled', false).html('<i class="fa fa-save me-1"></i><span>Save Draft</span>');
+            var errMsg = 'Server error saving draft order.';
+            try {
+               var parsed = JSON.parse(xhr.responseText);
+               if (parsed && parsed.message) errMsg = parsed.message;
+            } catch (e) {}
+            if (typeof toastr !== 'undefined') toastr.error(errMsg);
+            else alert(errMsg);
+         }
+      });
+   });
 
    $(document).on("click", "#POS_clear", function () {
       clearcart();

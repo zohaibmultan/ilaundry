@@ -544,35 +544,47 @@ select.pos-input-sm {
 }
 
 .pos-stepper-rate {
-  max-width: 115px !important;
-  width: 115px !important;
+  max-width: 86px !important;
+  width: 86px !important;
 }
 
 .pos-stepper-rate .pos-stepper-btn {
-  width: 22px !important;
-  min-width: 22px !important;
-  max-width: 22px !important;
+  width: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
 }
 
 .pos-stepper-rate .pos-stepper-input {
-  font-size: 12.5px !important;
-  padding: 0 2px !important;
+  font-size: 12px !important;
+  padding: 0 1px !important;
 }
 
 .pos-stepper-qty {
-  max-width: 105px !important;
-  width: 105px !important;
+  max-width: 74px !important;
+  width: 74px !important;
 }
 
 .pos-stepper-qty .pos-stepper-btn {
-  width: 22px !important;
-  min-width: 22px !important;
-  max-width: 22px !important;
+  width: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
 }
 
 .pos-stepper-qty .pos-stepper-input {
-  font-size: 13px !important;
-  padding: 0 2px !important;
+  font-size: 12px !important;
+  padding: 0 1px !important;
+}
+
+.pos-btn-draft {
+  background-color: #f59e0b !important;
+  border-color: #d97706 !important;
+  color: #1e293b !important;
+}
+
+.pos-btn-draft:hover {
+  background-color: #d97706 !important;
+  border-color: #b45309 !important;
+  color: #ffffff !important;
 }
 
 .pos-stepper-btn {

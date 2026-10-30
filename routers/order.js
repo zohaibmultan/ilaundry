@@ -392,6 +392,9 @@ router.get("/list/data", auth, async (req, res) => {
           else if (order.order_status == 6) {
             statusClass = "status-cancelled";
             order.orderStatusName = order.void_reason ? `Void (${order.void_reason})` : "Voided";
+          } else if (order.order_status == 8) {
+            statusClass = "status-draft";
+            order.orderStatusName = "Draft";
           }
 
           return {

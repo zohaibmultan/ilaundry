@@ -2342,6 +2342,177 @@ router.post("/new_order", auth, async (req, res) => {
   }
 });
 
+// Save current POS cart as a Draft order (order_status = 8)
+router.post("/save_draft_order", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+
+    const cart = await DataFind(
+      `SELECT * FROM tbl_cart WHERE created_by = '${loginas},${id}' LIMIT 1`
+    );
+
+    if (!cart || cart.length === 0) {
+      return res.status(400).json({ success: false, message: "Cart not found." });
+    }
+
+    const cartRow = cart[0];
+    const serviceListId = (cartRow.service_list_id && String(cartRow.service_list_id).trim() !== "0")
+      ? cartRow.service_list_id
+      : "";
+
+    if (!serviceListId) {
+      return res.status(400).json({ success: false, message: "Cart is empty. Please add services before saving draft." });
+    }
+
+    // Resolve customer ID
+    let customerId = (req.body.customer_id && req.body.customer_id != "0")
+      ? req.body.customer_id
+      : (cartRow.customer_id && cartRow.customer_id != "0")
+        ? cartRow.customer_id
+        : "0";
+
+    if (!customerId || customerId == "0") {
+      const defaultCust = await DataFind(
+        "SELECT id FROM tbl_customer WHERE name = 'Walk in customer' LIMIT 1"
+      );
+      customerId = (defaultCust && defaultCust.length > 0) ? String(defaultCust[0].id) : "1";
+    }
+
+    const targetStoreId = cartRow.store_id || store || "1";
+
+    let orderid = (cartRow.order_id && cartRow.order_id.trim()) ? cartRow.order_id.trim() : null;
+    const existingOrder = orderid ? await DataFind(`SELECT id FROM tbl_order WHERE order_id = '${orderid}' LIMIT 1`) : [];
+    if (!orderid || existingOrder.length > 0) {
+      orderid = await idfororder(targetStoreId);
+    }
+
+    let order_date = new Date(cartRow.order_date || Date.now());
+    let order_day = (order_date.getDate() < 10 ? "0" : "") + order_date.getDate();
+    let order_month = (order_date.getMonth() + 1 < 10 ? "0" : "") + (order_date.getMonth() + 1);
+    let order_year = order_date.getFullYear();
+    let order_fullDate = `${order_year}-${order_month}-${order_day}`;
+
+    let order_type = req.body.order_type || cartRow.order_type || "Counter & Counter";
+
+    let finalReadyDate = req.body.readydate || cartRow.ready_date;
+    let finalDeliveryDate = req.body.deliverydate || cartRow.delivery_date;
+    let finalPickupDate = req.body.pickupdate || cartRow.pickup_date || null;
+
+    if (finalReadyDate && !(finalReadyDate instanceof Date)) {
+      finalReadyDate = new Date(finalReadyDate);
+    }
+    if (finalReadyDate && !isNaN(finalReadyDate.getTime())) {
+      let rDay = (finalReadyDate.getDate() < 10 ? "0" : "") + finalReadyDate.getDate();
+      let rMonth = (finalReadyDate.getMonth() + 1 < 10 ? "0" : "") + (finalReadyDate.getMonth() + 1);
+      let rYear = finalReadyDate.getFullYear();
+      let rHours = (finalReadyDate.getHours() < 10 ? "0" : "") + finalReadyDate.getHours();
+      let rMins = (finalReadyDate.getMinutes() < 10 ? "0" : "") + finalReadyDate.getMinutes();
+      finalReadyDate = `${rYear}-${rMonth}-${rDay} ${rHours}:${rMins}:00`;
+    } else {
+      finalReadyDate = `${order_fullDate} 17:00:00`;
+    }
+
+    if (finalDeliveryDate && !(finalDeliveryDate instanceof Date)) {
+      finalDeliveryDate = new Date(finalDeliveryDate);
+    }
+    if (finalDeliveryDate && !isNaN(finalDeliveryDate.getTime())) {
+      let dDay = (finalDeliveryDate.getDate() < 10 ? "0" : "") + finalDeliveryDate.getDate();
+      let dMonth = (finalDeliveryDate.getMonth() + 1 < 10 ? "0" : "") + (finalDeliveryDate.getMonth() + 1);
+      let dYear = finalDeliveryDate.getFullYear();
+      let dHours = (finalDeliveryDate.getHours() < 10 ? "0" : "") + finalDeliveryDate.getHours();
+      let dMins = (finalDeliveryDate.getMinutes() < 10 ? "0" : "") + finalDeliveryDate.getMinutes();
+      finalDeliveryDate = `${dYear}-${dMonth}-${dDay} ${dHours}:${dMins}:00`;
+    } else {
+      finalDeliveryDate = finalReadyDate;
+    }
+
+    if (finalPickupDate && !(finalPickupDate instanceof Date)) {
+      finalPickupDate = new Date(finalPickupDate);
+    }
+    if (finalPickupDate && !isNaN(finalPickupDate.getTime())) {
+      let pDay = (finalPickupDate.getDate() < 10 ? "0" : "") + finalPickupDate.getDate();
+      let pMonth = (finalPickupDate.getMonth() + 1 < 10 ? "0" : "") + (finalPickupDate.getMonth() + 1);
+      let pYear = finalPickupDate.getFullYear();
+      let pHours = (finalPickupDate.getHours() < 10 ? "0" : "") + finalPickupDate.getHours();
+      let pMins = (finalPickupDate.getMinutes() < 10 ? "0" : "") + finalPickupDate.getMinutes();
+      finalPickupDate = `${pYear}-${pMonth}-${pDay} ${pHours}:${pMins}:00`;
+    } else {
+      finalPickupDate = null;
+    }
+
+    const cartGross = parseFloat(cartRow.gross_total) || 0;
+    const cartSub = parseFloat(cartRow.sub_total) || 0;
+    const cartAddon = parseFloat(cartRow.addon_price) || 0;
+    const cartCoupon = parseFloat(cartRow.coupon_discount) || 0;
+    const cartTaxAmt = parseFloat(cartRow.tax_amount) || 0;
+    const extraDiscount = parseFloat(req.body.extradiscount || cartRow.extra_discount || 0) || 0;
+    const gross = Math.max(0, cartGross - extraDiscount);
+    const paid_amount = 0;
+    const balance = gross;
+    const note = req.body.note || cartRow.notes || "";
+    const reference_number = req.body.reference_number || "";
+
+    // Insert order with order_status = 8 (Draft)
+    const order = await DataInsert(
+      `tbl_order`,
+      `order_id,order_date,ready_date,delivery_date,pickup_date,order_type,order_status,service_list,customer_id,created_by,store_id,addon_data,addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission,commission_status,reference_number`,
+      `'${orderid}',
+       '${order_fullDate}','${finalReadyDate}','${finalDeliveryDate}',${finalPickupDate ? `'${finalPickupDate}'` : 'NULL'},'${order_type.replace(/'/g, "\\'")}',8,'${serviceListId}','${customerId}','${cartRow.created_by}','${targetStoreId}','${cartRow.addon_id || '0'}',${cartAddon},${cartSub},'${cartRow.tax || 0}','${cartRow.coupon_id || 0}',${cartCoupon},${extraDiscount},${gross},${paid_amount},${balance},'0',${cartTaxAmt},'${note.replace(/'/g, "\\'")}',0,'1','${reference_number.replace(/'/g, "\\'")}'`,
+      req.hostname,
+      req.protocol
+    );
+
+    if (order == -1) {
+      return res.status(500).json({
+        success: false,
+        message: process.env.dataerror || "Database error creating draft order."
+      });
+    }
+
+    // Reset cashier's cart and allocate brand new order ID for next order
+    const nextOrderId = await idfororder(targetStoreId);
+    const taxData = await DataFind(`SELECT tax_percent FROM tbl_store WHERE id = '${targetStoreId}'`);
+    const taxVal = taxData.length > 0 ? (taxData[0].tax_percent || 0) : 0;
+
+    await DataUpdate(
+      "tbl_cart",
+      `order_id = '${nextOrderId}',
+       order_date = CURRENT_TIMESTAMP,
+       service_list_id = '0',
+       addon_id = '0',
+       addon_price = 0,
+       sub_total = 0,
+       tax = ${taxVal},
+       tax_amount = 0,
+       extra_discount = 0,
+       coupon_id = 0,
+       coupon_discount = 0,
+       gross_total = 0,
+       paid_amount = 0,
+       balance = 0,
+       payment_type = 0,
+       notes = '',
+       customer_id = 0,
+       order_type = 'Counter & Counter'`,
+      `created_by = '${loginas},${id}'`,
+      req.hostname,
+      req.protocol
+    );
+
+    return res.status(200).json({
+      success: true,
+      order_id: orderid,
+      id: order.insertId,
+      new_order_id: nextOrderId,
+      message: `Draft order #${orderid} saved successfully.`
+    });
+  } catch (error) {
+    console.error("Error in /admin/save_draft_order:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Helper to resolve the original catalog rate of a cart/order service line item
 async function resolveOriginalServiceRate(serviceRow) {
   if (!serviceRow) return 0;
