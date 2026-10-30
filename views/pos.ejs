@@ -7,9 +7,9 @@
 </head>
 
 <body class="pos-screen-layout">
-  <% 
+  <%
     const isEditMode = Boolean((typeof isEdit !== 'undefined' && isEdit) || (typeof cart !== 'undefined' && cart && cart.isEdit));
-    
+
     // Defensive date & time formatting helpers using local timezone
     const formatLocalDate = (d) => {
       if (!d) return '';
@@ -105,7 +105,7 @@
   <!--********** Content body start **********-->
   <div class="content-body pos-content-body">
     <div class="container-fluid min-vh-100">
-      
+
       <!-- Mobile / Tablet Segmented View Switcher (<992px) -->
       <div class="pos-responsive-segmented-bar d-lg-none">
         <button type="button" class="pos-segmented-btn active" id="posBtnShowCatalog" onclick="switchPosMobileTab('catalog')">
@@ -278,7 +278,7 @@
                 </div>
 
                 <!-- User Profile Dropdown -->
-                <% 
+                <%
                   let userDisplayName = accessdata?.topbardata?.name || 'Administrator';
                   let userRoleName = accessdata?.roll?.roll || '';
                   let defaultAvatar = accessdata?.logas === 'custmor' ? '/images/profile-default.png' : '/images/default.png';
@@ -507,7 +507,7 @@
                         <%= (typeof showStoreSelect !== 'undefined' && showStoreSelect && (!cart.store_id || cart.store_id == 0)) ? (language.Select_Store_First || 'Select Store First') : (language.Select_Customer || 'Select Customer') %>
                       </option>
                       <% customerList.forEach(function(x) { %>
-                      <% 
+                      <%
                         let showExtra = "";
                         if ((!x.username) && (!x.email) && (!x.number)) {
                           if (accessdata.logas != 'store') { showExtra = x.store_name; }
@@ -549,7 +549,7 @@
                     </div>
                   </div>
                 </div>
-  
+
                 <!-- Unpaid Orders -->
                 <div class="col-2">
                   <div class="pos-cust-stat-tile tile-unpaid" title="Orders Unpaid / Partially Paid">
@@ -559,7 +559,7 @@
                     </div>
                   </div>
                 </div>
-  
+
                 <!-- Total Due -->
                 <div class="col-2">
                   <div class="pos-cust-stat-tile tile-balance" title="Total Outstanding Balance">
@@ -613,7 +613,7 @@
                     <% } %>
                   </div>
                 </div>
-      
+
                 <!-- Delivery Date & Hour -->
                 <div class="col-6" id="<%= isEditMode ? 'edit_pos_delivery_date_group' : 'pos_delivery_date_group' %>">
                   <label class="pos-field-label mb-0">
@@ -632,7 +632,7 @@
                   </div>
                 </div>
               </div>
-              
+
               <!-- Cart Line Items Table -->
               <div class="pos-table-scroll">
                 <table class="pos-cart-table table-bordered verticle-middle text-center mb-0 <%= (cartservice && cartservice.length > 0) ? '' : 'd-none' %>" id="pos_cart_main_table">
@@ -679,7 +679,7 @@
                         </button>
                       </td>
                       <td class="text-center">
-                        <% 
+                        <%
                           const pColor = x.primary_color || '';
                           const sColor = x.secondary_color || '';
                           const pat = x.garment_pattern || 'Solid';
@@ -745,108 +745,100 @@
 
               <!-- Bottom Actions & Financial Summary Area -->
               <div class="pos-bottom-section">
-                <div class="row g-1 align-items-center">
-                  <div class="col-5">
-                    <div class="<%= ((accessdata.logas == 'custmor' && accessdata.roll?.pos?.includes('write')) || (accessdata.roll?.pos && accessdata.roll.pos.includes('write'))) ? 'd-block' : 'd-none' %>">
-                      <% if (isEditMode) { %>
-                      <div class="row g-2 mb-2">
-                        <div class="col">
-                          <button type="button" class="btn btn-primary pos-btn-mini" style="width: 100% !important;" data-bs-toggle="modal" data-bs-target="#addons">
-                            <i class="fa fa-plus-circle me-1"></i><%= language.Addons %>
-                          </button>
-                        </div>
-                        <div class="col">
-                          <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_POS_coupon_model_show">
-                            <i class="fa fa-tag me-1"></i><%= language.Coupon %>
-                          </button>
-                        </div>
-                        <div class="col">
-                          <button type="button" class="btn btn-success pos-btn-mini w-100" id="edit_direct_save_btn">
-                            <i class="fa fa-save me-1"></i><%= language.Save || 'Save' %>
-                          </button>
-                        </div>
-                      </div>
-                      <div class="row g-2">
-                        <div class="col">
-                          <button type="button" class="btn btn-danger pos-btn-mini w-100 fw-bold" id="edit_btn_pos_void" style="height: 38px !important;" title="Void this order">
-                            <i class="fa fa-ban me-1"></i><%= language.Void || 'Void' %>
-                          </button>
-                        </div>
-                        <div class="col">
-                          <a class="btn btn-secondary pos-btn-mini w-100 d-flex align-items-center justify-content-center" href="/admin/pos" style="height: 38px !important;" title="Start New Order">
-                            <i class="fa fa-plus me-1"></i><%= language.New || 'New' %>
-                          </a>
-                        </div>
-                        <div class="col-6">
-                          <button type="button" class="btn btn-info text-white pos-btn-pay-primary shadow-sm w-100" id="edit_POS_payment_model_show" style="height: 38px !important;">
-                            <i class="fa fa-credit-card me-1"></i> <span>Payment</span>
-                          </button>
-                        </div>
-                      </div>
-                      <% } else { %>
-                      <div class="row g-2 mb-2">
-                        <div class="col-4">
-                          <button type="button" class="btn btn-primary pos-btn-mini w-100" data-bs-toggle="modal" data-bs-target="#addons">
-                            <i class="fa fa-plus-circle me-1"></i><%= language.Addons %>
-                          </button>
-                        </div>
-                        <div class="col-4">
-                          <button type="button" class="btn btn-primary pos-btn-mini w-100" id="POS_coupon_model_show">
-                            <i class="fa fa-tag me-1"></i><%= language.Coupon %>
-                          </button>
-                        </div>
-                        <div class="col-4">
-                          <button type="button" class="btn btn-danger pos-btn-mini w-100 fw-bold" id="btn_pos_void" title="Void current order">
-                            <i class="fa fa-ban me-1"></i><%= language.Void || 'Void' %>
-                          </button>
-                        </div>
-                      </div>
-                      <div class="d-flex align-items-center gap-2">
-                        <button type="button" class="btn btn-primary pos-btn-new-order shadow-sm fw-bold d-flex align-items-center justify-content-center" id="btn_pos_new_order" style="height: 38px; min-width: 80px;">
-                          <i class="fa fa-plus me-1"></i><span><%= language.New_Order || 'New' %></span>
-                        </button>
-                        <button type="button" class="btn btn-warning pos-btn-draft shadow-sm fw-bold d-flex align-items-center justify-content-center flex-grow-1" id="btn_pos_save_draft" style="height: 38px;" title="Save current items as a Draft order">
-                          <i class="fa fa-save me-1"></i><span><%= language.Save_Draft || 'Save Draft' %></span>
-                        </button>
-                        <button type="button" class="btn btn-success pos-btn-pay-primary flex-grow-1 shadow-sm fw-bold d-flex align-items-center justify-content-center" id="POS_payment_model_show" style="height: 38px;">
-                          <span><%= language.Payment || 'Payment' %></span> <i class="fas fa-arrow-right ms-2"></i>
+                <div class="<%= ((accessdata.logas == 'custmor' && accessdata.roll?.pos?.includes('write')) || (accessdata.roll?.pos && accessdata.roll.pos.includes('write'))) ? 'd-block' : 'd-none' %>">
+                  <div class="row g-2">
+                    <% if (isEditMode) { %>
+                      <div class="col">
+                        <button type="button" class="btn btn-primary pos-btn-mini" style="width: 100% !important;" data-bs-toggle="modal" data-bs-target="#addons">
+                          <i class="fa fa-plus-circle me-2"></i><%= language.Addons %>
                         </button>
                       </div>
-                      <% } %>
+                      <div class="col">
+                        <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_POS_coupon_model_show">
+                          <i class="fa fa-tag me-2"></i><%= language.Coupon %>
+                        </button>
+                      </div>
+                      <div class="col">
+                        <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_direct_save_btn">
+                          <i class="fa fa-save me-2"></i><%= language.Save || 'Save Order' %>
+                        </button>
+                      </div>
+                      <div class="col">
+                        <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_btn_pos_void">
+                          <i class="fa fa-ban me-2"></i><%= language.Void || 'Void' %>
+                        </button>
+                      </div>
+                      <div class="col">
+                        <a class="btn btn-primary pos-btn-mini w-100" href="/admin/pos">
+                          <i class="fa fa-plus me-2"></i><%= language.New || 'New Order' %>
+                        </a>
+                      </div>
+                    <% } else { %>
+                      <div class="col">
+                        <button type="button" class="btn btn-primary pos-btn-mini w-100" data-bs-toggle="modal" data-bs-target="#addons">
+                          <i class="fa fa-plus-circle me-2"></i><%= language.Addons %>
+                        </button>
+                      </div>
+                      <div class="col">
+                        <button type="button" class="btn btn-primary pos-btn-mini w-100" id="POS_coupon_model_show">
+                          <i class="fa fa-tag me-2"></i><%= language.Coupon %>
+                        </button>
+                      </div>
+                      <div class="col">
+                        <button type="button" class="btn btn-danger pos-btn-mini w-100 fw-bold" id="btn_pos_void">
+                          <i class="fa fa-ban me-2"></i><%= language.Void || 'Void' %>
+                        </button>
+                      </div>
+                      <div class="col">
+                        <button type="button" class="btn btn-primary pos-btn-mini w-100" id="btn_pos_new_order">
+                          <i class="fa fa-plus me-2"></i><span>New Order</span>
+                        </button>
+                      </div>
+                      <div class="col">
+                        <button type="button" class="btn btn-primary pos-btn-mini w-100" id="btn_pos_save_draft">
+                          <i class="fa fa-save me-2"></i><span>Save Order</span>
+                        </button>
+                      </div>
+                    <% } %>
+                  </div>
+                </div>
+                <div class="row mt-2">
+                  <div class="col-3 border-right">
+                    <div class="pos-total-row">
+                      <span class="pos-total-label"><%= language.Sub_Total %>:</span>
+                      <span class="pos-total-value symbol possymbol" id="POS_sub_total"><%= (Number(cart.sub_total) || 0).toFixed(2) %></span>
+                    </div>
+                    <div class="pos-total-row">
+                      <span class="pos-total-label"><%= language.Addon_Total %>:</span>
+                      <span class="pos-total-value symbol possymbol" id="POS_addon_total"><%= (Number(cart.addon_price) || 0).toFixed(2) %></span>
+                    </div>
+                    <div class="pos-total-row text-success">
+                      <span class="pos-total-label text-success"><%= language.Coupon_Discount %>:</span>
+                      <span class="pos-total-value text-success symbol possymbol" id="POS_coupon_total"><%= (Number(cart.coupon_discount) || 0).toFixed(2) %></span>
                     </div>
                   </div>
-                  <div class="col-4">
-                    <div class="pos-totals-container">
-                      <div class="pos-total-row">
-                        <span class="pos-total-label"><%= language.Sub_Total %>:</span>
-                        <span class="pos-total-value symbol possymbol" id="POS_sub_total"><%= (Number(cart.sub_total) || 0).toFixed(2) %></span>
-                      </div>
-                      <div class="pos-total-row">
-                        <span class="pos-total-label"><%= language.Addon_Total %>:</span>
-                        <span class="pos-total-value symbol possymbol" id="POS_addon_total"><%= (Number(cart.addon_price) || 0).toFixed(2) %></span>
-                      </div>
-                      <div class="pos-total-row text-success">
-                        <span class="pos-total-label text-success"><%= language.Coupon_Discount %>:</span>
-                        <span class="pos-total-value text-success symbol possymbol" id="POS_coupon_total"><%= (Number(cart.coupon_discount) || 0).toFixed(2) %></span>
-                      </div>
-                      <div class="pos-total-row">
-                        <span class="pos-total-label" id="POS_tax_percent"><%= language.TAX %> (<%= cart.tax %> %):</span>
-                        <span class="pos-total-value symbol possymbol" id="POS_tax_total"><%= (Number(cart.tax_amount) || 0).toFixed(2) %></span>
-                      </div>
-                      <% if (isEditMode) { %>
-                        <div class="pos-total-row">
-                          <span class="pos-total-label"><%= language.Paid_Amount || 'Paid Amount' %>:</span>
-                          <span class="pos-total-value symbol possymbol" id="POS_paid_amount"><%= (Number(cart.paid_amount) || 0).toFixed(2) %></span>
-                        </div>
-                        <% } %>
-                      </div>
+                  <div class="col-3 border-right">
+                    <div class="pos-total-row">
+                      <span class="pos-total-label" id="POS_tax_percent"><%= language.TAX %> (<%= cart.tax %> %):</span>
+                      <span class="pos-total-value symbol possymbol" id="POS_tax_total"><%= (Number(cart.tax_amount) || 0).toFixed(2) %></span>
                     </div>
-                    <div class="col-3">
-                      <div style="margin-left:15px; padding:15px;  border: 1px dashed #cbd5e1; border-radius: 6px; text-align:center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                        <div><%= language.Gross_Total %></div>
-                        <div class="text-dark" style="font-size: 20px; font-weight: bold;" id="POS_gross_total"><%= (Number(cart.gross_total) || 0).toFixed(2) %></div>
-                      </div> 
+                    <% if (isEditMode) { %>
+                      <div class="pos-total-row">
+                        <span class="pos-total-label"><%= language.Paid_Amount || 'Paid Amount' %>:</span>
+                        <span class="pos-total-value symbol possymbol" id="POS_paid_amount"><%= (Number(cart.paid_amount) || 0).toFixed(2) %></span>
+                      </div>
+                    <% } %>
+                  </div>
+                  <div class="col-3 border-right">
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                      <div><%= language.Gross_Total %></div>
+                      <div class="text-dark" style="font-size: 20px; font-weight: bold;" id="POS_gross_total"><%= (Number(cart.gross_total) || 0).toFixed(2) %></div>
                     </div>
+                  </div>
+                  <div class="col-3">
+                    <button type="button" class="btn btn-success pos-btn-pay-primary flex-grow-1 shadow-sm fw-bold d-flex align-items-center justify-content-center" id="POS_payment_model_show" style="height: 38px;">
+                      <span><%= language.Payment || 'Payment' %></span> <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1775,7 +1767,7 @@
             Are you sure you want to <strong>VOID</strong> Order #<strong id="pos_void_modal_order_id_text"><%= cart.order_id %></strong>?
             This order will be permanently recorded in the database as <strong>VOID</strong> and excluded from revenue totals.
           </div>
-          
+
           <div class="mb-3">
             <label class="form-label fw-bold fs-13 mb-1">
               Reason for Voiding <span class="text-danger">*</span>
