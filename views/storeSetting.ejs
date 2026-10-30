@@ -334,7 +334,7 @@
                             <div class="card-body p-4">
                                 <div class="row g-3">
                                     <!-- Commission (Read-only for Store Managers) -->
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label class="form-label fw-semibold">
                                             <%= language.Shop_Commission || 'Shop Franchise Commission' %>
                                         </label>
@@ -343,11 +343,11 @@
                                             <input type="number" step="0.01" class="form-control bg-light" name="commission" value="<%= data.shop_commission %>" readonly>
                                             <span class="input-group-text bg-light fw-bold">%</span>
                                         </div>
-                                        <small class="text-muted fs-12">Franchise royalty rate configured and maintained by Master Administration.</small>
+                                        <small class="text-muted fs-12">Franchise royalty rate maintained by Master Admin.</small>
                                     </div>
 
                                     <!-- Tax Rate -->
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label class="form-label fw-semibold">
                                             <%= language.Tax_Percentage || 'Local Sales Tax / VAT' %> <span class="text-danger">*</span>
                                         </label>
@@ -356,11 +356,11 @@
                                             <input type="number" step="0.01" class="form-control" name="taxpercent" value="<%= data.tax_percent %>" placeholder="e.g. 9.50" <%= update ? 'required' : 'readonly' %>>
                                             <span class="input-group-text bg-light fw-bold">%</span>
                                         </div>
-                                        <small class="text-muted fs-12">Applicable sales tax / VAT applied to POS receipts and customer invoices.</small>
+                                        <small class="text-muted fs-12">Sales tax / VAT applied to POS receipts.</small>
                                     </div>
 
                                     <!-- Value Override Rate -->
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label class="form-label fw-semibold">
                                             <%= language.Override_Rate || 'Value Override Rate' %> <span class="text-danger">*</span>
                                         </label>
@@ -369,7 +369,31 @@
                                             <input type="number" step="0.01" min="0" max="100" class="form-control" name="override_rate_percent" value="<%= (data.override_rate_percent !== undefined && data.override_rate_percent !== null) ? data.override_rate_percent : 10 %>" placeholder="e.g. 10" <%= update ? 'required' : 'readonly' %>>
                                             <span class="input-group-text bg-light fw-bold">%</span>
                                         </div>
-                                        <small class="text-muted fs-12">Percentage of item Value used to override service Rate in POS (default 10%).</small>
+                                        <small class="text-muted fs-12">Override service Rate in POS (default 10%).</small>
+                                    </div>
+
+                                    <!-- Default Payment Type -->
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold">
+                                            <%= language.Default_Payment_Type || 'Default Payment Type' %>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-money-check-alt"></i></span>
+                                            <select class="form-control form-select" name="default_payment_type" <%= update ? '' : 'disabled' %>>
+                                                <% if (typeof paymentAccounts !== 'undefined' && paymentAccounts && paymentAccounts.length > 0) { %>
+                                                    <% paymentAccounts.forEach(function(ac) { %>
+                                                        <option value="<%= ac.ac_name %>" <%= (data.default_payment_type && (data.default_payment_type.toLowerCase() === ac.ac_name.toLowerCase() || String(data.default_payment_type) === String(ac.id))) ? 'selected' : '' %>><%= ac.ac_name %></option>
+                                                    <% }); %>
+                                                <% } else { %>
+                                                    <option value="Cash" <%= (!data.default_payment_type || data.default_payment_type.toLowerCase() === 'cash') ? 'selected' : '' %>>Cash</option>
+                                                    <option value="Card" <%= (data.default_payment_type && data.default_payment_type.toLowerCase() === 'card') ? 'selected' : '' %>>Card</option>
+                                                    <option value="UPI" <%= (data.default_payment_type && data.default_payment_type.toLowerCase() === 'upi') ? 'selected' : '' %>>UPI</option>
+                                                    <option value="Cheque" <%= (data.default_payment_type && (data.default_payment_type.toLowerCase() === 'cheque' || data.default_payment_type.toLowerCase() === 'check')) ? 'selected' : '' %>>Cheque</option>
+                                                    <option value="Bank Transfer" <%= (data.default_payment_type && data.default_payment_type.toLowerCase() === 'bank transfer') ? 'selected' : '' %>>Bank Transfer</option>
+                                                <% } %>
+                                            </select>
+                                        </div>
+                                        <small class="text-muted fs-12">Pre-selected method on POS payment screen.</small>
                                     </div>
                                 </div>
                             </div>

@@ -157,6 +157,17 @@
                                                 <option value selected disabled>Choose Timezone</option>
                                             </select>
                                         </div>
+
+                                        <div class="col-sm-6">
+                                            <label class="form-label"><%= language.Default_Payment_Type || 'Default Payment Type' %></label>
+                                            <select class="form-control form-select" name="default_payment_type">
+                                                <option value="Cash" <%= (!masterstore.default_payment_type || masterstore.default_payment_type.toLowerCase() === 'cash') ? 'selected' : '' %>>Cash</option>
+                                                <option value="Card" <%= (masterstore.default_payment_type && masterstore.default_payment_type.toLowerCase() === 'card') ? 'selected' : '' %>>Card</option>
+                                                <option value="UPI" <%= (masterstore.default_payment_type && masterstore.default_payment_type.toLowerCase() === 'upi') ? 'selected' : '' %>>UPI</option>
+                                                <option value="Cheque" <%= (masterstore.default_payment_type && (masterstore.default_payment_type.toLowerCase() === 'cheque' || masterstore.default_payment_type.toLowerCase() === 'check')) ? 'selected' : '' %>>Cheque / Check</option>
+                                                <option value="Bank Transfer" <%= (masterstore.default_payment_type && masterstore.default_payment_type.toLowerCase() === 'bank transfer') ? 'selected' : '' %>>Bank Transfer</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

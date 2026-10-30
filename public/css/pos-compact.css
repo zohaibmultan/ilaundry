@@ -1256,13 +1256,49 @@ select.pos-input-sm {
 /* Modal Dialog Sizing */
 #POS_payment_model .modal-dialog.modal-lg,
 #POS_payment_model .modal-dialog.modal-xl {
-  max-width: 75% !important;
-  margin: 1.75rem auto !important;
+  max-width: 920px !important;
+  width: 94% !important;
+  margin: 1.5rem auto !important;
 }
 
 #POS_payment_model .modal-dialog:not(.modal-lg):not(.modal-xl) {
-  max-width: 540px !important;
-  margin: 1.75rem auto !important;
+  max-width: 920px !important;
+  width: 94% !important;
+  margin: 1.5rem auto !important;
+}
+
+/* POS Payment Cards & Alignment */
+#POS_payment_model .pos-payment-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  min-height: 100%;
+}
+
+[data-theme-version="dark"] #POS_payment_model .pos-payment-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] #POS_payment_model .modal-content {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+[data-theme-version="dark"] #POS_payment_model .modal-header,
+[data-theme-version="dark"] #POS_payment_model .modal-footer {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme-version="dark"] #POS_payment_model .pos-payment-card .text-muted {
+  color: #94a3b8 !important;
+}
+
+[data-theme-version="dark"] #POS_payment_model .pos-modal-field-header .form-label,
+[data-theme-version="dark"] #POS_payment_model .form-label {
+  color: #f8fafc !important;
 }
 
 /* Unified POS Modal Field Headers */

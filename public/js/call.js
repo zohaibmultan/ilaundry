@@ -3648,10 +3648,14 @@
             url: baseUrl + "/admin/paymentdata/",
             dataType: 'json',
             success: function (res) {
-               $('#POS_payment_type_list').html('<option value="0" disabled selected>Choose Payment Type</option>')
+               $('#POS_payment_type_list').html('<option value="0" disabled>Choose Payment Type</option>');
                $.each(res.payment, function (index, value) {
-                  $('#POS_payment_type_list').append('<option value="' + value.id + '">' + value.ac_name + '</option>')
-               })
+                  var isSelected = (res.default_payment_type && String(value.id) === String(res.default_payment_type)) ? ' selected' : '';
+                  $('#POS_payment_type_list').append('<option value="' + value.id + '"' + isSelected + '>' + value.ac_name + '</option>');
+               });
+               if (res.default_payment_type) {
+                  $('#POS_payment_type_list').val(res.default_payment_type);
+               }
                $("#POS_payment_type_list").prop('required', false);
                $('.default-select').selectpicker('refresh');
                let orderDateMin = $('#POS_order_date').val() || new Date(res.cart.order_date).toLocaleDateString('en-CA');
@@ -3734,10 +3738,15 @@
             dataType: 'json',
             data: { customer, order_id },
             success: function (res) {
-               $('#POS_payment_type_list').html('<option value="0"  disabled>Choose Payment Type</option>')
+               $('#POS_payment_type_list').html('<option value="0" disabled>Choose Payment Type</option>');
+               var selectedPayType = (res.order_date && res.order_date.payment_data) || res.default_payment_type;
                $.each(res.payment, function (index, value) {
-                  $('#POS_payment_type_list').append(' <option value="' + value.id + '">' + value.ac_name + '</option>')
-               })
+                  var isSelected = (selectedPayType && (String(value.id) === String(selectedPayType) || String(value.ac_name).toLowerCase() === String(selectedPayType).toLowerCase())) ? ' selected' : '';
+                  $('#POS_payment_type_list').append('<option value="' + value.id + '"' + isSelected + '>' + value.ac_name + '</option>');
+               });
+               if (selectedPayType) {
+                  $('#POS_payment_type_list').val(selectedPayType);
+               }
                $("#POS_payment_type_list").prop('required', true);
                $('.default-select').selectpicker('refresh');
                let editOrderDateMin = $('#edit_POS_order_date').val() || new Date(res.order_date.order_date).toLocaleDateString('en-CA');
@@ -4015,10 +4024,11 @@
          return document.getElementById("POS_worning").innerHTML = "Enter Delivery Date";
       }
 
+      var $posForm = $('#pyment_POS_cart').length ? $('#pyment_POS_cart') : $('#posprintform');
       $.ajax({
          type: 'POST',
          url: baseUrl + "/admin/order",
-         data: $('#pyment_POS_cart').serialize(),
+         data: $posForm.serialize(),
          success: function (res) {
             $('#POS_payment_model').modal('hide');
             toastr.success('Order Success fully Save')

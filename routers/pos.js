@@ -4415,7 +4415,30 @@ router.get("/paymentdata", auth, async (req, res) => {
         " AND delet_flage != '1'  ",
     );
 
-    return res.status(200).json({ cart: cart[0], payment: payment || [] });
+    let defaultTypeSetting = "Cash";
+    const storeSettings = await DataFind(
+      `SELECT default_payment_type FROM tbl_store WHERE id = '${storeId}' LIMIT 1`
+    );
+    if (storeSettings.length > 0 && storeSettings[0].default_payment_type && String(storeSettings[0].default_payment_type).trim()) {
+      defaultTypeSetting = String(storeSettings[0].default_payment_type).trim();
+    } else {
+      const masterSettings = await DataFind(
+        `SELECT default_payment_type FROM tbl_master_shop WHERE id = 1 LIMIT 1`
+      );
+      if (masterSettings.length > 0 && masterSettings[0].default_payment_type && String(masterSettings[0].default_payment_type).trim()) {
+        defaultTypeSetting = String(masterSettings[0].default_payment_type).trim();
+      }
+    }
+
+    let defaultAccountId = "";
+    if (payment && payment.length > 0) {
+      const matched = payment.find(
+        (p) => String(p.id) === String(defaultTypeSetting) || String(p.ac_name).toLowerCase() === defaultTypeSetting.toLowerCase()
+      );
+      defaultAccountId = matched ? String(matched.id) : String(payment[0].id);
+    }
+
+    return res.status(200).json({ cart: cart[0], payment: payment || [], default_payment_type: defaultAccountId });
   } catch (error) {
     console.error("Error in /paymentdata:", error);
     return res.status(500).json({ success: false, message: error.message });
@@ -4441,7 +4464,30 @@ router.post("/edit_paymentdata", auth, async (req, res) => {
         " AND delet_flage != '1'  ",
     );
 
-    return res.status(200).json({ order_date: order_date[0], payment: payment || [] });
+    let defaultTypeSetting = "Cash";
+    const storeSettings = await DataFind(
+      `SELECT default_payment_type FROM tbl_store WHERE id = '${storeId}' LIMIT 1`
+    );
+    if (storeSettings.length > 0 && storeSettings[0].default_payment_type && String(storeSettings[0].default_payment_type).trim()) {
+      defaultTypeSetting = String(storeSettings[0].default_payment_type).trim();
+    } else {
+      const masterSettings = await DataFind(
+        `SELECT default_payment_type FROM tbl_master_shop WHERE id = 1 LIMIT 1`
+      );
+      if (masterSettings.length > 0 && masterSettings[0].default_payment_type && String(masterSettings[0].default_payment_type).trim()) {
+        defaultTypeSetting = String(masterSettings[0].default_payment_type).trim();
+      }
+    }
+
+    let defaultAccountId = "";
+    if (payment && payment.length > 0) {
+      const matched = payment.find(
+        (p) => String(p.id) === String(defaultTypeSetting) || String(p.ac_name).toLowerCase() === defaultTypeSetting.toLowerCase()
+      );
+      defaultAccountId = matched ? String(matched.id) : String(payment[0].id);
+    }
+
+    return res.status(200).json({ order_date: order_date[0], payment: payment || [], default_payment_type: defaultAccountId });
   } catch (error) {
     console.error("Error in /edit_paymentdata:", error);
     return res.status(500).json({ success: false, message: error.message });

@@ -856,350 +856,330 @@
 
   <!-- Modal Payment -->
   <div class="modal fade" id="POS_payment_model" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down modal-lg" role="document">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down modal-xl" role="document">
       <% if (isEditMode) { %>
       <form id="pyment_POS_cart" method="post" class="modal-content need-validation">
         <input type="hidden" id="pos_order_id" name="order_id" value="<%= cart.id %>">
-        <div class="modal-header">
-          <h5 class="modal-title"><%= language.Make_Payment %></h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-header border-bottom py-2.5 px-3 d-flex align-items-center justify-content-between">
+          <h5 class="modal-title d-flex align-items-center fw-bold">
+            <i class="fa fa-credit-card text-primary me-2"></i><%= language.Make_Payment %>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
-        <div class="modal-body p-3 p-md-4" id="payment_sum">
-          <div class="row g-3">
-            <!-- Left Column: Inputs -->
-            <div class="col-12 col-lg-7">
-              <div class="row g-3 align-items-start mb-3">
-                <input type="hidden" name="order_type" id="edit_modal_order_type" value="<%= cart.order_type || 'Counter & Counter' %>">
+        <div class="modal-body p-3" id="payment_sum">
+          <input type="hidden" name="order_type" id="edit_modal_order_type" value="<%= cart.order_type || 'Counter & Counter' %>">
+          <input type="hidden" name="pickupdate" id="edit_pickupdate" value="<%= pick_fullDate %>">
+          <input type="hidden" name="pickuptime" id="edit_pickuptime" value="<%= pick_time %>">
+          <input type="hidden" name="pickupdate_hidden" id="edit_pickupdate_hidden">
+          <input type="hidden" name="readydate" id="edit_readydate" value="<%= ready_fullDate %>">
+          <input type="hidden" name="readytime" id="edit_readytime" value="<%= ready_time %>">
+          <input type="hidden" name="deliverydate" id="deliverydate" value="<%= del_fullDate %>">
+          <input type="hidden" name="deliverytime" id="deliverytime" value="<%= del_time %>">
+          <input type="hidden" name="deliverydate_hidden" id="deliverydate_hidden">
+          <input type="hidden" id="POS_gross_order" value="" name="gross">
+          <input type="hidden" id="POS_subtotal_order" value="" name="sub">
 
-                <!-- Route Pick-up Date & Time in Edit Payment Modal -->
-                <div class="col-12 col-sm-4" id="edit_modal_pickup_group" style="<%= !isRoutePickup ? 'display: none;' : '' %>">
-                  <div class="pos-modal-field-header">
-                    <label class="form-label mb-0" for="edit_pickupdate">
-                      <i class="fa fa-truck text-primary me-1"></i><%= language.Route_Pickup_Date || 'Pick-up Schedule' %>
-                    </label>
+          <div class="row g-3 align-items-stretch">
+            <!-- Left Column: Payment Details Card -->
+            <div class="col-12 col-md-7">
+              <div class="card border rounded-3 p-3 h-100 shadow-none d-flex flex-column justify-content-between pos-payment-card">
+                <div>
+                  <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                    <h6 class="fw-bold mb-0 text-primary d-flex align-items-center">
+                      <i class="fa fa-coins me-2"></i><%= language.Payment_Details || 'Payment Details' %>
+                    </h6>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-12">Settlement</span>
                   </div>
-                  <div class="input-group input-group-sm">
-                    <input type="date" class="form-control me-1" name="pickupdate" id="edit_pickupdate" value="<%= pick_fullDate %>">
-                    <input type="time" class="form-control" name="pickuptime" id="edit_pickuptime" value="<%= pick_time %>" style="max-width: 105px;">
-                  </div>
-                  <input type="date" class="form-control" name="pickupdate_hidden" id="edit_pickupdate_hidden" hidden>
-                </div>
 
-                <!-- Ready Schedule in Edit Payment Modal (Always Visible) -->
-                <div class="col-12 col-sm-4" id="edit_modal_ready_group">
-                  <div class="pos-modal-field-header">
-                    <label class="form-label mb-0" for="edit_readydate">
-                      <i class="fa fa-check-circle text-success me-1"></i><%= language.Ready_Schedule || 'Ready Schedule' %>
-                    </label>
-                  </div>
-                  <div class="input-group input-group-sm">
-                    <input type="date" class="form-control me-1" name="readydate" id="edit_readydate" value="<%= ready_fullDate %>">
-                    <input type="time" class="form-control" name="readytime" id="edit_readytime" value="<%= ready_time %>" style="max-width: 105px;">
-                  </div>
-                </div>
+                  <div class="row g-3 align-items-center mb-3">
+                    <div class="col-12 col-sm-6">
+                      <div class="pos-modal-field-header">
+                        <label class="form-label mb-0" for="edit_POS_extra_discount_order">
+                          <%= language.Extra_Discount %>
+                        </label>
+                        <div class="pos-discount-type-group" role="group" aria-label="Discount Type">
+                          <input type="radio" class="btn-check" name="edit_discount_type" id="edit_pos_disc_type_fixed" value="fixed" checked autocomplete="off">
+                          <label class="pos-disc-btn active" for="edit_pos_disc_type_fixed" id="edit_pos_disc_btn_fixed" title="Fixed Amount">Fix (<%= accessdata?.symbol || '$' %>)</label>
 
-                <!-- Route Delivery Date & Time in Edit Payment Modal -->
-                <div class="col-12 col-sm-4" id="edit_modal_delivery_group" style="<%= !isRouteDelivery ? 'display: none;' : '' %>">
-                  <div class="pos-modal-field-header">
-                    <label class="form-label mb-0" for="deliverydate">
-                      <i class="fa fa-home text-info me-1"></i><%= language.Route_Delivery_Date || 'Delivery Schedule' %>
-                    </label>
-                  </div>
-                  <div class="input-group input-group-sm">
-                    <input type="date" class="form-control me-1" name="deliverydate" id="deliverydate" value="<%= del_fullDate %>">
-                    <input type="time" class="form-control" name="deliverytime" id="deliverytime" value="<%= del_time %>" style="max-width: 105px;">
-                  </div>
-                  <input type="date" class="form-control" name="deliverydate_hidden" id="deliverydate_hidden" hidden>
-                </div>
+                          <input type="radio" class="btn-check" name="edit_discount_type" id="edit_pos_disc_type_percent" value="percent" autocomplete="off">
+                          <label class="pos-disc-btn" for="edit_pos_disc_type_percent" id="edit_pos_disc_btn_percent" title="Percentage">% Percent</label>
+                        </div>
+                      </div>
+                      <div class="input-group pos-discount-input-group">
+                        <span class="input-group-text pos-discount-prefix" id="edit_pos_discount_prefix"><%= accessdata?.symbol || '$' %></span>
+                        <input type="number" id="edit_POS_extra_discount_order" class="form-control" placeholder="0.00" min="0" step="any" autocomplete="off">
+                      </div>
+                      <input type="hidden" name="extradiscount" id="edit_POS_extradiscount_hidden" value="0">
+                      <input type="hidden" id="edit_POS_extra_discount_order_hidden" value="0">
+                    </div>
 
-                <input type="hidden" id="POS_gross_order" value="" name="gross">
-                <input type="hidden" id="POS_subtotal_order" value="" name="sub">
-                <div class="col-12 col-sm-6">
-                  <div class="pos-modal-field-header">
-                    <label class="form-label mb-0" for="edit_POS_extra_discount_order">
-                      <%= language.Extra_Discount %>
-                    </label>
-                    <div class="pos-discount-type-group" role="group" aria-label="Discount Type">
-                      <input type="radio" class="btn-check" name="edit_discount_type" id="edit_pos_disc_type_fixed" value="fixed" checked autocomplete="off">
-                      <label class="pos-disc-btn active" for="edit_pos_disc_type_fixed" id="edit_pos_disc_btn_fixed" title="Fixed Amount">Fix (<%= accessdata?.symbol || '$' %>)</label>
-
-                      <input type="radio" class="btn-check" name="edit_discount_type" id="edit_pos_disc_type_percent" value="percent" autocomplete="off">
-                      <label class="pos-disc-btn" for="edit_pos_disc_type_percent" id="edit_pos_disc_btn_percent" title="Percentage">% Percent</label>
+                    <div class="col-12 col-sm-6">
+                      <label class="form-label fw-semibold"><%= language.Paid_Amount %></label>
+                      <input type="number" class="form-control" placeholder="Enter Amount" name="paid_amount" id="edit_paid_amount" min="0" step="0.01" required>
                     </div>
                   </div>
-                  <div class="input-group pos-discount-input-group">
-                    <span class="input-group-text pos-discount-prefix" id="edit_pos_discount_prefix"><%= accessdata?.symbol || '$' %></span>
-                    <input type="number" id="edit_POS_extra_discount_order" class="form-control" placeholder="0.00" min="0" step="any" autocomplete="off">
+
+                  <div class="row g-3 align-items-center mb-3">
+                    <div class="col-12 col-sm-6">
+                      <label class="form-label fw-semibold"><%= language.Payment_Type %></label>
+                      <select class="form-control wide" name="payment_type" id="POS_payment_type_list" required>
+                        <option value disabled>Choose Payment Type</option>
+                        <option value="cash">Cash</option>
+                        <option value="upi">UPI</option>
+                        <option value="card">Card</option>
+                        <option value="cheque">Cheque</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                      </select>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <label class="form-label fw-semibold" for="edit_POS_reference_number">
+                        <%= language.Reference_Number || 'Reference / Transaction No.' %> <span class="text-muted fw-normal fs-12">(<%= language.Optional || 'Optional' %>)</span>
+                      </label>
+                      <input type="text" class="form-control" placeholder="Enter Reference / Transaction No." name="reference_number" id="edit_POS_reference_number">
+                    </div>
                   </div>
-                  <input type="hidden" name="extradiscount" id="edit_POS_extradiscount_hidden" value="0">
-                  <input type="hidden" id="edit_POS_extra_discount_order_hidden" value="0">
+
+                  <div class="row g-3 align-items-center">
+                    <div class="col-12">
+                      <label class="form-label fw-semibold"><%= language.Notes %> / <%= language.Remarks %></label>
+                      <input type="text" class="form-control" placeholder="Enter Notes / Remarks" name="note">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-2">
+                  <small><span id="POS_worning" class="text-center text-danger d-block"></span></small>
+                  <small><span id="POS_worning_paid" class="text-center text-danger d-block"></span></small>
                 </div>
               </div>
-
-              <div class="row g-3 align-items-center mb-3">
-                <div class="col-12 col-sm-6">
-                  <label class="form-label"><%= language.Paid_Amount %></label>
-                  <input type="number" class="form-control" placeholder="Enter Amount" name="paid_amount" id="edit_paid_amount" min="0" required>
-                </div>
-                <div class="col-12 col-sm-6">
-                  <label class="form-label"><%= language.Payment_Type %></label>
-                  <select class="form-control wide" name="payment_type" id="POS_payment_type_list" required>
-                    <option value disabled>Choose Payment Type</option>
-                    <option value="cash">Cash</option>
-                    <option value="upi">UPI</option>
-                    <option value="card">Card</option>
-                    <option value="cheque">Cheque</option>
-                    <option value="bank_transfer">Bank Transfer</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="row g-3 align-items-center mb-3">
-                <div class="col-12">
-                  <label class="form-label" for="edit_POS_reference_number">
-                    <%= language.Reference_Number || 'Reference / Transaction No.' %> <span class="text-muted font-weight-normal text-xs">(<%= language.Optional || 'Optional' %>)</span>
-                  </label>
-                  <input type="text" class="form-control" placeholder="Enter Reference / Transaction No. (Optional)" name="reference_number" id="edit_POS_reference_number">
-                </div>
-              </div>
-
-              <div class="row g-3 align-items-center mb-2">
-                <div class="col-12">
-                  <label class="form-label"><%= language.Notes %> / <%= language.Remarks %></label>
-                  <input type="text" class="form-control" placeholder="Enter Notes" name="note">
-                </div>
-              </div>
-
-              <small><span id="POS_worning" class="text-center text-danger d-block"></span></small>
-              <span id="POS_worning_paid" class="text-center text-danger d-block"></span>
             </div>
 
-            <!-- Right Column: Order Bill Breakdown Card -->
-            <div class="col-12 col-lg-5">
-              <div class="card border rounded-3 p-3 bg-light h-100 shadow-none">
-                <h6 class="fw-bold mb-3 border-bottom pb-2 text-primary">
-                  <i class="fa fa-receipt me-2"></i>Order Summary
-                </h6>
-                <div class="d-flex justify-content-between py-1">
-                  <span class="text-sm text-muted"><%= language.Sub_Total %>:</span>
-                  <span class="text-sm fw-semibold payment_val paysymbol" id="payment_subtotal">$ 0.00</span>
+            <!-- Right Column: Order Summary Card -->
+            <div class="col-12 col-md-5">
+              <div class="card border rounded-3 p-3 h-100 shadow-none d-flex flex-column justify-content-between pos-payment-card">
+                <div>
+                  <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                    <h6 class="fw-bold mb-0 text-primary d-flex align-items-center">
+                      <i class="fa fa-receipt me-2"></i>Order Summary
+                    </h6>
+                    <span class="badge bg-light text-muted border px-2 py-1 fs-12">Review</span>
+                  </div>
+
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted"><%= language.Sub_Total %>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol" id="payment_subtotal">$ 0.00</span>
+                  </div>
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted"><%= language.Addon %>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol" id="payment_addons">$ 0.00</span>
+                  </div>
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted">
+                      <%= language.Extra_Discount %> <span id="edit_payment_extradiscount_percent_info" class="text-primary fw-bold"></span>:
+                    </span>
+                    <span class="text-sm fw-semibold payment_val paysymbol extsymbol text-danger" id="payment_extradiscount">$ 0.00</span>
+                  </div>
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted"><%= language.Coupon_Discount %>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol text-success" id="payment_coupondiscount">$ 0.00</span>
+                  </div>
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted" id="payment_text_perdent"><%= language.TAX %>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol" id="payment_text_amount">0.00</span>
+                  </div>
                 </div>
-                <div class="d-flex justify-content-between py-1">
-                  <span class="text-sm text-muted"><%= language.Addon %>:</span>
-                  <span class="text-sm fw-semibold payment_val paysymbol" id="payment_addons">$ 0.00</span>
-                </div>
-                <div class="d-flex justify-content-between py-1">
-                  <span class="text-sm text-muted">
-                    <%= language.Extra_Discount %> <span id="edit_payment_extradiscount_percent_info" class="text-primary font-weight-bold"></span>:
-                  </span>
-                  <span class="text-sm fw-semibold payment_val paysymbol extsymbol text-danger" id="payment_extradiscount">$ 0.00</span>
-                </div>
-                <div class="d-flex justify-content-between py-1">
-                  <span class="text-sm text-muted"><%= language.Coupon_Discount %>:</span>
-                  <span class="text-sm fw-semibold payment_val paysymbol text-success" id="payment_coupondiscount">$ 0.00</span>
-                </div>
-                <div class="d-flex justify-content-between py-1">
-                  <span class="text-sm text-muted" id="payment_text_perdent"><%= language.TAX %>:</span>
-                  <span class="text-sm fw-semibold payment_val paysymbol" id="payment_text_amount">0.00</span>
-                </div>
-                <hr class="my-2">
-                <div class="d-flex justify-content-between py-1 align-items-center">
-                  <span class="fw-bold text-dark"><%= language.Gross_Total %>:</span>
-                  <span class="fw-bold text-primary fs-5 paysymbol extsymbol" id="payment_grosstotal">0.00</span>
-                </div>
-                <hr class="my-2">
-                <div class="d-flex justify-content-between py-1 align-items-center">
-                  <span class="fw-bold text-danger"><%= language.Balance %>:</span>
-                  <span class="fw-bold text-danger fs-5 paysymbol extsymbol pamtsymbol" id="POS_total_balance">0.00</span>
+
+                <div class="border-top pt-2 mt-2">
+                  <div class="d-flex justify-content-between py-1 align-items-center">
+                    <span class="fw-bold fs-6"><%= language.Gross_Total %>:</span>
+                    <span class="fw-bold text-primary fs-5 paysymbol extsymbol" id="payment_grosstotal">0.00</span>
+                  </div>
+                  <div class="d-flex justify-content-between py-1.5 px-2 align-items-center bg-danger-subtle rounded border border-danger-subtle mt-1">
+                    <span class="fw-bold text-danger"><%= language.Balance %>:</span>
+                    <span class="fw-bold text-danger fs-5 paysymbol extsymbol pamtsymbol" id="POS_total_balance">0.00</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+        <div class="modal-footer border-top bg-light-subtle d-flex justify-content-between align-items-center py-2 px-3">
+          <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">
             <i class="fa fa-times me-2"></i><%= language.Cancel %>
           </button>
-          <button class="btn btn-primary" type="submit" value="submit" id="edit_cart_submit_for_order">
+          <button class="btn btn-primary px-4 fw-semibold shadow-sm" type="submit" value="submit" id="edit_cart_submit_for_order">
             <i class="fa fa-save me-2"></i><%= language.Save %>
           </button>
         </div>
       </form>
       <% } else { %>
       <form id="posprintform" action="/admin/posprint" method="post" class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title"><%= language.Make_Payment %></h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-header border-bottom py-2.5 px-3 d-flex align-items-center justify-content-between">
+          <h5 class="modal-title d-flex align-items-center fw-bold">
+            <i class="fa fa-credit-card text-primary me-2"></i><%= language.Make_Payment %>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
-        <div class="modal-body p-3 p-md-4" id="payment_sum">
-          <div class="row g-3">
-            <!-- Left Column: Payment & Order Inputs -->
-            <div class="col-12 col-lg-8">
-              <div class="row g-3 align-items-start mb-3">
-                <input type="hidden" name="order_type" id="modal_order_type" value="<%= cart.order_type || 'Counter & Counter' %>">
-                <input type="hidden" name="customer_id" id="modal_customer_id" value="<%= cart.customer_id || '0' %>">
-                <input type="hidden" name="store_id" id="modal_store_id" value="<%= cart.store_id || '' %>">
+        <div class="modal-body p-3" id="payment_sum">
+          <input type="hidden" name="order_type" id="modal_order_type" value="<%= cart.order_type || 'Counter & Counter' %>">
+          <input type="hidden" name="customer_id" id="modal_customer_id" value="<%= cart.customer_id || '0' %>">
+          <input type="hidden" name="store_id" id="modal_store_id" value="<%= cart.store_id || '' %>">
 
-                <!-- Route Pick-up Date & Time in Payment Modal -->
-                <div class="col-12 col-sm-4" id="modal_pickup_group" style="<%= !isRoutePickup ? 'display: none;' : '' %>">
-                  <div class="pos-modal-field-header">
-                    <label class="form-label mb-0" for="pickupdate">
-                      <i class="fa fa-truck text-primary me-1"></i><%= language.Route_Pickup_Date || 'Pick-up Schedule' %>
-                    </label>
-                  </div>
-                  <div class="input-group input-group-sm">
-                    <input type="date" class="form-control me-1" name="pickupdate" id="pickupdate" value="<%= pick_fullDate %>">
-                    <input type="time" class="form-control w-50" name="pickuptime" id="pickuptime" value="<%= pick_time %>">
-                  </div>
-                  <input type="date" class="form-control" name="pickupdate_hidden" id="pickupdate_hidden" hidden>
-                </div>
+          <!-- Hidden schedule fields in Payment Modal -->
+          <input type="hidden" name="pickupdate" id="pickupdate" value="<%= pick_fullDate %>">
+          <input type="hidden" name="pickuptime" id="pickuptime" value="<%= pick_time %>">
+          <input type="hidden" name="pickupdate_hidden" id="pickupdate_hidden">
+          <input type="hidden" name="readydate" id="readydate" value="<%= ready_fullDate %>">
+          <input type="hidden" name="readytime" id="readytime" value="<%= ready_time %>">
+          <input type="hidden" name="deliverydate" id="deliverydate" value="<%= del_fullDate %>">
+          <input type="hidden" name="deliverytime" id="deliverytime" value="<%= del_time %>">
+          <input type="hidden" name="deliverydate_hidden" id="deliverydate_hidden">
 
-                <!-- Ready Schedule in Payment Modal (Always Visible) -->
-                <div class="col-12 col-sm-4" id="modal_ready_group">
-                  <div class="pos-modal-field-header">
-                    <label class="form-label mb-0" for="readydate">
-                      <i class="fa fa-check-circle text-success me-1"></i><%= language.Ready_Schedule || 'Ready Schedule' %>
-                    </label>
-                  </div>
-                  <div class="input-group input-group-sm">
-                    <input type="date" class="form-control me-1" name="readydate" id="readydate" value="<%= ready_fullDate %>">
-                    <input type="time" class="form-control w-50" name="readytime" id="readytime" value="<%= ready_time %>">
-                  </div>
-                </div>
+          <input type="hidden" id="POS_gross_order" value="" name="gross">
+          <input type="hidden" id="POS_subtotal_order" value="" name="sub">
 
-                <!-- Route Delivery Date & Time in Payment Modal -->
-                <div class="col-12 col-sm-4" id="modal_delivery_group" style="<%= !isRouteDelivery ? 'display: none;' : '' %>">
-                  <div class="pos-modal-field-header">
-                    <label class="form-label mb-0" for="deliverydate">
-                      <i class="fa fa-home text-info me-1"></i><%= language.Route_Delivery_Date || 'Delivery Schedule' %>
-                    </label>
+          <div class="row g-3 align-items-stretch">
+            <!-- Left Column: Payment & Order Inputs Card -->
+            <div class="col-12 col-md-7">
+              <div class="card border rounded-3 p-3 h-100 shadow-none d-flex flex-column justify-content-between pos-payment-card">
+                <div>
+                  <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                    <h6 class="fw-bold mb-0 text-primary d-flex align-items-center">
+                      <i class="fa fa-coins me-2"></i><%= language.Payment_Details || 'Payment Details' %>
+                    </h6>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-12">Settlement</span>
                   </div>
-                  <div class="input-group input-group-sm">
-                    <input type="date" class="form-control me-1" name="deliverydate" id="deliverydate" value="<%= del_fullDate %>">
-                    <input type="time" class="form-control w-50" name="deliverytime" id="deliverytime" value="<%= del_time %>">
-                  </div>
-                  <input type="date" class="form-control" name="deliverydate_hidden" id="deliverydate_hidden" hidden>
-                </div>
 
-                <input type="hidden" id="POS_gross_order" value="" name="gross">
-                <input type="hidden" id="POS_subtotal_order" value="" name="sub">
-                <div class="col-12 col-sm-6 <%= login === 'customer' ? 'd-none' : '' %>">
-                  <div class="pos-modal-field-header">
-                    <label class="form-label mb-0" for="POS_extra_discount_order">
-                      <%= language.Extra_Discount %>
-                    </label>
-                    <div class="pos-discount-type-group" role="group" aria-label="Discount Type">
-                      <input type="radio" class="btn-check" name="discount_type" id="pos_disc_type_fixed" value="fixed" checked autocomplete="off">
-                      <label class="pos-disc-btn active pt-1" for="pos_disc_type_fixed" id="pos_disc_btn_fixed" title="Fixed Amount">Fix (<%= accessdata?.symbol || '$' %>)</label>
+                  <div class="row g-3 align-items-center mb-3">
+                    <div class="col-12 col-sm-6 <%= login === 'customer' ? 'd-none' : '' %>">
+                      <div class="pos-modal-field-header">
+                        <label class="form-label mb-0" for="POS_extra_discount_order">
+                          <%= language.Extra_Discount %>
+                        </label>
+                        <div class="pos-discount-type-group" role="group" aria-label="Discount Type">
+                          <input type="radio" class="btn-check" name="discount_type" id="pos_disc_type_fixed" value="fixed" checked autocomplete="off">
+                          <label class="pos-disc-btn active pt-1" for="pos_disc_type_fixed" id="pos_disc_btn_fixed" title="Fixed Amount">Fix (<%= accessdata?.symbol || '$' %>)</label>
 
-                      <input type="radio" class="btn-check" name="discount_type" id="pos_disc_type_percent" value="percent" autocomplete="off">
-                      <label class="pos-disc-btn pt-1" for="pos_disc_type_percent" id="pos_disc_btn_percent" title="Percentage">% Percent</label>
+                          <input type="radio" class="btn-check" name="discount_type" id="pos_disc_type_percent" value="percent" autocomplete="off">
+                          <label class="pos-disc-btn pt-1" for="pos_disc_type_percent" id="pos_disc_btn_percent" title="Percentage">% Percent</label>
+                        </div>
+                      </div>
+                      <div class="input-group pos-discount-input-group">
+                        <span class="input-group-text pos-discount-prefix" id="pos_discount_prefix">
+                          <%= accessdata?.symbol || '$' %>
+                        </span>
+                        <input type="number" id="POS_extra_discount_order" class="form-control" placeholder="0.00" min="0" step="any" autocomplete="off">
+                      </div>
+                      <input type="hidden" name="extradiscount" id="POS_extradiscount_hidden" value="0">
+                    </div>
+
+                    <div class="col-12 <%= login === 'customer' ? 'col-sm-12' : 'col-sm-6' %>">
+                      <label class="form-label fw-semibold"><%= language.Paid_Amount %></label>
+                      <input type="number" class="form-control" placeholder="Enter Amount" name="paid_amount" id="paid_amount" min="0" step="0.01">
                     </div>
                   </div>
-                  <div class="input-group pos-discount-input-group">
-                    <span class="input-group-text pos-discount-prefix" id="pos_discount_prefix">
-                      <%= accessdata?.symbol || '$' %>
-                    </span>
-                    <input type="number" id="POS_extra_discount_order" class="form-control" placeholder="0.00" min="0" step="any" autocomplete="off">
+
+                  <div class="row g-3 align-items-center mb-3">
+                    <div class="col-12 col-sm-6">
+                      <label class="form-label fw-semibold"><%= language.Payment_Type %></label>
+                      <select class="form-control wide" name="payment_type" id="POS_payment_type_list">
+                        <option value="0" disabled>Choose Payment Type</option>
+                        <option value="cash">Cash</option>
+                        <option value="upi">UPI</option>
+                        <option value="card">Card</option>
+                        <option value="cheque">Cheque</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                      </select>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <label class="form-label fw-semibold" for="POS_reference_number">
+                        <%= language.Reference_Number || 'Reference / Transaction No.' %> <span class="text-muted fw-normal fs-12">(<%= language.Optional || 'Optional' %>)</span>
+                      </label>
+                      <input type="text" class="form-control" placeholder="Enter Reference / Transaction No." name="reference_number" id="POS_reference_number">
+                    </div>
                   </div>
-                  <input type="hidden" name="extradiscount" id="POS_extradiscount_hidden" value="0">
-                </div>
-              </div>
 
-              <div class="row g-3 align-items-center mb-3">
-                <div class="col-12 col-sm-6">
-                  <label class="form-label"><%= language.Paid_Amount %></label>
-                  <input type="number" class="form-control" placeholder="Enter Amount" name="paid_amount" id="paid_amount" min="0" step="0.01">
+                  <div class="row g-3 align-items-center">
+                    <div class="col-12">
+                      <label class="form-label fw-semibold"><%= language.Notes %> / <%= language.Remarks %></label>
+                      <input type="text" class="form-control" placeholder="Enter Notes / Remarks" name="note">
+                    </div>
+                  </div>
                 </div>
-                <div class="col-12 col-sm-6">
-                  <label class="form-label"><%= language.Payment_Type %></label>
-                  <select class="form-control wide" name="payment_type" id="POS_payment_type_list">
-                    <option value="0" disabled selected>Choose Payment Type</option>
-                    <option value="cash">Cash</option>
-                    <option value="upi">UPI</option>
-                    <option value="card">Card</option>
-                    <option value="cheque">Cheque</option>
-                    <option value="bank_transfer">Bank Transfer</option>
-                  </select>
-                </div>
-              </div>
 
-              <div class="row g-3 align-items-center mb-3">
-                <div class="col-12">
-                  <label class="form-label" for="POS_reference_number">
-                    <%= language.Reference_Number || 'Reference / Transaction No.' %> <span class="text-muted font-weight-normal text-xs">(<%= language.Optional || 'Optional' %>)</span>
-                  </label>
-                  <input type="text" class="form-control" placeholder="Enter Reference / Transaction No. (Optional)" name="reference_number" id="POS_reference_number">
+                <div class="mt-2">
+                  <div class="text-center my-1" id="show_pos_barcode"></div>
+                  <small><span id="POS_worning" class="text-center text-danger d-block"></span></small>
+                  <small><span id="POS_worning_paid" class="text-center text-danger d-block"></span></small>
                 </div>
               </div>
-
-              <div class="row g-3 align-items-center mb-2">
-                <div class="col-12">
-                  <label class="form-label"><%= language.Notes %> / <%= language.Remarks %></label>
-                  <input type="text" class="form-control" placeholder="Enter Notes" name="note">
-                </div>
-              </div>
-
-              <div class="row text-center my-2">
-                <div id="show_pos_barcode"></div>
-              </div>
-              <small><span id="POS_worning" class="text-center text-danger d-block"></span></small>
-              <span id="POS_worning_paid" class="text-center text-danger d-block"></span>
             </div>
 
             <!-- Right Column: Order Bill Breakdown Card -->
-            <div class="col-12 col-lg-4">
-              <div class="card border rounded-3 p-3 bg-light h-100 shadow-none">
-                <h6 class="fw-bold mb-3 border-bottom pb-2 text-primary">
-                  <i class="fa fa-receipt me-2"></i>Order Summary
-                </h6>
-                <div class="d-flex justify-content-between py-1">
-                  <span class="text-sm text-muted"><%= language.Sub_Total %>:</span>
-                  <span class="text-sm fw-semibold payment_val paysymbol" id="payment_subtotal">$ 0.00</span>
+            <div class="col-12 col-md-5">
+              <div class="card border rounded-3 p-3 h-100 shadow-none d-flex flex-column justify-content-between pos-payment-card">
+                <div>
+                  <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                    <h6 class="fw-bold mb-0 text-primary d-flex align-items-center">
+                      <i class="fa fa-receipt me-2"></i>Order Summary
+                    </h6>
+                    <span class="badge bg-light text-muted border px-2 py-1 fs-12">Review</span>
+                  </div>
+
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted"><%= language.Sub_Total %>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol" id="payment_subtotal">$ 0.00</span>
+                  </div>
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted"><%= language.Addon %>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol" id="payment_addons">$ 0.00</span>
+                  </div>
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted">
+                      <%= language.Extra_Discount %> <span id="payment_extradiscount_percent_info" class="text-primary fw-bold"></span>:
+                    </span>
+                    <span class="text-sm fw-semibold payment_val paysymbol extsymbol text-danger" id="payment_extradiscount">$ 0.00</span>
+                  </div>
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted"><%= language.Coupon_Discount %>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol text-success" id="payment_coupondiscount">$ 0.00</span>
+                  </div>
+                  <div class="d-flex justify-content-between py-1">
+                    <span class="text-sm text-muted" id="payment_text_perdent"><%= language.TAX %>:</span>
+                    <span class="text-sm fw-semibold payment_val paysymbol" id="payment_text_amount">0.00</span>
+                  </div>
                 </div>
-                <div class="d-flex justify-content-between py-1">
-                  <span class="text-sm text-muted"><%= language.Addon %>:</span>
-                  <span class="text-sm fw-semibold payment_val paysymbol" id="payment_addons">$ 0.00</span>
-                </div>
-                <div class="d-flex justify-content-between py-1">
-                  <span class="text-sm text-muted">
-                    <%= language.Extra_Discount %> <span id="payment_extradiscount_percent_info" class="text-primary font-weight-bold"></span>:
-                  </span>
-                  <span class="text-sm fw-semibold payment_val paysymbol extsymbol text-danger" id="payment_extradiscount">$ 0.00</span>
-                </div>
-                <div class="d-flex justify-content-between py-1">
-                  <span class="text-sm text-muted"><%= language.Coupon_Discount %>:</span>
-                  <span class="text-sm fw-semibold payment_val paysymbol text-success" id="payment_coupondiscount">$ 0.00</span>
-                </div>
-                <div class="d-flex justify-content-between py-1">
-                  <span class="text-sm text-muted"><%= language.TAX %> <span id="payment_text_perdent"></span>:</span>
-                  <span class="text-sm fw-semibold payment_val paysymbol" id="payment_text_amount">0.00</span>
-                </div>
-                <hr class="my-2">
-                <div class="d-flex justify-content-between py-1 align-items-center">
-                  <span class="fw-bold text-dark"><%= language.Gross_Total %>:</span>
-                  <span class="fw-bold text-primary fs-5 paysymbol extsymbol" id="payment_grosstotal">0.00</span>
-                </div>
-                <hr class="my-2">
-                <div class="d-flex justify-content-between py-1 align-items-center">
-                  <span class="fw-bold text-danger"><%= language.Balance %>:</span>
-                  <span class="fw-bold text-danger fs-5 paysymbol extsymbol pamtsymbol" id="POS_total_balance">0.00</span>
+
+                <div class="border-top pt-2 mt-2">
+                  <div class="d-flex justify-content-between py-1 align-items-center">
+                    <span class="fw-bold fs-6"><%= language.Gross_Total %>:</span>
+                    <span class="fw-bold text-primary fs-5 paysymbol extsymbol" id="payment_grosstotal">0.00</span>
+                  </div>
+                  <div class="d-flex justify-content-between py-1.5 px-2 align-items-center bg-danger-subtle rounded border border-danger-subtle mt-1">
+                    <span class="fw-bold text-danger"><%= language.Balance %>:</span>
+                    <span class="fw-bold text-danger fs-5 paysymbol extsymbol pamtsymbol" id="POS_total_balance">0.00</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+        <div class="modal-footer border-top bg-light-subtle d-flex justify-content-between align-items-center py-2 px-3">
+          <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">
             <i class="fa fa-times me-2"></i><%= language.Cancel %>
           </button>
-          <button class="btn btn-primary" type="submit" value="submit" id="printcheck">
-            <i class="fa fa-print me-2"></i><%= language.Save %> & <%= language.Print %>
-          </button>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary px-3 fw-semibold" id="cart_submit_for_order">
+              <i class="fa fa-save me-2"></i><%= language.Save_Order || 'Save Order' %>
+            </button>
+            <button class="btn btn-primary px-4 fw-semibold shadow-sm" type="submit" value="submit" id="printcheck">
+              <i class="fa fa-print me-2"></i><%= language.Save %> & <%= language.Print %>
+            </button>
+          </div>
         </div>
       </form>
       <% } %>
