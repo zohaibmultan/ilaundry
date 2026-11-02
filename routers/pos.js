@@ -21,6 +21,10 @@ const {
 const {
   broadcastCalendarChange,
 } = require("../middelwer/calendarBroadcaster");
+const {
+  dispatchCustomerNotification,
+  isRoutePickupOrderType,
+} = require("../services/notificationService");
 
 function formatMySQLDateTime(d, fallbackTime = "16:00:00") {
   if (!d) return null;
@@ -133,6 +137,8 @@ async function getStoreScopedCustomers(storeId, includeWalkIn = true) {
     SELECT 
       tbl_customer.id, 
       tbl_customer.name, 
+      tbl_customer.first_name, 
+      tbl_customer.last_name, 
       tbl_customer.number, 
       tbl_customer.email, 
       tbl_customer.username, 
@@ -141,11 +147,25 @@ async function getStoreScopedCustomers(storeId, includeWalkIn = true) {
       tbl_customer.city, 
       tbl_customer.state, 
       tbl_customer.zipcode, 
-      tbl_store.name AS store_name
+      tbl_customer.memo, 
+      tbl_customer.taxnumber, 
+      tbl_store.name AS store_name,
+      COALESCE(ord_stats.total_orders, 0) AS total_orders,
+      COALESCE(ord_stats.unpaid_orders, 0) AS unpaid_orders,
+      COALESCE(ord_stats.unpaid_amount, 0) AS unpaid_amount
     FROM 
       tbl_customer
     LEFT JOIN 
       tbl_store ON tbl_customer.store_ID = tbl_store.id
+    LEFT JOIN (
+      SELECT 
+        customer_id,
+        COUNT(id) AS total_orders,
+        COALESCE(SUM(CASE WHEN balance_amount > 0 THEN 1 ELSE 0 END), 0) AS unpaid_orders,
+        COALESCE(SUM(CASE WHEN balance_amount > 0 THEN balance_amount ELSE 0 END), 0) AS unpaid_amount
+      FROM tbl_order
+      GROUP BY customer_id
+    ) ord_stats ON ord_stats.customer_id = tbl_customer.id
     WHERE 
       tbl_customer.approved = 1 
       AND tbl_customer.delet_flage = 0 
@@ -2163,6 +2183,14 @@ router.post("/void_order", auth, async (req, res) => {
         req.hostname,
         req.protocol
       );
+
+      dispatchCustomerNotification({
+        eventKey: "order_cancelled",
+        storeId: ord.store_id,
+        customerId: ord.customer_id,
+        orderId: ord.id,
+        extraData: { cancelReason: safeReason },
+      }).catch((e) => console.error("Void notification error:", e.message));
 
       return res.status(200).json({
         success: true,
@@ -4648,6 +4676,41 @@ router.post("/edit_order", auth, async (req, res) => {
         order_code: updated_order[0].order_id,
         store_id: updated_order[0].store_id,
       });
+
+      const oldDelStr = order.delivery_date ? new Date(order.delivery_date).toISOString().slice(0, 16) : "";
+      const newDelStr = updated_order[0].delivery_date ? new Date(updated_order[0].delivery_date).toISOString().slice(0, 16) : "";
+      const scheduleChanged = Boolean(oldDelStr && newDelStr && oldDelStr !== newDelStr);
+      const isRouteIntake = isRoutePickupOrderType(updated_order[0].order_type) && cartservice && cartservice.length > 0;
+
+      let editEventKey = "order_modified";
+      if (isRouteIntake && Number(order.extra_discount || 0) === 0 && Number(order.paid_amount || 0) === 0 && !req.body._already_priced) {
+        editEventKey = "route_intake_priced";
+      } else if (scheduleChanged) {
+        editEventKey = "schedule_rescheduled";
+      }
+
+      dispatchCustomerNotification({
+        eventKey: editEventKey,
+        storeId: updated_order[0].store_id,
+        customerId: updated_order[0].customer_id,
+        orderId: updated_order[0].id,
+        accessdata,
+      }).catch((e) => console.error("Edit order notification error:", e.message));
+
+      if (paid_amount > 0) {
+        dispatchCustomerNotification({
+          eventKey: "payment_received",
+          storeId: updated_order[0].store_id,
+          customerId: updated_order[0].customer_id,
+          orderId: updated_order[0].id,
+          extraData: {
+            paidNow: paid_amount,
+            paymentMethod: payment_type || "Payment",
+            referenceNumber: refNum,
+          },
+          accessdata,
+        }).catch((e) => console.error("Edit order payment notification error:", e.message));
+      }
     }
 
     return res.json({
@@ -4767,6 +4830,20 @@ router.post("/edit_order_direct", auth, async (req, res) => {
       order_code: order.order_id,
       store_id: order.store_id,
     });
+
+    const oldDelDirect = order.delivery_date ? new Date(order.delivery_date).toISOString().slice(0, 16) : "";
+    const newDelDirect = delivery_date ? formatMySQLDateTime(delivery_date, req.body.delivery_time || "16:00:00").slice(0, 16).replace(" ", "T") : oldDelDirect;
+    const directScheduleChanged = Boolean(oldDelDirect && newDelDirect && oldDelDirect !== newDelDirect);
+    const directEventKey = (isRoutePickupOrderType(req.body.order_type || order.order_type) && cartservice.length > 0 && Number(order.paid_amount || 0) === 0)
+      ? "route_intake_priced"
+      : (directScheduleChanged ? "schedule_rescheduled" : "order_modified");
+
+    dispatchCustomerNotification({
+      eventKey: directEventKey,
+      storeId: order.store_id,
+      customerId: order.customer_id,
+      orderId: order.id,
+    }).catch((e) => console.error("Direct edit notification error:", e.message));
 
     return res.json({ success: true, order_id });
   } catch (error) {
@@ -5205,161 +5282,23 @@ router.post("/order", auth, async (req, res) => {
       "SELECT * From tbl_customer WHERE id=" + orderdata[0].customer_id + "",
     );
 
-    const data = await DataFind(
-      "SELECT * FROM tbl_email WHERE store_id=" + cart[0].store_id + "",
+    const hasServicesInOrder = Boolean(
+      orderdata[0].service_list &&
+      String(orderdata[0].service_list).trim() !== "" &&
+      String(orderdata[0].service_list).trim() !== "0"
     );
-    if (
-      data.length > 0 &&
-      coust.length > 0 &&
-      coust[0].email !== null &&
-      coust[0].email !== ""
-    ) {
-      if (
-        data[0].host &&
-        data[0].port &&
-        data[0].username &&
-        data[0].password &&
-        data[0].frommail
-      ) {
-        const transporter = nodemailer.createTransport({
-          host: data[0].host,
-          port: Number(data[0].port),
-          // service: "gmail",
-          auth: {
-            user: data[0].username,
-            pass: data[0].password,
-          },
-        });
+    const createdEventKey =
+      isRoutePickupOrderType(orderdata[0].order_type) && !hasServicesInOrder
+        ? "route_pickup_scheduled"
+        : "order_placed";
 
-        let mailDetails = {
-          // from: data[0].frommail,
-          from: data[0].frommail,
-          to: coust[0].email,
-          subject: "Email From " + shope[0].name,
-          html:
-            "<!DOCTYPE html>" +
-            "<html><head><title></title>" +
-            "</head><body><div>" +
-            "<h5>Greeting From " +
-            shope[0].name +
-            "</h5>" +
-            "<p> Woo hoo! Your order is on its way. Your order details can be found below. </p>" +
-            "<p>ORDER SUMMARY:</p>" +
-            "<p>Order #: " +
-            orderid +
-            " </p>" +
-            "<p>Order Date: " +
-            order_fullDate +
-            " </p>" +
-            "<p>Order Total: " +
-            gross +
-            " </p>" +
-            "<br>" +
-            "<p> We hope you enjoyed your shopping experience with us and that you will visit us again soon. </p>" +
-            '</div><div style="display: list-item;">' +
-            "<p>Best from :</p>" +
-            '<span style="margin-bottom:0">' +
-            shope[0].mobile_number +
-            "</span><br>" +
-            '<span style="margin-bottom:0">' +
-            shope[0].store_email +
-            "</span><br>" +
-            '<span style="margin-bottom:0">' +
-            shope[0].city +
-            "</span><br>" +
-            "</div></body></html>",
-        };
-
-        transporter.sendMail(mailDetails, function (err, data) {
-          if (err) {
-            console.log(err);
-            console.log("Error Occurs");
-            req.flash("error", "Message not occurred!");
-          } else {
-            console.log("Email sent successfully");
-            req.flash("success", "Email Send Successful");
-          }
-        });
-      }
-    }
-    if (coust[0].name != "Walk in customer") {
-      // ========= sms ============ //
-
-      let tsid =
-        shope && shope.length > 0 && shope[0].twilio_sid
-          ? shope[0].twilio_sid
-          : accessdata.masterstore.twilio_sid;
-      let ttoken =
-        shope && shope.length > 0 && shope[0].twilio_auth_token
-          ? shope[0].twilio_auth_token
-          : accessdata.masterstore.twilio_auth_token;
-      let tphone =
-        shope && shope.length > 0 && shope[0].twilio_phone_no
-          ? shope[0].twilio_phone_no
-          : accessdata.masterstore.twilio_phone_no;
-
-      if (tsid && ttoken) {
-        let ACCOUNT_SID = tsid;
-        let AUTH_TOKEN = ttoken;
-        const client_sms = require("twilio")(ACCOUNT_SID, AUTH_TOKEN);
-
-        client_sms.messages
-          .create({
-            body: `We have successfully processed your order and it is now en route to the destination. Thank you for using our services, we appreciate your business!`,
-            from: tphone,
-            to: customer_data[0].number,
-          })
-          .then((message) => console.log(message.sid))
-          .catch((e) => {
-            req.flash("error", "Message not occurred!");
-          });
-      }
-    }
-
-    // ----------- Notification ------------ //
-
-    if (accessdata.masterstore.onesignal_app_id) {
-      let message = {
-        app_id: accessdata.masterstore.onesignal_app_id,
-        contents: { en: "There is a new order registered, please check it." },
-        headings: { en: "laundry" },
-        included_segments: ["Subscribed Users"],
-        filters: [
-          {
-            field: "tag",
-            key: "subscription_user_Type",
-            relation: "=",
-            value: "master",
-          },
-          { operator: "AND" },
-          { field: "tag", key: "Login_ID", relation: "=", value: "1" },
-        ],
-      };
-      sendNotification(message);
-
-      let customer_message = {
-        app_id: accessdata.masterstore.onesignal_app_id,
-        contents: { en: "There is a new order registered, please check it." },
-        headings: { en: "laundry" },
-        included_segments: ["Subscribed Users"],
-        filters: [
-          {
-            field: "tag",
-            key: "subscription_user_Type",
-            relation: "=",
-            value: accessdata.logas,
-          },
-          { operator: "AND" },
-          {
-            field: "tag",
-            key: "Login_ID",
-            relation: "=",
-            value: accessdata.topbardata.id,
-          },
-        ],
-      };
-      sendNotification(customer_message);
-    }
+    dispatchCustomerNotification({
+      eventKey: createdEventKey,
+      storeId: cart[0].store_id,
+      customerId: orderdata[0].customer_id,
+      orderId: orderdata[0].id,
+      accessdata,
+    }).catch((e) => console.error("Order notification error:", e.message));
 
     if (orderdata && orderdata.length > 0) {
       broadcastCalendarChange(notifMeta.broadcastPayload);
@@ -5629,169 +5568,18 @@ router.post("/save_order", auth, async (req, res) => {
       req.protocol,
     );
 
-    var shope = await DataFind(
-      "SELECT * FROM tbl_store WHERE id=" + storeId + "",
-    );
+    const saveOrderEventKey =
+      isRoutePickup && (!serviceListId || serviceListId === "0")
+        ? "route_pickup_scheduled"
+        : "order_placed";
 
-    var coust = await DataFind(
-      "SELECT * From tbl_customer WHERE id=" + customerId + "",
-    );
-
-    const emailData = await DataFind(
-      "SELECT * FROM tbl_email WHERE store_id=" + storeId + "",
-    );
-
-    if (
-      emailData.length > 0 &&
-      coust.length > 0 &&
-      coust[0].email !== null &&
-      coust[0].email !== ""
-    ) {
-      if (
-        emailData[0].host &&
-        emailData[0].port &&
-        emailData[0].username &&
-        emailData[0].password &&
-        emailData[0].frommail
-      ) {
-        try {
-          const transporter = nodemailer.createTransport({
-            host: emailData[0].host,
-            port: Number(emailData[0].port),
-            auth: {
-              user: emailData[0].username,
-              pass: emailData[0].password,
-            },
-          });
-
-          let mailDetails = {
-            from: emailData[0].frommail,
-            to: coust[0].email,
-            subject:
-              "Email From " +
-              (shope && shope.length > 0 ? shope[0].name : "Store"),
-            html: `
-      <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
-      <h2 style="color: #4CAF50;">Thank you for your order, ${
-        coust[0].name || "Customer"
-      }!</h2>
-      <p>Your order has been received. Below are your order details:</p>
-      <table style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td><strong>Order Number: </strong> ${orderid}</td>
-        </tr>
-        <tr>
-          <td><strong>Order Date: </strong> ${order_fullDate}</td>
-        </tr>
-        <tr>
-          <td><strong>Total Amount: </strong> <span class="symbol">${
-            accessdata.masterstore.currency_symbol
-          }${gross}</span></td>
-        </tr>
-      </table>
-      <br>
-      <p>We appreciate your business and hope you enjoy your purchase!</p>
-      <hr>
-      <p style="font-size: 12px; color: #999;">
-        ${shope && shope.length > 0 ? shope[0].name : ""} <br>
-        📞 ${shope && shope.length > 0 ? shope[0].mobile_number : ""} <br>
-        ✉️ ${shope && shope.length > 0 ? shope[0].store_email : ""} <br>
-        📍 ${shope && shope.length > 0 ? shope[0].city : ""}
-      </p>
-    </div>
-  `,
-          };
-
-          transporter.sendMail(mailDetails, function (err, data) {
-            if (err) {
-              console.log("Email error:", err);
-            }
-          });
-        } catch (e) {
-          console.log("Transporter error:", e);
-        }
-      }
-    }
-
-    if (coust.length > 0 && coust[0].number != null) {
-      let tsid =
-        shope && shope.length > 0 && shope[0].twilio_sid
-          ? shope[0].twilio_sid
-          : accessdata.masterstore.twilio_sid;
-      let ttoken =
-        shope && shope.length > 0 && shope[0].twilio_auth_token
-          ? shope[0].twilio_auth_token
-          : accessdata.masterstore.twilio_auth_token;
-      let tphone =
-        shope && shope.length > 0 && shope[0].twilio_phone_no
-          ? shope[0].twilio_phone_no
-          : accessdata.masterstore.twilio_phone_no;
-
-      if (tsid && ttoken) {
-        try {
-          const client_sms = require("twilio")(tsid, ttoken);
-          if (client_sms) {
-            client_sms.messages
-              .create({
-                body: `We have successfully processed your order and it is now en route to the destination. Thank you for using our services, we appreciate your business!`,
-                from: tphone,
-                to: customer_data[0].number,
-              })
-              .catch((e) => console.log("SMS error:", e));
-          }
-        } catch (error) {
-          console.log(error);
-        }
-      }
-    }
-
-    // Notification
-    let onesignalAppId =
-      shope && shope.length > 0 && shope[0].onesignal_app_id
-        ? shope[0].onesignal_app_id
-        : accessdata.masterstore.onesignal_app_id;
-    if (onesignalAppId) {
-      let message = {
-        app_id: onesignalAppId,
-        contents: { en: "There is a new order registered, please check it." },
-        headings: { en: "laundry" },
-        included_segments: ["Subscribed Users"],
-        filters: [
-          {
-            field: "tag",
-            key: "subscription_user_Type",
-            relation: "=",
-            value: "master",
-          },
-          { operator: "AND" },
-          { field: "tag", key: "Login_ID", relation: "=", value: "1" },
-        ],
-      };
-      sendNotification(message);
-
-      let customer_message = {
-        app_id: onesignalAppId,
-        contents: { en: "There is a new order registered, please check it." },
-        headings: { en: "laundry" },
-        included_segments: ["Subscribed Users"],
-        filters: [
-          {
-            field: "tag",
-            key: "subscription_user_Type",
-            relation: "=",
-            value: accessdata.logas,
-          },
-          { operator: "AND" },
-          {
-            field: "tag",
-            key: "Login_ID",
-            relation: "=",
-            value: accessdata.topbardata.id,
-          },
-        ],
-      };
-      sendNotification(customer_message);
-    }
+    dispatchCustomerNotification({
+      eventKey: saveOrderEventKey,
+      storeId: storeId,
+      customerId: customerId,
+      orderId: order.insertId,
+      accessdata,
+    }).catch((e) => console.error("Save order notification error:", e.message));
 
     broadcastCalendarChange(notifMeta.broadcastPayload);
 

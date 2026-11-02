@@ -15,6 +15,16 @@ var {
 
 const { paginateDataTable } = require("../middelwer/dataTableHelper");
 const { invalidateMultiLanguageCache } = require("../middelwer/language");
+const {
+  NOTIFICATION_EVENTS,
+  getEffectiveNotificationSettings,
+  saveNotificationSettings,
+  saveEmailAndTwilioGateways,
+  resetStoreNotificationSettings,
+  sendTestNotification,
+  resolveSmtpConfig,
+  resolveTwilioConfig,
+} = require("../services/notificationService");
 
 // <<<<<<<<<<roll >>>>>>>>>>>>>>>>>
 
@@ -3391,18 +3401,28 @@ router.get("/mail", auth, async (req, res) => {
   WHERE sr.id = ${roll}
 `);
     if (accessdata.mutibranch == false || rolldetail[0].mail.includes("read")) {
+      const effectiveStoreId = parseInt(store, 10) || 0;
       var data = await DataFind(
-        "SELECT * FROM tbl_email WHERE store_id=" + store + "",
+        `SELECT * FROM tbl_email WHERE store_id='${effectiveStoreId}'`,
       );
-      res.render("mailsetting", {
+      if ((!data || data.length === 0) && effectiveStoreId === 0) {
+        data = await DataFind("SELECT * FROM tbl_email ORDER BY id ASC LIMIT 1");
+      }
+      const twilioData = await resolveTwilioConfig(effectiveStoreId);
+      return res.render("mailsetting", {
         accessdata,
         data,
+        twilioData,
         language: req.language_data,
         language_name: req.language_name,
       });
+    } else {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
     }
   } catch (error) {
     console.log(error);
+    return res.redirect(req.get("Referrer") || "/");
   }
 });
 
@@ -3412,53 +3432,21 @@ router.post("/mailsetting", auth, async (req, res) => {
       req.flash("error", "For demo purpose we disabled crud operations!!");
       return res.redirect(req.get("Referrer") || "/");
     }
-    const { id, roll, store, loginas } = req.user;
-    const { host, port, username, password, frommail, status } = req.body;
-
-    var data = await DataFind(
-      "SELECT * FROM tbl_email WHERE store_id=" + store + "",
-    );
-
-    if (data.length > 0) {
-      // await DataFind(
-      //   `UPDATE tbl_email SET host='${host}',port='${port}',username='${username}',password='${password}',frommail='${frommail}',status='${status}' WHERE store_id=${store} `
-      // );
-
-      const updateEmailSettings = await DataUpdate(
-        "tbl_email",
-        `host='${host}', port='${port}', username='${username}', password='${password}', frommail='${frommail}', status='${status}'`,
-        `store_id=${store}`,
-        req.hostname,
-        req.protocol,
-      );
-
-      if (updateEmailSettings === -1) {
-        req.flash("error", "Action failed, please check input and try again");
-        return res.redirect("back");
-      }
-    } else {
-      // await DataFind(
-      //   `INSERT INTO tbl_email  (host,port,username,password,frommail,status, store_id) VALUE ('${host}','${port}','${username}','${password}','${frommail}','${status}',${store}) `
-      // );
-
-      const email = await DataInsert(
-        `tbl_email`,
-        `host,port,username,password,frommail,status, store_id`,
-        `'${host}','${port}','${username}','${password}','${frommail}','${status}',${store}`,
-        req.hostname,
-        req.protocol,
-      );
-
-      if (email == -1) {
-        req.flash("error", "Action failed, please check input and try again");
-        return res.redirect("back");
-      }
+    const { store, loginas } = req.user;
+    if (loginas == 0) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
     }
 
-    req.flash("success", "Email Setting Save Success Fully");
-    res.redirect("back");
+    const effectiveStoreId = parseInt(store, 10) || 0;
+    await saveEmailAndTwilioGateways(effectiveStoreId, req.body, req);
+
+    req.flash("success", "Email & Twilio SMS Settings Saved Successfully!");
+    return res.redirect("back");
   } catch (error) {
     console.log(error);
+    req.flash("error", "Action failed, please check input and try again");
+    return res.redirect("back");
   }
 });
 
@@ -3870,6 +3858,244 @@ router.post("/download", auth, async (req, res) => {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   );
   res.send(buffer);
+});
+
+// <<<<<<<<<<<<<<<<<<< Customer Notification Settings >>>>>>>>>>>>>>>>>>
+router.get("/notificationsetting", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    if (loginas == 0) {
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT 
+        sr.*, 
+        r.roll_status, 
+        r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === "master";
+    const hasReadAccess =
+      isMaster ||
+      accessdata.mutibranch === false ||
+      (rolldetail.length > 0 &&
+        ((rolldetail[0].mail && rolldetail[0].mail.includes("read")) ||
+          (rolldetail[0].sms && rolldetail[0].sms.includes("read")) ||
+          (rolldetail[0].master && rolldetail[0].master.includes("read")) ||
+          (rolldetail[0].master_setting && rolldetail[0].master_setting.includes("read"))));
+
+    if (!hasReadAccess) {
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const hasEditPermission =
+      isMaster ||
+      accessdata.mutibranch === false ||
+      (rolldetail.length > 0 &&
+        ((rolldetail[0].mail && rolldetail[0].mail.includes("edit")) ||
+          (rolldetail[0].sms && rolldetail[0].sms.includes("edit")) ||
+          (rolldetail[0].master && rolldetail[0].master.includes("edit")) ||
+          (rolldetail[0].master_setting && rolldetail[0].master_setting.includes("edit"))));
+
+    const stores = await DataFind(
+      "SELECT id, name, city FROM tbl_store WHERE delete_flage=0 AND status=1 ORDER BY id ASC"
+    );
+
+    let targetStoreId = 0;
+    if (isMaster) {
+      if (req.query.store_id !== undefined && req.query.store_id !== "") {
+        targetStoreId = parseInt(req.query.store_id, 10) || 0;
+      } else {
+        targetStoreId = 0; // Default to Global Defaults for Master Admin
+      }
+    } else {
+      let assignedStore = store;
+      if (!assignedStore || assignedStore === " " || assignedStore === "" || assignedStore == 0) {
+        const adminData = await DataFind(`SELECT store_ID FROM tbl_admin WHERE id = ${id}`);
+        if (adminData.length > 0 && adminData[0].store_ID) {
+          assignedStore = adminData[0].store_ID;
+        }
+      }
+      targetStoreId = parseInt(assignedStore, 10) || (stores[0] ? stores[0].id : 0);
+    }
+
+    let storeData = null;
+    if (targetStoreId > 0) {
+      const sRows = await DataFind(`SELECT * FROM tbl_store WHERE id = ${targetStoreId} LIMIT 1`);
+      if (sRows.length > 0) storeData = sRows[0];
+    }
+
+    const notifSettings = await getEffectiveNotificationSettings(targetStoreId);
+    const smtpCfg = await resolveSmtpConfig(targetStoreId);
+    const twilioCfg = await resolveTwilioConfig(targetStoreId);
+
+    const smtpConfigured = Boolean(smtpCfg && smtpCfg.host && smtpCfg.username && smtpCfg.password);
+    const twilioConfigured = Boolean(
+      twilioCfg &&
+      twilioCfg.sid &&
+      twilioCfg.token &&
+      twilioCfg.phone &&
+      String(twilioCfg.status) === "1"
+    );
+    const pushConfigured = Boolean(
+      accessdata &&
+      accessdata.masterstore &&
+      accessdata.masterstore.onesignal_app_id &&
+      accessdata.masterstore.onesignal_api_key
+    );
+
+    return res.render("notification_setting", {
+      targetStoreId,
+      storeData,
+      stores,
+      isMaster,
+      canEdit: hasEditPermission,
+      notifSettings,
+      notificationEvents: NOTIFICATION_EVENTS,
+      smtpConfig: smtpCfg || {},
+      twilioConfig: twilioCfg || {},
+      smtpConfigured,
+      twilioConfigured,
+      pushConfigured,
+      accessdata,
+      language: req.language_data,
+      language_name: req.language_name,
+    });
+  } catch (error) {
+    console.error("Error loading notification settings:", error);
+    req.flash("error", "Error loading notification settings");
+    return res.redirect(req.get("Referrer") || "/");
+  }
+});
+
+router.post("/notificationsetting", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const { id, roll, store, loginas } = req.user;
+    if (loginas == 0) {
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT 
+        sr.*, 
+        r.roll_status, 
+        r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === "master";
+    let targetStoreId = parseInt(req.body.target_store_id, 10) || 0;
+
+    if (!isMaster) {
+      let userStore = store;
+      if (!userStore || userStore === " " || userStore === "") {
+        const adminData = await DataFind(`SELECT store_ID FROM tbl_admin WHERE id = ${id}`);
+        if (adminData.length > 0) userStore = adminData[0].store_ID;
+      }
+      targetStoreId = parseInt(userStore, 10) || 0;
+    }
+
+    await saveEmailAndTwilioGateways(targetStoreId, req.body, req);
+    const saved = await saveNotificationSettings(targetStoreId, req.body, req);
+    if (!saved) {
+      req.flash("error", "Failed to save notification settings");
+      return res.redirect(`/tool/notificationsetting?store_id=${targetStoreId}`);
+    }
+
+    req.flash("success", "Notification, Email & Twilio Settings Saved Successfully!");
+    return res.redirect(`/tool/notificationsetting?store_id=${targetStoreId}`);
+  } catch (error) {
+    console.error("Error saving notification settings:", error);
+    req.flash("error", "Error saving notification settings");
+    return res.redirect("back");
+  }
+});
+
+router.post("/notificationsetting/reset", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      return res.status(403).json({
+        success: false,
+        message: "For demo purpose we disabled crud operations!!",
+      });
+    }
+
+    const { id, roll, store, loginas } = req.user;
+    if (loginas == 0) {
+      return res.status(403).json({ success: false, message: "Not authorized" });
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+    const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === "master";
+
+    let targetStoreId = parseInt(req.body.store_id, 10) || 0;
+    if (!isMaster) {
+      let userStore = store;
+      if (!userStore || userStore === " " || userStore === "") {
+        const adminData = await DataFind(`SELECT store_ID FROM tbl_admin WHERE id = ${id}`);
+        if (adminData.length > 0) userStore = adminData[0].store_ID;
+      }
+      targetStoreId = parseInt(userStore, 10) || 0;
+    }
+
+    if (targetStoreId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Global defaults cannot be deleted; use Enable All / Disable All instead.",
+      });
+    }
+
+    await resetStoreNotificationSettings(targetStoreId);
+    return res.status(200).json({
+      success: true,
+      message: "Store override removed. Now inheriting Global Default Notification Settings.",
+    });
+  } catch (error) {
+    console.error("Error resetting notification settings:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.post("/notificationsetting/test", auth, async (req, res) => {
+  try {
+    const { loginas } = req.user;
+    if (loginas == 0) {
+      return res.status(403).json({ success: false, message: "Not authorized" });
+    }
+
+    const storeId = parseInt(req.body.store_id, 10) || 0;
+    const channel = String(req.body.channel || "email").toLowerCase();
+    const recipient = String(req.body.recipient || "").trim();
+
+    const result = await sendTestNotification({ storeId, channel, recipient });
+    return res.status(result.success ? 200 : 400).json(result);
+  } catch (error) {
+    console.error("Error sending test notification:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to send test notification",
+    });
+  }
 });
 
 module.exports = router;

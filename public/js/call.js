@@ -982,6 +982,7 @@
          url: baseUrl + "/admin/customerlist/" + storeid,
          dataType: 'json',
          success: function (res) {
+            window.POS_CUSTOMER_LIST = res.customerList || [];
             $('#single-select').prop('disabled', false);
             if (res.customerList.length < 1) {
                $('#single-select').html('<option value="0" selected disabled >No Customers Registered in Selected Store</option>');
@@ -1003,8 +1004,8 @@
             } else {
                $('#single-select').val('0');
             }
-            if ($.fn.selectpicker) {
-               $('#single-select').selectpicker('refresh');
+            if (typeof window.syncPosCustomerDisplay === 'function') {
+               window.syncPosCustomerDisplay(res.defaultCustomerId || '0');
             }
             $('#coupon_storlist_update').val(storeid);
          }
@@ -2361,8 +2362,8 @@
       var $btn = $(this);
       $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i><span>Saving...</span>');
 
-      var customerId = $('#customer').val() || $('#POS_coustomer_id').val() || '0';
-      var orderType = $('#POS_order_type').val() || 'Counter & Counter';
+      var customerId = $('#single-select').val() || $('#customer').val() || $('#POS_coustomer_id').val() || '0';
+      var orderType = $('#pos_order_type').val() || $('#POS_order_type').val() || 'Counter & Counter';
       var readyDate = $('#POS_ready_date').val() || '';
       var deliveryDate = $('#POS_delivery_date').val() || '';
       var pickupDate = $('#POS_pickup_date').val() || '';
@@ -2400,6 +2401,93 @@
          error: function (xhr) {
             $btn.prop('disabled', false).html('<i class="fa fa-save me-1"></i><span>Save Draft</span>');
             var errMsg = 'Server error saving draft order.';
+            try {
+               var parsed = JSON.parse(xhr.responseText);
+               if (parsed && parsed.message) errMsg = parsed.message;
+            } catch (e) {}
+            if (typeof toastr !== 'undefined') toastr.error(errMsg);
+            else alert(errMsg);
+         }
+      });
+   });
+
+   // Direct Print Order from POS Cart Toolbar
+   $(document).on("click", "#btn_pos_direct_print", function (e) {
+      e.preventDefault();
+      var rowCount = $('#POS_service_added_list tr').length;
+      var hasItems = rowCount > 0 && !$('#POS_service_added_list').text().includes('Your cart is empty');
+      if (!hasItems) {
+         if (typeof toastr !== 'undefined') {
+            toastr.warning('Your cart is empty. Please add services before printing.');
+         } else {
+            alert('Your cart is empty.');
+         }
+         return false;
+      }
+
+      var customerId = $('#single-select').val() || $('#customer').val() || $('#POS_coustomer_id').val() || '0';
+      if (!customerId || customerId === '0') {
+         if (typeof toastr !== 'undefined') {
+            toastr.warning('Please select a customer before printing.');
+         } else {
+            alert('Please select a customer before printing.');
+         }
+         if (typeof window.openPosCustomerSelectModal === 'function') {
+            window.openPosCustomerSelectModal();
+         }
+         return false;
+      }
+
+      var $btn = $(this);
+      $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i><span>Printing...</span>');
+
+      var orderType = $('#pos_order_type').val() || $('#POS_order_type').val() || 'Counter & Counter';
+      var readyDate = $('#POS_ready_date').val() || '';
+      var readyTime = $('#POS_ready_time').val() || '16:00:00';
+      var deliveryDate = $('#POS_delivery_date').val() || '';
+      var deliveryTime = $('#POS_delivery_time').val() || '16:00:00';
+      var pickupDate = $('#POS_pickup_date').val() || '';
+      var pickupTime = $('#POS_pickup_time').val() || '10:00:00';
+      var extraDiscount = $('#POS_extra_discount').val() || 0;
+      var notes = $('#notes').val() || '';
+      var paymentType = $('#POS_payment_type_list').val() || '0';
+
+      $.ajax({
+         type: 'POST',
+         url: window.location.origin + '/admin/save_order',
+         data: {
+            customer_id: customerId,
+            order_type: orderType,
+            readydate: readyDate,
+            readytime: readyTime,
+            deliverydate: deliveryDate,
+            deliverytime: deliveryTime,
+            pickupdate: pickupDate,
+            pickuptime: pickupTime,
+            extradiscount: extraDiscount,
+            note: notes,
+            paid_amount: 0,
+            payment_type: paymentType
+         },
+         dataType: 'json',
+         success: function (res) {
+            if (res && res.success) {
+               if (typeof toastr !== 'undefined') {
+                  toastr.success(res.message || ('Order #' + res.order_id + ' placed successfully!'));
+               }
+               setTimeout(function () {
+                  window.location.href = '/admin/posprint?id=' + encodeURIComponent(res.id || res.order_id);
+               }, 300);
+            } else {
+               $btn.prop('disabled', false).html('<i class="fa fa-print me-1"></i><span>Print</span>');
+               var msg = (res && res.message) ? res.message : 'Failed to place order.';
+               if (typeof toastr !== 'undefined') toastr.error(msg);
+               else alert(msg);
+            }
+         },
+         error: function (xhr) {
+            $btn.prop('disabled', false).html('<i class="fa fa-print me-1"></i><span>Print</span>');
+            var errMsg = 'Server error placing order.';
             try {
                var parsed = JSON.parse(xhr.responseText);
                if (parsed && parsed.message) errMsg = parsed.message;
@@ -3638,6 +3726,9 @@
       }
       if (!customer || customer === '0') {
          toastr.warning('Please Select Customer');
+         if (typeof window.openPosCustomerSelectModal === 'function') {
+            window.openPosCustomerSelectModal();
+         }
          return;
       }
 
@@ -4175,6 +4266,70 @@
          },
          error: function (err) {
             toastr.error('Failed to save order changes');
+         }
+      });
+   });
+
+   // Edit Mode: Direct Print from POS Cart Toolbar
+   $(document).on("click", "#edit_btn_pos_print", function (e) {
+      e.preventDefault();
+      var order_id = $('#order_id').val() || $('#pos_order_id').val();
+      var baseUrl = window.location.origin;
+      var $btn = $(this);
+      $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i><span>Printing...</span>');
+
+      $.ajax({
+         type: 'POST',
+         url: baseUrl + "/admin/edit_order_direct",
+         data: { order_id: order_id },
+         success: function (res) {
+            toastr.success('Order changes saved. Redirecting to print...');
+            setTimeout(function () {
+               window.location.href = baseUrl + "/admin/posprint?id=" + encodeURIComponent(order_id);
+            }, 300);
+         },
+         error: function (err) {
+            $btn.prop('disabled', false).html('<i class="fa fa-print me-1"></i><span>Print</span>');
+            toastr.error('Failed to save order changes');
+         }
+      });
+   });
+
+   // Edit Mode: Print from Make Payment Modal
+   $(document).on("click", "#edit_modal_print_btn", function (e) {
+      e.preventDefault();
+      var paid = Number($('input[name=paid_amount]').val());
+      var date = $('input[name=deliverydate]').val();
+      var date_hidden = $('input[name=deliverydate_hidden]').val();
+      var payment_type = $('#POS_payment_type_list').val();
+      var baseUrl = window.location.origin;
+
+      if (paid > 0 && !payment_type) {
+         return toastr.warning('Please Select Payment Type');
+      }
+
+      if (date < date_hidden) {
+         return document.getElementById("POS_worning").innerHTML = "Enter Delivery Date";
+      }
+
+      var $btn = $(this);
+      $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-2"></i>Printing...');
+
+      $.ajax({
+         type: 'POST',
+         url: baseUrl + "/admin/edit_order",
+         data: $('#pyment_POS_cart').serialize(),
+         success: function (res) {
+            $('#POS_payment_model').modal('hide');
+            toastr.success('Order successfully updated. Redirecting to print...');
+            var targetId = (res && res.order && res.order.id) ? res.order.id : ($('#pos_order_id').val() || $('input[name=order_id]').val());
+            setTimeout(function () {
+               window.location.href = baseUrl + "/admin/posprint?id=" + encodeURIComponent(targetId);
+            }, 300);
+         },
+         error: function (err) {
+            $btn.prop('disabled', false).html('<i class="fa fa-print me-2"></i>Print');
+            toastr.error('Failed to update order');
          }
       });
    });

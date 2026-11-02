@@ -2400,3 +2400,134 @@ body.pos-screen-layout .pos-content-body .container-fluid {
 [data-theme-version="dark"] .pos-total-row-gross .pos-total-value {
   color: #38bdf8 !important;
 }
+
+/* =========================================================================
+   POS Customer Selector Trigger & Customer Selection Modal
+   ========================================================================= */
+.pos-cust-selector-trigger,
+.pos-cust-selector-trigger input {
+  cursor: pointer !important;
+}
+
+.pos-cust-selector-trigger:hover .input-group-text,
+.pos-cust-selector-trigger:hover .form-control {
+  border-color: #3b82f6 !important;
+}
+
+#pos_customer_select_modal .modal-dialog.modal-xl {
+  max-width: 960px !important;
+  width: 94% !important;
+  margin: 1.5rem auto !important;
+}
+
+#pos_customer_select_modal .pos-payment-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  min-height: 100%;
+}
+
+.pos-cust-modal-list {
+  max-height: 360px !important;
+  min-height: 320px !important;
+  background: #f8fafc;
+}
+
+.pos-cust-list-item {
+  border-left: 3px solid transparent !important;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.pos-cust-list-item:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.pos-cust-list-item.active {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+  border-left-color: #3b82f6 !important;
+  color: inherit !important;
+}
+
+.pos-cust-list-item.active .pos-cust-item-name {
+  color: #2563eb !important;
+}
+
+.pos-cust-list-avatar {
+  width: 34px;
+  height: 34px;
+  font-size: 12px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+}
+
+.pos-cust-list-item.active .pos-cust-list-avatar {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.pos-cd-avatar {
+  width: 44px;
+  height: 44px;
+  font-size: 15px;
+}
+
+/* Dark Theme Support for POS Customer Selection Modal */
+[data-theme-version="dark"] #pos_customer_select_modal .modal-content {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] #pos_customer_select_modal .modal-header,
+[data-theme-version="dark"] #pos_customer_select_modal .modal-footer {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme-version="dark"] #pos_customer_select_modal .pos-payment-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] #pos_customer_select_modal .pos-cust-modal-list {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+[data-theme-version="dark"] #pos_customer_select_modal .pos-cust-list-item {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+[data-theme-version="dark"] #pos_customer_select_modal .pos-cust-list-item:hover {
+  background: #26354d !important;
+}
+
+[data-theme-version="dark"] #pos_customer_select_modal .pos-cust-list-item.active {
+  background: rgba(59, 130, 246, 0.18) !important;
+  border-left-color: #60a5fa !important;
+}
+
+[data-theme-version="dark"] #pos_customer_select_modal .pos-cust-list-item.active .pos-cust-item-name {
+  color: #60a5fa !important;
+}
+
+[data-theme-version="dark"] #pos_customer_select_modal .pos-cust-item-badge {
+  background: #0f172a !important;
+  color: #cbd5e1 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme-version="dark"] #pos_customer_select_modal .form-control,
+[data-theme-version="dark"] #pos_customer_select_modal .input-group-text {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] .pos-cust-selector-trigger .form-control {
+  color: #f8fafc !important;
+}

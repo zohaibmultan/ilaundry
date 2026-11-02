@@ -19,6 +19,10 @@ const {
 } = require("../middelwer/calendarBroadcaster");
 
 const { generateOrderId } = require("../middelwer/orderIdHelper");
+const {
+  dispatchCustomerNotification,
+  isRouteDeliveryOrderType,
+} = require("../services/notificationService");
 
 async function idfororder(storeId) {
   return await generateOrderId(storeId);
@@ -761,86 +765,12 @@ router.get("/changestatus/:id", auth, async (req, res) => {
       const customer_data = await DataFind(
         `SELECT * FROM tbl_customer WHERE id = '${order_date[0].customer_id}'`,
       );
-      console.log(1111, "customer_data", customer_data);
-
-      if (data.length > 0) {
-        if (data[0].status == 1) {
-          if (
-            data[0].host &&
-            data[0].port &&
-            data[0].username &&
-            data[0].password &&
-            data[0].frommail
-          ) {
-            const transporter = nodemailer.createTransport({
-              host: data[0].host,
-              port: Number(data[0].port),
-              // service: "gmail",
-              auth: {
-                user: data[0].username,
-                pass: data[0].password,
-              },
-            });
-            let mailDetails = {
-              from: data[0].frommail,
-              // to: 'vivekchovatiya1179@gmail.com',
-              to: customer_data[0].email,
-              subject: "Email From " + storedata[0].name,
-              html:
-                "<!DOCTYPE html>" +
-                "<html><head><title></title>" +
-                "</head><body><div>" +
-                "<h5>Greeting From " +
-                storedata[0].name +
-                "</h5>" +
-                "<h4> Your Order " +
-                storedata[0].order_id +
-                " status has been change to <b>" +
-                storedata[0].status +
-                "</b> </h4>" +
-                "<p>Thank For Order to us</p>" +
-                '</div><div style="display: list-item;">' +
-                "<p>Best from :</p>" +
-                '<span style="margin-bottom:0">' +
-                storedata[0].mobile_number +
-                "</span><br>" +
-                '<span style="margin-bottom:0">' +
-                storedata[0].store_email +
-                "</span><br>" +
-                '<span style="margin-bottom:0">' +
-                storedata[0].city +
-                "</span><br>" +
-                "</div></body></html>",
-            };
-
-            transporter.sendMail(mailDetails, function (err, data) {
-              if (err) {
-                console.log(err);
-                console.log("Error Occurs");
-                req.flash("error", "Message not occurred!");
-              } else {
-                console.log(data);
-
-                console.log("Email sent successfully");
-                req.flash("success", "Email Send Successful");
-              }
-            });
-          }
-        }
-      }
 
       let date = new Date();
       let day = (date.getDate() < 10 ? "0" : "") + date.getDate();
       let month = (date.getMonth() + 1 < 10 ? "0" : "") + (date.getMonth() + 1);
       let year = date.getFullYear();
       let fullDate = `${year}-${month}-${day}`;
-
-      // await DataFind(
-      //   `INSERT INTO tbl_notification (invoice, date, sender, received, notification) VALUE ('${storedata[0].order_id}', '${fullDate}', '${accessdata.topbardata.id}', '${storedata[0].store_id}', 'The order status ${storedata[0].order_id} has been updated, please check it.')`
-      // );
-      // await DataFind(
-      //   `INSERT INTO tbl_notification (invoice, date, sender, received, notification) VALUE ('${storedata[0].order_id}', '${fullDate}', '${accessdata.topbardata.id}', '${order_date[0].customer_id}', 'The order status '${storedata[0].order_id}' has been updated, please check it.')`
-      // );
 
       const storeNotification = await DataInsert(
         `tbl_notification`,
@@ -870,83 +800,31 @@ router.get("/changestatus/:id", auth, async (req, res) => {
         return res.redirect("/some_error_page");
       }
 
-      // await DataFind(
-      //   `INSERT INTO tbl_notification (invoice, date, sender, received, notification) VALUE ('${storedata[0].order_id}', '${fullDate}', '${accessdata.topbardata.id}', '1', 'The order status ${storedata[0].order_id} has been updated, please check it.')`
-      // );
-
-      if (customer_data[0].name != "Walk in customer") {
-        // ========= sms ============ //
-        const storeCommData = await DataFind(`SELECT twilio_sid, twilio_auth_token, twilio_phone_no FROM tbl_store WHERE id = ${storedata[0].store_id} LIMIT 1`);
-        let ACCOUNT_SID = (storeCommData.length > 0 && storeCommData[0].twilio_sid) ? storeCommData[0].twilio_sid : accessdata.masterstore.twilio_sid;
-        let AUTH_TOKEN = (storeCommData.length > 0 && storeCommData[0].twilio_auth_token) ? storeCommData[0].twilio_auth_token : accessdata.masterstore.twilio_auth_token;
-        let FROM_PHONE = (storeCommData.length > 0 && storeCommData[0].twilio_phone_no) ? storeCommData[0].twilio_phone_no : accessdata.masterstore.twilio_phone_no;
-
-        if (ACCOUNT_SID && AUTH_TOKEN) {
-          try {
-            const client_sms = require("twilio")(ACCOUNT_SID, AUTH_TOKEN);
-
-            client_sms.messages
-              .create({
-                body: `We have successfully change your order status.`,
-                from: FROM_PHONE,
-                to: customer_data[0].number,
-              })
-              .then((message) => console.log(message.sid))
-              .catch((e) => {
-                req.flash("error", "Message not occurred!");
-              });
-          } catch (error) {
-            console.log(error);
-          }
-        }
+      // Map status transition to the 12 Notification Settings events
+      const statusLower = String((storedata[0] && storedata[0].status) || "").toLowerCase();
+      const sIdNum = Number(statusid);
+      let statusEventKey = "order_processing";
+      if (sIdNum === 6 || sIdNum === 5 || statusLower.includes("cancel") || statusLower.includes("void") || statusLower.includes("return")) {
+        statusEventKey = "order_cancelled";
+      } else if (sIdNum === 4 || statusLower.includes("deliver") || statusLower.includes("complet")) {
+        statusEventKey = "order_delivered";
+      } else if (statusLower.includes("out for delivery") || statusLower.includes("en route") || statusLower.includes("shipped")) {
+        statusEventKey = "order_out_for_delivery";
+      } else if (sIdNum === 3 || statusLower.includes("ready")) {
+        statusEventKey = isRouteDeliveryOrderType(order_date[0].order_type)
+          ? "order_out_for_delivery"
+          : "order_ready_pickup";
+      } else {
+        statusEventKey = "order_processing";
       }
 
-      if (accessdata.masterstore.onesignal_app_id) {
-        let message = {
-          app_id: accessdata.masterstore.onesignal_app_id,
-          contents: {
-            en: "The order status has been updated, please check it.",
-          },
-          headings: { en: "laundry" },
-          included_segments: ["Subscribed Users"],
-          filters: [
-            {
-              field: "tag",
-              key: "subscription_user_Type",
-              relation: "=",
-              value: "master",
-            },
-            { operator: "AND" },
-            { field: "tag", key: "Login_ID", relation: "=", value: "1" },
-          ],
-        };
-        sendNotification(message);
-
-        let store_message = {
-          app_id: accessdata.masterstore.onesignal_app_id,
-          contents: {
-            en: "The order status has been updated, please check it.",
-          },
-          headings: { en: "laundry" },
-          included_segments: ["Subscribed Users"],
-          filters: [
-            {
-              field: "tag",
-              key: "subscription_user_Type",
-              relation: "=",
-              value: accessdata.logas,
-            },
-            { operator: "AND" },
-            {
-              field: "tag",
-              key: "Login_ID",
-              relation: "=",
-              value: accessdata.topbardata.id,
-            },
-          ],
-        };
-        sendNotification(store_message);
-      }
+      dispatchCustomerNotification({
+        eventKey: statusEventKey,
+        storeId: storedata[0].store_id,
+        customerId: order_date[0].customer_id,
+        orderId: order_date[0].id,
+        accessdata,
+      }).catch((e) => console.error("Order status notification error:", e.message));
 
       res
         .status(208)
@@ -1233,6 +1111,17 @@ router.post("/addpayment", auth, async (req, res) => {
       req.flash("error", process.env.dataerror);
       return res.redirect("/some_error_page");
     }
+
+    dispatchCustomerNotification({
+      eventKey: "payment_received",
+      storeId: orderdata[0].store_id,
+      customerId: orderdata[0].customer_id,
+      orderId: orderdata[0].id,
+      extraData: {
+        paidNow: paidamount,
+        paymentMethod: account && account[0] ? account[0].ac_name : "Payment",
+      },
+    }).catch((e) => console.error("Add payment notification error:", e.message));
 
     res.status(200).json({ status: "success", message: "Payment Data Saved" });
   } catch (error) {
@@ -1836,6 +1725,15 @@ router.post("/calendar/toggle-status", auth, async (req, res) => {
       is_picked_up: updated.is_picked_up,
       is_delivered: updated.is_delivered,
     });
+
+    if (field === "delivery" && targetStatus === "1") {
+      dispatchCustomerNotification({
+        eventKey: "order_delivered",
+        storeId: order.store_id,
+        customerId: order.customer_id,
+        orderId: order.id,
+      }).catch((e) => console.error("Calendar delivery notification error:", e.message));
+    }
 
     return res.status(200).json({
       success: true,

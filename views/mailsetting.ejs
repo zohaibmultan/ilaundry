@@ -8,37 +8,40 @@
 
 <body>
     <%- include('templet/preloder_topbar_sidebar', { titel: accessdata?.topbardata?.name })-%>
-    
+
     <!--********** Content body start **********-->
     <div class="content-body">
-        <div class="container-fluid" style="min-height: 100vh;">
-            <% 
-                const mail = (data && data.length > 0) ? data[0] : {};
+        <div class="container-fluid pb-5 mb-5">
+            <%
+                const mail = (typeof data !== 'undefined' && data && data.length > 0) ? data[0] : {};
+                const twilio = (typeof twilioData !== 'undefined' && twilioData) ? twilioData : {};
                 const isConfigured = Boolean(mail.host && mail.username);
-                const isActive = mail.status == 1;
+                const isActive = String(mail.status) !== '0' && isConfigured;
+                const isTwilioConfigured = Boolean(twilio.sid && twilio.token && (twilio.fromPhone || twilio.phone));
+                const isTwilioActive = String(twilio.status) !== '0' && isTwilioConfigured;
                 const canEdit = accessdata && accessdata.roll && accessdata.roll.mail ? accessdata.roll.mail.includes('edit') : true;
             %>
 
             <!-- Page Header Card -->
-            <div class="row mb-2">
+            <div class="row mb-3">
                 <div class="col-12">
-                    <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card border-0 shadow-sm rounded-3" style="height: auto;">
                         <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="p-3 bg-primary-subtle text-primary rounded-3 d-inline-flex align-items-center justify-content-center">
                                     <i class="fa fa-envelope fs-4"></i>
                                 </div>
                                 <div>
-                                    <h3 class="mb-1 fw-bold text-dark d-flex align-items-center gap-2">
-                                        <%= language.Email_Setting || 'Email & SMTP Configuration' %>
+                                    <h3 class="mb-1 fw-bold d-flex align-items-center gap-2">
+                                        <%= language.Email_Setting || 'Email (SMTP) & Twilio SMS Configuration' %>
                                     </h3>
                                     <p class="text-muted mb-0 fs-13">
-                                        <%= language.Email_Setting_Subtitle || 'Configure outgoing SMTP mail server, authentication credentials, and automated invoice delivery' %>
+                                        Configure outgoing SMTP mail server and Twilio SMS gateway credentials on a single unified page
                                     </p>
                                 </div>
                             </div>
                             <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <!-- Status Badge -->
+                                <!-- SMTP Status Badge -->
                                 <% if (isConfigured && isActive) { %>
                                     <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fw-semibold d-inline-flex align-items-center gap-1" id="header_status_badge">
                                         <i class="fa fa-check-circle"></i> SMTP Active
@@ -49,9 +52,24 @@
                                     </span>
                                 <% } else { %>
                                     <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2 rounded-pill fw-semibold d-inline-flex align-items-center gap-1" id="header_status_badge">
-                                        <i class="fa fa-exclamation-circle"></i> Not Configured
+                                        <i class="fa fa-exclamation-circle"></i> SMTP Unconfigured
                                     </span>
                                 <% } %>
+
+                                <!-- Twilio Status Badge -->
+                                <% if (isTwilioActive) { %>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fw-semibold d-inline-flex align-items-center gap-1">
+                                        <i class="fa fa-comment-sms"></i> Twilio SMS Active
+                                    </span>
+                                <% } else { %>
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2 rounded-pill fw-semibold d-inline-flex align-items-center gap-1">
+                                        <i class="fa fa-comment-slash"></i> Twilio SMS Offline
+                                    </span>
+                                <% } %>
+
+                                <a href="/tool/notificationsetting" class="btn btn-outline-primary btn-sm px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1">
+                                    <i class="fa fa-bell"></i> <%= language.Notification_Settings || 'Notification Event Switches' %>
+                                </a>
 
                                 <a href="/index" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1">
                                     <i class="fa fa-arrow-left"></i> <%= language.Back_to_Dashboard || 'Dashboard' %>
@@ -65,36 +83,35 @@
             <!-- Main Form -->
             <form action="/tool/mailsetting" method="post" class="need-validation" id="mailSettingForm" novalidate>
                 <div class="row g-4">
-                    
-                    <!-- Left Column: Core SMTP Configuration (8 Cols) -->
+
+                    <!-- Left Column: Core SMTP & Twilio SMS Configuration (8 Cols) -->
                     <div class="col-12 col-xl-8">
-                        
+
                         <!-- Section 1: Server & Transmission Connection -->
                         <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
                             <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <div>
-                                    <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
-                                        <i class="fa fa-server text-primary me-2"></i><%= language.Mail_Host || 'SMTP Server Setup' %>
+                                    <h5 class="card-title mb-0 fw-bold d-flex align-items-center">
+                                        <i class="fa fa-server text-primary me-2"></i><%= language.Mail_Host || '1. Email (SMTP) Server Setup' %>
                                     </h5>
                                     <small class="text-muted">Specify the outgoing relay server address and secure transmission port</small>
                                 </div>
-                                <span class="badge bg-light text-secondary border px-2 py-1 fs-11">Step 1 of 2</span>
+                                <span class="badge bg-primary-subtle text-primary px-2 py-1 fs-11">EMAIL (SMTP)</span>
                             </div>
                             <div class="card-body p-4">
                                 <div class="row g-3">
-                                    
+
                                     <!-- Mail Host -->
                                     <div class="col-12 col-md-7">
                                         <label class="form-label fw-semibold" for="mail_host">
-                                            <%= language.Mail_Host || 'Mail Host (SMTP Server)' %> <span class="text-danger">*</span>
+                                            <%= language.Mail_Host || 'Mail Host (SMTP Server)' %>
                                         </label>
                                         <div class="input-group">
-                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-globe"></i></span>
-                                            <input type="text" class="form-control font-monospace" id="mail_host" name="host" 
-                                                value="<%= mail.host || '' %>" placeholder="e.g. smtp.gmail.com" required <%= canEdit ? '' : 'readonly' %>>
+                                            <span class="input-group-text bg-light-subtle text-muted"><i class="fa fa-globe"></i></span>
+                                            <input type="text" class="form-control font-monospace" id="mail_host" name="host"
+                                                value="<%= mail.host || '' %>" placeholder="e.g. smtp.gmail.com" <%= canEdit ? '' : 'readonly' %>>
                                         </div>
-                                        <div class="invalid-feedback">Please provide a valid SMTP mail host.</div>
-                                        
+
                                         <!-- Provider Preset Chips -->
                                         <% if (canEdit) { %>
                                         <div class="mt-2 d-flex flex-wrap gap-1 align-items-center">
@@ -111,14 +128,13 @@
                                     <!-- Mail Port -->
                                     <div class="col-12 col-md-5">
                                         <label class="form-label fw-semibold" for="mail_port">
-                                            <%= language.Mail_Port || 'SMTP Port' %> <span class="text-danger">*</span>
+                                            <%= language.Mail_Port || 'SMTP Port' %>
                                         </label>
                                         <div class="input-group">
-                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-network-wired"></i></span>
-                                            <input type="number" class="form-control font-monospace" id="mail_port" name="port" 
-                                                value="<%= mail.port || '' %>" placeholder="587" min="1" max="65535" required <%= canEdit ? '' : 'readonly' %>>
+                                            <span class="input-group-text bg-light-subtle text-muted"><i class="fa fa-network-wired"></i></span>
+                                            <input type="number" class="form-control font-monospace" id="mail_port" name="port"
+                                                value="<%= mail.port || '587' %>" placeholder="587" min="1" max="65535" <%= canEdit ? '' : 'readonly' %>>
                                         </div>
-                                        <div class="invalid-feedback">Please specify a valid port number.</div>
 
                                         <!-- Port Preset Chips -->
                                         <% if (canEdit) { %>
@@ -130,33 +146,15 @@
                                         <% } %>
                                     </div>
 
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Section 2: Authentication Credentials & Sender Profile -->
-                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
-                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <div>
-                                    <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
-                                        <i class="fa fa-user-shield text-info me-2"></i><%= language.Mail_Username || 'Credentials & Sender Profile' %>
-                                    </h5>
-                                    <small class="text-muted">Account login details and recipient-facing email address</small>
-                                </div>
-                                <span class="badge bg-light text-secondary border px-2 py-1 fs-11">Step 2 of 2</span>
-                            </div>
-                            <div class="card-body p-4">
-                                <div class="row g-3">
-
                                     <!-- Mail Username -->
                                     <div class="col-12 col-md-6">
                                         <label class="form-label fw-semibold" for="mail_username">
-                                            <%= language.Mail_Username || 'SMTP Account Username / Email' %> <span class="text-danger">*</span>
+                                            <%= language.Mail_Username || 'SMTP Account Username / Email' %>
                                         </label>
                                         <div class="input-group">
-                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-user"></i></span>
-                                            <input type="text" class="form-control" id="mail_username" name="username" 
-                                                value="<%= mail.username || '' %>" placeholder="e.g. notifications@yourdomain.com" required <%= canEdit ? '' : 'readonly' %>>
+                                            <span class="input-group-text bg-light-subtle text-muted"><i class="fa fa-user"></i></span>
+                                            <input type="text" class="form-control" id="mail_username" name="username"
+                                                value="<%= mail.username || '' %>" placeholder="e.g. notifications@yourdomain.com" <%= canEdit ? '' : 'readonly' %>>
                                         </div>
                                         <small class="text-muted fs-11">Username or full email address used to authenticate with the SMTP server.</small>
                                     </div>
@@ -164,14 +162,14 @@
                                     <!-- Mail Password -->
                                     <div class="col-12 col-md-6">
                                         <label class="form-label fw-semibold" for="mail_password">
-                                            <%= language.Mail_Password || 'SMTP Password / App Password' %> <span class="text-danger">*</span>
+                                            <%= language.Mail_Password || 'SMTP Password / App Password' %>
                                         </label>
                                         <div class="input-group">
-                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-key"></i></span>
-                                            <input type="password" class="form-control" id="mail_password" name="password" 
-                                                value="<%= mail.password || '' %>" placeholder="Enter password or app password" required <%= canEdit ? '' : 'readonly' %> autocomplete="new-password">
+                                            <span class="input-group-text bg-light-subtle text-muted"><i class="fa fa-key"></i></span>
+                                            <input type="password" class="form-control" id="mail_password" name="password"
+                                                value="<%= mail.password || '' %>" placeholder="Enter password or app password" <%= canEdit ? '' : 'readonly' %> autocomplete="new-password">
                                             <% if (canEdit) { %>
-                                            <button type="button" class="btn btn-outline-secondary" id="togglePasswordBtn" title="Toggle password visibility">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="togglePasswordBtn" title="Toggle password visibility">
                                                 <i class="fa fa-eye" id="passwordEyeIcon"></i>
                                             </button>
                                             <% } %>
@@ -182,12 +180,12 @@
                                     <!-- From Email ID -->
                                     <div class="col-12 col-md-6">
                                         <label class="form-label fw-semibold" for="mail_frommail">
-                                            <%= language.From_Email_ID || 'From Email Address (Sender)' %> <span class="text-danger">*</span>
+                                            <%= language.From_Email_ID || 'From Email Address (Sender)' %>
                                         </label>
                                         <div class="input-group">
-                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-paper-plane"></i></span>
-                                            <input type="email" class="form-control" id="mail_frommail" name="frommail" 
-                                                value="<%= mail.frommail || '' %>" placeholder="e.g. orders@yourdomain.com" required <%= canEdit ? '' : 'readonly' %>>
+                                            <span class="input-group-text bg-light-subtle text-muted"><i class="fa fa-paper-plane"></i></span>
+                                            <input type="email" class="form-control" id="mail_frommail" name="frommail"
+                                                value="<%= mail.frommail || '' %>" placeholder="e.g. orders@yourdomain.com" <%= canEdit ? '' : 'readonly' %>>
                                         </div>
                                         <small class="text-muted fs-11">The email address displayed in the "From" header of customer invoice emails.</small>
                                     </div>
@@ -195,15 +193,15 @@
                                     <!-- Status Mode -->
                                     <div class="col-12 col-md-6">
                                         <label class="form-label fw-semibold" for="mail_status">
-                                            <%= language.Status || 'Service Status' %>
+                                            <%= language.Status || 'SMTP Service Status' %>
                                         </label>
                                         <div class="input-group">
-                                            <span class="input-group-text bg-light text-muted"><i class="fa fa-toggle-on"></i></span>
+                                            <span class="input-group-text bg-light-subtle text-muted"><i class="fa fa-toggle-on"></i></span>
                                             <select class="form-select" id="mail_status" name="status" <%= canEdit ? '' : 'disabled' %>>
                                                 <option value="1" <%= (mail.status == 1 || mail.status === undefined || mail.status === '') ? 'selected' : '' %>>
                                                     Active — Deliver Invoices &amp; Receipts
                                                 </option>
-                                                <option value="0" <%= (mail.status == 0) ? 'selected' : '' %>>
+                                                <option value="0" <%= (mail.status == 0 && mail.status !== '' && mail.status !== undefined) ? 'selected' : '' %>>
                                                     Disabled — Pause All Outgoing Emails
                                                 </option>
                                             </select>
@@ -213,11 +211,92 @@
 
                                 </div>
                             </div>
-                            
+                        </div>
+
+                        <!-- Section 2: Twilio SMS Gateway Configuration -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <h5 class="card-title mb-0 fw-bold d-flex align-items-center">
+                                        <i class="fa fa-comment-dots text-success me-2"></i><%= language.Twilio_SMS_Settings || '2. Twilio (SMS) Gateway Setup' %>
+                                    </h5>
+                                    <small class="text-muted">Configure Twilio API credentials and sender phone number for automated SMS text alerts</small>
+                                </div>
+                                <span class="badge bg-success-subtle text-success px-2 py-1 fs-11">TWILIO SMS</span>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-3">
+
+                                    <!-- Twilio Account SID -->
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold" for="twilio_sid">
+                                            <%= language.Twilio_Account_SID || 'Twilio Account SID' %>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light-subtle text-muted"><i class="fa fa-id-badge"></i></span>
+                                            <input type="text" class="form-control font-monospace" id="twilio_sid" name="twilio_sid"
+                                                value="<%= twilio.sid || '' %>" placeholder="e.g. ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" <%= canEdit ? '' : 'readonly' %>>
+                                        </div>
+                                        <small class="text-muted fs-11">Your 34-character Twilio Account SID starting with <code>AC</code>.</small>
+                                    </div>
+
+                                    <!-- Twilio Auth Token -->
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold" for="twilio_auth_token">
+                                            <%= language.Twilio_Auth_Token || 'Twilio Auth Token' %>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light-subtle text-muted"><i class="fa fa-lock"></i></span>
+                                            <input type="password" class="form-control font-monospace" id="twilio_auth_token" name="twilio_auth_token"
+                                                value="<%= twilio.token || '' %>" placeholder="Enter Twilio Auth Token" <%= canEdit ? '' : 'readonly' %> autocomplete="new-password">
+                                            <% if (canEdit) { %>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="toggleTwilioTokenBtn" title="Toggle token visibility">
+                                                <i class="fa fa-eye" id="twilioTokenEyeIcon"></i>
+                                            </button>
+                                            <% } %>
+                                        </div>
+                                        <small class="text-muted fs-11">Secret API Auth Token from your Twilio Console Dashboard.</small>
+                                    </div>
+
+                                    <!-- Twilio Phone Number -->
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold" for="twilio_phone_no">
+                                            <%= language.Twilio_Phone_Number || 'Twilio Sender Phone Number' %>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light-subtle text-muted"><i class="fa fa-phone"></i></span>
+                                            <input type="text" class="form-control font-monospace" id="twilio_phone_no" name="twilio_phone_no"
+                                                value="<%= twilio.fromPhone || twilio.phone || '' %>" placeholder="e.g. +15550192834" <%= canEdit ? '' : 'readonly' %>>
+                                        </div>
+                                        <small class="text-muted fs-11">Active SMS-capable Twilio phone number in E.164 format (<code>+1...</code>).</small>
+                                    </div>
+
+                                    <!-- Twilio Status -->
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold" for="twilio_status">
+                                            Twilio SMS Service Status
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light-subtle text-muted"><i class="fa fa-toggle-on"></i></span>
+                                            <select class="form-select" id="twilio_status" name="twilio_status" <%= canEdit ? '' : 'disabled' %>>
+                                                <option value="1" <%= (String(twilio.status) !== '0') ? 'selected' : '' %>>
+                                                    Active — Deliver Customer SMS Alerts
+                                                </option>
+                                                <option value="0" <%= (String(twilio.status) === '0') ? 'selected' : '' %>>
+                                                    Disabled — Pause All Outgoing SMS
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <small class="text-muted fs-11">Controls whether outgoing SMS alerts are dispatched via Twilio.</small>
+                                    </div>
+
+                                </div>
+                            </div>
+
                             <!-- Card Actions Footer -->
                             <div class="card-footer border-top py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <div class="text-muted fs-12 d-flex align-items-center gap-1">
-                                    <i class="fa fa-lock text-success"></i> Credentials stored encrypted in the database
+                                    <i class="fa fa-lock text-success"></i> Email &amp; Twilio credentials saved together
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
                                     <% if (canEdit) { %>
@@ -225,7 +304,7 @@
                                         <i class="fa fa-undo me-1"></i> Reset Changes
                                     </button>
                                     <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2" id="submitFormBtn">
-                                        <i class="fa fa-save"></i> <%= language.Save_Data || 'Save Configuration' %>
+                                        <i class="fa fa-save"></i> <%= language.Save_Data || 'Save Email & Twilio Settings' %>
                                     </button>
                                     <% } %>
                                 </div>
@@ -236,25 +315,25 @@
 
                     <!-- Right Column: Status Summary, Quick Guides & Triggers (4 Cols) -->
                     <div class="col-12 col-xl-4">
-                        
+
                         <!-- Card 1: Live Status & Configuration Overview -->
                         <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
                             <div class="card-header border-bottom py-3 px-4">
-                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
-                                    <i class="fa fa-satellite-dish text-primary me-2"></i>Service Summary
+                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center">
+                                    <i class="fa fa-satellite-dish text-primary me-2"></i>Gateway Summary
                                 </h5>
                             </div>
                             <div class="card-body p-4">
-                                
-                                <!-- Status Banner -->
-                                <div class="p-3 border rounded-3 mb-3 d-flex align-items-center justify-content-between <%= isActive && isConfigured ? 'bg-success-subtle border-success-subtle' : 'bg-light border' %>" id="summary_banner">
+
+                                <!-- SMTP Status Banner -->
+                                <div class="p-3 border rounded-3 mb-3 d-flex align-items-center justify-content-between <%= isActive && isConfigured ? 'bg-success-subtle border-success-subtle' : 'bg-light-subtle border' %>" id="summary_banner">
                                     <div class="d-flex align-items-center gap-3">
                                         <div class="daily-metric-icon <%= isActive && isConfigured ? 'icon-delivered' : 'icon-expense' %>">
                                             <i class="fa <%= isActive && isConfigured ? 'fa-check' : 'fa-power-off' %>" id="summary_banner_icon"></i>
                                         </div>
                                         <div>
-                                            <span class="text-muted small d-block">SMTP Service</span>
-                                            <strong class="text-dark fs-14" id="summary_status_text">
+                                            <span class="text-muted small d-block">SMTP Email Service</span>
+                                            <strong class="fs-14" id="summary_status_text">
                                                 <%= (isActive && isConfigured) ? 'Active & Ready' : (isConfigured ? 'Paused / Disabled' : 'Unconfigured') %>
                                             </strong>
                                         </div>
@@ -264,116 +343,90 @@
                                     </span>
                                 </div>
 
+                                <!-- Twilio Status Banner -->
+                                <div class="p-3 border rounded-3 mb-3 d-flex align-items-center justify-content-between <%= isTwilioActive ? 'bg-success-subtle border-success-subtle' : 'bg-light-subtle border' %>" id="twilio_summary_banner">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="daily-metric-icon <%= isTwilioActive ? 'icon-delivered' : 'icon-expense' %>">
+                                            <i class="fa <%= isTwilioActive ? 'fa-comment-sms' : 'fa-power-off' %>" id="twilio_summary_icon"></i>
+                                        </div>
+                                        <div>
+                                            <span class="text-muted small d-block">Twilio SMS Service</span>
+                                            <strong class="fs-14" id="twilio_summary_status_text">
+                                                <%= isTwilioActive ? 'Active & Ready' : (isTwilioConfigured ? 'Paused / Disabled' : 'Unconfigured') %>
+                                            </strong>
+                                        </div>
+                                    </div>
+                                    <span class="badge <%= isTwilioActive ? 'bg-success text-white' : 'bg-secondary text-white' %> rounded-pill px-3 py-1" id="twilio_summary_badge">
+                                        <%= isTwilioActive ? 'Online' : 'Offline' %>
+                                    </span>
+                                </div>
+
                                 <!-- Key Settings List -->
                                 <ul class="list-group list-group-flush border rounded-3 mb-3">
                                     <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
                                         <span class="text-muted fs-12"><i class="fa fa-globe text-primary me-2"></i>Mail Server:</span>
-                                        <span class="fw-semibold font-monospace text-dark text-break fs-12" id="summary_host"><%= mail.host || '—' %></span>
+                                        <span class="fw-semibold font-monospace text-break fs-12" id="summary_host"><%= mail.host || '—' %></span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
                                         <span class="text-muted fs-12"><i class="fa fa-network-wired text-info me-2"></i>Port / Protocol:</span>
-                                        <span class="badge bg-light text-dark font-monospace border px-2 py-1 fs-12" id="summary_port"><%= mail.port ? (mail.port + ' (TCP)') : '—' %></span>
+                                        <span class="badge bg-light-subtle font-monospace border px-2 py-1 fs-12" id="summary_port"><%= mail.port ? (mail.port + ' (TCP)') : '—' %></span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
-                                        <span class="text-muted fs-12"><i class="fa fa-user text-secondary me-2"></i>Username:</span>
-                                        <span class="text-dark text-truncate fs-12 max-w-150" id="summary_user" title="<%= mail.username || '' %>"><%= mail.username || '—' %></span>
+                                        <span class="text-muted fs-12"><i class="fa fa-paper-plane text-success me-2"></i>From Email:</span>
+                                        <span class="text-truncate fs-12 max-w-150" id="summary_from" title="<%= mail.frommail || '' %>"><%= mail.frommail || '—' %></span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
-                                        <span class="text-muted fs-12"><i class="fa fa-paper-plane text-success me-2"></i>From Header:</span>
-                                        <span class="text-dark text-truncate fs-12 max-w-150" id="summary_from" title="<%= mail.frommail || '' %>"><%= mail.frommail || '—' %></span>
+                                        <span class="text-muted fs-12"><i class="fa fa-phone text-success me-2"></i>Twilio Phone:</span>
+                                        <span class="fw-semibold font-monospace fs-12" id="summary_twilio_phone"><%= twilio.fromPhone || twilio.phone || '—' %></span>
                                     </li>
                                 </ul>
 
                                 <% if (canEdit) { %>
-                                <div class="d-grid">
-                                    <button type="button" class="btn btn-outline-primary btn-sm py-2 fw-semibold" onclick="$('#submitFormBtn').click()">
-                                        <i class="fa fa-save me-1"></i> Apply &amp; Save Changes
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-primary btn-sm py-2 fw-semibold" onclick="$('#submitFormBtn').click()">
+                                        <i class="fa fa-save me-1"></i> Save Email &amp; Twilio Settings
                                     </button>
+                                    <a href="/tool/notificationsetting" class="btn btn-outline-secondary btn-sm py-2 fw-semibold">
+                                        <i class="fa fa-Sliders-h me-1"></i> Configure Event Switches &amp; Test
+                                    </a>
                                 </div>
                                 <% } %>
 
                             </div>
                         </div>
 
-                        <!-- Card 2: Quick SMTP Provider Reference -->
+                        <!-- Card 2: Quick SMTP & Twilio Reference -->
                         <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
                             <div class="card-header border-bottom py-3 px-4">
-                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center">
                                     <i class="fa fa-lightbulb text-warning me-2"></i>Quick Setup Guide
                                 </h5>
                             </div>
                             <div class="card-body p-4">
-                                
+
                                 <!-- Gmail Guide -->
                                 <div class="p-3 border rounded-3 mb-3 bg-light-subtle">
-                                    <div class="fw-bold text-dark mb-1 d-flex align-items-center">
+                                    <div class="fw-bold mb-1 d-flex align-items-center">
                                         <i class="fab fa-google text-danger me-2"></i> Google Workspace / Gmail
                                     </div>
                                     <div class="fs-12 text-muted">
-                                        1. Enable <strong>2-Step Verification</strong> on your Google Account.<br>
+                                        1. Enable <strong>2-Step Verification</strong> on Google.<br>
                                         2. Go to <strong>Security &gt; App Passwords</strong>.<br>
-                                        3. Create an App Password for <strong>Mail</strong>.<br>
-                                        4. Use Host: <code class="text-primary">smtp.gmail.com</code> | Port: <code class="text-primary">587</code>.<br>
-                                        5. Paste the 16-character code into the Password field.
+                                        3. Use Host: <code class="text-primary">smtp.gmail.com</code> | Port: <code class="text-primary">587</code>.
                                     </div>
                                 </div>
 
-                                <!-- Microsoft 365 Guide -->
-                                <div class="p-3 border rounded-3 mb-3 bg-light-subtle">
-                                    <div class="fw-bold text-dark mb-1 d-flex align-items-center">
-                                        <i class="fab fa-microsoft text-info me-2"></i> Microsoft 365 / Outlook
-                                    </div>
-                                    <div class="fs-12 text-muted">
-                                        Host: <code class="text-primary">smtp.office365.com</code> | Port: <code class="text-primary">587</code> (STARTTLS)<br>
-                                        Ensure SMTP AUTH is enabled on the tenant mailbox.
-                                    </div>
-                                </div>
-
-                                <!-- Custom Domain / cPanel -->
+                                <!-- Twilio Guide -->
                                 <div class="p-3 border rounded-3 bg-light-subtle">
-                                    <div class="fw-bold text-dark mb-1 d-flex align-items-center">
-                                        <i class="fa fa-hdd text-secondary me-2"></i> Custom Domain / cPanel
+                                    <div class="fw-bold mb-1 d-flex align-items-center">
+                                        <i class="fas fa-comment-sms text-success me-2"></i> Twilio SMS Setup
                                     </div>
                                     <div class="fs-12 text-muted">
-                                        Host: <code class="text-primary">mail.yourdomain.com</code><br>
-                                        Port: <code class="text-primary">465</code> (SSL) or <code class="text-primary">587</code> (TLS).
+                                        1. Copy your <strong>Account SID</strong> &amp; <strong>Auth Token</strong> from the Twilio Console.<br>
+                                        2. Enter your active Twilio phone number in <strong>E.164</strong> format (e.g. <code class="text-primary">+15550192834</code>).
                                     </div>
                                 </div>
 
-                            </div>
-                        </div>
-
-                        <!-- Card 3: Automated Notifications Info -->
-                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
-                            <div class="card-header border-bottom py-3 px-4">
-                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
-                                    <i class="fa fa-envelope-open-text text-success me-2"></i>Automated Triggers
-                                </h5>
-                            </div>
-                            <div class="card-body p-4">
-                                <div class="d-flex flex-column gap-3">
-                                    <div class="d-flex align-items-start gap-2">
-                                        <i class="fa fa-check-circle text-success mt-1"></i>
-                                        <div class="fs-12">
-                                            <strong class="text-dark d-block">POS Order Invoices</strong>
-                                            Sent immediately when a customer booking is created with valid customer email.
-                                        </div>
-                                    </div>
-                                    <div class="d-flex align-items-start gap-2">
-                                        <i class="fa fa-check-circle text-success mt-1"></i>
-                                        <div class="fs-12">
-                                            <strong class="text-dark d-block">Ready for Pickup Alerts</strong>
-                                            Notifies clients as soon as garments are cleaned, ironed, and ready.
-                                        </div>
-                                    </div>
-                                    <div class="d-flex align-items-start gap-2">
-                                        <i class="fa fa-check-circle text-success mt-1"></i>
-                                        <div class="fs-12">
-                                            <strong class="text-dark d-block">Payment Confirmations</strong>
-                                            Dispatches payment transaction receipts upon partial or full settlements.
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -395,11 +448,11 @@
 
     <script>
         $(document).ready(function () {
-            // 1. Password Visibility Toggle
+            // 1. SMTP Password Visibility Toggle
             $('#togglePasswordBtn').on('click', function () {
                 const passInput = $('#mail_password');
                 const eyeIcon = $('#passwordEyeIcon');
-                
+
                 if (passInput.attr('type') === 'password') {
                     passInput.attr('type', 'text');
                     eyeIcon.removeClass('fa-eye').addClass('fa-eye-slash');
@@ -409,11 +462,25 @@
                 }
             });
 
+            // 1b. Twilio Token Visibility Toggle
+            $('#toggleTwilioTokenBtn').on('click', function () {
+                const tokenInput = $('#twilio_auth_token');
+                const eyeIcon = $('#twilioTokenEyeIcon');
+
+                if (tokenInput.attr('type') === 'password') {
+                    tokenInput.attr('type', 'text');
+                    eyeIcon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    tokenInput.attr('type', 'password');
+                    eyeIcon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+
             // 2. Provider Presets Handler
             $('.host-preset-btn').on('click', function () {
                 const host = $(this).data('host');
                 const port = $(this).data('port');
-                
+
                 if (host) $('#mail_host').val(host).trigger('input');
                 if (port) $('#mail_port').val(port).trigger('input');
 
@@ -432,16 +499,20 @@
 
             // 4. Live Sync with Right Overview Card
             function syncOverview() {
-                const host = $('#mail_host').val().trim();
-                const port = $('#mail_port').val().trim();
-                const user = $('#mail_username').val().trim();
-                const from = $('#mail_frommail').val().trim();
+                const host = ($('#mail_host').val() || '').trim();
+                const port = ($('#mail_port').val() || '').trim();
+                const user = ($('#mail_username').val() || '').trim();
+                const from = ($('#mail_frommail').val() || '').trim();
                 const status = $('#mail_status').val();
+                const twilioSid = ($('#twilio_sid').val() || '').trim();
+                const twilioToken = ($('#twilio_auth_token').val() || '').trim();
+                const twilioPhone = ($('#twilio_phone_no').val() || '').trim();
+                const twilioStatus = $('#twilio_status').val();
 
                 $('#summary_host').text(host || '—');
                 $('#summary_port').text(port ? (port + ' (TCP)') : '—');
-                $('#summary_user').text(user || '—').attr('title', user);
                 $('#summary_from').text(from || '—').attr('title', from);
+                $('#summary_twilio_phone').text(twilioPhone || '—');
 
                 const isOnline = (status === '1' && host && user);
                 const banner = $('#summary_banner');
@@ -450,36 +521,42 @@
                 const badge = $('#summary_badge');
 
                 if (isOnline) {
-                    banner.removeClass('bg-light').addClass('bg-success-subtle border-success-subtle');
+                    banner.removeClass('bg-light-subtle').addClass('bg-success-subtle border-success-subtle');
                     bannerIcon.removeClass('fa-power-off text-muted').addClass('fa-check text-success');
                     statusText.text('Active & Ready');
                     badge.removeClass('bg-secondary').addClass('bg-success').text('Online');
                 } else if (status === '0') {
-                    banner.removeClass('bg-success-subtle border-success-subtle').addClass('bg-light');
+                    banner.removeClass('bg-success-subtle border-success-subtle').addClass('bg-light-subtle');
                     bannerIcon.removeClass('fa-check text-success').addClass('fa-power-off text-muted');
                     statusText.text('Paused / Disabled');
                     badge.removeClass('bg-success').addClass('bg-secondary').text('Offline');
                 } else {
-                    banner.removeClass('bg-success-subtle border-success-subtle').addClass('bg-light');
+                    banner.removeClass('bg-success-subtle border-success-subtle').addClass('bg-light-subtle');
                     bannerIcon.removeClass('fa-check text-success').addClass('fa-exclamation-triangle text-muted');
                     statusText.text('Incomplete Setup');
                     badge.removeClass('bg-success').addClass('bg-secondary').text('Incomplete');
                 }
+
+                const isTwilioOnline = (twilioStatus === '1' && twilioSid && twilioToken && twilioPhone);
+                const tBanner = $('#twilio_summary_banner');
+                const tStatusText = $('#twilio_summary_status_text');
+                const tBadge = $('#twilio_summary_badge');
+                if (isTwilioOnline) {
+                    tBanner.removeClass('bg-light-subtle').addClass('bg-success-subtle border-success-subtle');
+                    tStatusText.text('Active & Ready');
+                    tBadge.removeClass('bg-secondary').addClass('bg-success').text('Online');
+                } else if (twilioStatus === '0') {
+                    tBanner.removeClass('bg-success-subtle border-success-subtle').addClass('bg-light-subtle');
+                    tStatusText.text('Paused / Disabled');
+                    tBadge.removeClass('bg-success').addClass('bg-secondary').text('Offline');
+                } else {
+                    tBanner.removeClass('bg-success-subtle border-success-subtle').addClass('bg-light-subtle');
+                    tStatusText.text('Unconfigured');
+                    tBadge.removeClass('bg-success').addClass('bg-secondary').text('Offline');
+                }
             }
 
-            $('#mail_host, #mail_port, #mail_username, #mail_frommail, #mail_status').on('input change', syncOverview);
-
-            // 5. Form validation feedback
-            const form = document.getElementById('mailSettingForm');
-            if (form) {
-                form.addEventListener('submit', function (event) {
-                    if (!form.checkValidity()) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                }, false);
-            }
+            $('#mail_host, #mail_port, #mail_username, #mail_frommail, #mail_status, #twilio_sid, #twilio_auth_token, #twilio_phone_no, #twilio_status').on('input change', syncOverview);
         });
     </script>
 </body>

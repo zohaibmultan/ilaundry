@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt')
 var {DataDelete,DataUpdate,DataInsert,DataFind} = require("../middelwer/databaseQurey")
 
 const { paginateDataTable } = require("../middelwer/dataTableHelper");
+const { dispatchCustomerNotification } = require("../services/notificationService");
 
 router.get("/list", auth, async (req, res) => {
   const { id, roll, store, loginas } = req.user;
@@ -37,7 +38,7 @@ router.get("/list", auth, async (req, res) => {
     login = "customer";
   } else {
     const rolldetail = await DataFind(`
-      SELECT sr.*, r.roll_status, r.rollType 
+      SELECT sr.*, r.roll_status, r.rollType
       FROM tbl_staff_roll sr
       JOIN tbl_roll r ON sr.main_roll_id = r.id
       WHERE sr.id = ${roll}
@@ -107,7 +108,7 @@ router.get("/list/data", auth, async (req, res) => {
       scopeConditions.push(`tbl_customer.id = ${id}`);
     } else {
       const rolldetail = await DataFind(`
-        SELECT sr.*, r.roll_status, r.rollType 
+        SELECT sr.*, r.roll_status, r.rollType
         FROM tbl_staff_roll sr
         JOIN tbl_roll r ON sr.main_roll_id = r.id
         WHERE sr.id = ${roll}
@@ -166,16 +167,16 @@ router.get("/list/data", auth, async (req, res) => {
     );
 
     const result = await paginateDataTable(req, {
-      select: `tbl_customer.*, 
+      select: `tbl_customer.*,
                COALESCE(tbl_store.name, '') AS store,
                COALESCE(tbl_customer_type.code, '') AS customer_type_code,
                COALESCE(tbl_customer_type.description, '') AS customer_type_description,
                (
-                 SELECT COUNT(*) 
-                 FROM tbl_transections 
+                 SELECT COUNT(*)
+                 FROM tbl_transections
                  WHERE tbl_transections.customer_id = tbl_customer.id
                ) AS transiction`,
-      from: `tbl_customer 
+      from: `tbl_customer
              LEFT JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id
              LEFT JOIN tbl_customer_type ON (tbl_customer.customer_type = tbl_customer_type.name OR tbl_customer.customer_type = tbl_customer_type.code)`,
       searchColumns: [
@@ -408,7 +409,7 @@ router.post("/register", auth, async (req, res) => {
         req.flash("error", "No active store found to assign this customer!");
         return res.redirect(req.get("Referrer") || "/");
       }
-          
+
       const check_number = await DataFind(
         "SELECT * FROM tbl_customer WHERE number='" + number + "'"
       );
@@ -516,11 +517,29 @@ router.post("/register", auth, async (req, res) => {
         return res.redirect("back");
       }
 
+      if (data && data.insertId) {
+        dispatchCustomerNotification({
+          eventKey: "welcome_customer",
+          storeId: storeid,
+          customerId: data.insertId,
+        }).catch((e) => console.error("Welcome customer notification error:", e.message));
+      }
+
       req.flash(
         "success",
         "Your data has been sent to the administration for approval!"
       );
-      res.redirect("back");
+      const referrer = req.get("Referrer") || "";
+      if (data && data.insertId && referrer.includes("/pos")) {
+        await DataUpdate(
+          `tbl_cart`,
+          `customer_id='${data.insertId}', order_type='${safeCustomerType}'`,
+          `created_by='${loginas},${id}'`,
+          req.hostname,
+          req.protocol
+        );
+      }
+      return res.redirect("back");
     }
   } catch (error) {
     console.log(error);
@@ -615,7 +634,7 @@ router.get("/ledger/:id/data", auth, async (req, res) => {
     console.error("Customer ledger data error:", error);
     return res.status(500).json({ error: error.message, data: [] });
   }
-});    
+});
 
 
 router.get("/delete/:id", auth, async (req, res) => {

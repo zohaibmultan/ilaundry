@@ -496,15 +496,44 @@
                     <input type="hidden" id="pos_staff_store_id" value="<%= typeof assignedStoreId !== 'undefined' ? assignedStoreId : '' %>">
                     <input type="hidden" id="single-select" name="customer" value="<%= (customerList && customerList[0]) ? customerList[0].id : (cart.customer_id || 0) %>">
                   <% } else { %>
-                    <label class="pos-field-label mb-0">
-                      <%= language.Select_Customer || 'Select Customer' %> <span class="text-danger">*</span>
-                    </label>
-                    <a href="javascript:void(0)" class="btn btn-xs btn-primary-subtle text-primary border rounded-pill px-2 py-0 fw-semibold d-inline-flex align-items-center gap-1 fs-11" data-bs-toggle="modal" data-bs-target="#addcustomer">
-                      <i class="fa fa-plus fs-10"></i> <%= language.Add || 'Add' %>
-                    </a>
-                    <select id="single-select" name="customer" class="default-select wide w-100" data-live-search="true" required <%= (typeof showStoreSelect !== 'undefined' && showStoreSelect && (!cart.store_id || cart.store_id == 0)) ? 'disabled' : '' %>>
-                      <option value="0" disabled <%= (!cart.customer_id || cart.customer_id == 0) ? 'selected' : '' %>>
-                        <%= (typeof showStoreSelect !== 'undefined' && showStoreSelect && (!cart.store_id || cart.store_id == 0)) ? (language.Select_Store_First || 'Select Store First') : (language.Select_Customer || 'Select Customer') %>
+                    <%
+                      let selectedCustomerObj = null;
+                      customerList.forEach(function(x) {
+                        let isWalkIn = (!x.username || (x.name && x.name.toLowerCase().includes('walkin')));
+                        if (cart.customer_id == x.id || (!selectedCustomerObj && (typeof isDefaultCustomerEnabled === 'undefined' || isDefaultCustomerEnabled) && (typeof showStoreSelect !== 'undefined' && !showStoreSelect) && (!cart.customer_id || cart.customer_id == 0) && isWalkIn)) {
+                          selectedCustomerObj = x;
+                        }
+                      });
+                      let initialCustomerDisplayText = '';
+                      if (selectedCustomerObj) {
+                        let cName = (selectedCustomerObj.last_name && selectedCustomerObj.first_name)
+                          ? (selectedCustomerObj.last_name + ', ' + selectedCustomerObj.first_name)
+                          : (selectedCustomerObj.name || '');
+                        let cPhone = selectedCustomerObj.number || '';
+                        initialCustomerDisplayText = cPhone ? (cName + ' (' + cPhone + ')') : cName;
+                      }
+                      let isStoreUnselected = (typeof showStoreSelect !== 'undefined' && showStoreSelect && (!cart.store_id || cart.store_id == 0));
+                    %>
+                    <div class="d-flex align-items-center justify-content-between" style="margin-bottom: 5px">
+                      <label class="pos-field-label mb-0">
+                        <%= language.Select_Customer || 'Select Customer' %> <span class="text-danger">*</span>
+                      </label>
+                      <a href="javascript:void(0)" class="btn btn-xs btn-primary-subtle text-primary border rounded-pill px-2 py-0 fw-semibold d-inline-flex align-items-center gap-1 fs-11" data-bs-toggle="modal" data-bs-target="#addcustomer">
+                        <i class="fa fa-plus fs-10"></i> <%= language.Add || 'New Customer' %>
+                      </a>
+                    </div>
+                    <div class="input-group input-group-sm pos-cust-selector-trigger" id="pos_customer_trigger_box" role="button" tabindex="0" title="Click to search and select customer">
+                      <span class="input-group-text bg-light-subtle border-end-0 py-0 px-2 text-primary">
+                        <i class="fa fa-user"></i>
+                      </span>
+                      <input type="text" id="pos_customer_display_input" class="form-control pos-input-sm border-start-0 border-end-0 ps-1 fw-bold text-dark" readonly placeholder="<%= isStoreUnselected ? (language.Select_Store_First || 'Select Store First') : (language.Select_Customer || 'Click to select customer...') %>" value="<%= initialCustomerDisplayText %>">
+                      <span class="input-group-text bg-light-subtle border-start-0 py-0 px-2 text-primary">
+                        <i class="fa fa-search fs-11"></i>
+                      </span>
+                    </div>
+                    <select id="single-select" name="customer" class="d-none" required <%= isStoreUnselected ? 'disabled' : '' %>>
+                      <option value="0" disabled <%= (!selectedCustomerObj) ? 'selected' : '' %>>
+                        <%= isStoreUnselected ? (language.Select_Store_First || 'Select Store First') : (language.Select_Customer || 'Select Customer') %>
                       </option>
                       <% customerList.forEach(function(x) { %>
                       <%
@@ -514,10 +543,9 @@
                         } else {
                           showExtra = x.number;
                         }
-                        let isWalkIn = (!x.username || (x.name && x.name.toLowerCase().includes('walkin')));
-                        let selected = (cart.customer_id == x.id || ((typeof isDefaultCustomerEnabled === 'undefined' || isDefaultCustomerEnabled) && (typeof showStoreSelect !== 'undefined' && !showStoreSelect) && (!cart.customer_id || cart.customer_id == 0) && isWalkIn)) ? 'selected' : '';
+                        let isSelected = (selectedCustomerObj && selectedCustomerObj.id == x.id) ? 'selected' : '';
                       %>
-                      <option value="<%= x.id %>" data-customer-type="<%= x.customer_type || 'Counter & Counter' %>" data-address="<%= x.address || '' %>" data-city="<%= x.city || '' %>" data-state="<%= x.state || '' %>" data-zipcode="<%= x.zipcode || '' %>" <%= selected %>>
+                      <option value="<%= x.id %>" data-customer-type="<%= x.customer_type || 'Counter & Counter' %>" data-address="<%= x.address || '' %>" data-city="<%= x.city || '' %>" data-state="<%= x.state || '' %>" data-zipcode="<%= x.zipcode || '' %>" <%= isSelected %>>
                         <%= x.name %><% if (showExtra) { %> (<%= showExtra %>)<% } %>
                       </option>
                       <% }); %>
@@ -746,57 +774,67 @@
               <!-- Bottom Actions & Financial Summary Area -->
               <div class="pos-bottom-section">
                 <div class="<%= ((accessdata.logas == 'custmor' && accessdata.roll?.pos?.includes('write')) || (accessdata.roll?.pos && accessdata.roll.pos.includes('write'))) ? 'd-block' : 'd-none' %>">
-                  <div class="row g-2">
+                  <div class="row g-1">
                     <% if (isEditMode) { %>
                       <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini" style="width: 100% !important;" data-bs-toggle="modal" data-bs-target="#addons">
-                          <i class="fa fa-plus-circle me-2"></i><%= language.Addons %>
+                          <i class="fa fa-plus-circle me-1"></i><%= language.Addons %>
                         </button>
                       </div>
                       <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_POS_coupon_model_show">
-                          <i class="fa fa-tag me-2"></i><%= language.Coupon %>
+                          <i class="fa fa-tag me-1"></i><%= language.Coupon %>
                         </button>
                       </div>
                       <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_direct_save_btn">
-                          <i class="fa fa-save me-2"></i><%= language.Save || 'Save Order' %>
+                          <i class="fa fa-save me-1"></i><%= language.Save || 'Save Order' %>
                         </button>
                       </div>
                       <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_btn_pos_void">
-                          <i class="fa fa-ban me-2"></i><%= language.Void || 'Void' %>
+                          <i class="fa fa-ban me-1"></i><%= language.Void || 'Void' %>
                         </button>
                       </div>
                       <div class="col">
                         <a class="btn btn-primary pos-btn-mini w-100" href="/admin/pos">
-                          <i class="fa fa-plus me-2"></i><%= language.New || 'New Order' %>
+                          <i class="fa fa-plus me-1"></i><%= language.New || 'New Order' %>
                         </a>
+                      </div>
+                      <div class="col">
+                        <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_btn_pos_print">
+                          <i class="fa fa-print me-1"></i><span><%= language.Print || 'Print' %></span>
+                        </button>
                       </div>
                     <% } else { %>
                       <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" data-bs-toggle="modal" data-bs-target="#addons">
-                          <i class="fa fa-plus-circle me-2"></i><%= language.Addons %>
+                          <i class="fa fa-plus-circle me-1"></i><%= language.Addons %>
                         </button>
                       </div>
                       <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="POS_coupon_model_show">
-                          <i class="fa fa-tag me-2"></i><%= language.Coupon %>
+                          <i class="fa fa-tag me-1"></i><%= language.Coupon %>
                         </button>
                       </div>
                       <div class="col">
                         <button type="button" class="btn btn-danger pos-btn-mini w-100 fw-bold" id="btn_pos_void">
-                          <i class="fa fa-ban me-2"></i><%= language.Void || 'Void' %>
+                          <i class="fa fa-ban me-1"></i><%= language.Void || 'Void' %>
                         </button>
                       </div>
                       <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="btn_pos_new_order">
-                          <i class="fa fa-plus me-2"></i><span>New Order</span>
+                          <i class="fa fa-plus me-1"></i><span>New Order</span>
                         </button>
                       </div>
                       <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="btn_pos_save_draft">
-                          <i class="fa fa-save me-2"></i><span>Save Order</span>
+                          <i class="fa fa-save me-1"></i><span>Save Order</span>
+                        </button>
+                      </div>
+                      <div class="col">
+                        <button type="button" class="btn btn-primary pos-btn-mini w-100" id="btn_pos_direct_print">
+                          <i class="fa fa-print me-1"></i><span><%= language.Print || 'Print' %></span>
                         </button>
                       </div>
                     <% } %>
@@ -1009,9 +1047,14 @@
           <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">
             <i class="fa fa-times me-2"></i><%= language.Cancel %>
           </button>
-          <button class="btn btn-primary px-4 fw-semibold shadow-sm" type="submit" value="submit" id="edit_cart_submit_for_order">
-            <i class="fa fa-save me-2"></i><%= language.Save %>
-          </button>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary px-3 fw-semibold" type="submit" value="submit" id="edit_cart_submit_for_order">
+              <i class="fa fa-save me-2"></i><%= language.Save_Order || 'Save Order' %>
+            </button>
+            <button class="btn btn-primary px-4 fw-semibold shadow-sm" type="button" id="edit_modal_print_btn">
+              <i class="fa fa-print me-2"></i><%= language.Print || 'Print' %>
+            </button>
+          </div>
         </div>
       </form>
       <% } else { %>
@@ -1177,12 +1220,182 @@
               <i class="fa fa-save me-2"></i><%= language.Save_Order || 'Save Order' %>
             </button>
             <button class="btn btn-primary px-4 fw-semibold shadow-sm" type="submit" value="submit" id="printcheck">
-              <i class="fa fa-print me-2"></i><%= language.Save %> & <%= language.Print %>
+              <i class="fa fa-print me-2"></i><%= language.Print || 'Print' %>
             </button>
           </div>
         </div>
       </form>
       <% } %>
+    </div>
+  </div>
+
+  <!-- Modal Select Customer (Search List + Right Details Panel) -->
+  <div class="modal fade" id="pos_customer_select_modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down modal-xl" role="document">
+      <div class="modal-content">
+        <div class="modal-header border-bottom py-2.5 px-3 d-flex align-items-center justify-content-between">
+          <h5 class="modal-title d-flex align-items-center fw-bold mb-0">
+            <i class="fa fa-address-book text-primary me-2"></i><%= language.Select_Customer || 'Select Customer' %>
+          </h5>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" id="btn_modal_open_add_customer">
+              <i class="fa fa-user-plus me-1"></i><%= language.Add || 'New Customer' %>
+            </button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+        </div>
+
+        <div class="modal-body p-3">
+          <div class="row g-3 align-items-stretch">
+            <!-- Left Column: Search Filter & Customer List -->
+            <div class="col-12 col-md-6">
+              <div class="card border rounded-3 p-3 h-100 shadow-none d-flex flex-column pos-payment-card">
+                <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-2.5">
+                  <h6 class="fw-bold mb-0 text-primary d-flex align-items-center">
+                    <i class="fa fa-users me-2"></i><%= language.Customer_List || 'Customer Directory' %>
+                  </h6>
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-11" id="pos_cust_modal_count_badge">0 Customers</span>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="input-group mb-2">
+                  <span class="input-group-text bg-light-subtle text-primary border-end-0">
+                    <i class="fa fa-search"></i>
+                  </span>
+                  <input type="text" id="pos_cust_modal_search" class="form-control border-start-0" placeholder="Search by name, phone number, or email..." autocomplete="off">
+                  <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="btn_clear_cust_modal_search" title="Clear search">
+                    <i class="fa fa-times"></i>
+                  </button>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-1.5 px-1">
+                  <span class="text-muted fs-11">Click to preview details</span>
+                  <span class="text-muted fs-11"><i class="fa fa-bolt text-warning me-1"></i>Double-click to confirm</span>
+                </div>
+
+                <!-- Scrollable Customer List -->
+                <div id="pos_cust_modal_list" class="pos-cust-modal-list flex-grow-1 border rounded-3 overflow-auto">
+                  <!-- Populated dynamically via JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Full Customer Details Panel -->
+            <div class="col-12 col-md-6">
+              <div class="card border rounded-3 p-3 h-100 shadow-none d-flex flex-column justify-content-between pos-payment-card">
+                <!-- Empty / Unselected State -->
+                <div id="pos_cust_detail_empty" class="h-100 d-flex flex-column align-items-center justify-content-center text-center py-5">
+                  <div class="pos-empty-icon-wrap mb-3">
+                    <i class="fa fa-user-check"></i>
+                  </div>
+                  <h6 class="fw-bold mb-1">No Customer Selected</h6>
+                  <p class="text-muted fs-12 mb-0 px-4">
+                    Click on any customer from the left list to view their full contact profile, address, memo, and lifetime order summary.
+                  </p>
+                </div>
+
+                <!-- Selected Customer Details Content -->
+                <div id="pos_cust_detail_content" class="d-none h-100 d-flex flex-column justify-content-between">
+                  <div>
+                    <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                      <h6 class="fw-bold mb-0 text-primary d-flex align-items-center">
+                        <i class="fa fa-id-card me-2"></i><%= language.Customer_Details || 'Customer Details' %>
+                      </h6>
+                      <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fs-11" id="pos_cd_type_badge">Counter & Counter</span>
+                    </div>
+
+                    <!-- Profile Header -->
+                    <div class="d-flex align-items-center gap-3 p-2.5 rounded-3 bg-light-subtle border mb-3">
+                      <div class="pos-cd-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-primary flex-shrink-0" id="pos_cd_avatar">
+                        CU
+                      </div>
+                      <div class="overflow-hidden flex-grow-1">
+                        <div class="d-flex align-items-center justify-content-between gap-2">
+                          <h6 class="fw-bold mb-0 text-truncate" id="pos_cd_name">—</h6>
+                          <span class="badge bg-secondary-subtle text-secondary border fs-10" id="pos_cd_id_badge">#0</span>
+                        </div>
+                        <div class="text-muted fs-12 mt-0.5 text-truncate" id="pos_cd_store_name">Main Store</div>
+                      </div>
+                    </div>
+
+                    <!-- Contact & Address Breakdown -->
+                    <div class="row g-2 mb-3">
+                      <div class="col-12 col-sm-6">
+                        <div class="p-2 rounded border bg-light-subtle h-100">
+                          <div class="text-muted fs-11 fw-semibold mb-0.5">
+                            <i class="fa fa-phone-alt text-primary me-1"></i><%= language.Phone_Number || 'Phone Number' %>
+                          </div>
+                          <div class="fw-bold fs-13 text-break" id="pos_cd_phone">—</div>
+                        </div>
+                      </div>
+                      <div class="col-12 col-sm-6">
+                        <div class="p-2 rounded border bg-light-subtle h-100">
+                          <div class="text-muted fs-11 fw-semibold mb-0.5">
+                            <i class="fa fa-envelope text-primary me-1"></i><%= language.Email || 'Email Address' %>
+                          </div>
+                          <div class="fw-semibold fs-12 text-break" id="pos_cd_email">—</div>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="p-2 rounded border bg-light-subtle">
+                          <div class="text-muted fs-11 fw-semibold mb-0.5">
+                            <i class="fa fa-map-marker-alt text-danger me-1"></i><%= language.Address || 'Full Address' %>
+                          </div>
+                          <div class="fw-semibold fs-12 text-break" id="pos_cd_address">—</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Customer Memo / Notes -->
+                    <div class="p-2.5 rounded border bg-warning-subtle border-warning-subtle mb-3">
+                      <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="fs-11 fw-bold text-uppercase text-warning-emphasis">
+                          <i class="fa fa-sticky-note me-1"></i><%= language.Customer_Memo || 'Customer Memo / Notes' %>
+                        </span>
+                        <span class="fs-11 text-muted" id="pos_cd_tax"></span>
+                      </div>
+                      <div class="fs-12 fw-medium" id="pos_cd_memo">No notes recorded for this customer.</div>
+                    </div>
+                  </div>
+
+                  <!-- Lifetime Order Stats Footer inside Right Card -->
+                  <div class="border-top pt-2.5 mt-auto">
+                    <div class="row g-2 text-center">
+                      <div class="col-4">
+                        <div class="p-2 rounded border bg-light-subtle">
+                          <div class="fw-bold fs-6 text-primary" id="pos_cd_stat_total">0</div>
+                          <div class="text-muted fs-11">Total Orders</div>
+                        </div>
+                      </div>
+                      <div class="col-4">
+                        <div class="p-2 rounded border bg-light-subtle">
+                          <div class="fw-bold fs-6 text-warning" id="pos_cd_stat_unpaid">0</div>
+                          <div class="text-muted fs-11">Unpaid Orders</div>
+                        </div>
+                      </div>
+                      <div class="col-4">
+                        <div class="p-2 rounded border bg-danger-subtle border-danger-subtle">
+                          <div class="fw-bold fs-6 text-danger" id="pos_cd_stat_balance">$ 0.00</div>
+                          <div class="text-danger fs-11 fw-semibold">Balance Due</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer border-top bg-light-subtle d-flex justify-content-between align-items-center py-2 px-3">
+          <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">
+            <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+          </button>
+          <button type="button" class="btn btn-primary px-4 fw-bold shadow-sm" id="btn_pos_confirm_customer" disabled>
+            <i class="fa fa-check-circle me-2"></i>Confirm Selection
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1835,6 +2048,7 @@
       window.POS_READY_SCHEDULE = <%- JSON.stringify((typeof readySchedule !== 'undefined' && readySchedule) ? readySchedule : (typeof locals !== 'undefined' && locals.readySchedule ? locals.readySchedule : {})) %>;
       window.POS_INITIAL_CATEGORIES = <%- JSON.stringify((typeof categoryList !== 'undefined' && categoryList) ? categoryList : []) %>;
       window.POS_INITIAL_SUBCATEGORIES = <%- JSON.stringify((typeof subcategoryList !== 'undefined' && subcategoryList) ? subcategoryList : []) %>;
+      window.POS_CUSTOMER_LIST = <%- JSON.stringify((typeof customerList !== 'undefined' && customerList) ? customerList : []) %>;
 
       const serverUrl = "<%= (typeof storePrinterConfig !== 'undefined' && storePrinterConfig && storePrinterConfig.printing_server_url) ? storePrinterConfig.printing_server_url : (accessdata?.masterstore?.printing_server_url || 'http://127.0.0.1:4321') %>";
       const silentEnabled = <%= ((typeof storePrinterConfig !== 'undefined' && storePrinterConfig && storePrinterConfig.silent_print_enabled !== null && storePrinterConfig.silent_print_enabled !== undefined) ? (storePrinterConfig.silent_print_enabled != 0) : (accessdata?.masterstore?.silent_print_enabled !== 0)) ? 'true' : 'false' %>;
@@ -2190,6 +2404,363 @@
           }
         });
 
+        // =====================================================================
+        // POS Customer Selection Modal Controller (Search + Right Details Panel)
+        // =====================================================================
+        let modalSelectedCustomerId = null;
+
+        function escapeHtml(str) {
+          if (str === null || str === undefined) return '';
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+        }
+
+        function formatPosCustomerName(c) {
+          if (!c) return '';
+          const lName = (c.last_name || '').trim();
+          const fName = (c.first_name || '').trim();
+          if (lName && fName) return lName + ', ' + fName;
+          return (c.name || fName || lName || 'Customer').trim();
+        }
+
+        function formatPosCustomerDisplayText(c) {
+          if (!c) return '';
+          const cName = formatPosCustomerName(c);
+          const cPhone = (c.number || '').trim();
+          return cPhone ? (cName + ' (' + cPhone + ')') : cName;
+        }
+
+        function getCustomerInitials(c) {
+          const name = formatPosCustomerName(c);
+          if (!name) return 'CU';
+          const parts = name.replace(/,/g, ' ').trim().split(/\s+/).filter(Boolean);
+          if (parts.length >= 2) {
+            return (parts[0][0] + parts[1][0]).toUpperCase();
+          }
+          return name.substring(0, 2).toUpperCase();
+        }
+
+        window.syncPosCustomerDisplay = function(targetCustomerId) {
+          const custId = (targetCustomerId !== undefined && targetCustomerId !== null)
+            ? String(targetCustomerId)
+            : String($('#single-select').val() || '0');
+          const $displayInput = $('#pos_customer_display_input');
+          if (!$displayInput.length) return;
+
+          const isStoreUnselected = $('#pos_store_id').length > 0 && (!$('#pos_store_id').val() || $('#pos_store_id').val() === '0') && (!$('#pos_staff_store_id').val() || $('#pos_staff_store_id').val() === '0');
+          if (isStoreUnselected) {
+            $displayInput.val('');
+            $displayInput.attr('placeholder', '<%= language.Select_Store_First || "Select Store First" %>');
+            return;
+          }
+          $displayInput.attr('placeholder', '<%= language.Select_Customer || "Click to select customer..." %>');
+
+          if (!custId || custId === '0') {
+            $displayInput.val('');
+            return;
+          }
+
+          const list = Array.isArray(window.POS_CUSTOMER_LIST) ? window.POS_CUSTOMER_LIST : [];
+          const found = list.find(function(x) { return String(x.id) === custId; });
+          if (found) {
+            $displayInput.val(formatPosCustomerDisplayText(found));
+          } else {
+            const optText = $('#single-select option[value="' + custId + '"]').text().trim();
+            $displayInput.val(optText || '');
+          }
+        };
+
+        function renderPosCustomerModalDetails(c) {
+          if (!c) {
+            $('#pos_cust_detail_empty').removeClass('d-none').addClass('d-flex');
+            $('#pos_cust_detail_content').addClass('d-none').removeClass('d-flex');
+            $('#btn_pos_confirm_customer').prop('disabled', true);
+            return;
+          }
+
+          $('#pos_cust_detail_empty').addClass('d-none').removeClass('d-flex');
+          $('#pos_cust_detail_content').removeClass('d-none').addClass('d-flex');
+          $('#btn_pos_confirm_customer').prop('disabled', false);
+
+          const sym = document.querySelector('input[name="sym"]')?.value || '$';
+          const fullName = formatPosCustomerName(c);
+          const phone = (c.number && String(c.number).trim() !== '') ? String(c.number).trim() : '—';
+          const email = (c.email && String(c.email).trim() !== '') ? String(c.email).trim() : '—';
+          const addrParts = [c.address, c.city, c.state, c.zipcode].map(function(p) { return (p || '').trim(); }).filter(Boolean);
+          const fullAddress = addrParts.length > 0 ? addrParts.join(', ') : 'No address on file';
+          const custType = (c.customer_type && String(c.customer_type).trim() !== '') ? String(c.customer_type).trim() : 'Counter & Counter';
+          const storeName = (c.store_name && String(c.store_name).trim() !== '') ? String(c.store_name).trim() : 'Store Customer';
+          const memo = (c.memo && String(c.memo).trim() !== '') ? String(c.memo).trim() : '';
+          const taxNum = (c.taxnumber && String(c.taxnumber).trim() !== '') ? ('Tax ID: ' + String(c.taxnumber).trim()) : '';
+
+          $('#pos_cd_avatar').text(getCustomerInitials(c));
+          $('#pos_cd_name').text(fullName);
+          $('#pos_cd_id_badge').text('#' + c.id);
+          $('#pos_cd_type_badge').text(custType);
+          $('#pos_cd_store_name').text(storeName);
+          $('#pos_cd_phone').text(phone);
+          $('#pos_cd_email').text(email);
+          $('#pos_cd_address').text(fullAddress);
+          $('#pos_cd_tax').text(taxNum);
+
+          if (memo) {
+            $('#pos_cd_memo').text(memo).removeClass('text-muted fst-italic');
+          } else {
+            $('#pos_cd_memo').text('No notes recorded for this customer.').addClass('text-muted fst-italic');
+          }
+
+          const totalOrders = parseInt(c.total_orders, 10) || 0;
+          const unpaidOrders = parseInt(c.unpaid_orders, 10) || 0;
+          const unpaidAmt = parseFloat(c.unpaid_amount || 0).toFixed(2);
+
+          $('#pos_cd_stat_total').text(totalOrders);
+          $('#pos_cd_stat_unpaid').text(unpaidOrders);
+          $('#pos_cd_stat_balance').text(sym + ' ' + unpaidAmt);
+
+          // Fetch fresh live stats in background to ensure 100% real-time accuracy
+          fetch('/admin/customer-stats/' + encodeURIComponent(c.id))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+              if (data && data.success && data.stats && String(modalSelectedCustomerId) === String(c.id)) {
+                c.total_orders = data.stats.total_orders || 0;
+                c.unpaid_orders = data.stats.unpaid_orders || 0;
+                c.unpaid_amount = data.stats.unpaid_amount || 0;
+                if (data.stats.memo !== undefined) c.memo = data.stats.memo;
+
+                $('#pos_cd_stat_total').text(c.total_orders);
+                $('#pos_cd_stat_unpaid').text(c.unpaid_orders);
+                $('#pos_cd_stat_balance').text(sym + ' ' + parseFloat(c.unpaid_amount || 0).toFixed(2));
+                if (c.memo && String(c.memo).trim() !== '') {
+                  $('#pos_cd_memo').text(String(c.memo).trim()).removeClass('text-muted fst-italic');
+                }
+              }
+            })
+            .catch(function() {});
+        }
+
+        function renderPosCustomerModalList(query) {
+          const list = Array.isArray(window.POS_CUSTOMER_LIST) ? window.POS_CUSTOMER_LIST : [];
+          const q = (query || '').trim().toLowerCase();
+          const $container = $('#pos_cust_modal_list');
+          if (!$container.length) return;
+
+          const filtered = list.filter(function(c) {
+            if (!q) return true;
+            const fullName = formatPosCustomerName(c).toLowerCase();
+            const rawName = (c.name || '').toLowerCase();
+            const fName = (c.first_name || '').toLowerCase();
+            const lName = (c.last_name || '').toLowerCase();
+            const phone = String(c.number || '').toLowerCase();
+            const email = String(c.email || '').toLowerCase();
+            return fullName.includes(q) || rawName.includes(q) || fName.includes(q) || lName.includes(q) || phone.includes(q) || email.includes(q);
+          });
+
+          $('#pos_cust_modal_count_badge').text(filtered.length + (filtered.length === 1 ? ' Customer' : ' Customers'));
+
+          if (filtered.length === 0) {
+            $container.html(
+              '<div class="d-flex flex-column align-items-center justify-content-center text-center py-5 px-3">' +
+                '<div class="text-muted mb-2"><i class="fa fa-search fa-2x opacity-50"></i></div>' +
+                '<div class="fw-bold fs-13 mb-1">No matching customers found</div>' +
+                '<p class="text-muted fs-11 mb-3">No customer matches "' + escapeHtml(query) + '" by name, phone, or email.</p>' +
+                '<button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold" id="btn_empty_search_add_cust">' +
+                  '<i class="fa fa-user-plus me-1"></i>Add New Customer' +
+                '</button>' +
+              '</div>'
+            );
+            return;
+          }
+
+          let html = '<div class="list-group list-group-flush">';
+          filtered.forEach(function(c) {
+            const isSelected = modalSelectedCustomerId && String(c.id) === String(modalSelectedCustomerId);
+            const activeClass = isSelected ? ' active' : '';
+            const fullName = escapeHtml(formatPosCustomerName(c));
+            const phone = c.number ? escapeHtml(c.number) : '';
+            const email = c.email ? escapeHtml(c.email) : '';
+            const custType = escapeHtml(c.customer_type || 'Counter & Counter');
+            const initials = escapeHtml(getCustomerInitials(c));
+
+            let subLine = '';
+            if (phone) {
+              subLine += '<span class="me-3"><i class="fa fa-phone-alt me-1 opacity-75"></i>' + phone + '</span>';
+            }
+            if (email) {
+              subLine += '<span class="text-truncate"><i class="fa fa-envelope me-1 opacity-75"></i>' + email + '</span>';
+            }
+            if (!subLine) {
+              subLine = '<span class="fst-italic opacity-75">Walk-in / Default Profile</span>';
+            }
+
+            html +=
+              '<div class="list-group-item list-group-item-action pos-cust-list-item d-flex align-items-center justify-content-between gap-2 py-2.5 px-3 cursor-pointer' + activeClass + '" data-cust-id="' + escapeHtml(c.id) + '" role="button" tabindex="0">' +
+                '<div class="d-flex align-items-center gap-2.5 overflow-hidden">' +
+                  '<div class="pos-cust-list-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0">' +
+                    initials +
+                  '</div>' +
+                  '<div class="overflow-hidden">' +
+                    '<div class="fw-bold fs-13 text-truncate pos-cust-item-name">' + fullName + '</div>' +
+                    '<div class="fs-11 d-flex align-items-center flex-wrap pos-cust-item-sub text-muted">' + subLine + '</div>' +
+                  '</div>' +
+                '</div>' +
+                '<span class="badge bg-light-subtle text-dark border fs-10 flex-shrink-0 pos-cust-item-badge">' + custType + '</span>' +
+              '</div>';
+          });
+          html += '</div>';
+          $container.html(html);
+        }
+
+        function confirmPosCustomerSelection(custId) {
+          if (!custId || String(custId) === '0') return;
+          const list = Array.isArray(window.POS_CUSTOMER_LIST) ? window.POS_CUSTOMER_LIST : [];
+          const found = list.find(function(x) { return String(x.id) === String(custId); });
+
+          const $select = $('#single-select');
+          if ($select.find('option[value="' + custId + '"]').length === 0 && found) {
+            $select.append(
+              $('<option></option>')
+                .attr('value', found.id)
+                .attr('data-customer-type', found.customer_type || 'Counter & Counter')
+                .attr('data-address', found.address || '')
+                .attr('data-city', found.city || '')
+                .attr('data-state', found.state || '')
+                .attr('data-zipcode', found.zipcode || '')
+                .text(formatPosCustomerDisplayText(found))
+            );
+          }
+
+          $select.val(String(custId)).trigger('change');
+          window.syncPosCustomerDisplay(custId);
+          $('#pos_customer_select_modal').modal('hide');
+        }
+
+        window.openPosCustomerSelectModal = function() {
+          const $select = $('#single-select');
+          const isStoreUnselected = $('#pos_store_id').length > 0 && (!$('#pos_store_id').val() || $('#pos_store_id').val() === '0') && (!$('#pos_staff_store_id').val() || $('#pos_staff_store_id').val() === '0');
+          if ($select.prop('disabled') || isStoreUnselected) {
+            if (typeof toastr !== 'undefined') {
+              toastr.warning('<%= language.Select_Store_First || "Please select a store first." %>');
+            }
+            return;
+          }
+          $('#pos_customer_select_modal').modal('show');
+        };
+
+        // Trigger Modal when clicking on Customer display input or trigger box
+        $(document).on('click', '#pos_customer_trigger_box, #pos_customer_display_input', function(e) {
+          e.preventDefault();
+          window.openPosCustomerSelectModal();
+        });
+
+        $(document).on('keydown', '#pos_customer_trigger_box, #pos_customer_display_input', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            window.openPosCustomerSelectModal();
+          }
+        });
+
+        // Populate Modal on Show
+        $('#pos_customer_select_modal').on('show.bs.modal', function() {
+          $('#pos_cust_modal_search').val('');
+          $('#btn_clear_cust_modal_search').addClass('d-none');
+
+          const currentId = String($('#single-select').val() || '0');
+          const list = Array.isArray(window.POS_CUSTOMER_LIST) ? window.POS_CUSTOMER_LIST : [];
+          const currentObj = (currentId && currentId !== '0')
+            ? list.find(function(x) { return String(x.id) === currentId; })
+            : null;
+
+          modalSelectedCustomerId = currentObj ? String(currentObj.id) : null;
+          renderPosCustomerModalList('');
+          renderPosCustomerModalDetails(currentObj || null);
+        });
+
+        $('#pos_customer_select_modal').on('shown.bs.modal', function() {
+          $('#pos_cust_modal_search').trigger('focus');
+          const $activeItem = $('#pos_cust_modal_list .pos-cust-list-item.active');
+          if ($activeItem.length) {
+            $activeItem[0].scrollIntoView({ block: 'nearest' });
+          }
+        });
+
+        // Search input filtering (by Name, Phone, or Email)
+        $(document).on('input', '#pos_cust_modal_search', function() {
+          const val = $(this).val() || '';
+          if (val.trim().length > 0) {
+            $('#btn_clear_cust_modal_search').removeClass('d-none');
+          } else {
+            $('#btn_clear_cust_modal_search').addClass('d-none');
+          }
+          renderPosCustomerModalList(val);
+        });
+
+        $(document).on('click', '#btn_clear_cust_modal_search', function() {
+          $('#pos_cust_modal_search').val('').trigger('input').trigger('focus');
+        });
+
+        // Single-click customer row -> Preview full details on Right Panel
+        $(document).on('click', '#pos_cust_modal_list .pos-cust-list-item', function() {
+          const custId = $(this).attr('data-cust-id');
+          if (!custId) return;
+          modalSelectedCustomerId = String(custId);
+          $('#pos_cust_modal_list .pos-cust-list-item').removeClass('active');
+          $(this).addClass('active');
+
+          const list = Array.isArray(window.POS_CUSTOMER_LIST) ? window.POS_CUSTOMER_LIST : [];
+          const found = list.find(function(x) { return String(x.id) === String(custId); });
+          renderPosCustomerModalDetails(found || null);
+        });
+
+        // Double-click customer row -> Immediately confirm selection & close modal
+        $(document).on('dblclick', '#pos_cust_modal_list .pos-cust-list-item', function() {
+          const custId = $(this).attr('data-cust-id');
+          if (!custId) return;
+          confirmPosCustomerSelection(custId);
+        });
+
+        // Keyboard Enter on focused customer row -> Confirm selection
+        $(document).on('keydown', '#pos_cust_modal_list .pos-cust-list-item', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const custId = $(this).attr('data-cust-id');
+            if (custId) confirmPosCustomerSelection(custId);
+          }
+        });
+
+        // Confirm Selection Button Click
+        $(document).on('click', '#btn_pos_confirm_customer', function() {
+          if (!modalSelectedCustomerId) return;
+          confirmPosCustomerSelection(modalSelectedCustomerId);
+        });
+
+        // Switch from Customer Selection Modal to "+ New Customer" Modal
+        $(document).on('click', '#btn_modal_open_add_customer, #btn_empty_search_add_cust', function() {
+          const searchVal = ($('#pos_cust_modal_search').val() || '').trim();
+          $('#pos_customer_select_modal').modal('hide');
+          setTimeout(function() {
+            if (searchVal) {
+              if (/^\d+$/.test(searchVal)) {
+                $('#pos_add_cust_number').val(searchVal).trigger('input');
+              } else if (searchVal.includes('@')) {
+                $('#addcustomer input[name="email"]').val(searchVal);
+              } else {
+                const parts = searchVal.split(/\s+/);
+                if (parts.length > 1) {
+                  $('#addcustomer input[name="first_name"]').val(parts[0]);
+                  $('#addcustomer input[name="last_name"]').val(parts.slice(1).join(' '));
+                } else {
+                  $('#addcustomer input[name="last_name"]').val(searchVal);
+                }
+              }
+            }
+            $('#addcustomer').modal('show');
+          }, 200);
+        });
+
         // Add Customer Modal Setup
         $('#addcustomer').on('show.bs.modal', function() {
           const posStore = $('#pos_store_id').val();
@@ -2262,7 +2833,7 @@
               if (res && res.success) {
                 window.location.href = '/admin/posprint?id=' + encodeURIComponent(res.id || res.order_id);
               } else {
-                $submitBtn.prop('disabled', false).html('<i class="fa fa-print me-2"></i><%= language.Save %> & <%= language.Print %>');
+                $submitBtn.prop('disabled', false).html('<i class="fa fa-print me-2"></i><%= language.Print || "Print" %>');
                 const errMsg = (res && res.message) ? res.message : 'Error placing order. Please try again.';
                 if (typeof toastr !== 'undefined') {
                   toastr.error(errMsg);
@@ -2272,7 +2843,7 @@
               }
             },
             error: function(xhr) {
-              $submitBtn.prop('disabled', false).html('<i class="fa fa-print me-2"></i><%= language.Save %> & <%= language.Print %>');
+              $submitBtn.prop('disabled', false).html('<i class="fa fa-print me-2"></i><%= language.Print || "Print" %>');
               let errMsg = 'Server error placing order. Please try again.';
               try {
                 const parsed = JSON.parse(xhr.responseText);
