@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Privacy Policy | <%= brandName %></title>
+    <link rel="icon" type="image/png" sizes="16x16" href="/uploads/<%= masterShop.app_favicon || 'default.png' %>">
+    <link href="/vendor/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="/css/liquid-glass-theme.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <!-- Clean Minimalist Header -->
+    <header class="py-3 border-bottom bg-white shadow-sm">
+        <div class="container d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <a href="/" class="d-flex align-items-center gap-2 text-decoration-none text-dark">
+                <% if (masterShop.app_logo) { %>
+                    <img src="/uploads/<%= masterShop.app_logo %>" alt="<%= brandName %>" height="38" class="rounded">
+                <% } else { %>
+                    <i class="fas fa-tshirt text-primary fs-3"></i>
+                <% } %>
+                <span class="fw-bold fs-5 text-primary"><%= brandName %></span>
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <a href="/terms-and-conditions" class="text-decoration-none text-muted small fw-semibold">Terms &amp; Conditions</a>
+                <a href="/" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                    <i class="fas fa-sign-in-alt me-1"></i> Customer / Staff Login
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="container py-5 my-2" style="max-width: 920px;">
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+            <div class="border-bottom pb-4 mb-4">
+                <div class="badge bg-primary-subtle text-primary mb-2 px-3 py-1 rounded-pill fw-semibold">
+                    <i class="fas fa-shield-alt me-1"></i> Legal Disclosure
+                </div>
+                <h1 class="fw-bold display-6 text-dark mb-1">Privacy Policy</h1>
+                <p class="text-muted small mb-0">
+                    Effective Date: January 1, 2026 &bull; Last Updated: November 2026 &bull; Applicable Brand: <strong><%= brandName %></strong>
+                </p>
+            </div>
+
+            <div class="legal-content text-secondary lh-lg">
+                <section class="mb-4">
+                    <h5 class="fw-bold text-dark">1. Overview &amp; Introduction</h5>
+                    <p>
+                        Welcome to <strong><%= brandName %></strong> ("we," "our," or "us"). We respect your privacy and are committed to protecting the personal information you share with us. This Privacy Policy describes how we collect, use, and safeguard your personal information when you utilize our dry cleaning, laundry, garment care, and pickup/delivery services, including through our store Point of Sale (POS) counter, website, and mobile communications.
+                    </p>
+                </section>
+
+                <section class="mb-4">
+                    <h5 class="fw-bold text-dark">2. Information We Collect</h5>
+                    <p>
+                        We collect information you provide directly to us when dropping off garments at our store counter, registering an account, or scheduling route pickup and delivery:
+                    </p>
+                    <ul>
+                        <li><strong>Contact Information:</strong> Full name, mobile phone number, email address, physical delivery/pickup address, and zip code.</li>
+                        <li><strong>Order &amp; Garment Details:</strong> Service selections (dry cleaning, launder &amp; press, alterations), garment brand/type, itemized piece counts, fabric care preferences, and storage rack details.</li>
+                        <li><strong>Payment Information:</strong> Transaction receipts, payment method used (cash, card, on-account), transaction dates, and outstanding balances. We do not store sensitive payment card numbers on our local servers.</li>
+                    </ul>
+                </section>
+
+                <section class="mb-4">
+                    <h5 class="fw-bold text-dark">3. How We Use Your Information</h5>
+                    <p>
+                        We use the information we collect solely for legitimate business operations and customer care purposes, including:
+                    </p>
+                    <ul>
+                        <li>Processing, itemizing, and tracking your garment care orders throughout intake, cleaning, pressing, and assembly.</li>
+                        <li>Sending transactional notifications regarding order confirmations, intake itemization, ready-for-counter-pickup alerts, route delivery schedules, and digital payment receipts via SMS text message and email.</li>
+                        <li>Facilitating customer support inquiries and lost item verification.</li>
+                    </ul>
+                </section>
+
+                <!-- Crucial A2P Mandatory Carrier Disclosure Section -->
+                <section class="mb-4 p-4 rounded-3 border border-primary border-opacity-25 bg-light-subtle">
+                    <h5 class="fw-bold text-dark d-flex align-items-center gap-2">
+                        <i class="fas fa-comment-sms text-primary"></i> 4. SMS Text Messaging &amp; Mobile Data Protection
+                    </h5>
+                    <p class="mb-2 fw-semibold text-dark">
+                        We do not sell or share your SMS opt-in data or personal information with third parties for marketing purposes.
+                    </p>
+                    <p class="mb-0 small text-muted">
+                        No mobile information will be shared with third parties/affiliates for marketing/promotional purposes. All the above categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties under any circumstances.
+                    </p>
+                </section>
+
+                <section class="mb-4">
+                    <h5 class="fw-bold text-dark">5. SMS Opt-In &amp; Opt-Out Rights</h5>
+                    <p>
+                        When you provide your mobile phone number at our counter or via our customer intake forms, you consent to receive transactional SMS updates regarding your garment cleaning orders.
+                    </p>
+                    <ul>
+                        <li><strong>Opt-Out:</strong> You may cancel the SMS service at any time by texting <strong>STOP</strong> to our text number. Upon sending STOP, you will receive a final confirmation text, after which no further SMS messages will be sent.</li>
+                        <li><strong>Help:</strong> For support with our messaging program, text <strong>HELP</strong> to our text number or contact our store directly.</li>
+                        <li><strong>Rates:</strong> Standard message and data rates may apply depending on your mobile carrier plan.</li>
+                    </ul>
+                </section>
+
+                <section class="mb-4">
+                    <h5 class="fw-bold text-dark">6. Data Security &amp; Retention</h5>
+                    <p>
+                        We maintain appropriate physical, electronic, and procedural safeguards to protect your personal information from unauthorized access, alteration, or disclosure. We retain customer order records for as long as necessary to fulfill ongoing service obligations, provide order history, and comply with legal or tax obligations.
+                    </p>
+                </section>
+
+                <section class="mb-4">
+                    <h5 class="fw-bold text-dark">7. Contact Information</h5>
+                    <p class="mb-2">
+                        If you have questions, comments, or concerns about this Privacy Policy, please contact us at:
+                    </p>
+                    <div class="p-3 rounded-3 bg-light border">
+                        <strong class="d-block text-dark"><%= brandName %></strong>
+                        <span class="d-block"><i class="fas fa-phone-alt me-1 text-primary"></i> Phone: <%= supportPhone %></span>
+                        <span class="d-block"><i class="fas fa-envelope me-1 text-primary"></i> Email: <%= supportEmail %></span>
+                        <% if (supportAddress) { %>
+                            <span class="d-block"><i class="fas fa-map-marker-alt me-1 text-primary"></i> Address: <%= supportAddress %></span>
+                        <% } %>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Clean Minimalist Footer -->
+    <footer class="py-4 border-top bg-white text-center text-muted small">
+        <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+            <span>&copy; <%= new Date().getFullYear() %> <%= brandName %>. All rights reserved.</span>
+            <div class="d-flex gap-3">
+                <a href="/privacy-policy" class="text-decoration-none text-muted">Privacy Policy</a>
+                <a href="/terms-and-conditions" class="text-decoration-none text-muted">Terms &amp; Conditions</a>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>
+

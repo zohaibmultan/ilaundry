@@ -1702,4 +1702,54 @@ router.get("/lang/:id", async (req, res) => {
   }
 });
 
+// =========== Public Legal Pages (A2P Carrier Compliance) ============= //
+
+async function resolveLegalBrandDetails(req) {
+  const masterList = await DataFind("SELECT * FROM tbl_master_shop WHERE id=1 LIMIT 1");
+  const masterShop = masterList && masterList.length > 0 ? masterList[0] : {};
+
+  let brandName = "FOUR SEASONS ICLEANERS";
+  let supportPhone = "(516) 792-0530";
+  let supportEmail = "support@fourseasonsicleaners.com";
+  let supportAddress = "123 Main Street, Suite 100";
+
+  // Check store 20 (Four Seasons iCleaners) or master shop for real store info
+  const storeRows = await DataFind("SELECT * FROM tbl_store WHERE id = 20 OR delete_flage = 0 ORDER BY id = 20 DESC, id ASC LIMIT 1");
+  if (storeRows && storeRows.length > 0) {
+    const s = storeRows[0];
+    if (s.name) brandName = s.name.trim();
+    if (s.mobile_number) supportPhone = s.mobile_number.trim();
+    if (s.store_email) supportEmail = s.store_email.trim();
+    supportAddress = [s.address, s.city, s.state, s.zipcode].filter(Boolean).join(", ") || supportAddress;
+  } else if (masterShop.app_name) {
+    brandName = masterShop.app_name.trim();
+  }
+
+  return { masterShop, brandName, supportPhone, supportEmail, supportAddress };
+}
+
+router.get("/privacy-policy", async (req, res) => {
+  try {
+    const legalData = await resolveLegalBrandDetails(req);
+    return res.render("privacy_policy", legalData);
+  } catch (err) {
+    console.error("Error rendering privacy policy:", err);
+    return res.status(500).send("Error loading Privacy Policy");
+  }
+});
+
+router.get("/terms-and-conditions", async (req, res) => {
+  try {
+    const legalData = await resolveLegalBrandDetails(req);
+    return res.render("terms_and_conditions", legalData);
+  } catch (err) {
+    console.error("Error rendering terms and conditions:", err);
+    return res.status(500).send("Error loading Terms & Conditions");
+  }
+});
+
+router.get("/terms-of-service", (req, res) => {
+  return res.redirect(301, "/terms-and-conditions");
+});
+
 module.exports = router;

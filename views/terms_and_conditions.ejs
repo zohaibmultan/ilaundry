@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Terms &amp; Conditions | <%= brandName %></title>
+    <link rel="icon" type="image/png" sizes="16x16" href="/uploads/<%= masterShop.app_favicon || 'default.png' %>">
+    <link href="/vendor/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="/css/liquid-glass-theme.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <!-- Clean Minimalist Header -->
+    <header class="py-3 border-bottom bg-white shadow-sm">
+        <div class="container d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <a href="/" class="d-flex align-items-center gap-2 text-decoration-none text-dark">
+                <% if (masterShop.app_logo) { %>
+                    <img src="/uploads/<%= masterShop.app_logo %>" alt="<%= brandName %>" height="38" class="rounded">
+                <% } else { %>
+                    <i class="fas fa-tshirt text-primary fs-3"></i>
+                <% } %>
+                <span class="fw-bold fs-5 text-primary"><%= brandName %></span>
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <a href="/privacy-policy" class="text-decoration-none text-muted small fw-semibold">Privacy Policy</a>
+                <a href="/" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                    <i class="fas fa-sign-in-alt me-1"></i> Customer / Staff Login
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="container py-5 my-2" style="max-width: 920px;">
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+            <div class="border-bottom pb-4 mb-4">
+                <div class="badge bg-primary-subtle text-primary mb-2 px-3 py-1 rounded-pill fw-semibold">
+                    <i class="fas fa-file-contract me-1"></i> Terms of Service
+                </div>
+                <h1 class="fw-bold display-6 text-dark mb-1">Terms &amp; Conditions</h1>
+                <p class="text-muted small mb-0">
+                    Effective Date: January 1, 2026 &bull; Last Updated: November 2026 &bull; Applicable Brand: <strong><%= brandName %></strong>
+                </p>
+            </div>
+
+            <div class="legal-content text-secondary lh-lg">
+                <section class="mb-4">
+                    <h5 class="fw-bold text-dark">1. Agreement to Terms</h5>
+                    <p>
+                        These Terms &amp; Conditions ("Terms") constitute a legally binding agreement made between you and <strong><%= brandName %></strong> concerning your access to and use of our dry cleaning, laundry, garment pressing, alterations, and route delivery services. By submitting garments to our facility or using our customer portal, you agree that you have read, understood, and agreed to be bound by all of these Terms.
+                    </p>
+                </section>
+
+                <section class="mb-4">
+                    <h5 class="fw-bold text-dark">2. Garment Care &amp; Operational Policies</h5>
+                    <ul>
+                        <li><strong>Standard of Care:</strong> <%= brandName %> provides professional dry cleaning and laundry care according to care labels attached to garments. We exercise reasonable care to clean and process items in accordance with industry standards.</li>
+                        <li><strong>Fabric Inspection &amp; Pre-Existing Damage:</strong> While we inspect garments during intake, we cannot be held responsible for inherent manufacturer defects, color bleeding from non-colorfast fabrics, weak fibers, missing or fragile buttons/beads, or pre-existing tears and stains that do not respond to cleaning.</li>
+                        <li><strong>Unclaimed Items:</strong> Garments not retrieved within 90 days after the ready notification date may be subject to storage fees or disposition in accordance with local statutory unclaimed property laws.</li>
+                    </ul>
+                </section>
+
+                <!-- Crucial A2P Mandatory Carrier Disclosure Section -->
+                <section class="mb-4 p-4 rounded-3 border border-primary border-opacity-25 bg-light-subtle">
+                    <h5 class="fw-bold text-dark d-flex align-items-center gap-2">
+                        <i class="fas fa-mobile-alt text-primary"></i> 3. SMS Text Messaging Terms (A2P Mobile Communications)
+                    </h5>
+                    <p class="mb-2">
+                        <strong><%= brandName %></strong> offers an automated customer notification program to keep you updated on the status of your garments.
+                    </p>
+                    <ul class="mb-3">
+                        <li><strong>Program Description:</strong> When you provide your mobile phone number, you consent to receive recurring automated SMS messages from <strong><%= brandName %></strong> regarding order placement confirmations, route pickup schedules, intake itemization breakdowns, cleaning status updates, ready-for-counter-pickup notifications, route delivery schedules, and digital payment receipts.</li>
+                        <li><strong>Cost &amp; Rates:</strong> <strong>Message and data rates may apply</strong> for any messages sent to you from us and to us from you. Check with your mobile carrier for your plan details.</li>
+                        <li><strong>Frequency:</strong> Message frequency varies depending on your active order volume and garment cleaning activity. Typically 1 to 4 SMS notifications per order cycle.</li>
+                        <li><strong>Opt-Out Instructions:</strong> You can cancel the SMS service at any time. Simply reply <strong>STOP</strong> to any text message from us. After you text <strong>STOP</strong>, we will send you an SMS message confirming that you have been unsubscribed. After this confirmation, you will no longer receive SMS messages from us. If you wish to rejoin in the future, reply <strong>START</strong> or <strong>UNSTOP</strong>.</li>
+                        <li><strong>Customer Support:</strong> If you experience issues with the messaging program, reply with the keyword <strong>HELP</strong> for more assistance, or contact our customer support team directly at <%= supportPhone %> or <%= supportEmail %>.</li>
+                        <li><strong>Carrier Liability Disclaimer:</strong> Mobile carriers (including but not limited to AT&amp;T, T-Mobile, Verizon, Sprint, and others) are not liable for delayed or undelivered messages.</li>
+                    </ul>
+                    <p class="mb-0 small text-muted">
+                        For information regarding how we handle your personal data, please review our <a href="/privacy-policy" class="text-primary fw-semibold">Privacy Policy</a>.
+                    </p>
+                </section>
+
+                <section class="mb-4">
+                    <h5 class="fw-bold text-dark">4. Payment &amp; Billing</h5>
+                    <p>
+                        Prices for cleaning and alterations are established in our store service catalog and itemized on your intake receipt. Payment is due upon drop-off or counter pickup, unless you have an approved corporate on-account billing agreement. We accept standard electronic credit/debit card payments, cash, and digital payments.
+                    </p>
+                </section>
+
+                <section class="mb-4">
+                    <h5 class="fw-bold text-dark">5. Limitation of Liability</h5>
+                    <p>
+                        In the unlikely event of damage or loss of an item caused directly by our negligence, liability is limited in accordance with the International Fabricare Institute (IFI) Fair Claims Guide and shall not exceed ten (10) times our cleaning charge for the affected garment, unless a higher declared value was submitted in writing prior to intake.
+                    </p>
+                </section>
+
+                <section class="mb-4">
+                    <h5 class="fw-bold text-dark">6. Contact Information</h5>
+                    <p class="mb-2">
+                        For any questions regarding these Terms &amp; Conditions, please contact us:
+                    </p>
+                    <div class="p-3 rounded-3 bg-light border">
+                        <strong class="d-block text-dark"><%= brandName %></strong>
+                        <span class="d-block"><i class="fas fa-phone-alt me-1 text-primary"></i> Phone: <%= supportPhone %></span>
+                        <span class="d-block"><i class="fas fa-envelope me-1 text-primary"></i> Email: <%= supportEmail %></span>
+                        <% if (supportAddress) { %>
+                            <span class="d-block"><i class="fas fa-map-marker-alt me-1 text-primary"></i> Address: <%= supportAddress %></span>
+                        <% } %>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Clean Minimalist Footer -->
+    <footer class="py-4 border-top bg-white text-center text-muted small">
+        <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+            <span>&copy; <%= new Date().getFullYear() %> <%= brandName %>. All rights reserved.</span>
+            <div class="d-flex gap-3">
+                <a href="/privacy-policy" class="text-decoration-none text-muted">Privacy Policy</a>
+                <a href="/terms-and-conditions" class="text-decoration-none text-muted">Terms &amp; Conditions</a>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>
+
