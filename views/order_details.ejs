@@ -121,7 +121,11 @@
                   <span class="text-muted"><%= language.Target_Ready || 'Target Ready' %>:</span>
                   <strong class="text-dark ms-1"><%= formatNiceDateTime(order.ready_date || order.delivery_date) %></strong>
                 </p>
-                <div class="d-flex align-items-center">
+                <%
+                  const orderAssignedRacks = (typeof assignedRacks !== 'undefined' && Array.isArray(assignedRacks)) ? assignedRacks : [];
+                  const isOrderTerminalStatus = [4, 5, 6].includes(Number(order.order_status)) || String(order.is_delivered) === '1';
+                %>
+                <div class="d-flex align-items-center flex-wrap gap-2">
                   <div>
                     <%= language.Order_Status %> :
                   </div>
@@ -136,7 +140,7 @@
                     <ul class="dropdown-menu shadow-lg border-0" style="z-index: 1060;">
                       <% Ordersatus.forEach(function(data) { %>
                       <li>
-                        <a class="dropdown-item" href="javascript:void(0)" onclick="changeOrderStatus('<%= data.id %>', '<%= order.id %>')">
+                        <a class="dropdown-item" href="javascript:void(0)" onclick="handleOrderDetailStatusClick('<%= data.id %>', '<%= String(data.status || '').replace(/'/g, "\\'") %>', '<%= order.id %>')">
                           <%= data.status %>
                         </a>
                       </li>
@@ -152,6 +156,24 @@
                     </ul>
                     <% } %>
                   </div>
+
+                  <% if (orderAssignedRacks.length > 0) { %>
+                  <div class="d-inline-flex align-items-center flex-wrap gap-1 ms-1" id="header_assigned_racks_wrap">
+                    <span class="badge bg-info-subtle text-info border py-1 px-2 d-inline-flex align-items-center gap-1">
+                      <i class="fa fa-layer-group"></i>
+                      <span>Rack<%= orderAssignedRacks.length > 1 ? 's' : '' %>: <strong><%= orderAssignedRacks.map(r => r.rack_name).join(', ') %></strong></span>
+                    </span>
+                    <% if (canEditOrder && !isOrderTerminalStatus) { %>
+                    <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2" onclick="openOrderRacksModal(null)" title="Change Assigned Racks">
+                      <i class="fas fa-pencil-alt me-1"></i>Change Racks
+                    </button>
+                    <% } %>
+                  </div>
+                  <% } else if (canEditOrder && Number(order.order_status) === 3 && !isOrderTerminalStatus) { %>
+                  <button type="button" class="btn btn-xs btn-outline-info py-1 px-2 ms-1" onclick="openOrderRacksModal(null)">
+                    <i class="fa fa-layer-group me-1"></i>Assign Racks
+                  </button>
+                  <% } %>
 
                 </div>
 
@@ -1366,6 +1388,67 @@
     </div>
   </div>
 
+  <!-- Select Order Racks Modal (Opened when changing status to 'Ready To deliver' or clicking Change Racks) -->
+  <div class="modal fade" id="assignOrderRacksModal" tabindex="-1" aria-labelledby="assignOrderRacksModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 540px;">
+      <div class="modal-content">
+        <div class="modal-header border-bottom py-3 px-4">
+          <div>
+            <h5 class="modal-title fw-bold d-flex align-items-center mb-0" id="assignOrderRacksModalLabel">
+              <i class="fa fa-layer-group text-primary me-2"></i>
+              <span id="assignOrderRacksModalTitle">Select Racks for Order #<%= order.order_id %></span>
+            </h5>
+            <small class="text-muted">Select one or multiple garment racks where this order is stored</small>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          <!-- Search & Quick Add Rack Toolbar -->
+          <div class="row g-2 mb-3">
+            <div class="col-12 col-sm-6">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
+                <input type="search" class="form-control" id="modal_rack_search_input" placeholder="Search racks...">
+              </div>
+            </div>
+            <div class="col-12 col-sm-6">
+              <div class="input-group input-group-sm">
+                <input type="text" class="form-control" id="quick_add_rack_name" placeholder="+ Quick add rack name">
+                <button type="button" class="btn btn-outline-primary fw-semibold" id="btn_quick_add_rack" onclick="quickAddRackFromModal()">
+                  <i class="fa fa-plus me-1"></i>Add
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="small fw-bold text-uppercase text-muted">Available Store Racks</span>
+            <span class="badge bg-primary-subtle text-primary border" id="modal_selected_racks_count">0 Selected</span>
+          </div>
+
+          <div id="modal_racks_checklist" class="list-group gap-2" style="max-height: 290px; overflow-y: auto;">
+            <!-- Populated dynamically via openOrderRacksModal() -->
+          </div>
+        </div>
+
+        <div class="modal-footer border-top py-2 px-4 d-flex justify-content-between align-items-center">
+          <a href="/order/racks" class="small text-primary text-decoration-none fw-semibold">
+            <i class="fa fa-cog me-1"></i>Manage All Racks
+          </a>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+              <i class="fa fa-times me-1"></i><%= language.Cancel || 'Cancel' %>
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" id="btn_confirm_order_racks" onclick="submitOrderRacksSelection()">
+              <i class="fa fa-check me-1"></i><span>Confirm Selection</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!--**********************************
             Footer start
         ***********************************-->
@@ -1700,6 +1783,251 @@
           } else {
             alert(errorMsg);
           }
+        }
+      });
+    }
+
+    // ==========================================
+    // MULTI-RACK SELECTION MODAL FOR 'READY TO DELIVER'
+    // ==========================================
+    var pendingRackStatusId = null;
+    var cachedOrderRacks = <%- JSON.stringify((typeof storeRacks !== 'undefined' && Array.isArray(storeRacks)) ? storeRacks : []) %>;
+    var selectedOrderRackIds = new Set(
+      <%- JSON.stringify(((typeof assignedRacks !== 'undefined' && Array.isArray(assignedRacks)) ? assignedRacks : []).map(r => String(r.id))) %>
+    );
+
+    function escapeRackHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function handleOrderDetailStatusClick(statusId, statusName, orderId) {
+      var sIdNum = parseInt(statusId, 10);
+      var sNameLower = String(statusName || '').toLowerCase();
+      // When user selects 'Ready To deliver' (id=3 or label contains 'ready'), open multi-rack selection modal
+      if (sIdNum === 3 || sNameLower.includes('ready')) {
+        openOrderRacksModal(sIdNum);
+      } else {
+        changeOrderStatus(statusId, orderId);
+      }
+    }
+
+    function updateSelectedRacksCounter() {
+      var countEl = document.getElementById('modal_selected_racks_count');
+      if (countEl) {
+        countEl.textContent = selectedOrderRackIds.size + ' Selected';
+      }
+    }
+
+    function renderOrderRacksChecklist(filterQuery) {
+      var listEl = document.getElementById('modal_racks_checklist');
+      if (!listEl) return;
+
+      var q = String(filterQuery || '').trim().toLowerCase();
+      var filtered = cachedOrderRacks.filter(function(r) {
+        if (!q) return true;
+        return String(r.rack_name || '').toLowerCase().includes(q);
+      });
+
+      if (filtered.length === 0) {
+        listEl.innerHTML =
+          '<div class="text-center py-4 text-muted border rounded bg-light-subtle">' +
+          '<i class="fa fa-layer-group fa-2x mb-2 d-block opacity-50"></i>' +
+          '<div class="fw-semibold">No racks found</div>' +
+          '<div class="small">Use the "+ Quick add rack name" box above to create a rack now.</div>' +
+          '</div>';
+        updateSelectedRacksCounter();
+        return;
+      }
+
+      var html = '';
+      filtered.forEach(function(r) {
+        var rIdStr = String(r.id);
+        var isChecked = selectedOrderRackIds.has(rIdStr);
+        var items = parseInt(r.itemCount || 0, 10);
+        var orders = parseInt(r.orderCount || 0, 10);
+        var loadBadge = orders > 0
+          ? '<span class="badge bg-success-subtle text-success border"><i class="fa fa-tshirt me-1"></i>' + items + ' ' + (items === 1 ? 'Item' : 'Items') + ' (' + orders + ' ' + (orders === 1 ? 'Order' : 'Orders') + ')</span>'
+          : '<span class="badge bg-light-subtle text-muted border">0 Items (Empty)</span>';
+
+        html +=
+          '<label class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3 border rounded cursor-pointer mb-0 ' + (isChecked ? 'border-primary bg-primary-subtle' : '') + '">' +
+            '<div class="d-flex align-items-center gap-3">' +
+              '<input class="form-check-input flex-shrink-0 m-0 order-rack-checkbox" type="checkbox" value="' + escapeRackHtml(rIdStr) + '" ' + (isChecked ? 'checked' : '') + '>' +
+              '<div>' +
+                '<div class="fw-bold text-dark"><i class="fa fa-layer-group text-primary me-1"></i>' + escapeRackHtml(r.rack_name) + '</div>' +
+              '</div>' +
+            '</div>' +
+            loadBadge +
+          '</label>';
+      });
+
+      listEl.innerHTML = html;
+      updateSelectedRacksCounter();
+    }
+
+    $(document).on('change', '.order-rack-checkbox', function() {
+      var val = String($(this).val());
+      var $label = $(this).closest('label');
+      if (this.checked) {
+        selectedOrderRackIds.add(val);
+        $label.addClass('border-primary bg-primary-subtle');
+      } else {
+        selectedOrderRackIds.delete(val);
+        $label.removeClass('border-primary bg-primary-subtle');
+      }
+      updateSelectedRacksCounter();
+    });
+
+    $(document).on('input', '#modal_rack_search_input', function() {
+      renderOrderRacksChecklist($(this).val());
+    });
+
+    function openOrderRacksModal(statusId) {
+      pendingRackStatusId = statusId ? parseInt(statusId, 10) : null;
+      var btnEl = document.getElementById('btn_confirm_order_racks');
+      if (btnEl) {
+        btnEl.disabled = false;
+        btnEl.innerHTML = pendingRackStatusId
+          ? '<i class="fa fa-check me-1"></i><span>Confirm & Mark Ready to Deliver</span>'
+          : '<i class="fa fa-save me-1"></i><span>Save Assigned Racks</span>';
+      }
+
+      $('#modal_rack_search_input').val('');
+      renderOrderRacksChecklist('');
+
+      var modalEl = document.getElementById('assignOrderRacksModal');
+      if (modalEl) {
+        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+      }
+
+      // Refresh live rack item counts from server
+      $.ajax({
+        type: 'GET',
+        url: '/order/racks/for-order/<%= order.id %>',
+        dataType: 'json',
+        success: function(res) {
+          if (res && res.success && Array.isArray(res.racks)) {
+            cachedOrderRacks = res.racks;
+            if (Array.isArray(res.selectedRackIds) && res.selectedRackIds.length > 0 && selectedOrderRackIds.size === 0) {
+              res.selectedRackIds.forEach(function(id) {
+                selectedOrderRackIds.add(String(id));
+              });
+            }
+            renderOrderRacksChecklist($('#modal_rack_search_input').val());
+          }
+        }
+      });
+    }
+
+    function quickAddRackFromModal() {
+      var $input = $('#quick_add_rack_name');
+      var name = String($input.val() || '').trim();
+      if (!name) {
+        if (typeof toastr !== 'undefined') toastr.warning('Please enter a rack name');
+        $input.focus();
+        return;
+      }
+
+      var $btn = $('#btn_quick_add_rack');
+      $btn.prop('disabled', true);
+
+      $.ajax({
+        type: 'POST',
+        url: '/order/racks/add',
+        data: {
+          rack_name: name,
+          store_id: '<%= order.store_id %>',
+          ajax: '1'
+        },
+        dataType: 'json',
+        success: function(res) {
+          $btn.prop('disabled', false);
+          if (res && res.success && res.rack) {
+            $input.val('');
+            cachedOrderRacks.push(res.rack);
+            cachedOrderRacks.sort(function(a, b) {
+              return String(a.rack_name || '').localeCompare(String(b.rack_name || ''));
+            });
+            selectedOrderRackIds.add(String(res.rack.id));
+            renderOrderRacksChecklist($('#modal_rack_search_input').val());
+            if (typeof toastr !== 'undefined') toastr.success(res.message || 'Rack added and selected');
+          } else {
+            if (typeof toastr !== 'undefined') toastr.error((res && res.message) || 'Failed to add rack');
+          }
+        },
+        error: function(xhr) {
+          $btn.prop('disabled', false);
+          var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to add rack';
+          if (typeof toastr !== 'undefined') toastr.error(msg);
+        }
+      });
+    }
+
+    $('#quick_add_rack_name').on('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        quickAddRackFromModal();
+      }
+    });
+
+    function submitOrderRacksSelection() {
+      var rackIds = Array.from(selectedOrderRackIds);
+      if (rackIds.length === 0) {
+        if (typeof toastr !== 'undefined') {
+          toastr.warning('Please select at least one rack for this order');
+        } else {
+          alert('Please select at least one rack for this order');
+        }
+        return;
+      }
+
+      var btnEl = document.getElementById('btn_confirm_order_racks');
+      if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i><span>Saving...</span>';
+      }
+
+      $.ajax({
+        type: 'POST',
+        url: '/order/assign-racks',
+        contentType: 'application/json',
+        data: JSON.stringify({
+          order_id: '<%= order.id %>',
+          rack_ids: rackIds,
+          status_id: pendingRackStatusId
+        }),
+        dataType: 'json',
+        success: function(res) {
+          if (res && res.status === 'success') {
+            if (typeof toastr !== 'undefined') {
+              toastr.success(res.message || 'Order racks saved successfully');
+            }
+            setTimeout(function() {
+              location.reload();
+            }, 700);
+          } else {
+            if (btnEl) {
+              btnEl.disabled = false;
+              btnEl.innerHTML = '<i class="fa fa-check me-1"></i><span>Confirm Selection</span>';
+            }
+            if (typeof toastr !== 'undefined') {
+              toastr.error((res && res.message) || 'Failed to save racks');
+            }
+          }
+        },
+        error: function(xhr) {
+          if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.innerHTML = '<i class="fa fa-check me-1"></i><span>Confirm Selection</span>';
+          }
+          var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error saving rack assignment';
+          if (typeof toastr !== 'undefined') toastr.error(msg);
         }
       });
     }

@@ -22,15 +22,45 @@ async function ensureSettingsTable() {
         sms_enabled TINYINT(1) NOT NULL DEFAULT 1,
         push_enabled TINYINT(1) NOT NULL DEFAULT 1,
         events_config LONGTEXT NULL,
+        templates_config LONGTEXT NULL,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY idx_notif_store_id (store_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
+    const [cols] = await promiseConn.query("SHOW COLUMNS FROM tbl_notification_settings");
+    if (!cols.some((c) => c.Field === "templates_config")) {
+      await promiseConn.query(
+        "ALTER TABLE tbl_notification_settings ADD COLUMN templates_config LONGTEXT NULL AFTER events_config"
+      );
+    }
     tableVerified = true;
   } catch (e) {
     console.error("Warning: ensureSettingsTable failed:", e.message);
   }
 }
+
+/**
+ * Supported Dynamic Template Variables (Merge Tags)
+ */
+const TEMPLATE_VARIABLES = [
+  { tag: "{customer_name}", label: "Customer Name", sample: "John Smith" },
+  { tag: "{order_id}", label: "Order Number", sample: "ORD-1024" },
+  { tag: "{store_name}", label: "Store Name", sample: "FOUR SEASONS ICLEANERS" },
+  { tag: "{store_phone}", label: "Store Phone", sample: "(718) 555-0199" },
+  { tag: "{store_email}", label: "Store Email", sample: "info@icleaners.com" },
+  { tag: "{store_address}", label: "Store Address", sample: "123 Main St, NY" },
+  { tag: "{gross_total}", label: "Order Gross Total", sample: "$48.50" },
+  { tag: "{paid_amount}", label: "Total Paid Amount", sample: "$20.00" },
+  { tag: "{balance_due}", label: "Remaining Balance", sample: "$28.50" },
+  { tag: "{total_pieces}", label: "Total Garment Pieces", sample: "4" },
+  { tag: "{ready_date}", label: "Target Ready Date/Time", sample: "Nov 5, 2026 at 4:00 PM" },
+  { tag: "{delivery_date}", label: "Route Delivery Date/Time", sample: "Nov 5, 2026 at 5:00 PM" },
+  { tag: "{pickup_date}", label: "Route Pick-up Date/Time", sample: "Nov 3, 2026 at 10:00 AM" },
+  { tag: "{rack_names}", label: "Assigned Rack(s)", sample: "Rack A1, Rack B2" },
+  { tag: "{paid_now}", label: "Payment Just Received", sample: "$20.00" },
+  { tag: "{payment_method}", label: "Payment Method", sample: "Cash" },
+  { tag: "{cancel_reason}", label: "Cancellation Reason", sample: "Customer request" },
+];
 
 /**
  * Master catalog of all 12 Customer Notification Events
@@ -47,7 +77,11 @@ const NOTIFICATION_EVENTS = [
     description: "Sent immediately when a new order is placed at the counter with itemized summary, gross total, paid amount, balance due, and estimated ready date.",
     defaultEmail: true,
     defaultSms: true,
-    sampleSms: "Hi {customer_name}, thank you for your order #{order_id} at {store_name}! Total: {gross_total} (Balance: {balance_due}). Ready by: {ready_date}."
+    defaultEmailSubject: "Order Confirmation #{order_id} - {store_name}",
+    defaultEmailHeadline: "Thank You for Your Order!",
+    defaultEmailBody: "Hi {customer_name}, we have received your garments at {store_name}. Below is your order summary and target completion schedule.",
+    defaultSmsBody: "Hi {customer_name}, thank you for your order #{order_id} at {store_name} ({total_pieces} pcs)! Total: {gross_total} (Balance: {balance_due}). Ready by: {ready_date}.",
+    sampleSms: "Hi {customer_name}, thank you for your order #{order_id} at {store_name} ({total_pieces} pcs)! Total: {gross_total} (Balance: {balance_due}). Ready by: {ready_date}."
   },
   {
     key: "route_pickup_scheduled",
@@ -59,7 +93,11 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when a Route Pick-up order (including 0-item pending intake) is scheduled, confirming the pickup date and 1-hour driver time slot.",
     defaultEmail: true,
     defaultSms: true,
-    sampleSms: "Hi {customer_name}, your garment pick-up (#{order_id}) with {store_name} is scheduled for {pickup_date}. Our driver will collect your items during this window."
+    defaultEmailSubject: "Route Pick-up Scheduled (#{order_id}) - {store_name}",
+    defaultEmailHeadline: "Your Garment Pick-up is Scheduled",
+    defaultEmailBody: "Hi {customer_name}, your route garment pick-up with {store_name} has been scheduled for {pickup_date}. Once our driver brings your garments to the store, we will inspect, itemize, and send you your updated order total.",
+    defaultSmsBody: "Hi {customer_name}, your garment pick-up (#{order_id}) with {store_name} is scheduled for {pickup_date}. Call {store_phone} for any special instructions.",
+    sampleSms: "Hi {customer_name}, your garment pick-up (#{order_id}) with {store_name} is scheduled for {pickup_date}. Call {store_phone} for any special instructions."
   },
   {
     key: "route_intake_priced",
@@ -71,7 +109,11 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when a 0-item route pick-up order is inspected, counted, and priced at the store, providing the customer with the itemized list and total.",
     defaultEmail: true,
     defaultSms: true,
-    sampleSms: "Hi {customer_name}, we have inspected & itemized your picked-up garments for Order #{order_id} ({total_pieces} pcs). Total: {gross_total}. Target ready date: {ready_date}."
+    defaultEmailSubject: "Your Garments Have Been Itemized (#{order_id}) - {store_name}",
+    defaultEmailHeadline: "Route Pick-up Inspected & Priced",
+    defaultEmailBody: "Hi {customer_name}, we have received and inspected the garments collected during your route pick-up ({total_pieces} piece(s)). Here is your itemized order breakdown and completion schedule.",
+    defaultSmsBody: "Hi {customer_name}, we have inspected & itemized your garments for Order #{order_id} ({total_pieces} pcs) at {store_name}. Total: {gross_total} (Balance: {balance_due}). Ready/Delivery: {ready_date}.",
+    sampleSms: "Hi {customer_name}, we have inspected & itemized your garments for Order #{order_id} ({total_pieces} pcs) at {store_name}. Total: {gross_total} (Balance: {balance_due}). Ready/Delivery: {ready_date}."
   },
   {
     key: "order_modified",
@@ -83,6 +125,10 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when items, quantities, or totals are updated on an existing order.",
     defaultEmail: true,
     defaultSms: false,
+    defaultEmailSubject: "Order Updated (#{order_id}) - {store_name}",
+    defaultEmailHeadline: "Your Order Details Have Been Updated",
+    defaultEmailBody: "Hi {customer_name}, your order #{order_id} at {store_name} has been updated. Please review the revised summary below.",
+    defaultSmsBody: "Hi {customer_name}, your Order #{order_id} at {store_name} has been updated. Revised Total: {gross_total} (Balance Due: {balance_due}).",
     sampleSms: "Hi {customer_name}, your Order #{order_id} at {store_name} has been updated. Revised Total: {gross_total} (Balance Due: {balance_due})."
   },
 
@@ -97,7 +143,11 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when order status moves to Processing, reassuring the customer that their garments are being cleaned.",
     defaultEmail: true,
     defaultSms: false,
-    sampleSms: "Hi {customer_name}, your Order #{order_id} is now in cleaning process at {store_name}. Estimated completion: {ready_date}."
+    defaultEmailSubject: "Your Order #{order_id} is In Process - {store_name}",
+    defaultEmailHeadline: "Garments In Cleaning Process",
+    defaultEmailBody: "Hi {customer_name}, your garments for Order #{order_id} are currently being cleaned and cared for by our specialists at {store_name}.",
+    defaultSmsBody: "Hi {customer_name}, your Order #{order_id} is now in cleaning process at {store_name}. Estimated ready date: {ready_date}.",
+    sampleSms: "Hi {customer_name}, your Order #{order_id} is now in cleaning process at {store_name}. Estimated ready date: {ready_date}."
   },
   {
     key: "schedule_rescheduled",
@@ -109,6 +159,10 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when the Ready Schedule or Route Delivery Date/Time is changed on an active order.",
     defaultEmail: true,
     defaultSms: true,
+    defaultEmailSubject: "Updated Schedule for Order #{order_id} - {store_name}",
+    defaultEmailHeadline: "Order Schedule Updated",
+    defaultEmailBody: "Hi {customer_name}, the completion/delivery schedule for your Order #{order_id} at {store_name} has been updated to {ready_date}.",
+    defaultSmsBody: "Hi {customer_name}, the schedule for your Order #{order_id} at {store_name} has been updated. New Ready/Delivery schedule: {ready_date}.",
     sampleSms: "Hi {customer_name}, the schedule for your Order #{order_id} at {store_name} has been updated. New Ready/Delivery schedule: {ready_date}."
   },
 
@@ -123,6 +177,10 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when a Counter Pickup order is marked Ready, including total garment pieces, store address/phone, and remaining balance due.",
     defaultEmail: true,
     defaultSms: true,
+    defaultEmailSubject: "Your Order #{order_id} is Ready for Pickup! - {store_name}",
+    defaultEmailHeadline: "Your Garments Are Clean & Ready!",
+    defaultEmailBody: "Good news, {customer_name}! Your Order #{order_id} ({total_pieces} piece(s)) is clean, pressed, and ready for pickup at {store_name}.",
+    defaultSmsBody: "Good news {customer_name}! Your Order #{order_id} ({total_pieces} pcs) at {store_name} is clean and READY for pickup. Balance Due: {balance_due}.",
     sampleSms: "Good news {customer_name}! Your Order #{order_id} ({total_pieces} pcs) at {store_name} is clean and READY for pickup. Balance Due: {balance_due}."
   },
   {
@@ -135,7 +193,11 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when a Route Delivery order is marked Ready or Out for Delivery, notifying the customer of the scheduled delivery window and balance due.",
     defaultEmail: true,
     defaultSms: true,
-    sampleSms: "Hi {customer_name}, your clean garments for Order #{order_id} ({total_pieces} pcs) are ready and scheduled for delivery on {delivery_date}. Balance Due: {balance_due}."
+    defaultEmailSubject: "Your Order #{order_id} is Ready for Route Delivery - {store_name}",
+    defaultEmailHeadline: "Scheduled for Route Delivery",
+    defaultEmailBody: "Hi {customer_name}, your clean garments for Order #{order_id} ({total_pieces} piece(s)) are ready and scheduled for route delivery on {delivery_date}.",
+    defaultSmsBody: "Hi {customer_name}, your clean garments for Order #{order_id} ({total_pieces} pcs) from {store_name} are ready for delivery on {delivery_date}. Balance Due: {balance_due}.",
+    sampleSms: "Hi {customer_name}, your clean garments for Order #{order_id} ({total_pieces} pcs) from {store_name} are ready for delivery on {delivery_date}. Balance Due: {balance_due}."
   },
   {
     key: "order_delivered",
@@ -147,6 +209,10 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when the customer picks up their garments or the driver completes delivery, providing a final digital receipt.",
     defaultEmail: true,
     defaultSms: true,
+    defaultEmailSubject: "Order #{order_id} Completed & Delivered - {store_name}",
+    defaultEmailHeadline: "Order Completed — Thank You!",
+    defaultEmailBody: "Thank you, {customer_name}! Your Order #{order_id} has been marked as completed and delivered. We truly appreciate your trust in {store_name}.",
+    defaultSmsBody: "Thank you {customer_name}! Your Order #{order_id} from {store_name} has been completed and delivered. We appreciate your business!",
     sampleSms: "Thank you {customer_name}! Your Order #{order_id} from {store_name} has been completed and delivered. We appreciate your business!"
   },
 
@@ -161,6 +227,10 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when a payment is recorded against an order via the Add Payment modal, showing amount paid, payment method, and remaining balance.",
     defaultEmail: true,
     defaultSms: true,
+    defaultEmailSubject: "Payment Receipt for Order #{order_id} - {store_name}",
+    defaultEmailHeadline: "Payment Received — Thank You!",
+    defaultEmailBody: "Hi {customer_name}, we have received your payment of {paid_now} for Order #{order_id} at {store_name}.",
+    defaultSmsBody: "Payment confirmed! We received {paid_now} for Order #{order_id} at {store_name}. Remaining Balance: {balance_due}. Thank you!",
     sampleSms: "Payment confirmed! We received {paid_now} for Order #{order_id} at {store_name}. Remaining Balance: {balance_due}. Thank you!"
   },
   {
@@ -173,7 +243,11 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when an order is voided from POS or marked as Cancelled, including the cancellation reason.",
     defaultEmail: true,
     defaultSms: true,
-    sampleSms: "Hi {customer_name}, your Order #{order_id} at {store_name} has been cancelled/voided ({cancel_reason}). Contact us at {store_phone} if you have questions."
+    defaultEmailSubject: "Order #{order_id} Cancelled - {store_name}",
+    defaultEmailHeadline: "Order Cancellation Notice",
+    defaultEmailBody: "Hi {customer_name}, your Order #{order_id} at {store_name} has been cancelled/voided. Reason: {cancel_reason}",
+    defaultSmsBody: "Hi {customer_name}, your Order #{order_id} at {store_name} has been cancelled ({cancel_reason}). Please call {store_phone} if you have any questions.",
+    sampleSms: "Hi {customer_name}, your Order #{order_id} at {store_name} has been cancelled ({cancel_reason}). Please call {store_phone} if you have any questions."
   },
   {
     key: "welcome_customer",
@@ -185,7 +259,11 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when a new customer profile is registered at the store or via POS, welcoming them with store contact information.",
     defaultEmail: true,
     defaultSms: true,
-    sampleSms: "Welcome to {store_name}, {customer_name}! Your customer account is ready. Call us anytime at {store_phone} for dry cleaning & laundry service."
+    defaultEmailSubject: "Welcome to {store_name}, {customer_name}!",
+    defaultEmailHeadline: "Welcome to {store_name}!",
+    defaultEmailBody: "Hi {customer_name}, welcome to {store_name}! Your customer profile has been registered. Whether you prefer counter drop-off or route pick-up & delivery, we look forward to caring for your garments.",
+    defaultSmsBody: "Welcome to {store_name}, {customer_name}! Your customer profile is active. Call us at {store_phone} anytime for dry cleaning & laundry service.",
+    sampleSms: "Welcome to {store_name}, {customer_name}! Your customer profile is active. Call us at {store_phone} anytime for dry cleaning & laundry service."
   }
 ];
 
@@ -198,6 +276,49 @@ function getDefaultEventsMap() {
     };
   });
   return map;
+}
+
+function getDefaultTemplatesMap() {
+  const map = {};
+  NOTIFICATION_EVENTS.forEach((ev) => {
+    map[ev.key] = {
+      emailSubject: ev.defaultEmailSubject,
+      emailHeadline: ev.defaultEmailHeadline,
+      emailBody: ev.defaultEmailBody,
+      smsBody: ev.defaultSmsBody
+    };
+  });
+  return map;
+}
+
+function mergeTemplatesConfig(rawJson, fallbackMap) {
+  const base = fallbackMap ? JSON.parse(JSON.stringify(fallbackMap)) : getDefaultTemplatesMap();
+  if (!rawJson) return base;
+  try {
+    const parsed = typeof rawJson === "string" ? JSON.parse(rawJson) : rawJson;
+    if (parsed && typeof parsed === "object") {
+      NOTIFICATION_EVENTS.forEach((ev) => {
+        const custom = parsed[ev.key];
+        if (custom && typeof custom === "object") {
+          if (typeof custom.emailSubject === "string" && custom.emailSubject.trim() !== "") {
+            base[ev.key].emailSubject = custom.emailSubject.trim();
+          }
+          if (typeof custom.emailHeadline === "string" && custom.emailHeadline.trim() !== "") {
+            base[ev.key].emailHeadline = custom.emailHeadline.trim();
+          }
+          if (typeof custom.emailBody === "string" && custom.emailBody.trim() !== "") {
+            base[ev.key].emailBody = custom.emailBody.trim();
+          }
+          if (typeof custom.smsBody === "string" && custom.smsBody.trim() !== "") {
+            base[ev.key].smsBody = custom.smsBody.trim();
+          }
+        }
+      });
+    }
+  } catch (e) {
+    // ignore malformed json
+  }
+  return base;
 }
 
 function mergeEventsConfig(rawJson, fallbackMap) {
@@ -222,15 +343,32 @@ function mergeEventsConfig(rawJson, fallbackMap) {
 }
 
 /**
- * Resolve effective notification settings for a store (with fallback to store_id = 0 global settings)
+ * Resolve effective notification settings & templates for a store (with fallback to store_id = 0 global settings)
  */
 async function getEffectiveNotificationSettings(storeId = 0) {
   await ensureSettingsTable();
   const cleanStoreId = parseInt(storeId, 10) || 0;
 
+  const builtInDefaults = getDefaultTemplatesMap();
   const globalRows = await DataFind(`SELECT * FROM tbl_notification_settings WHERE store_id = 0 LIMIT 1`);
   const globalRow = globalRows && globalRows.length > 0 ? globalRows[0] : null;
   const globalEvents = mergeEventsConfig(globalRow ? globalRow.events_config : null, getDefaultEventsMap());
+  const globalTemplates = mergeTemplatesConfig(globalRow ? globalRow.templates_config : null, builtInDefaults);
+
+  const computeCustomFlags = (resolvedTpls, compareTpls) => {
+    const flags = {};
+    NOTIFICATION_EVENTS.forEach((ev) => {
+      const a = resolvedTpls[ev.key] || {};
+      const b = compareTpls[ev.key] || {};
+      flags[ev.key] = Boolean(
+        a.emailSubject !== b.emailSubject ||
+        a.emailHeadline !== b.emailHeadline ||
+        a.emailBody !== b.emailBody ||
+        a.smsBody !== b.smsBody
+      );
+    });
+    return flags;
+  };
 
   let globalSettings = {
     store_id: 0,
@@ -238,7 +376,10 @@ async function getEffectiveNotificationSettings(storeId = 0) {
     email_enabled: globalRow ? Number(globalRow.email_enabled) === 1 : true,
     sms_enabled: globalRow ? Number(globalRow.sms_enabled) === 1 : true,
     push_enabled: globalRow ? Number(globalRow.push_enabled) === 1 : true,
-    events: globalEvents
+    events: globalEvents,
+    templates: globalTemplates,
+    defaultTemplates: builtInDefaults,
+    customTemplateFlags: computeCustomFlags(globalTemplates, builtInDefaults)
   };
 
   if (cleanStoreId === 0) {
@@ -250,18 +391,23 @@ async function getEffectiveNotificationSettings(storeId = 0) {
     return {
       ...globalSettings,
       store_id: cleanStoreId,
-      is_custom_store_override: false
+      is_custom_store_override: false,
+      customTemplateFlags: computeCustomFlags(globalTemplates, builtInDefaults)
     };
   }
 
   const sRow = storeRows[0];
+  const storeTemplates = mergeTemplatesConfig(sRow.templates_config, globalTemplates);
   return {
     store_id: cleanStoreId,
     is_custom_store_override: true,
     email_enabled: Number(sRow.email_enabled) === 1,
     sms_enabled: Number(sRow.sms_enabled) === 1,
     push_enabled: Number(sRow.push_enabled) === 1,
-    events: mergeEventsConfig(sRow.events_config, globalEvents)
+    events: mergeEventsConfig(sRow.events_config, globalEvents),
+    templates: storeTemplates,
+    defaultTemplates: builtInDefaults,
+    customTemplateFlags: computeCustomFlags(storeTemplates, builtInDefaults)
   };
 }
 
@@ -390,6 +536,130 @@ async function saveEmailAndTwilioGateways(storeId, bodyData, req) {
 }
 
 /**
+ * Save custom notification templates for storeId (0 = Global Master, >0 = Store Override)
+ */
+async function saveNotificationTemplates(storeId, bodyData, req) {
+  await ensureSettingsTable();
+  const cleanStoreId = parseInt(storeId, 10) || 0;
+
+  const existing = await DataFind(`SELECT * FROM tbl_notification_settings WHERE store_id = ${cleanStoreId} LIMIT 1`);
+  let currentTemplates = {};
+  if (existing && existing.length > 0 && existing[0].templates_config) {
+    try {
+      const parsed = typeof existing[0].templates_config === "string"
+        ? JSON.parse(existing[0].templates_config)
+        : existing[0].templates_config;
+      if (parsed && typeof parsed === "object") {
+        currentTemplates = parsed;
+      }
+    } catch (e) {
+      currentTemplates = {};
+    }
+  }
+
+  NOTIFICATION_EVENTS.forEach((ev) => {
+    const subjKey = `tpl_${ev.key}_emailSubject`;
+    const headKey = `tpl_${ev.key}_emailHeadline`;
+    const bodyKey = `tpl_${ev.key}_emailBody`;
+    const smsKey = `tpl_${ev.key}_smsBody`;
+
+    if (
+      bodyData[subjKey] !== undefined ||
+      bodyData[headKey] !== undefined ||
+      bodyData[bodyKey] !== undefined ||
+      bodyData[smsKey] !== undefined
+    ) {
+      const prev = currentTemplates[ev.key] || {};
+      currentTemplates[ev.key] = {
+        emailSubject: bodyData[subjKey] !== undefined ? String(bodyData[subjKey]).trim() : (prev.emailSubject || ev.defaultEmailSubject || ""),
+        emailHeadline: bodyData[headKey] !== undefined ? String(bodyData[headKey]).trim() : (prev.emailHeadline || ev.defaultEmailHeadline || ""),
+        emailBody: bodyData[bodyKey] !== undefined ? String(bodyData[bodyKey]).trim() : (prev.emailBody || ev.defaultEmailBody || ""),
+        smsBody: bodyData[smsKey] !== undefined ? String(bodyData[smsKey]).trim() : (prev.smsBody || ev.defaultSmsBody || "")
+      };
+    }
+  });
+
+  const jsonStr = JSON.stringify(currentTemplates).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+
+  if (existing && existing.length > 0) {
+    await DataUpdate(
+      "tbl_notification_settings",
+      `templates_config = '${jsonStr}'`,
+      `store_id = ${cleanStoreId}`,
+      req ? req.hostname : "localhost",
+      req ? req.protocol : "http"
+    );
+  } else {
+    const defaultEventsJson = JSON.stringify(getDefaultEventsMap()).replace(/'/g, "\\'");
+    await DataInsert(
+      "tbl_notification_settings",
+      `store_id, email_enabled, sms_enabled, push_enabled, events_config, templates_config`,
+      `${cleanStoreId}, 1, 1, 1, '${defaultEventsJson}', '${jsonStr}'`,
+      req ? req.hostname : "localhost",
+      req ? req.protocol : "http"
+    );
+  }
+  return true;
+}
+
+/**
+ * Reset custom notification templates to default for a single eventKey or all events
+ */
+async function resetNotificationTemplates(storeId, eventKey = null, req) {
+  await ensureSettingsTable();
+  const cleanStoreId = parseInt(storeId, 10) || 0;
+  const existing = await DataFind(`SELECT * FROM tbl_notification_settings WHERE store_id = ${cleanStoreId} LIMIT 1`);
+  if (!existing || existing.length === 0) return true;
+
+  if (!eventKey || eventKey === "all") {
+    await DataUpdate(
+      "tbl_notification_settings",
+      `templates_config = NULL`,
+      `store_id = ${cleanStoreId}`,
+      req ? req.hostname : "localhost",
+      req ? req.protocol : "http"
+    );
+    return true;
+  }
+
+  let currentTemplates = {};
+  if (existing[0].templates_config) {
+    try {
+      const parsed = typeof existing[0].templates_config === "string"
+        ? JSON.parse(existing[0].templates_config)
+        : existing[0].templates_config;
+      if (parsed && typeof parsed === "object") {
+        currentTemplates = parsed;
+      }
+    } catch (e) {
+      currentTemplates = {};
+    }
+  }
+
+  delete currentTemplates[eventKey];
+  const keysRemaining = Object.keys(currentTemplates);
+  if (keysRemaining.length === 0) {
+    await DataUpdate(
+      "tbl_notification_settings",
+      `templates_config = NULL`,
+      `store_id = ${cleanStoreId}`,
+      req ? req.hostname : "localhost",
+      req ? req.protocol : "http"
+    );
+  } else {
+    const jsonStr = JSON.stringify(currentTemplates).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    await DataUpdate(
+      "tbl_notification_settings",
+      `templates_config = '${jsonStr}'`,
+      `store_id = ${cleanStoreId}`,
+      req ? req.hostname : "localhost",
+      req ? req.protocol : "http"
+    );
+  }
+  return true;
+}
+
+/**
  * Remove store-specific override so the branch inherits Global Defaults
  */
 async function resetStoreNotificationSettings(storeId) {
@@ -399,6 +669,19 @@ async function resetStoreNotificationSettings(storeId) {
   const promiseConn = conn.promise();
   await promiseConn.query(`DELETE FROM tbl_notification_settings WHERE store_id = ?`, [cleanStoreId]);
   return true;
+}
+
+/**
+ * Replace {variable_name} placeholders in template strings
+ */
+function interpolateTemplate(templateStr, varsMap = {}) {
+  if (!templateStr) return "";
+  return String(templateStr).replace(/\{([a-zA-Z0-9_]+)\}/g, (match, key) => {
+    if (Object.prototype.hasOwnProperty.call(varsMap, key) && varsMap[key] !== undefined && varsMap[key] !== null) {
+      return String(varsMap[key]);
+    }
+    return match;
+  });
 }
 
 function formatCustomerDisplayName(cust) {
@@ -469,6 +752,22 @@ async function resolveSmtpConfig(storeId) {
 }
 
 /**
+ * Normalize phone numbers into E.164 format for Twilio (+1XXXXXXXXXX or +CountryCode...)
+ */
+function formatE164Phone(rawPhone) {
+  if (!rawPhone) return "";
+  const str = String(rawPhone).trim();
+  const hasPlus = str.startsWith("+");
+  const digits = str.replace(/\D/g, "");
+  if (!digits) return "";
+  if (hasPlus) return `+${digits}`;
+  // Standard 10-digit US/Canada number without country code -> prepend +1
+  if (digits.length === 10) return `+1${digits}`;
+  // 11+ digits starting with country code -> prepend +
+  return `+${digits}`;
+}
+
+/**
  * Resolve Twilio credentials for a store (falling back to tbl_master_shop)
  * Accepts either (storeId) OR (storeObj, masterObj)
  */
@@ -494,9 +793,10 @@ async function resolveTwilioConfig(storeOrId, masterObj) {
   const token = (storeObj && storeObj.twilio_auth_token && String(storeObj.twilio_auth_token).trim() !== "")
     ? String(storeObj.twilio_auth_token).trim()
     : (effectiveMaster && effectiveMaster.twilio_auth_token ? String(effectiveMaster.twilio_auth_token).trim() : "");
-  const fromPhone = (storeObj && storeObj.twilio_phone_no && String(storeObj.twilio_phone_no).trim() !== "")
+  const rawFromPhone = (storeObj && storeObj.twilio_phone_no && String(storeObj.twilio_phone_no).trim() !== "")
     ? String(storeObj.twilio_phone_no).trim()
     : (effectiveMaster && effectiveMaster.twilio_phone_no ? String(effectiveMaster.twilio_phone_no).trim() : "");
+  const fromPhone = formatE164Phone(rawFromPhone);
   const status = (storeObj && storeObj.twilio_status !== undefined && storeObj.twilio_status !== null)
     ? String(storeObj.twilio_status)
     : (effectiveMaster && effectiveMaster.twilio_status !== undefined && effectiveMaster.twilio_status !== null ? String(effectiveMaster.twilio_status) : "1");
@@ -505,7 +805,7 @@ async function resolveTwilioConfig(storeOrId, masterObj) {
     sid,
     token,
     fromPhone,
-    phone: fromPhone,
+    phone: rawFromPhone || fromPhone,
     status,
     isConfigured: Boolean(sid && token && fromPhone && status !== "0")
   };
@@ -513,8 +813,9 @@ async function resolveTwilioConfig(storeOrId, masterObj) {
 
 /**
  * Build Subject, HTML Email, and SMS text for any of the 12 events
+ * Respects custom templates (store or global) when provided, with {tag} interpolation
  */
-function buildNotificationContent({ eventKey, customer, store, master, order, items, extraData }) {
+function buildNotificationContent({ eventKey, customer, store, master, order, items, extraData, templates = null, rackNames = "" }) {
   const sym = (master && master.currency_symbol) ? master.currency_symbol : "$";
   const storeName = (store && store.name) ? store.name : ((master && master.app_name) ? master.app_name : "iCleaners");
   const storePhone = (store && store.mobile_number) ? store.mobile_number : "";
@@ -540,134 +841,105 @@ function buildNotificationContent({ eventKey, customer, store, master, order, it
     });
   }
 
-  let subject = `${storeName} Notification`;
-  let headline = "Update from " + storeName;
+  const paidNowNum = parseFloat(extraData?.paidNow || 0);
+  const paidNowFormatted = `${sym}${paidNowNum.toFixed(2)}`;
+  const paymentMethodStr = extraData?.paymentMethod ? String(extraData.paymentMethod) : "Card / Cash";
+  const cancelReasonStr = extraData?.cancelReason || (order && order.note) || "Cancelled by store";
+  const resolvedRacks = rackNames || extraData?.rackNames || "";
+
+  const varsMap = {
+    customer_name: custName,
+    order_id: orderCode,
+    store_name: storeName,
+    store_phone: storePhone || "our store",
+    store_email: storeEmail,
+    store_address: storeAddress,
+    gross_total: grossTotal,
+    paid_amount: paidAmount,
+    balance_due: balanceDue,
+    total_pieces: totalPieces,
+    ready_date: readyDateStr,
+    delivery_date: deliveryDateStr,
+    pickup_date: pickupDateStr,
+    rack_names: resolvedRacks,
+    paid_now: paidNowFormatted,
+    payment_method: paymentMethodStr,
+    cancel_reason: cancelReasonStr
+  };
+
   let badgeText = "Notification";
   let badgeColor = "#2563eb";
-  let introHtml = "";
-  let smsBody = "";
 
   switch (eventKey) {
     case "order_placed":
-      subject = `Order Confirmation #${orderCode} - ${storeName}`;
-      headline = `Thank You for Your Order!`;
       badgeText = `Order #${orderCode} Confirmed`;
       badgeColor = "#2563eb";
-      introHtml = `<p>Hi <strong>${custName}</strong>, we have received your garments at <strong>${storeName}</strong>. Below is your order summary and target completion schedule.</p>`;
-      smsBody = `Hi ${custName}, thank you for your order #${orderCode} at ${storeName} (${totalPieces} pcs)! Total: ${grossTotal} (Balance: ${balanceDue}). Ready by: ${readyDateStr}.`;
       break;
-
     case "route_pickup_scheduled":
-      subject = `Route Pick-up Scheduled (#${orderCode}) - ${storeName}`;
-      headline = `Your Garment Pick-up is Scheduled`;
       badgeText = `Route Pick-up #${orderCode}`;
       badgeColor = "#0284c7";
-      introHtml = `<p>Hi <strong>${custName}</strong>, your route garment pick-up with <strong>${storeName}</strong> has been scheduled for <strong>${pickupDateStr}</strong>. Once our driver brings your garments to the store, we will inspect, itemize, and send you your updated order total.</p>`;
-      smsBody = `Hi ${custName}, your garment pick-up (#${orderCode}) with ${storeName} is scheduled for ${pickupDateStr}. Call ${storePhone || "us"} for any special instructions.`;
       break;
-
     case "route_intake_priced":
-      subject = `Your Garments Have Been Itemized (#${orderCode}) - ${storeName}`;
-      headline = `Route Pick-up Inspected & Priced`;
       badgeText = `Order #${orderCode} Itemized`;
       badgeColor = "#0d9488";
-      introHtml = `<p>Hi <strong>${custName}</strong>, we have received and inspected the garments collected during your route pick-up (<strong>${totalPieces} piece(s)</strong>). Here is your itemized order breakdown and completion schedule.</p>`;
-      smsBody = `Hi ${custName}, we have inspected & itemized your garments for Order #${orderCode} (${totalPieces} pcs) at ${storeName}. Total: ${grossTotal} (Balance: ${balanceDue}). Ready/Delivery: ${readyDateStr}.`;
       break;
-
     case "order_modified":
-      subject = `Order Updated (#${orderCode}) - ${storeName}`;
-      headline = `Your Order Details Have Been Updated`;
       badgeText = `Order #${orderCode} Updated`;
       badgeColor = "#4f46e5";
-      introHtml = `<p>Hi <strong>${custName}</strong>, your order <strong>#${orderCode}</strong> at <strong>${storeName}</strong> has been updated. Please review the revised summary below.</p>`;
-      smsBody = `Hi ${custName}, your Order #${orderCode} at ${storeName} has been updated. Revised Total: ${grossTotal} (Balance Due: ${balanceDue}).`;
       break;
-
     case "order_processing":
-      subject = `Your Order #${orderCode} is In Process - ${storeName}`;
-      headline = `Garments In Cleaning Process`;
       badgeText = `In Process`;
       badgeColor = "#d97706";
-      introHtml = `<p>Hi <strong>${custName}</strong>, your garments for Order <strong>#${orderCode}</strong> are currently being cleaned and cared for by our specialists at <strong>${storeName}</strong>.</p>`;
-      smsBody = `Hi ${custName}, your Order #${orderCode} is now in cleaning process at ${storeName}. Estimated ready date: ${readyDateStr}.`;
       break;
-
     case "schedule_rescheduled":
-      subject = `Updated Schedule for Order #${orderCode} - ${storeName}`;
-      headline = `Order Schedule Updated`;
       badgeText = `Rescheduled`;
       badgeColor = "#ea580c";
-      introHtml = `<p>Hi <strong>${custName}</strong>, the completion/delivery schedule for your Order <strong>#${orderCode}</strong> at <strong>${storeName}</strong> has been updated to <strong>${readyDateStr}</strong>.</p>`;
-      smsBody = `Hi ${custName}, the schedule for your Order #${orderCode} at ${storeName} has been updated. New Ready/Delivery schedule: ${readyDateStr}.`;
       break;
-
     case "order_ready_pickup":
-      subject = `Your Order #${orderCode} is Ready for Pickup! - ${storeName}`;
-      headline = `Your Garments Are Clean & Ready!`;
       badgeText = `Ready for Counter Pickup`;
       badgeColor = "#16a34a";
-      introHtml = `<p>Good news, <strong>${custName}</strong>! Your Order <strong>#${orderCode}</strong> (<strong>${totalPieces} piece(s)</strong>) is clean, pressed, and ready for pickup at <strong>${storeName}</strong>.</p>`;
-      smsBody = `Good news ${custName}! Your Order #${orderCode} (${totalPieces} pcs) at ${storeName} is clean and READY for pickup. Balance Due: ${balanceDue}.`;
       break;
-
     case "order_out_for_delivery":
-      subject = `Your Order #${orderCode} is Ready for Route Delivery - ${storeName}`;
-      headline = `Scheduled for Route Delivery`;
       badgeText = `Out for Delivery`;
       badgeColor = "#059669";
-      introHtml = `<p>Hi <strong>${custName}</strong>, your clean garments for Order <strong>#${orderCode}</strong> (<strong>${totalPieces} piece(s)</strong>) are ready and scheduled for route delivery on <strong>${deliveryDateStr}</strong>.</p>`;
-      smsBody = `Hi ${custName}, your clean garments for Order #${orderCode} (${totalPieces} pcs) from ${storeName} are ready for delivery on ${deliveryDateStr}. Balance Due: ${balanceDue}.`;
       break;
-
     case "order_delivered":
-      subject = `Order #${orderCode} Completed & Delivered - ${storeName}`;
-      headline = `Order Completed — Thank You!`;
       badgeText = `Delivered / Completed`;
       badgeColor = "#15803d";
-      introHtml = `<p>Thank you, <strong>${custName}</strong>! Your Order <strong>#${orderCode}</strong> has been marked as completed and delivered. We truly appreciate your trust in <strong>${storeName}</strong>.</p>`;
-      smsBody = `Thank you ${custName}! Your Order #${orderCode} from ${storeName} has been completed and delivered. We appreciate your business!`;
       break;
-
-    case "payment_received": {
-      const paidNowNum = parseFloat(extraData?.paidNow || 0);
-      const paidNowFormatted = `${sym}${paidNowNum.toFixed(2)}`;
-      const methodStr = extraData?.paymentMethod ? ` via ${extraData.paymentMethod}` : "";
-      const refStr = extraData?.referenceNumber ? ` (Ref: ${extraData.referenceNumber})` : "";
-      subject = `Payment Receipt for Order #${orderCode} - ${storeName}`;
-      headline = `Payment Received — Thank You!`;
+    case "payment_received":
       badgeText = `Payment Confirmed: ${paidNowFormatted}`;
       badgeColor = "#16a34a";
-      introHtml = `<p>Hi <strong>${custName}</strong>, we have received your payment of <strong>${paidNowFormatted}</strong>${methodStr}${refStr} for Order <strong>#${orderCode}</strong> at <strong>${storeName}</strong>.</p>`;
-      smsBody = `Payment confirmed! We received ${paidNowFormatted}${methodStr} for Order #${orderCode} at ${storeName}. Remaining Balance: ${balanceDue}. Thank you!`;
       break;
-    }
-
-    case "order_cancelled": {
-      const reason = extraData?.cancelReason || (order && order.note) || "Cancelled by store";
-      subject = `Order #${orderCode} Cancelled - ${storeName}`;
-      headline = `Order Cancellation Notice`;
+    case "order_cancelled":
       badgeText = `Cancelled / Voided`;
       badgeColor = "#dc2626";
-      introHtml = `<p>Hi <strong>${custName}</strong>, your Order <strong>#${orderCode}</strong> at <strong>${storeName}</strong> has been cancelled/voided.<br><strong>Reason:</strong> ${reason}</p>`;
-      smsBody = `Hi ${custName}, your Order #${orderCode} at ${storeName} has been cancelled (${reason}). Please call ${storePhone || "us"} if you have any questions.`;
       break;
-    }
-
     case "welcome_customer":
-      subject = `Welcome to ${storeName}, ${custName}!`;
-      headline = `Welcome to ${storeName}!`;
       badgeText = `New Customer Profile`;
       badgeColor = "#2563eb";
-      introHtml = `<p>Hi <strong>${custName}</strong>, welcome to <strong>${storeName}</strong>! Your customer profile has been registered. Whether you prefer counter drop-off or route pick-up & delivery, we look forward to caring for your garments.</p>`;
-      smsBody = `Welcome to ${storeName}, ${custName}! Your customer profile is active. Call us at ${storePhone || "our store"} anytime for dry cleaning & laundry service.`;
       break;
-
     default:
-      introHtml = `<p>Hi <strong>${custName}</strong>, here is an update from <strong>${storeName}</strong>.</p>`;
-      smsBody = `Hi ${custName}, update from ${storeName} regarding Order #${orderCode}.`;
+      badgeText = "Notification";
+      badgeColor = "#2563eb";
       break;
   }
+
+  const defaultMap = getDefaultTemplatesMap();
+  const activeTpl = (templates && templates[eventKey])
+    ? templates[eventKey]
+    : (defaultMap[eventKey] || {
+        emailSubject: "{store_name} Notification",
+        emailHeadline: "Update from {store_name}",
+        emailBody: "Hi {customer_name}, here is an update from {store_name} regarding Order #{order_id}.",
+        smsBody: "Hi {customer_name}, update from {store_name} regarding Order #{order_id}."
+      });
+
+  const subject = interpolateTemplate(activeTpl.emailSubject, varsMap);
+  const headline = interpolateTemplate(activeTpl.emailHeadline, varsMap);
+  const rawEmailBody = interpolateTemplate(activeTpl.emailBody, varsMap);
+  const introHtml = `<p style="line-height:1.6;margin-top:0;">${rawEmailBody.replace(/\r?\n/g, "<br>")}</p>`;
+  const smsBody = interpolateTemplate(activeTpl.smsBody, varsMap);
 
   // Build itemized table HTML if order is present
   let orderDetailsHtml = "";
@@ -700,12 +972,17 @@ function buildNotificationContent({ eventKey, customer, store, master, order, it
       `;
     }
 
+    const rackBadgeRow = resolvedRacks
+      ? `<div><span style="color:#64748b;font-size:12px;">ASSIGNED RACK(S)</span><div style="font-weight:700;font-size:13px;color:#16a34a;">${resolvedRacks}</div></div>`
+      : "";
+
     orderDetailsHtml = `
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:18px 0;">
         <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;border-bottom:1px solid #e2e8f0;padding-bottom:10px;">
           <div><span style="color:#64748b;font-size:12px;">ORDER NUMBER</span><div style="font-weight:700;font-size:15px;color:#0f172a;">#${orderCode}</div></div>
           <div><span style="color:#64748b;font-size:12px;">SERVICE TYPE</span><div style="font-weight:600;font-size:13px;color:#0f172a;">${orderType}</div></div>
           <div><span style="color:#64748b;font-size:12px;">READY / DELIVERY SCHEDULE</span><div style="font-weight:700;font-size:13px;color:#2563eb;">${readyDateStr}</div></div>
+          ${rackBadgeRow}
         </div>
         <table style="width:100%;border-collapse:collapse;font-size:13px;">
           <thead>
@@ -763,6 +1040,7 @@ async function dispatchCustomerNotification({
   try {
     let orderObj = null;
     let itemsList = [];
+    let resolvedRackNames = "";
 
     if (orderId) {
       const cleanOrderId = String(orderId).trim().replace(/'/g, "\\'");
@@ -778,6 +1056,21 @@ async function dispatchCustomerNotification({
           itemsList = await DataFind(
             `SELECT * FROM tbl_cart_servicelist WHERE FIND_IN_SET(id, '${orderObj.service_list}')`
           );
+        }
+
+        if (orderObj.rack_ids && String(orderObj.rack_ids).trim() !== "") {
+          const cleanRacks = String(orderObj.rack_ids)
+            .split(",")
+            .map((r) => parseInt(r.trim(), 10))
+            .filter((n) => !isNaN(n) && n > 0);
+          if (cleanRacks.length > 0) {
+            const rackRows = await DataFind(
+              `SELECT name FROM tbl_racks WHERE id IN (${cleanRacks.join(",")}) AND delet_flage = 0`
+            );
+            if (rackRows && rackRows.length > 0) {
+              resolvedRackNames = rackRows.map((r) => r.name).join(", ");
+            }
+          }
         }
       }
     }
@@ -822,7 +1115,9 @@ async function dispatchCustomerNotification({
       master: masterObj,
       order: orderObj,
       items: itemsList,
-      extraData
+      extraData,
+      templates: settings.templates,
+      rackNames: resolvedRackNames
     });
 
     let sentEmail = false;
@@ -863,14 +1158,15 @@ async function dispatchCustomerNotification({
     // 2. Send SMS if enabled and customer has phone number
     if (shouldSendSms && !isWalkIn && customerObj && customerObj.number && String(customerObj.number).trim() !== "") {
       const twilioCfg = await resolveTwilioConfig(storeObj, masterObj);
-      if (twilioCfg.isConfigured) {
+      const formattedTo = formatE164Phone(customerObj.number);
+      if (twilioCfg.isConfigured && formattedTo) {
         try {
           const clientSms = require("twilio")(twilioCfg.sid, twilioCfg.token);
           clientSms.messages
             .create({
               body: smsBody,
               from: twilioCfg.fromPhone,
-              to: String(customerObj.number).trim()
+              to: formattedTo
             })
             .catch((smsErr) => {
               console.error(`[NotificationService] SMS error (${eventKey}):`, smsErr.message);
@@ -982,14 +1278,26 @@ async function sendTestNotification({ storeId = 0, channel = "email", recipient 
       };
     }
 
+    const formattedRecipient = formatE164Phone(cleanRecipient);
+    if (!formattedRecipient) {
+      return { success: false, message: "Please enter a valid recipient phone number." };
+    }
+
     try {
       const clientSms = require("twilio")(twilioCfg.sid, twilioCfg.token);
-      await clientSms.messages.create({
+      const msgResult = await clientSms.messages.create({
         body: `[${storeName}] Test SMS successful! Your automated customer SMS notifications are active.`,
         from: twilioCfg.fromPhone,
-        to: cleanRecipient
+        to: formattedRecipient
       });
-      return { success: true, message: `Test SMS dispatched successfully to ${cleanRecipient}!` };
+      return {
+        success: true,
+        sid: msgResult.sid,
+        status: msgResult.status,
+        to: formattedRecipient,
+        from: twilioCfg.fromPhone,
+        message: `Test SMS dispatched successfully to ${formattedRecipient}! (Twilio SID: ${msgResult.sid})`
+      };
     } catch (err) {
       return { success: false, message: `Twilio SMS Error: ${err.message}` };
     }
@@ -1000,10 +1308,16 @@ async function sendTestNotification({ storeId = 0, channel = "email", recipient 
 
 module.exports = {
   NOTIFICATION_EVENTS,
+  TEMPLATE_VARIABLES,
+  getDefaultTemplatesMap,
   getEffectiveNotificationSettings,
   saveNotificationSettings,
+  saveNotificationTemplates,
+  resetNotificationTemplates,
   saveEmailAndTwilioGateways,
   resetStoreNotificationSettings,
+  buildNotificationContent,
+  interpolateTemplate,
   dispatchCustomerNotification,
   sendTestNotification,
   resolveSmtpConfig,

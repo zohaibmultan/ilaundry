@@ -89,6 +89,9 @@
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <a href="/tool/notification-templates?store_id=<%= selectedStore %>" class="btn btn-primary btn-sm px-3 py-2 fw-semibold">
+                            <i class="fas fa-file-signature me-1"></i> Customize SMS &amp; Email Templates
+                        </a>
                         <a href="/index" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold">
                             <i class="fa fa-arrow-left me-1"></i> <%= language.Back_to_Dashboard || 'Back to Dashboard' %>
                         </a>
@@ -524,7 +527,13 @@
                                                     <small class="text-muted d-block mt-1"><%= ev.description %></small>
                                                 </div>
 
-                                                <div class="d-flex align-items-center gap-3 ms-auto pt-1">
+                                                <div class="d-flex align-items-center gap-3 ms-auto pt-1 flex-wrap">
+                                                    <a href="/tool/notification-templates?store_id=<%= selectedStore %>#event_card_<%= ev.key %>"
+                                                        class="btn btn-xs btn-outline-primary rounded-pill py-1 px-2 text-nowrap"
+                                                        title="Customize SMS & Email template for <%= ev.title %>">
+                                                        <i class="fas fa-pen-fancy me-1"></i>Edit Template
+                                                    </a>
+
                                                     <!-- Email Switch for Event -->
                                                     <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
                                                         <input class="form-check-input event-email-toggle" type="checkbox" role="switch"

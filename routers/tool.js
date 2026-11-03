@@ -17,8 +17,11 @@ const { paginateDataTable } = require("../middelwer/dataTableHelper");
 const { invalidateMultiLanguageCache } = require("../middelwer/language");
 const {
   NOTIFICATION_EVENTS,
+  TEMPLATE_VARIABLES,
   getEffectiveNotificationSettings,
   saveNotificationSettings,
+  saveNotificationTemplates,
+  resetNotificationTemplates,
   saveEmailAndTwilioGateways,
   resetStoreNotificationSettings,
   sendTestNotification,
@@ -4095,6 +4098,197 @@ router.post("/notificationsetting/test", auth, async (req, res) => {
       success: false,
       message: error.message || "Failed to send test notification",
     });
+  }
+});
+
+// <<<<<<<<<<<<<<<<<<< Customer Notification Templates Editor >>>>>>>>>>>>>>>>>>
+router.get("/notification-templates", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    if (loginas == 0) {
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT 
+        sr.*, 
+        r.roll_status, 
+        r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === "master";
+    const hasReadAccess =
+      isMaster ||
+      accessdata.mutibranch === false ||
+      (rolldetail.length > 0 &&
+        ((rolldetail[0].mail && rolldetail[0].mail.includes("read")) ||
+          (rolldetail[0].sms && rolldetail[0].sms.includes("read")) ||
+          (rolldetail[0].master && rolldetail[0].master.includes("read")) ||
+          (rolldetail[0].master_setting && rolldetail[0].master_setting.includes("read"))));
+
+    if (!hasReadAccess) {
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const hasEditPermission =
+      isMaster ||
+      accessdata.mutibranch === false ||
+      (rolldetail.length > 0 &&
+        ((rolldetail[0].mail && rolldetail[0].mail.includes("edit")) ||
+          (rolldetail[0].sms && rolldetail[0].sms.includes("edit")) ||
+          (rolldetail[0].master && rolldetail[0].master.includes("edit")) ||
+          (rolldetail[0].master_setting && rolldetail[0].master_setting.includes("edit"))));
+
+    const stores = await DataFind(
+      "SELECT id, name, city FROM tbl_store WHERE delete_flage=0 AND status=1 ORDER BY id ASC"
+    );
+
+    let targetStoreId = 0;
+    if (isMaster) {
+      if (req.query.store_id !== undefined && req.query.store_id !== "") {
+        targetStoreId = parseInt(req.query.store_id, 10) || 0;
+      } else {
+        targetStoreId = 0;
+      }
+    } else {
+      let assignedStore = store;
+      if (!assignedStore || assignedStore === " " || assignedStore === "" || assignedStore == 0) {
+        const adminData = await DataFind(`SELECT store_ID FROM tbl_admin WHERE id = ${id}`);
+        if (adminData.length > 0 && adminData[0].store_ID) {
+          assignedStore = adminData[0].store_ID;
+        }
+      }
+      targetStoreId = parseInt(assignedStore, 10) || (stores[0] ? stores[0].id : 0);
+    }
+
+    let storeData = null;
+    if (targetStoreId > 0) {
+      const sRows = await DataFind(`SELECT * FROM tbl_store WHERE id = ${targetStoreId} LIMIT 1`);
+      if (sRows.length > 0) storeData = sRows[0];
+    }
+
+    const notifSettings = await getEffectiveNotificationSettings(targetStoreId);
+
+    return res.render("notification_templates", {
+      targetStoreId,
+      storeData,
+      stores,
+      isMaster,
+      canEdit: hasEditPermission,
+      notifSettings,
+      notificationEvents: NOTIFICATION_EVENTS,
+      templateVariables: TEMPLATE_VARIABLES,
+      accessdata,
+      language: req.language_data,
+      language_name: req.language_name,
+    });
+  } catch (error) {
+    console.error("Error loading notification templates:", error);
+    req.flash("error", "Error loading notification templates");
+    return res.redirect(req.get("Referrer") || "/");
+  }
+});
+
+router.post("/notification-templates", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const { id, roll, store, loginas } = req.user;
+    if (loginas == 0) {
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT 
+        sr.*, 
+        r.roll_status, 
+        r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === "master";
+    let targetStoreId = parseInt(req.body.target_store_id, 10) || 0;
+
+    if (!isMaster) {
+      let userStore = store;
+      if (!userStore || userStore === " " || userStore === "") {
+        const adminData = await DataFind(`SELECT store_ID FROM tbl_admin WHERE id = ${id}`);
+        if (adminData.length > 0) userStore = adminData[0].store_ID;
+      }
+      targetStoreId = parseInt(userStore, 10) || 0;
+    }
+
+    const saved = await saveNotificationTemplates(targetStoreId, req.body, req);
+    if (!saved) {
+      req.flash("error", "Failed to save notification templates");
+      return res.redirect(`/tool/notification-templates?store_id=${targetStoreId}`);
+    }
+
+    req.flash("success", "SMS & Email Notification Templates Saved Successfully!");
+    return res.redirect(`/tool/notification-templates?store_id=${targetStoreId}`);
+  } catch (error) {
+    console.error("Error saving notification templates:", error);
+    req.flash("error", "Error saving notification templates");
+    return res.redirect("back");
+  }
+});
+
+router.post("/notification-templates/reset", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      return res.status(403).json({
+        success: false,
+        message: "For demo purpose we disabled crud operations!!",
+      });
+    }
+
+    const { id, roll, store, loginas } = req.user;
+    if (loginas == 0) {
+      return res.status(403).json({ success: false, message: "Not authorized" });
+    }
+
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.rollType 
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+    const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === "master";
+
+    let targetStoreId = parseInt(req.body.store_id, 10) || 0;
+    if (!isMaster) {
+      let userStore = store;
+      if (!userStore || userStore === " " || userStore === "") {
+        const adminData = await DataFind(`SELECT store_ID FROM tbl_admin WHERE id = ${id}`);
+        if (adminData.length > 0) userStore = adminData[0].store_ID;
+      }
+      targetStoreId = parseInt(userStore, 10) || 0;
+    }
+
+    const eventKey = req.body.event_key ? String(req.body.event_key).trim() : "all";
+    await resetNotificationTemplates(targetStoreId, eventKey, req);
+
+    return res.status(200).json({
+      success: true,
+      message: eventKey === "all"
+        ? "All notification templates reset to default."
+        : `Template for '${eventKey}' reset to default.`,
+    });
+  } catch (error) {
+    console.error("Error resetting notification templates:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 });
 

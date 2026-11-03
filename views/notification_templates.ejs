@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <%- include('templet/meta')-%>
+</head>
+
+<body>
+    <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
+
+    <%
+        const activeNotifSettings = (typeof notifSettings !== 'undefined' && notifSettings) ? notifSettings : { templates: {}, defaultTemplates: {}, customTemplateFlags: {} };
+        const eventsList = (typeof notificationEvents !== 'undefined' && Array.isArray(notificationEvents)) ? notificationEvents : [];
+        const varsList = (typeof templateVariables !== 'undefined' && Array.isArray(templateVariables)) ? templateVariables : [];
+        const activeTemplatesMap = activeNotifSettings.templates || {};
+        const defaultTemplatesMap = activeNotifSettings.defaultTemplates || {};
+        const customFlagsMap = activeNotifSettings.customTemplateFlags || {};
+        const selectedStore = (typeof targetStoreId !== 'undefined') ? Number(targetStoreId) : 0;
+        const activeStoreObj = (typeof storeData !== 'undefined' && storeData) ? storeData : null;
+        const isMasterUser = (typeof isMaster !== 'undefined') ? Boolean(isMaster) : false;
+        const canEditSettings = (typeof canEdit !== 'undefined') ? Boolean(canEdit) : true;
+
+        const categories = [
+            {
+                id: 'intake',
+                title: '1. Order Intake & Modifications',
+                subtitle: 'Templates for order confirmation, route pick-up scheduling, itemization, and order edits',
+                icon: 'fas fa-shopping-basket',
+                badgeClass: 'badge-primary-glass',
+                pillText: 'INTAKE & EDITS'
+            },
+            {
+                id: 'processing',
+                title: '2. Processing & Schedule Updates',
+                subtitle: 'Templates for garments in cleaning process and rescheduled ready/delivery dates',
+                icon: 'fas fa-sync-alt',
+                badgeClass: 'badge-ops-glass',
+                pillText: 'IN PROCESS'
+            },
+            {
+                id: 'ready',
+                title: '3. Ready, Route Dispatch & Completion',
+                subtitle: 'Templates when garments are ready for counter pickup, out for route delivery, or delivered',
+                icon: 'fas fa-shipping-fast',
+                badgeClass: 'badge-primary-glass',
+                pillText: 'READY & DELIVERY'
+            },
+            {
+                id: 'billing',
+                title: '4. Billing, Cancellations & Onboarding',
+                subtitle: 'Templates for payment receipts, order cancellations, and new customer welcome messages',
+                icon: 'fas fa-file-invoice-dollar',
+                badgeClass: 'badge-ops-glass',
+                pillText: 'BILLING & ACCOUNT'
+            }
+        ];
+    %>
+
+    <!--********** Content body start **********-->
+    <div class="content-body">
+        <div class="container-fluid pb-5 mb-5">
+
+            <!-- Page Banner Header -->
+            <div class="settings-banner mb-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 w-100">
+                    <div class="d-flex align-items-center">
+                        <div class="settings-icon-badge badge-primary-glass">
+                            <i class="fas fa-file-signature"></i>
+                        </div>
+                        <div>
+                            <h4 class="settings-card-title mb-1">
+                                <%= language.Notification_Templates || 'SMS & Email Notification Templates' %>
+                            </h4>
+                            <p class="settings-card-subtitle mb-0">
+                                Customize automated SMS text messages and Email subjects, headlines &amp; bodies for
+                                <strong class="text-primary">
+                                    <%= selectedStore === 0 ? 'Global Defaults (All Stores)' : (activeStoreObj ? activeStoreObj.name : 'Store') %>
+                                </strong>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <a href="/tool/notificationsetting?store_id=<%= selectedStore %>" class="btn btn-outline-primary btn-sm px-3 py-2 fw-semibold">
+                            <i class="fas fa-sliders-h me-1"></i> Gateways &amp; Event Switches
+                        </a>
+                        <% if (canEditSettings) { %>
+                            <button type="button" class="btn btn-outline-warning btn-sm px-3 py-2 fw-semibold" onclick="resetEventTemplate('all')">
+                                <i class="fas fa-undo me-1"></i> Reset All to Default
+                            </button>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Master Admin Store Switcher -->
+            <% if (isMasterUser) { %>
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-body p-3 d-flex align-items-center justify-content-between flex-wrap gap-3 bg-light-subtle rounded-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-layer-group text-primary fs-5"></i>
+                            <div>
+                                <span class="fw-bold d-block">Template Scope (Two-Tier Hierarchy):</span>
+                                <small class="text-muted">Edit Global Default templates for all stores, or select a specific branch to customize its wording</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <select class="form-select form-select-sm" id="templateStoreSelector" onchange="switchTemplateStore(this.value)">
+                                <option value="0" <%= selectedStore === 0 ? 'selected' : '' %>>
+                                    🌐 Global Default Templates (Inherited by All Stores)
+                                </option>
+                                <% if (typeof stores !== 'undefined' && Array.isArray(stores)) { %>
+                                    <% stores.forEach(function(s) { %>
+                                        <option value="<%= s.id %>" <%= Number(s.id) === selectedStore ? 'selected' : '' %>>
+                                            🏪 <%= s.name %> (<%= s.city || 'Branch' %>)
+                                        </option>
+                                    <% }); %>
+                                <% } %>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            <% } %>
+
+            <!-- Dynamic Merge Tags Bar -->
+            <div class="settings-section-card mb-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary-subtle text-primary px-2 py-1">
+                            <i class="fas fa-code me-1"></i>DYNAMIC MERGE TAGS
+                        </span>
+                        <span class="fw-bold small">Click any variable pill to insert it at your cursor in the active SMS or Email field:</span>
+                    </div>
+                    <small class="text-muted" id="active_field_indicator">
+                        <i class="fas fa-mouse-pointer me-1"></i>Click inside any template box below, then click a tag to insert
+                    </small>
+                </div>
+                <div class="d-flex flex-wrap gap-2 pt-1">
+                    <% varsList.forEach(function(v) { %>
+                        <button type="button"
+                            class="btn btn-sm btn-outline-primary rounded-pill py-1 px-3 d-inline-flex align-items-center gap-1"
+                            onclick="insertMergeTag('<%= v.tag %>')"
+                            title="<%= v.label %> (Example: <%= v.sample %>)">
+                            <code class="text-reset fw-bold"><%= v.tag %></code>
+                            <span class="small opacity-75 d-none d-sm-inline">— <%= v.label %></span>
+                        </button>
+                    <% }); %>
+                </div>
+            </div>
+
+            <!-- Category Filter Pills -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+                <div class="d-flex flex-wrap gap-2" role="group" aria-label="Template category filter">
+                    <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 tpl-cat-btn" data-cat="all" onclick="filterTemplateCategory('all', this)">
+                        <i class="fas fa-th-large me-1"></i> All 12 Event Templates
+                    </button>
+                    <% categories.forEach(function(cat) { %>
+                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 tpl-cat-btn" data-cat="<%= cat.id %>" onclick="filterTemplateCategory('<%= cat.id %>', this)">
+                            <i class="<%= cat.icon %> me-1"></i> <%= cat.pillText %>
+                        </button>
+                    <% }); %>
+                </div>
+                <div class="input-group input-group-sm w-auto">
+                    <span class="input-group-text bg-light-subtle"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" class="form-control" id="templateSearchInput" placeholder="Search event name..." oninput="filterTemplatesBySearch(this.value)">
+                </div>
+            </div>
+
+            <!-- Main Templates Form -->
+            <form action="/tool/notification-templates" method="POST" id="notification_templates_form">
+                <input type="hidden" name="target_store_id" value="<%= selectedStore %>">
+
+                <% categories.forEach(function(cat) { %>
+                    <% const catEvents = eventsList.filter(function(ev) { return ev.category === cat.id; }); %>
+                    <div class="template-category-section mb-4" data-category="<%= cat.id %>">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <div class="settings-icon-badge <%= cat.badgeClass %>">
+                                <i class="<%= cat.icon %>"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-bold"><%= cat.title %></h5>
+                                <small class="text-muted"><%= cat.subtitle %></small>
+                            </div>
+                        </div>
+
+                        <div class="row g-4">
+                            <% catEvents.forEach(function(ev) { %>
+                                <%
+                                    const activeTpl = activeTemplatesMap[ev.key] || {
+                                        emailSubject: ev.defaultEmailSubject || '',
+                                        emailHeadline: ev.defaultEmailHeadline || '',
+                                        emailBody: ev.defaultEmailBody || '',
+                                        smsBody: ev.defaultSmsBody || ''
+                                    };
+                                    const isCustomized = Boolean(customFlagsMap[ev.key]);
+                                %>
+                                <div class="col-12 template-event-col" id="event_card_<%= ev.key %>" data-title="<%= (ev.title + ' ' + ev.description + ' ' + ev.badge).toLowerCase() %>">
+                                    <div class="settings-section-card">
+                                        <!-- Event Header -->
+                                        <div class="settings-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                <div class="settings-icon-badge <%= cat.badgeClass %>">
+                                                    <i class="<%= ev.icon %>"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                        <h5 class="settings-card-title mb-0"><%= ev.title %></h5>
+                                                        <span class="badge bg-secondary-subtle text-secondary fw-normal"><%= ev.badge %></span>
+                                                        <% if (isCustomized) { %>
+                                                            <span class="badge bg-primary-subtle text-primary" id="badge_status_<%= ev.key %>">
+                                                                <i class="fas fa-pen-fancy me-1"></i>Customized
+                                                            </span>
+                                                        <% } else { %>
+                                                            <span class="badge bg-success-subtle text-success" id="badge_status_<%= ev.key %>">
+                                                                <i class="fas fa-check me-1"></i>Default Template
+                                                            </span>
+                                                        <% } %>
+                                                    </div>
+                                                    <p class="settings-card-subtitle mb-0 mt-1"><%= ev.description %></p>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="openTemplatePreview('<%= ev.key %>', '<%= ev.title.replace(/'/g, "\\'") %>')">
+                                                    <i class="fas fa-eye me-1"></i> Live Preview
+                                                </button>
+                                                <% if (canEditSettings) { %>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="restoreDefaultFields('<%= ev.key %>')" title="Restore built-in default text in form fields">
+                                                        <i class="fas fa-history me-1"></i> Restore Default Text
+                                                    </button>
+                                                    <% if (isCustomized) { %>
+                                                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="resetEventTemplate('<%= ev.key %>')" title="Reset saved override in database">
+                                                            <i class="fas fa-undo me-1"></i> Reset Saved Override
+                                                        </button>
+                                                    <% } %>
+                                                <% } %>
+                                            </div>
+                                        </div>
+
+                                        <!-- Two-Column Editor: SMS on Left, Email on Right -->
+                                        <div class="row g-4">
+                                            <!-- SMS Template Editor -->
+                                            <div class="col-12 col-lg-5">
+                                                <div class="p-3 rounded-3 border bg-light-subtle h-100 d-flex flex-column justify-content-between">
+                                                    <div>
+                                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                                            <label class="form-label fw-bold mb-0" for="tpl_<%= ev.key %>_smsBody">
+                                                                <i class="fas fa-comment-sms text-success me-1"></i> SMS Text Message Template
+                                                            </label>
+                                                            <span class="badge bg-success-subtle text-success">Twilio SMS &amp; Push</span>
+                                                        </div>
+                                                        <textarea
+                                                            class="form-control template-merge-input"
+                                                            id="tpl_<%= ev.key %>_smsBody"
+                                                            name="tpl_<%= ev.key %>_smsBody"
+                                                            rows="5"
+                                                            data-event="<%= ev.key %>"
+                                                            data-field-label="<%= ev.title %> — SMS Message"
+                                                            oninput="updateSmsCounter('<%= ev.key %>')"
+                                                            <%= !canEditSettings ? 'readonly' : '' %>><%= activeTpl.smsBody %></textarea>
+                                                    </div>
+                                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-2 pt-2 border-top small text-muted">
+                                                        <span>
+                                                            <i class="fas fa-info-circle text-success me-1"></i>Plain text with <code>{merge_tags}</code>
+                                                        </span>
+                                                        <span id="sms_counter_<%= ev.key %>" class="fw-semibold">0 chars (1 SMS segment)</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Email Template Editor -->
+                                            <div class="col-12 col-lg-7">
+                                                <div class="p-3 rounded-3 border bg-light-subtle h-100">
+                                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                                        <span class="fw-bold">
+                                                            <i class="fas fa-envelope text-primary me-1"></i> HTML Email Template
+                                                        </span>
+                                                        <span class="badge bg-primary-subtle text-primary">SMTP Email</span>
+                                                    </div>
+
+                                                    <div class="row g-3">
+                                                        <div class="col-12 col-md-6">
+                                                            <label class="form-label small fw-semibold mb-1" for="tpl_<%= ev.key %>_emailSubject">
+                                                                Email Subject Line
+                                                            </label>
+                                                            <input type="text"
+                                                                class="form-control form-control-sm template-merge-input"
+                                                                id="tpl_<%= ev.key %>_emailSubject"
+                                                                name="tpl_<%= ev.key %>_emailSubject"
+                                                                value="<%= activeTpl.emailSubject %>"
+                                                                data-event="<%= ev.key %>"
+                                                                data-field-label="<%= ev.title %> — Email Subject"
+                                                                <%= !canEditSettings ? 'readonly' : '' %>>
+                                                        </div>
+
+                                                        <div class="col-12 col-md-6">
+                                                            <label class="form-label small fw-semibold mb-1" for="tpl_<%= ev.key %>_emailHeadline">
+                                                                Email Header Banner Headline
+                                                            </label>
+                                                            <input type="text"
+                                                                class="form-control form-control-sm template-merge-input"
+                                                                id="tpl_<%= ev.key %>_emailHeadline"
+                                                                name="tpl_<%= ev.key %>_emailHeadline"
+                                                                value="<%= activeTpl.emailHeadline %>"
+                                                                data-event="<%= ev.key %>"
+                                                                data-field-label="<%= ev.title %> — Email Headline"
+                                                                <%= !canEditSettings ? 'readonly' : '' %>>
+                                                        </div>
+
+                                                        <div class="col-12">
+                                                            <label class="form-label small fw-semibold mb-1" for="tpl_<%= ev.key %>_emailBody">
+                                                                Email Message Body (Intro Paragraph)
+                                                            </label>
+                                                            <textarea
+                                                                class="form-control form-control-sm template-merge-input"
+                                                                id="tpl_<%= ev.key %>_emailBody"
+                                                                name="tpl_<%= ev.key %>_emailBody"
+                                                                rows="3"
+                                                                data-event="<%= ev.key %>"
+                                                                data-field-label="<%= ev.title %> — Email Message Body"
+                                                                <%= !canEditSettings ? 'readonly' : '' %>><%= activeTpl.emailBody %></textarea>
+                                                            <div class="small text-muted mt-1">
+                                                                <i class="fas fa-table text-primary me-1"></i>
+                                                                Note: For order events, the <strong>Itemized Garment Table, Totals, Assigned Rack(s), and Store Contact Footer</strong> are automatically included below your message body.
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                <% }); %>
+
+                <!-- Sticky Glass Save Footer Bar -->
+                <div class="settings-sticky-footer">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="badge light badge-primary d-none d-md-inline-flex">
+                            <i class="fas fa-file-signature me-1"></i>
+                            Scope: <%= selectedStore === 0 ? 'Global Default Templates' : (activeStoreObj ? activeStoreObj.name : 'Store Templates') %>
+                        </span>
+                        <small class="text-muted d-none d-sm-inline">
+                            Saves all 12 SMS &amp; Email Notification Templates for the selected scope.
+                        </small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="/tool/notificationsetting?store_id=<%= selectedStore %>" class="btn btn-outline-secondary px-3">
+                            <i class="fas fa-sliders-h me-1"></i> Notification Switches
+                        </a>
+                        <% if (canEditSettings) { %>
+                            <button type="submit" id="btn_save_notification_templates" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i> Save All Templates
+                            </button>
+                        <% } %>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+    </div>
+    <!--********** Content body end **********-->
+
+    <!-- Live Preview Modal -->
+    <div class="modal fade" id="templatePreviewModal" tabindex="-1" aria-labelledby="templatePreviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-bottom">
+                    <div>
+                        <h5 class="modal-title fw-bold" id="templatePreviewModalLabel">
+                            <i class="fas fa-eye text-primary me-2"></i>Live Template Preview
+                        </h5>
+                        <small class="text-muted" id="preview_event_subtitle">Preview rendered with sample customer &amp; order data</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- SMS Bubble Preview -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-bold small text-uppercase text-success">
+                                <i class="fas fa-comment-sms me-1"></i> SMS Message Preview (Twilio)
+                            </span>
+                            <span class="badge bg-success-subtle text-success" id="preview_sms_length">0 chars</span>
+                        </div>
+                        <div class="p-3 rounded-3 border bg-light-subtle font-monospace small" id="preview_sms_box"></div>
+                    </div>
+
+                    <!-- Email Card Preview -->
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-bold small text-uppercase text-primary">
+                                <i class="fas fa-envelope-open-text me-1"></i> HTML Email Preview (SMTP)
+                            </span>
+                            <span class="badge bg-primary-subtle text-primary">Auto-Includes Order Summary Table</span>
+                        </div>
+                        <div class="p-2 rounded-3 border bg-light-subtle mb-2 small">
+                            <span class="text-muted fw-semibold">Subject:</span>
+                            <strong id="preview_email_subject" class="ms-1"></strong>
+                        </div>
+                        <div class="rounded-3 border overflow-hidden">
+                            <div class="p-3 bg-primary text-white">
+                                <div class="small text-uppercase opacity-75" id="preview_email_badge">Order Notification</div>
+                                <h5 class="mb-0 fw-bold text-white" id="preview_email_headline"></h5>
+                            </div>
+                            <div class="p-3 bg-body">
+                                <p class="mb-3" id="preview_email_body"></p>
+                                <!-- Sample Itemized Order Box -->
+                                <div class="p-3 rounded-3 border bg-light-subtle small" id="preview_order_table_box">
+                                    <div class="d-flex justify-content-between flex-wrap gap-2 pb-2 mb-2 border-bottom">
+                                        <div><span class="text-muted">ORDER NUMBER</span><div class="fw-bold">#ORD-1042</div></div>
+                                        <div><span class="text-muted">ASSIGNED RACK(S)</span><div class="fw-bold text-success">Rack A-1, Rack B-2</div></div>
+                                        <div><span class="text-muted">READY / DELIVERY</span><div class="fw-bold text-primary">Nov 5, 2026 at 5:00 PM</div></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom">
+                                        <span><strong>2-Piece Suit</strong> [Dry Clean]</span>
+                                        <span>Qty: 1 (2 Pcs) — <strong>$24.50</strong></span>
+                                    </div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom">
+                                        <span><strong>Dress Shirt</strong> [Launder &amp; Press]</span>
+                                        <span>Qty: 2 — <strong>$21.00</strong></span>
+                                    </div>
+                                    <div class="text-end pt-2">
+                                        <div>Gross Total: <strong>$45.50</strong> | Paid: <strong class="text-success">$20.00</strong> | Balance Due: <strong class="text-danger">$25.50</strong></div>
+                                    </div>
+                                </div>
+                                <div class="mt-3 pt-2 border-top small text-muted" id="preview_email_footer"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Close Preview</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('templet/footer')-%>
+    <%- include('templet/script')-%>
+
+    <script>
+        const BUILTIN_DEFAULTS = <%- JSON.stringify(defaultTemplatesMap || {}) %>;
+        const SAMPLE_VARIABLES = <%- JSON.stringify(varsList || []) %>;
+        const ACTIVE_STORE_NAME = "<%= activeStoreObj && activeStoreObj.name ? activeStoreObj.name.replace(/\"/g, '\\\"') : 'Four Seasons iCleaners' %>";
+        const ACTIVE_STORE_PHONE = "<%= activeStoreObj && activeStoreObj.mobile_number ? activeStoreObj.mobile_number.replace(/\"/g, '\\\"') : '(555) 234-5678' %>";
+        const ACTIVE_STORE_EMAIL = "<%= activeStoreObj && activeStoreObj.store_email ? activeStoreObj.store_email.replace(/\"/g, '\\\"') : 'support@icleaners.com' %>";
+        const ACTIVE_STORE_ADDR = "<%= activeStoreObj && activeStoreObj.address ? activeStoreObj.address.replace(/\"/g, '\\\"') : '123 Main St, Suite 100' %>";
+
+        let lastFocusedInput = null;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const inputs = document.querySelectorAll('.template-merge-input');
+            inputs.forEach(function (el) {
+                el.addEventListener('focus', function () {
+                    lastFocusedInput = this;
+                    const label = this.getAttribute('data-field-label') || this.name;
+                    const indicator = document.getElementById('active_field_indicator');
+                    if (indicator) {
+                        indicator.innerHTML = '<i class="fas fa-edit text-primary me-1"></i>Inserting into: <strong class="text-primary">' + label + '</strong>';
+                    }
+                });
+            });
+
+            // Initialize all SMS character counters
+            const smsFields = document.querySelectorAll('textarea[id^="tpl_"][id$="_smsBody"]');
+            smsFields.forEach(function (ta) {
+                const evKey = ta.getAttribute('data-event');
+                if (evKey) updateSmsCounter(evKey);
+            });
+        });
+
+        function switchTemplateStore(storeId) {
+            window.location.href = '/tool/notification-templates?store_id=' + encodeURIComponent(storeId);
+        }
+
+        function updateSmsCounter(eventKey) {
+            const ta = document.getElementById('tpl_' + eventKey + '_smsBody');
+            const counter = document.getElementById('sms_counter_' + eventKey);
+            if (!ta || !counter) return;
+            const len = (ta.value || '').length;
+            const segments = Math.max(1, Math.ceil(len / 160));
+            counter.textContent = len + ' chars (' + segments + ' SMS segment' + (segments > 1 ? 's' : '') + ')';
+        }
+
+        function insertMergeTag(tag) {
+            if (!lastFocusedInput) {
+                const firstSms = document.querySelector('.template-merge-input');
+                if (firstSms) {
+                    lastFocusedInput = firstSms;
+                }
+            }
+
+            if (lastFocusedInput && !lastFocusedInput.readOnly) {
+                const start = lastFocusedInput.selectionStart || 0;
+                const end = lastFocusedInput.selectionEnd || 0;
+                const val = lastFocusedInput.value || '';
+                lastFocusedInput.value = val.substring(0, start) + tag + val.substring(end);
+                lastFocusedInput.focus();
+                const nextPos = start + tag.length;
+                lastFocusedInput.setSelectionRange(nextPos, nextPos);
+
+                const evKey = lastFocusedInput.getAttribute('data-event');
+                if (evKey) updateSmsCounter(evKey);
+
+                if (typeof toastr !== 'undefined') {
+                    toastr.info('Inserted ' + tag);
+                }
+            }
+        }
+
+        function buildSampleMap() {
+            const map = {};
+            SAMPLE_VARIABLES.forEach(function (v) {
+                const cleanKey = String(v.tag).replace(/^\{|\}$/g, '');
+                map[cleanKey] = v.sample;
+            });
+            map.store_name = ACTIVE_STORE_NAME || map.store_name;
+            map.store_phone = ACTIVE_STORE_PHONE || map.store_phone;
+            map.store_email = ACTIVE_STORE_EMAIL || map.store_email;
+            map.store_address = ACTIVE_STORE_ADDR || map.store_address;
+            return map;
+        }
+
+        function interpolateSample(str, map) {
+            if (!str) return '';
+            return String(str).replace(/\{([a-zA-Z0-9_]+)\}/g, function (match, key) {
+                return Object.prototype.hasOwnProperty.call(map, key) ? map[key] : match;
+            });
+        }
+
+        function openTemplatePreview(eventKey, eventTitle) {
+            const subjEl = document.getElementById('tpl_' + eventKey + '_emailSubject');
+            const headEl = document.getElementById('tpl_' + eventKey + '_emailHeadline');
+            const bodyEl = document.getElementById('tpl_' + eventKey + '_emailBody');
+            const smsEl = document.getElementById('tpl_' + eventKey + '_smsBody');
+
+            const sampleMap = buildSampleMap();
+            const renderedSubj = interpolateSample(subjEl ? subjEl.value : '', sampleMap);
+            const renderedHead = interpolateSample(headEl ? headEl.value : '', sampleMap);
+            const renderedBody = interpolateSample(bodyEl ? bodyEl.value : '', sampleMap);
+            const renderedSms = interpolateSample(smsEl ? smsEl.value : '', sampleMap);
+
+            document.getElementById('preview_event_subtitle').textContent = eventTitle + ' — Rendered with sample customer & order values';
+            document.getElementById('preview_sms_box').textContent = renderedSms;
+            document.getElementById('preview_sms_length').textContent = renderedSms.length + ' chars';
+            document.getElementById('preview_email_subject').textContent = renderedSubj;
+            document.getElementById('preview_email_headline').textContent = renderedHead;
+            document.getElementById('preview_email_body').innerHTML = renderedBody.replace(/\r?\n/g, '<br>');
+            document.getElementById('preview_email_footer').innerHTML =
+                '<strong>' + sampleMap.store_name + '</strong><br>' +
+                sampleMap.store_address + '<br>Phone: ' + sampleMap.store_phone + ' | Email: ' + sampleMap.store_email;
+
+            const orderTableBox = document.getElementById('preview_order_table_box');
+            if (orderTableBox) {
+                orderTableBox.classList.toggle('d-none', eventKey === 'welcome_customer');
+            }
+
+            const modalEl = document.getElementById('templatePreviewModal');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            }
+        }
+
+        function restoreDefaultFields(eventKey) {
+            const def = BUILTIN_DEFAULTS[eventKey];
+            if (!def) return;
+
+            const subjEl = document.getElementById('tpl_' + eventKey + '_emailSubject');
+            const headEl = document.getElementById('tpl_' + eventKey + '_emailHeadline');
+            const bodyEl = document.getElementById('tpl_' + eventKey + '_emailBody');
+            const smsEl = document.getElementById('tpl_' + eventKey + '_smsBody');
+
+            if (subjEl) subjEl.value = def.emailSubject || '';
+            if (headEl) headEl.value = def.emailHeadline || '';
+            if (bodyEl) bodyEl.value = def.emailBody || '';
+            if (smsEl) smsEl.value = def.smsBody || '';
+
+            updateSmsCounter(eventKey);
+            if (typeof toastr !== 'undefined') {
+                toastr.info('Default template text restored in editor. Click "Save All Templates" to persist.');
+            }
+        }
+
+        async function resetEventTemplate(eventKey) {
+            const confirmMsg = eventKey === 'all'
+                ? 'Are you sure you want to reset ALL 12 notification templates to their default wording?'
+                : 'Reset this event template back to default wording?';
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                const res = await fetch('/tool/notification-templates/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        store_id: <%= selectedStore %>,
+                        event_key: eventKey
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (typeof toastr !== 'undefined') toastr.success(data.message);
+                    setTimeout(function () { window.location.reload(); }, 500);
+                } else {
+                    alert(data.message || 'Failed to reset template');
+                }
+            } catch (err) {
+                alert('Error resetting template: ' + err.message);
+            }
+        }
+
+        function filterTemplateCategory(catId, btnEl) {
+            document.querySelectorAll('.tpl-cat-btn').forEach(function (b) {
+                b.classList.remove('btn-primary');
+                b.classList.add('btn-outline-secondary');
+            });
+            if (btnEl) {
+                btnEl.classList.remove('btn-outline-secondary');
+                btnEl.classList.add('btn-primary');
+            }
+
+            document.querySelectorAll('.template-category-section').forEach(function (sec) {
+                if (catId === 'all' || sec.getAttribute('data-category') === catId) {
+                    sec.classList.remove('d-none');
+                } else {
+                    sec.classList.add('d-none');
+                }
+            });
+        }
+
+        function filterTemplatesBySearch(query) {
+            const q = String(query || '').trim().toLowerCase();
+            document.querySelectorAll('.template-event-col').forEach(function (col) {
+                const hay = col.getAttribute('data-title') || '';
+                if (!q || hay.includes(q)) {
+                    col.classList.remove('d-none');
+                } else {
+                    col.classList.add('d-none');
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
+

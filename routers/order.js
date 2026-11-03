@@ -28,6 +28,117 @@ async function idfororder(storeId) {
   return await generateOrderId(storeId);
 }
 
+const { conn } = require("../middelwer/db");
+
+let racksSchemaVerified = false;
+async function ensureRacksSchema() {
+  if (racksSchemaVerified) return;
+  try {
+    const promiseConn = conn.promise();
+    await promiseConn.query(`
+      CREATE TABLE IF NOT EXISTS tbl_racks (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        rack_name VARCHAR(150) NOT NULL,
+        store_id INT NOT NULL DEFAULT 0,
+        delet_flage VARCHAR(10) NOT NULL DEFAULT '0',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_racks_store (store_id, delet_flage)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+    const [cols] = await promiseConn.query("SHOW COLUMNS FROM tbl_order");
+    if (!cols.some((c) => c.Field === "rack_ids")) {
+      await promiseConn.query("ALTER TABLE tbl_order ADD COLUMN rack_ids VARCHAR(255) NULL DEFAULT NULL");
+    }
+    racksSchemaVerified = true;
+  } catch (e) {
+    console.error("Warning: ensureRacksSchema error:", e.message);
+  }
+}
+
+/**
+ * Compute live item count and active order count per rack_id
+ * Only active orders (not Delivered=4, Returned=5, Cancelled=6, and is_delivered != '1') occupy racks.
+ */
+async function computeRackUsageMap(storeFilter = null) {
+  await ensureRacksSchema();
+  let storeClause = "";
+  if (storeFilter && storeFilter !== "all" && storeFilter !== "0") {
+    storeClause = ` AND store_id = '${String(storeFilter).replace(/'/g, "\\'")}'`;
+  }
+
+  const activeOrders = await DataFind(`
+    SELECT id, order_id, store_id, order_status, is_delivered, service_list, rack_ids
+    FROM tbl_order
+    WHERE rack_ids IS NOT NULL
+      AND rack_ids != ''
+      AND order_status NOT IN (4, 5, 6)
+      AND COALESCE(is_delivered, '0') != '1'
+      ${storeClause}
+  `);
+
+  const usageMap = {};
+  if (!activeOrders || activeOrders.length === 0) return usageMap;
+
+  // Gather all service_list item IDs across these active orders in one batch
+  const allServiceIds = new Set();
+  activeOrders.forEach((ord) => {
+    const raw = String(ord.service_list || "").trim();
+    if (raw && raw !== "0") {
+      raw.split(",").forEach((s) => {
+        const clean = parseInt(s.trim(), 10);
+        if (clean > 0) allServiceIds.add(clean);
+      });
+    }
+  });
+
+  const serviceItemPiecesMap = {};
+  if (allServiceIds.size > 0) {
+    const idList = Array.from(allServiceIds).join(",");
+    const items = await DataFind(
+      `SELECT id, service_quntity, no_of_items FROM tbl_cart_servicelist WHERE id IN (${idList})`
+    );
+    (items || []).forEach((it) => {
+      const qty = parseFloat(it.service_quntity || 1) || 1;
+      const pcs = parseInt(it.no_of_items || 1, 10) || 1;
+      serviceItemPiecesMap[String(it.id)] = Math.round(qty * pcs);
+    });
+  }
+
+  activeOrders.forEach((ord) => {
+    const rawRacks = String(ord.rack_ids || "")
+      .split(",")
+      .map((r) => r.trim())
+      .filter(Boolean);
+    if (rawRacks.length === 0) return;
+
+    let orderPieces = 0;
+    const rawServices = String(ord.service_list || "").trim();
+    if (rawServices && rawServices !== "0") {
+      rawServices.split(",").forEach((sId) => {
+        const cleanId = String(parseInt(sId.trim(), 10));
+        if (serviceItemPiecesMap[cleanId] !== undefined) {
+          orderPieces += serviceItemPiecesMap[cleanId];
+        }
+      });
+    }
+
+    rawRacks.forEach((rId) => {
+      if (!usageMap[rId]) {
+        usageMap[rId] = { itemCount: 0, orderCount: 0, orders: [] };
+      }
+      usageMap[rId].itemCount += orderPieces;
+      usageMap[rId].orderCount += 1;
+      usageMap[rId].orders.push({
+        id: ord.id,
+        order_id: ord.order_id,
+        pieces: orderPieces,
+      });
+    });
+  });
+
+  return usageMap;
+}
+
 async function getStaffScope(userId, loginas) {
   if (loginas == 0) return { isStaff: false, staffStoreId: null };
   const adminData = await DataFind(
@@ -346,6 +457,13 @@ router.get("/list/data", auth, async (req, res) => {
         5: 'tbl_order.order_status',
       },
       postProcess: async (rows) => {
+        await ensureRacksSchema();
+        const allRacks = await DataFind("SELECT id, rack_name FROM tbl_racks WHERE delet_flage = '0'");
+        const rackMap = {};
+        (allRacks || []).forEach((r) => {
+          rackMap[String(r.id)] = r.rack_name;
+        });
+
         return rows.map((order) => {
           const oDate = order.order_date
             ? new Date(order.order_date)
@@ -401,6 +519,18 @@ router.get("/list/data", auth, async (req, res) => {
             order.orderStatusName = "Draft";
           }
 
+          let rackNames = [];
+          if (
+            order.rack_ids &&
+            ![4, 5, 6].includes(Number(order.order_status)) &&
+            String(order.is_delivered) !== "1"
+          ) {
+            rackNames = String(order.rack_ids)
+              .split(",")
+              .map((rId) => rackMap[String(rId).trim()])
+              .filter(Boolean);
+          }
+
           return {
             ...order,
             formattedOrderDate,
@@ -410,6 +540,7 @@ router.get("/list/data", auth, async (req, res) => {
             isZeroItemOrder,
             order_type: order.order_type || 'Counter & Counter',
             statusClass,
+            rackNames,
             canDelete,
             canEdit,
             isMaster: login === "master",
@@ -676,6 +807,36 @@ router.get("/view/:id", auth, async (req, res) => {
       }
     }
 
+    await ensureRacksSchema();
+    const rawRacks = await DataFind(
+      `SELECT id, rack_name, store_id FROM tbl_racks WHERE store_id = '${order[0].store_id}' AND delet_flage = '0' ORDER BY rack_name ASC`
+    );
+    const usageMap = await computeRackUsageMap(order[0].store_id);
+    const currentOrderRackIds = (
+      order[0].rack_ids &&
+      ![4, 5, 6].includes(Number(order[0].order_status)) &&
+      String(order[0].is_delivered) !== "1"
+    )
+      ? String(order[0].rack_ids)
+          .split(",")
+          .map((r) => String(r).trim())
+          .filter(Boolean)
+      : [];
+
+    const storeRacks = (rawRacks || []).map((r) => {
+      const u = usageMap[String(r.id)] || { itemCount: 0, orderCount: 0, orders: [] };
+      return {
+        ...r,
+        itemCount: u.itemCount,
+        orderCount: u.orderCount,
+        isAssignedToThisOrder: currentOrderRackIds.includes(String(r.id)),
+      };
+    });
+
+    const assignedRacks = storeRacks.filter((r) =>
+      currentOrderRackIds.includes(String(r.id))
+    );
+
     res.render("order_details", {
       order: order[0],
       Ordersatus,
@@ -688,6 +849,8 @@ router.get("/view/:id", auth, async (req, res) => {
       accessdata,
       availableStores: availableStores || [],
       transferredFromStore,
+      storeRacks,
+      assignedRacks,
       language: req.language_data,
       language_name: req.language_name,
       splite_id,
@@ -726,17 +889,25 @@ router.get("/changestatus/:id", auth, async (req, res) => {
       const orderid = req.params.id.split(",")[1];
       const statusid = req.params.id.split(",")[0];
 
-      // await DataFind(
-      //   `UPDATE tbl_order SET order_status=${statusid},commission_status=${
-      //     statusid == "6" ? "0" : "1"
-      //   },stutus_change_date=CURRENT_TIMESTAMP WHERE id=${orderid}`
-      // );
+      await ensureRacksSchema();
+      let rackUpdateClause = "";
+      if ([4, 5, 6].includes(Number(statusid))) {
+        // Automatically release racks when order is Delivered, Returned, or Cancelled
+        rackUpdateClause = `,rack_ids=NULL`;
+      } else if (req.query.rack_ids !== undefined) {
+        const cleanRacks = String(req.query.rack_ids || "")
+          .split(",")
+          .map((r) => parseInt(r.trim(), 10))
+          .filter((n) => !isNaN(n) && n > 0)
+          .join(",");
+        rackUpdateClause = cleanRacks ? `,rack_ids='${cleanRacks}'` : `,rack_ids=NULL`;
+      }
 
       const orderupdate = await DataUpdate(
         `tbl_order`,
         `order_status=${statusid},commission_status=${
           statusid == "6" ? "0" : "1"
-        },stutus_change_date=CURRENT_TIMESTAMP`,
+        }${rackUpdateClause},stutus_change_date=CURRENT_TIMESTAMP`,
         `id=${orderid}`,
         req.hostname,
         req.protocol,
@@ -1675,9 +1846,10 @@ router.post("/calendar/toggle-status", auth, async (req, res) => {
         targetStatus === "1" ? "CURRENT_TIMESTAMP" : "NULL";
       const setDeliveredBy =
         targetStatus === "1" ? `'${req.user.id}'` : "NULL";
+      const clearRacksClause = targetStatus === "1" ? ", rack_ids = NULL" : "";
       await DataUpdate(
         "tbl_order",
-        `is_delivered = '${targetStatus}', delivered_at = ${setDeliveredAt}, delivered_by = ${setDeliveredBy}`,
+        `is_delivered = '${targetStatus}', delivered_at = ${setDeliveredAt}, delivered_by = ${setDeliveredBy}${clearRacksClause}`,
         `id = '${order.id}'`,
         req.hostname,
         req.protocol
@@ -1824,6 +1996,572 @@ router.get(["/calendar", "/calendar/:storeId"], optionalAuth, async (req, res) =
     console.error("Error in /order/calendar:", error);
     req.flash("error", "Error loading route calendar");
     return res.redirect("/");
+  }
+});
+
+// ==========================================
+// RACKS MANAGEMENT & ORDER RACK ASSIGNMENT
+// ==========================================
+
+// 1. Render Racks Management Page
+router.get("/racks", auth, async (req, res) => {
+  try {
+    await ensureRacksSchema();
+    const { id, store, loginas } = req.user;
+    if (loginas == 0) {
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect("/");
+    }
+
+    const accessdata = await access(req.user);
+    if (
+      accessdata?.logas === "custmor" ||
+      (!accessdata?.roll?.orders?.includes("read") &&
+        !accessdata?.roll?.service?.includes("read"))
+    ) {
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect("/");
+    }
+
+    const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
+    const multiy = await DataFind("SELECT type FROM tbl_master_shop");
+    const ismulty =
+      !isStaff &&
+      accessdata.login === "master" &&
+      multiy &&
+      multiy.length > 0 &&
+      multiy[0].type == 1;
+
+    const storeList = await DataFind(
+      "SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0 ORDER BY name ASC"
+    );
+
+    const effectiveStoreId = isStaff ? staffStoreId : store;
+
+    return res.render("racks", {
+      titel: req.language_data?.Racks || "Garment Racks",
+      accessdata,
+      ismulty,
+      storeList: storeList || [],
+      effectiveStoreId: effectiveStoreId || "",
+      language: req.language_data,
+      language_name: req.language_name,
+    });
+  } catch (error) {
+    console.error("Error in GET /order/racks:", error);
+    req.flash("error", "Error loading racks page");
+    return res.redirect("/");
+  }
+});
+
+// 2. Server-Side DataTables Endpoint for Racks
+router.get("/racks/data", auth, async (req, res) => {
+  try {
+    await ensureRacksSchema();
+    const { id, store, loginas } = req.user;
+    if (loginas == 0) {
+      return res.status(403).json({ error: "Unauthorized", data: [] });
+    }
+
+    const accessdata = await access(req.user);
+    const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
+    const multiy = await DataFind("SELECT type FROM tbl_master_shop");
+    const ismulty =
+      !isStaff &&
+      accessdata.login === "master" &&
+      multiy &&
+      multiy.length > 0 &&
+      multiy[0].type == 1;
+
+    const baseWhere = [`tbl_racks.delet_flage = '0'`];
+    if (isStaff && staffStoreId) {
+      baseWhere.push(`tbl_racks.store_id = '${staffStoreId}'`);
+    } else if (!ismulty) {
+      const adminData = await DataFind(`SELECT store_ID FROM tbl_admin WHERE id = ${id}`);
+      const sId = (adminData && adminData.length > 0 && adminData[0].store_ID) ? adminData[0].store_ID : store;
+      if (sId) {
+        baseWhere.push(`tbl_racks.store_id = '${sId}'`);
+      }
+    }
+
+    const filterWhere = [];
+    const storeParam = req.query.store_id || req.query.store_filter;
+    if (ismulty && storeParam && !["all", "ALL", "", "0"].includes(String(storeParam).trim())) {
+      const cleanStore = String(storeParam).trim().replace(/'/g, "\\'");
+      filterWhere.push(`tbl_racks.store_id = '${cleanStore}'`);
+    }
+
+    const isMaster = accessdata.logas === "master" || (accessdata.roll && accessdata.roll.rollType === "master");
+    const canEdit = Boolean(
+      isMaster ||
+        (accessdata?.roll?.orders && accessdata.roll.orders.includes("edit")) ||
+        (accessdata?.roll?.service && accessdata.roll.service.includes("edit"))
+    );
+    const canDelete = Boolean(
+      isMaster ||
+        (accessdata?.roll?.orders && accessdata.roll.orders.includes("delete")) ||
+        (accessdata?.roll?.service && accessdata.roll.service.includes("delete"))
+    );
+
+    const usageMap = await computeRackUsageMap();
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_racks.*, COALESCE(tbl_store.name, 'Default Store') AS store_name`,
+      from: `tbl_racks LEFT JOIN tbl_store ON tbl_racks.store_id = tbl_store.id`,
+      searchColumns: ["tbl_racks.rack_name", "tbl_store.name"],
+      baseWhere,
+      filterWhere,
+      defaultOrder: "tbl_racks.rack_name ASC, tbl_racks.id DESC",
+      columnMap: {
+        0: "tbl_racks.id",
+        1: "tbl_racks.rack_name",
+        2: "tbl_racks.id",
+        3: "tbl_store.name",
+      },
+      postProcess: async (rows) => {
+        return rows.map((row) => {
+          const u = usageMap[String(row.id)] || { itemCount: 0, orderCount: 0, orders: [] };
+          return {
+            ...row,
+            itemCount: u.itemCount,
+            orderCount: u.orderCount,
+            activeOrders: u.orders,
+            inUse: u.orderCount > 0,
+            canEdit,
+            canDelete,
+          };
+        });
+      },
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Error in GET /order/racks/data:", error);
+    return res.status(500).json({ error: error.message, data: [] });
+  }
+});
+
+// 3. Add New Rack (supports both standard form submit and AJAX quick-add)
+router.post("/racks/add", auth, async (req, res) => {
+  try {
+    const isAjax =
+      req.xhr ||
+      req.body.ajax === "1" ||
+      req.body.ajax === true ||
+      (req.headers.accept && req.headers.accept.includes("application/json"));
+
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      const msg = "For demo purpose CRUD operations are disabled!";
+      if (isAjax) return res.status(403).json({ success: false, message: msg });
+      req.flash("error", msg);
+      return res.redirect("/order/racks");
+    }
+
+    await ensureRacksSchema();
+    const { id, store, loginas } = req.user;
+    if (loginas == 0) {
+      if (isAjax) return res.status(403).json({ success: false, message: "Unauthorized" });
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect("/");
+    }
+
+    const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
+    const rawName = String(req.body.rack_name || "").trim();
+    if (!rawName) {
+      if (isAjax) return res.status(400).json({ success: false, message: "Rack name is required." });
+      req.flash("error", "Rack name is required.");
+      return res.redirect("/order/racks");
+    }
+
+    let targetStoreId = req.body.store_id || req.body.storeid;
+    if (isStaff && staffStoreId) {
+      targetStoreId = staffStoreId;
+    } else if (!targetStoreId) {
+      const adminData = await DataFind(`SELECT store_ID FROM tbl_admin WHERE id = ${id}`);
+      targetStoreId = (adminData && adminData.length > 0 && adminData[0].store_ID) ? adminData[0].store_ID : store;
+    }
+    if (!targetStoreId || targetStoreId === "0") {
+      const firstStore = await DataFind("SELECT id FROM tbl_store WHERE status=1 AND delete_flage=0 ORDER BY id ASC LIMIT 1");
+      targetStoreId = firstStore && firstStore.length > 0 ? firstStore[0].id : 1;
+    }
+
+    const safeName = rawName.replace(/'/g, "\\'");
+    const cleanStoreId = parseInt(targetStoreId, 10) || 1;
+
+    // Prevent duplicate active rack name in the same store
+    const dup = await DataFind(
+      `SELECT id FROM tbl_racks WHERE store_id = '${cleanStoreId}' AND LOWER(rack_name) = LOWER('${safeName}') AND delet_flage = '0' LIMIT 1`
+    );
+    if (dup && dup.length > 0) {
+      const msg = `Rack "${rawName}" already exists in this store.`;
+      if (isAjax) return res.status(400).json({ success: false, message: msg });
+      req.flash("error", msg);
+      return res.redirect("/order/racks");
+    }
+
+    const inserted = await DataInsert(
+      "tbl_racks",
+      "rack_name, store_id, delet_flage",
+      `'${safeName}', '${cleanStoreId}', '0'`,
+      req.hostname,
+      req.protocol
+    );
+
+    if (inserted == -1) {
+      const msg = "Failed to add rack, please try again.";
+      if (isAjax) return res.status(500).json({ success: false, message: msg });
+      req.flash("error", msg);
+      return res.redirect("/order/racks");
+    }
+
+    if (isAjax) {
+      return res.status(200).json({
+        success: true,
+        message: `Rack "${rawName}" added successfully.`,
+        rack: {
+          id: inserted.insertId,
+          rack_name: rawName,
+          store_id: cleanStoreId,
+          itemCount: 0,
+          orderCount: 0,
+        },
+      });
+    }
+
+    req.flash("success", `Rack "${rawName}" added successfully.`);
+    return res.redirect("/order/racks");
+  } catch (error) {
+    console.error("Error in POST /order/racks/add:", error);
+    req.flash("error", "Error adding rack: " + error.message);
+    return res.redirect("/order/racks");
+  }
+});
+
+// 4. Update Rack
+router.post("/racks/update/:id", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose CRUD operations are disabled!");
+      return res.redirect("/order/racks");
+    }
+
+    await ensureRacksSchema();
+    const rackId = parseInt(req.params.id, 10);
+    const rawName = String(req.body.rack_name_update || req.body.rack_name || "").trim();
+    if (!rackId || !rawName) {
+      req.flash("error", "Rack name is required.");
+      return res.redirect("/order/racks");
+    }
+
+    const existing = await DataFind(`SELECT * FROM tbl_racks WHERE id = '${rackId}' AND delet_flage = '0' LIMIT 1`);
+    if (!existing || existing.length === 0) {
+      req.flash("error", "Rack not found.");
+      return res.redirect("/order/racks");
+    }
+
+    const targetStoreId = req.body.store_id_update
+      ? parseInt(req.body.store_id_update, 10)
+      : existing[0].store_id;
+    const safeName = rawName.replace(/'/g, "\\'");
+
+    const dup = await DataFind(
+      `SELECT id FROM tbl_racks WHERE store_id = '${targetStoreId}' AND LOWER(rack_name) = LOWER('${safeName}') AND delet_flage = '0' AND id != '${rackId}' LIMIT 1`
+    );
+    if (dup && dup.length > 0) {
+      req.flash("error", `Another rack named "${rawName}" already exists in this store.`);
+      return res.redirect("/order/racks");
+    }
+
+    const updated = await DataUpdate(
+      "tbl_racks",
+      `rack_name = '${safeName}', store_id = '${targetStoreId}'`,
+      `id = '${rackId}'`,
+      req.hostname,
+      req.protocol
+    );
+
+    if (updated == -1) {
+      req.flash("error", "Failed to update rack.");
+      return res.redirect("/order/racks");
+    }
+
+    req.flash("success", `Rack "${rawName}" updated successfully.`);
+    return res.redirect("/order/racks");
+  } catch (error) {
+    console.error("Error in POST /order/racks/update/:id:", error);
+    req.flash("error", "Error updating rack");
+    return res.redirect("/order/racks");
+  }
+});
+
+// 5. Delete Rack (Blocked if currently used in any active order)
+router.get("/racks/delete/:id", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose CRUD operations are disabled!");
+      return res.redirect("/order/racks");
+    }
+
+    await ensureRacksSchema();
+    const rackId = parseInt(req.params.id, 10);
+    if (!rackId) {
+      req.flash("error", "Invalid rack ID.");
+      return res.redirect("/order/racks");
+    }
+
+    const existing = await DataFind(`SELECT * FROM tbl_racks WHERE id = '${rackId}' AND delet_flage = '0' LIMIT 1`);
+    if (!existing || existing.length === 0) {
+      req.flash("error", "Rack not found.");
+      return res.redirect("/order/racks");
+    }
+
+    const usageMap = await computeRackUsageMap(existing[0].store_id);
+    const rackUsage = usageMap[String(rackId)];
+    if (rackUsage && rackUsage.orderCount > 0) {
+      const orderCodes = rackUsage.orders.map((o) => `#${o.order_id}`).join(", ");
+      req.flash(
+        "error",
+        `Cannot delete rack "${existing[0].rack_name}" because it is currently used by ${rackUsage.orderCount} active order(s) (${rackUsage.itemCount} item(s)): ${orderCodes}.`
+      );
+      return res.redirect("/order/racks");
+    }
+
+    const del = await DataUpdate(
+      "tbl_racks",
+      `delet_flage = '1'`,
+      `id = '${rackId}'`,
+      req.hostname,
+      req.protocol
+    );
+
+    if (del == -1) {
+      req.flash("error", "Failed to delete rack.");
+      return res.redirect("/order/racks");
+    }
+
+    req.flash("success", `Rack "${existing[0].rack_name}" deleted successfully.`);
+    return res.redirect("/order/racks");
+  } catch (error) {
+    console.error("Error in GET /order/racks/delete/:id:", error);
+    req.flash("error", "Error deleting rack");
+    return res.redirect("/order/racks");
+  }
+});
+
+// 6. Fetch Racks for a Specific Order (used by the Order Details Rack Modal)
+router.get("/racks/for-order/:orderId", auth, async (req, res) => {
+  try {
+    await ensureRacksSchema();
+    const orderId = parseInt(req.params.orderId, 10);
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: "Invalid Order ID." });
+    }
+
+    const ordRows = await DataFind(`SELECT * FROM tbl_order WHERE id = '${orderId}' LIMIT 1`);
+    if (!ordRows || ordRows.length === 0) {
+      return res.status(404).json({ success: false, message: "Order not found." });
+    }
+
+    const order = ordRows[0];
+    const racks = await DataFind(
+      `SELECT id, rack_name, store_id FROM tbl_racks WHERE store_id = '${order.store_id}' AND delet_flage = '0' ORDER BY rack_name ASC`
+    );
+    const usageMap = await computeRackUsageMap(order.store_id);
+    const selectedRackIds = order.rack_ids
+      ? String(order.rack_ids)
+          .split(",")
+          .map((r) => String(r).trim())
+          .filter(Boolean)
+      : [];
+
+    const enrichedRacks = (racks || []).map((r) => {
+      const u = usageMap[String(r.id)] || { itemCount: 0, orderCount: 0, orders: [] };
+      return {
+        id: r.id,
+        rack_name: r.rack_name,
+        store_id: r.store_id,
+        itemCount: u.itemCount,
+        orderCount: u.orderCount,
+        selected: selectedRackIds.includes(String(r.id)),
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      orderId: order.id,
+      orderCode: order.order_id,
+      storeId: order.store_id,
+      selectedRackIds,
+      racks: enrichedRacks,
+    });
+  } catch (error) {
+    console.error("Error in GET /order/racks/for-order/:orderId:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 7. Assign Multiple Racks to an Order & Optionally Update Status to 'Ready To deliver'
+router.post("/assign-racks", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      return res.status(403).json({
+        status: "error",
+        message: "For demo purpose CRUD operations are disabled!",
+      });
+    }
+
+    await ensureRacksSchema();
+    const { id, roll, loginas } = req.user;
+    if (loginas == 0) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not authorized for this operation.",
+      });
+    }
+
+    const accessdata = await access(req.user);
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.roll_status, r.rollType
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+
+    if (!rolldetail || !rolldetail[0] || !rolldetail[0].orders.includes("edit")) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not authorized to edit orders.",
+      });
+    }
+
+    const orderId = parseInt(req.body.order_id, 10);
+    const statusId = req.body.status_id ? parseInt(req.body.status_id, 10) : null;
+    let rawRackIds = req.body.rack_ids || req.body["rack_ids[]"] || [];
+    if (!Array.isArray(rawRackIds)) {
+      rawRackIds = String(rawRackIds)
+        .split(",")
+        .map((r) => r.trim())
+        .filter(Boolean);
+    }
+
+    const cleanRackIds = Array.from(
+      new Set(
+        rawRackIds
+          .map((r) => parseInt(r, 10))
+          .filter((n) => !isNaN(n) && n > 0)
+      )
+    );
+
+    if (!orderId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Order ID is required.",
+      });
+    }
+
+    if (cleanRackIds.length === 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "Please select at least one rack for this order.",
+      });
+    }
+
+    const orderRows = await DataFind(`SELECT * FROM tbl_order WHERE id = '${orderId}' LIMIT 1`);
+    if (!orderRows || orderRows.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "Order not found.",
+      });
+    }
+
+    const order = orderRows[0];
+    const rackIdsCsv = cleanRackIds.join(",");
+
+    let updateSet = `rack_ids = '${rackIdsCsv}'`;
+    const isStatusTransition = statusId && Number(statusId) !== Number(order.order_status);
+    if (statusId) {
+      updateSet += `, order_status = ${statusId}, commission_status = ${statusId == 6 ? "0" : "1"}, stutus_change_date = CURRENT_TIMESTAMP`;
+    }
+
+    const upd = await DataUpdate(
+      "tbl_order",
+      updateSet,
+      `id = ${orderId}`,
+      req.hostname,
+      req.protocol
+    );
+
+    if (upd == -1) {
+      return res.status(500).json({
+        status: "error",
+        message: "Failed to save rack assignment for this order.",
+      });
+    }
+
+    const assignedRacksRows = await DataFind(
+      `SELECT id, rack_name FROM tbl_racks WHERE id IN (${rackIdsCsv}) AND delet_flage = '0' ORDER BY rack_name ASC`
+    );
+    const assignedNames = (assignedRacksRows || []).map((r) => r.rack_name);
+
+    // If transitioning status (e.g., to Ready To deliver = 3), log notification and dispatch customer Email/SMS
+    if (isStatusTransition) {
+      const storedata = await DataFind(`
+        SELECT tbl_order.order_id, tbl_order.store_id, tbl_orderstatus.status, tbl_store.name
+        FROM tbl_order
+        JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id
+        JOIN tbl_store ON tbl_order.store_id = tbl_store.id
+        WHERE tbl_order.id = ${orderId}
+      `);
+
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, "0");
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const fullDate = `${now.getFullYear()}-${month}-${day}`;
+
+      if (storedata && storedata.length > 0) {
+        await DataInsert(
+          "tbl_notification",
+          "invoice, date, sender, received, notification",
+          `'${storedata[0].order_id}', '${fullDate}', '${accessdata.topbardata.id}', '${storedata[0].store_id}', 'Order ${storedata[0].order_id} is Ready To deliver on Rack(s): ${assignedNames.join(", ").replace(/'/g, "\\'")}.'`,
+          req.hostname,
+          req.protocol
+        );
+
+        await DataInsert(
+          "tbl_notification",
+          "invoice, date, sender, received, notification",
+          `'${storedata[0].order_id}', '${fullDate}', '${accessdata.topbardata.id}', '${order.customer_id}', 'Your order ${storedata[0].order_id} status has been updated to Ready To deliver.'`,
+          req.hostname,
+          req.protocol
+        );
+      }
+
+      const statusEventKey = isRouteDeliveryOrderType(order.order_type)
+        ? "order_out_for_delivery"
+        : "order_ready_pickup";
+
+      dispatchCustomerNotification({
+        eventKey: statusEventKey,
+        storeId: order.store_id,
+        customerId: order.customer_id,
+        orderId: order.id,
+        accessdata,
+      }).catch((e) => console.error("Order ready notification error:", e.message));
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: statusId
+        ? `Order marked Ready To deliver and assigned to rack(s): ${assignedNames.join(", ")}`
+        : `Order racks updated: ${assignedNames.join(", ")}`,
+      racks: assignedRacksRows || [],
+    });
+  } catch (error) {
+    console.error("Error in POST /order/assign-racks:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Server error assigning racks: " + error.message,
+    });
   }
 });
 

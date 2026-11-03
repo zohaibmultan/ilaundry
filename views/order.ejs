@@ -396,9 +396,15 @@
                                 {
                                     data: 'orderStatusName',
                                     render: function (data, type, row) {
-                                        return '<span class="badge-status-pill ' + row.statusClass + '">' +
+                                        var html = '<span class="badge-status-pill ' + row.statusClass + '">' +
                                             (data || 'Pending') +
                                             '</span>';
+                                        if (row.rackNames && row.rackNames.length > 0) {
+                                            html += '<div class="mt-1"><span class="badge bg-info-subtle text-info border py-1 px-2" style="font-size: 11px;">' +
+                                                '<i class="fa fa-layer-group me-1"></i>Rack: ' + row.rackNames.join(', ') +
+                                                '</span></div>';
+                                        }
+                                        return html;
                                     }
                                 },
                                 {

@@ -333,6 +333,16 @@
         </li>
         <% } %>
 
+        <% if(accessdata?.logas !='custmor' && (accessdata?.roll?.orders?.includes('read') || accessdata?.roll?.service?.includes('read'))){ %>
+        <li><a href="/order/racks" class="has-arrow ai-icon" aria-expanded="false">
+            <i class="fa fa-layer-group"></i>
+            <span class="nav-text">
+              <%= language.Racks || 'Racks' %>
+            </span>
+          </a>
+        </li>
+        <% } %>
+
         <% if((accessdata?.logas=='custmor' && accessdata?.roll?.customers?.includes('read')) ||
                       accessdata?.roll?.customers?.includes('read')){ %>
         <li><a href="/coustomer/list" class="has-arrow ai-icon" aria-expanded="false">
@@ -521,13 +531,20 @@
                 <%= language.Master_Settings %>
               </a></li>
             <% } %>
+            <% if((accessdata.logas=='master' && accessdata.roll?.master_setting?.includes('read')) ||
+                  (accessdata.logas=='master' && accessdata.mutibranch==false) ||
+                  (accessdata.topbardata?.store_ID && accessdata.topbardata.store_ID !='' ) ||
+                  (accessdata.roll?.master?.includes('read') && accessdata.logas=='store') ||
+                  (accessdata.roll?.mail?.includes('read'))){ %>
+            <li><a href="/tool/notificationsetting"><%= language.Notification_Settings || 'Notification Settings' %></a></li>
+            <li><a href="/tool/notification-templates"><%= language.Notification_Templates || 'Notification Templates' %></a></li>
+            <% } %>
             <% if((accessdata.logas=='master' &&
                                                                       accessdata.mutibranch==false)||
                                                                       (accessdata.topbardata?.store_ID &&
                                                                       accessdata.topbardata.store_ID !='' )||
                                                                       (accessdata.roll.master.includes('read') &&
                                                                       accessdata.logas=='store' )){ %>
-            <li><a href="/tool/notificationsetting"><%= language.Notification_Settings || 'Notification Settings' %></a></li>
             <li><a href="/tool/storesetting">
                 <%= language.Store_Settings %>
               </a></li>
