@@ -22,6 +22,8 @@ const { generateOrderId } = require("../middelwer/orderIdHelper");
 const {
   dispatchCustomerNotification,
   isRouteDeliveryOrderType,
+  formatWhatsAppInvoiceMessage,
+  formatWhatsAppNumber,
 } = require("../services/notificationService");
 
 async function idfororder(storeId) {
@@ -538,7 +540,7 @@ router.get("/list/data", auth, async (req, res) => {
             formattedPickupDate,
             formattedReadyDate,
             isZeroItemOrder,
-            order_type: order.order_type || 'Counter & Counter',
+            order_type: order.order_type || 'Counter • Counter',
             statusClass,
             rackNames,
             canDelete,
@@ -1642,7 +1644,7 @@ router.get("/calendar/events", optionalAuth, async (req, res) => {
       FROM tbl_order o
       LEFT JOIN tbl_customer c ON o.customer_id = c.id
       LEFT JOIN tbl_store s ON o.store_id = s.id
-      WHERE o.order_type NOT IN ('Counter & Counter', 'Customer drop-off & Store collection')
+      WHERE o.order_type NOT IN ('Counter • Counter', 'Counter & Counter', 'Customer drop-off & Store collection')
         ${storeCondition}
         ${searchCondition}
       ORDER BY o.order_date DESC
@@ -2382,6 +2384,7 @@ router.get("/racks/for-order/:orderId", auth, async (req, res) => {
         store_id: r.store_id,
         itemCount: u.itemCount,
         orderCount: u.orderCount,
+        active_orders_count: u.orderCount,
         selected: selectedRackIds.includes(String(r.id)),
       };
     });
@@ -2391,11 +2394,76 @@ router.get("/racks/for-order/:orderId", auth, async (req, res) => {
       orderId: order.id,
       orderCode: order.order_id,
       storeId: order.store_id,
+      currentRackIds: selectedRackIds,
       selectedRackIds,
       racks: enrichedRacks,
     });
   } catch (error) {
     console.error("Error in GET /order/racks/for-order/:orderId:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 6b. Get Order Racks (compatible with query param ?order_id=... for POS modal and quick lookups)
+router.get("/get-order-racks", auth, async (req, res) => {
+  try {
+    await ensureRacksSchema();
+    const orderId = parseInt(req.query.order_id, 10);
+    const accessdata = await access(req.user);
+    let storeId = accessdata?.topbardata?.store_ID || req.user.store || null;
+
+    let selectedRackIds = [];
+    let order = null;
+
+    if (orderId && orderId > 0) {
+      const ordRows = await DataFind(`SELECT * FROM tbl_order WHERE id = '${orderId}' LIMIT 1`);
+      if (ordRows && ordRows.length > 0) {
+        order = ordRows[0];
+        storeId = order.store_id || storeId;
+        selectedRackIds = order.rack_ids
+          ? String(order.rack_ids)
+              .split(",")
+              .map((r) => String(r).trim())
+              .filter(Boolean)
+          : [];
+      }
+    }
+
+    if (!storeId && req.query.store_id && req.query.store_id !== '0') {
+      storeId = req.query.store_id;
+    }
+
+    const storeFilter = storeId ? `WHERE store_id = '${storeId}' AND delet_flage = '0'` : `WHERE delet_flage = '0'`;
+    const racks = await DataFind(
+      `SELECT id, rack_name, store_id FROM tbl_racks ${storeFilter} ORDER BY rack_name ASC`
+    );
+
+    const usageMap = storeId ? await computeRackUsageMap(storeId) : await computeRackUsageMap();
+
+    const enrichedRacks = (racks || []).map((r) => {
+      const u = usageMap[String(r.id)] || { itemCount: 0, orderCount: 0, orders: [] };
+      return {
+        id: r.id,
+        rack_name: r.rack_name,
+        store_id: r.store_id,
+        itemCount: u.itemCount,
+        orderCount: u.orderCount,
+        active_orders_count: u.orderCount,
+        selected: selectedRackIds.includes(String(r.id)),
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      orderId: order ? order.id : (orderId || null),
+      orderCode: order ? order.order_id : null,
+      storeId,
+      currentRackIds: selectedRackIds,
+      selectedRackIds,
+      racks: enrichedRacks,
+    });
+  } catch (error) {
+    console.error("Error in GET /order/get-order-racks:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -2475,6 +2543,50 @@ router.post("/assign-racks", auth, async (req, res) => {
     }
 
     const order = orderRows[0];
+
+    // Check for duplicate rack collision across other active/undelivered orders
+    const forceConfirm = req.body.force_confirm === "1" || req.body.force_confirm === true || req.body.force_confirm === "true";
+    const occupiedRacks = [];
+    if (!forceConfirm && cleanRackIds.length > 0) {
+      const activeOrders = await DataFind(`
+        SELECT o.id, o.order_id, o.rack_ids, o.customer_id, c.name AS customer_name, c.first_name, c.last_name
+        FROM tbl_order o
+        LEFT JOIN tbl_customer c ON o.customer_id = c.id
+        WHERE o.id != '${orderId}'
+          AND o.order_status NOT IN (4, 5, 6)
+          AND LENGTH(COALESCE(o.rack_ids, '')) > 0
+          AND o.store_id = '${order.store_id}'
+      `);
+
+      if (activeOrders && activeOrders.length > 0) {
+        for (const rackId of cleanRackIds) {
+          const matching = activeOrders.filter((ao) => {
+            const list = String(ao.rack_ids).split(",").map((s) => s.trim());
+            return list.includes(String(rackId));
+          });
+          if (matching.length > 0) {
+            const rackInfo = await DataFind(`SELECT rack_name FROM tbl_racks WHERE id = '${rackId}' LIMIT 1`);
+            const rName = rackInfo && rackInfo.length > 0 ? rackInfo[0].rack_name : `Rack #${rackId}`;
+            const ordersDesc = matching.map((m) => {
+              const cust = (m.last_name && m.first_name) ? `${m.last_name}, ${m.first_name}` : (m.customer_name || 'Customer');
+              return `#${m.order_id} (${cust})`;
+            }).join(", ");
+            occupiedRacks.push({ rackId, rackName: rName, orders: ordersDesc });
+          }
+        }
+      }
+    }
+
+    if (occupiedRacks.length > 0 && !forceConfirm) {
+      const rackDetails = occupiedRacks.map((or) => `${or.rackName} currently holds order(s): ${or.orders}`).join("; ");
+      return res.status(200).json({
+        status: "warning",
+        requires_confirmation: true,
+        message: `Rack collision detected: ${rackDetails}. Do you wish to share this rack position?`,
+        collisions: occupiedRacks,
+      });
+    }
+
     const rackIdsCsv = cleanRackIds.join(",");
 
     let updateSet = `rack_ids = '${rackIdsCsv}'`;
@@ -2562,6 +2674,383 @@ router.post("/assign-racks", auth, async (req, res) => {
       status: "error",
       message: "Server error assigning racks: " + error.message,
     });
+  }
+});
+
+// <<<<<<<<<<<< POS & Search: Get Active Customer Orders with Racks >>>>>>>>>>>>>
+router.get("/customer-active-orders/:customerId", auth, async (req, res) => {
+  try {
+    const customerId = req.params.customerId;
+    const { store, loginas } = req.user;
+    if (!customerId || customerId == "0") {
+      return res.status(400).json({ success: false, message: "Valid Customer ID is required." });
+    }
+
+    const accessdata = await access(req.user);
+    let storeCondition = "";
+    if (loginas != 1 && accessdata?.topbardata?.store_ID) {
+      storeCondition = `AND o.store_id = '${accessdata.topbardata.store_ID}'`;
+    }
+
+    const orders = await DataFind(`
+      SELECT o.id, o.order_id, o.store_id, o.order_type, o.order_date, o.ready_date, o.delivery_date,
+             o.gross_total, o.paid_amount, o.balance_amount, o.order_status, o.rack_ids, o.service_list,
+             s.status AS status_name
+      FROM tbl_order o
+      LEFT JOIN tbl_orderstatus s ON o.order_status = s.id
+      WHERE o.customer_id = '${customerId}'
+        AND o.order_status NOT IN (4, 5, 6)
+        ${storeCondition}
+      ORDER BY o.id DESC
+    `);
+
+    // Resolve rack names for each order
+    const allRacks = await DataFind(`SELECT id, rack_name FROM tbl_racks WHERE delet_flage = '0'`);
+    const racksMap = {};
+    (allRacks || []).forEach((r) => {
+      racksMap[String(r.id)] = r.rack_name;
+    });
+
+    const formattedOrders = (orders || []).map((ord) => {
+      let rackNames = [];
+      if (ord.rack_ids && String(ord.rack_ids).trim() !== "") {
+        const ids = String(ord.rack_ids).split(",").map((s) => s.trim());
+        rackNames = ids.map((id) => racksMap[id] || `Rack #${id}`);
+      }
+
+      const isReady = Number(ord.order_status) === 3;
+      return {
+        id: ord.id,
+        order_id: ord.order_id,
+        order_type: ord.order_type,
+        order_date: ord.order_date,
+        ready_date: ord.ready_date,
+        gross_total: parseFloat(ord.gross_total || 0).toFixed(2),
+        paid_amount: parseFloat(ord.paid_amount || 0).toFixed(2),
+        balance_amount: parseFloat(ord.balance_amount || 0).toFixed(2),
+        order_status: ord.order_status,
+        status_name: ord.status_name || (isReady ? "Ready To deliver" : "In Process"),
+        is_ready: isReady,
+        rack_ids: ord.rack_ids || "",
+        rack_names: rackNames.join(", "),
+        rack_count: rackNames.length,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      orders: formattedOrders,
+    });
+  } catch (error) {
+    console.error("Error fetching customer active orders:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// <<<<<<<<<<<< Two-Way Racks Search: Search Invoice or Rack Location >>>>>>>>>>>>>
+router.get("/racks/search-invoice", auth, async (req, res) => {
+  try {
+    const invoiceQuery = String(req.query.q || "").trim();
+    if (!invoiceQuery) {
+      return res.status(400).json({ success: false, message: "Please provide an invoice or order number to search." });
+    }
+
+    const { loginas } = req.user;
+    const accessdata = await access(req.user);
+    let storeCondition = "";
+    if (loginas != 1 && accessdata?.topbardata?.store_ID) {
+      storeCondition = `AND o.store_id = '${accessdata.topbardata.store_ID}'`;
+    }
+
+    const safeQ = invoiceQuery.replace(/'/g, "\\'");
+    const matchingOrders = await DataFind(`
+      SELECT o.id, o.order_id, o.gross_total, o.balance_amount, o.order_status, o.ready_date, o.rack_ids,
+             s.status AS status_name, st.name AS store_name,
+             c.name AS customer_name, c.first_name, c.last_name, c.number AS customer_phone
+      FROM tbl_order o
+      LEFT JOIN tbl_orderstatus s ON o.order_status = s.id
+      LEFT JOIN tbl_store st ON o.store_id = st.id
+      LEFT JOIN tbl_customer c ON o.customer_id = c.id
+      WHERE (o.order_id LIKE '%${safeQ}%' OR o.id = '${safeQ}')
+        ${storeCondition}
+      ORDER BY o.id DESC
+      LIMIT 10
+    `);
+
+    if (!matchingOrders || matchingOrders.length === 0) {
+      return res.status(200).json({
+        success: true,
+        found: false,
+        message: `No active order found matching invoice "${invoiceQuery}".`,
+        results: [],
+      });
+    }
+
+    const allRacks = await DataFind(`SELECT id, rack_name FROM tbl_racks WHERE delet_flage = '0'`);
+    const racksMap = {};
+    (allRacks || []).forEach((r) => {
+      racksMap[String(r.id)] = r.rack_name;
+    });
+
+    const results = matchingOrders.map((ord) => {
+      let rackNames = [];
+      if (ord.rack_ids && String(ord.rack_ids).trim() !== "") {
+        const ids = String(ord.rack_ids).split(",").map((s) => s.trim());
+        rackNames = ids.map((id) => racksMap[id] || `Rack #${id}`);
+      }
+      const custDisplay = (ord.last_name && ord.first_name) ? `${ord.last_name}, ${ord.first_name}` : (ord.customer_name || "Customer");
+      return {
+        id: ord.id,
+        order_id: ord.order_id,
+        customer_name: custDisplay,
+        customer_phone: ord.customer_phone || "",
+        order_status: ord.order_status,
+        status_name: ord.status_name,
+        gross_total: parseFloat(ord.gross_total || 0).toFixed(2),
+        balance_amount: parseFloat(ord.balance_amount || 0).toFixed(2),
+        ready_date: ord.ready_date,
+        rack_ids: ord.rack_ids || "",
+        rack_names: rackNames.join(", "),
+        has_racks: rackNames.length > 0,
+        store_name: ord.store_name,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      found: true,
+      results,
+    });
+  } catch (error) {
+    console.error("Error searching invoice in racks:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// <<<<<<<<<<<< Rack Drilldown: Get all orders currently assigned to a specific rack >>>>>>>>>>>>>
+router.get("/racks/orders-by-rack/:rackId", auth, async (req, res) => {
+  try {
+    const rackId = req.params.rackId;
+    if (!rackId) {
+      return res.status(400).json({ success: false, message: "Rack ID is required." });
+    }
+
+    const rackRows = await DataFind(`SELECT * FROM tbl_racks WHERE id = '${rackId}' AND delet_flage = '0' LIMIT 1`);
+    if (!rackRows || rackRows.length === 0) {
+      return res.status(404).json({ success: false, message: "Rack not found." });
+    }
+    const rack = rackRows[0];
+
+    const activeOrders = await DataFind(`
+      SELECT o.id, o.order_id, o.order_date, o.ready_date, o.gross_total, o.paid_amount, o.balance_amount,
+             o.order_status, o.rack_ids, o.service_list,
+             s.status AS status_name,
+             c.name AS customer_name, c.first_name, c.last_name, c.number AS customer_phone
+      FROM tbl_order o
+      LEFT JOIN tbl_orderstatus s ON o.order_status = s.id
+      LEFT JOIN tbl_customer c ON o.customer_id = c.id
+      WHERE FIND_IN_SET('${rackId}', o.rack_ids)
+        AND o.order_status NOT IN (4, 5, 6)
+      ORDER BY o.id DESC
+    `);
+
+    const formatted = (activeOrders || []).map((ord) => {
+      const custDisplay = (ord.last_name && ord.first_name) ? `${ord.last_name}, ${ord.first_name}` : (ord.customer_name || "Customer");
+      return {
+        id: ord.id,
+        order_id: ord.order_id,
+        customer_name: custDisplay,
+        customer_phone: ord.customer_phone || "",
+        ready_date: ord.ready_date,
+        order_status: ord.order_status,
+        status_name: ord.status_name,
+        gross_total: parseFloat(ord.gross_total || 0).toFixed(2),
+        balance_amount: parseFloat(ord.balance_amount || 0).toFixed(2),
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      rack: {
+        id: rack.id,
+        rack_name: rack.rack_name,
+        store_id: rack.store_id,
+      },
+      orders: formatted,
+      order_count: formatted.length,
+    });
+  } catch (error) {
+    console.error("Error fetching orders by rack:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// <<<<<<<<<<<< Manual Invoice Dispatch: Email, SMS & WhatsApp >>>>>>>>>>>>
+router.post("/send-manual-invoice", auth, async (req, res) => {
+  try {
+    const { order_id, channel, recipient, update_customer } = req.body;
+    if (!order_id) {
+      return res.status(400).json({ success: false, message: "Order ID is required." });
+    }
+    if (!channel || (channel !== "email" && channel !== "sms" && channel !== "whatsapp")) {
+      return res.status(400).json({ success: false, message: "Valid channel ('email', 'sms', or 'whatsapp') is required." });
+    }
+
+    const cleanRecipient = String(recipient || "").trim();
+    if (!cleanRecipient) {
+      return res.status(400).json({
+        success: false,
+        message: channel === "email" ? "Recipient email address is required." : "Recipient phone number is required."
+      });
+    }
+
+    const ordRows = await DataFind(`SELECT * FROM tbl_order WHERE id = '${order_id}' LIMIT 1`);
+    if (!ordRows || ordRows.length === 0) {
+      return res.status(404).json({ success: false, message: "Order not found." });
+    }
+    const order = ordRows[0];
+
+    const accessdata = await access(req.user);
+    const isMaster = req.user.loginas == 0 || req.user.loginas == 1;
+    if (!isMaster && accessdata?.topbardata?.store_ID && String(order.store_id) !== String(accessdata.topbardata.store_ID)) {
+      return res.status(403).json({ success: false, message: "Unauthorized to dispatch invoices for other stores." });
+    }
+
+    // Optionally update customer's missing email or phone
+    if (update_customer && order.customer_id && String(order.customer_id) !== "0") {
+      const safeRecipient = cleanRecipient.replace(/'/g, "\\'");
+      if (channel === "email") {
+        await DataUpdate(
+          "tbl_customer",
+          `email = '${safeRecipient}'`,
+          `id = '${order.customer_id}' AND (email IS NULL OR email = '' OR email = '0')`,
+          req.hostname,
+          req.protocol
+        );
+      } else if (channel === "sms" || channel === "whatsapp") {
+        await DataUpdate(
+          "tbl_customer",
+          `number = '${safeRecipient}'`,
+          `id = '${order.customer_id}' AND (number IS NULL OR number = '' OR number = '0')`,
+          req.hostname,
+          req.protocol
+        );
+      }
+    }
+
+    if (channel === "email" || channel === "sms") {
+      const dispatchResult = await dispatchCustomerNotification({
+        eventKey: "order_placed",
+        storeId: order.store_id,
+        customerId: order.customer_id,
+        orderId: order.id,
+        accessdata,
+        forceEmail: channel === "email",
+        forceSms: channel === "sms",
+        overrideRecipient: cleanRecipient
+      });
+
+      if (dispatchResult && dispatchResult.error) {
+        return res.status(400).json({ success: false, message: dispatchResult.error });
+      }
+    }
+
+    // Log in notification table
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, "0");
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const fullDate = `${now.getFullYear()}-${month}-${day}`;
+
+    await DataInsert(
+      "tbl_notification",
+      "invoice, date, sender, received, notification",
+      `'${order.order_id}', '${fullDate}', '${accessdata?.topbardata?.id || req.user.id}', '${order.customer_id}', 'Invoice ${channel.toUpperCase()} manually dispatched to ${cleanRecipient.replace(/'/g, "\\'")}.'`,
+      req.hostname,
+      req.protocol
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: channel === "whatsapp"
+        ? `Invoice WhatsApp ready for ${cleanRecipient}!`
+        : `Invoice ${channel.toUpperCase()} sent successfully to ${cleanRecipient}!`
+    });
+  } catch (error) {
+    console.error("Error in /order/send-manual-invoice:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// <<<<<<<<<<<< WhatsApp Invoice Payload Generator >>>>>>>>>>>>
+router.get("/whatsapp-invoice-payload/:orderId", auth, async (req, res) => {
+  try {
+    const orderId = req.params.orderId;
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: "Order ID is required." });
+    }
+
+    const ordRows = await DataFind(`SELECT * FROM tbl_order WHERE id = '${orderId}' LIMIT 1`);
+    if (!ordRows || ordRows.length === 0) {
+      return res.status(404).json({ success: false, message: "Order not found." });
+    }
+    const order = ordRows[0];
+
+    let customer = null;
+    if (order.customer_id && String(order.customer_id) !== "0") {
+      const custRows = await DataFind(`SELECT * FROM tbl_customer WHERE id = '${order.customer_id}' LIMIT 1`);
+      if (custRows && custRows.length > 0) customer = custRows[0];
+    }
+
+    let items = [];
+    if (order.service_list && String(order.service_list).trim() !== "0" && String(order.service_list).trim() !== "") {
+      items = await DataFind(
+        `SELECT * FROM tbl_cart_servicelist WHERE FIND_IN_SET(id, '${order.service_list}')`
+      );
+    }
+
+    const storeRows = order.store_id
+      ? await DataFind(`SELECT * FROM tbl_store WHERE id = '${order.store_id}' LIMIT 1`)
+      : [];
+    const store = storeRows && storeRows.length > 0 ? storeRows[0] : null;
+
+    const masterRows = await DataFind(`SELECT * FROM tbl_master_shop LIMIT 1`);
+    const master = masterRows && masterRows.length > 0 ? masterRows[0] : null;
+
+    let rackNames = "";
+    if (order.rack_ids && String(order.rack_ids).trim() !== "") {
+      const cleanRacks = String(order.rack_ids)
+        .split(",")
+        .map((r) => parseInt(r.trim(), 10))
+        .filter((n) => !isNaN(n) && n > 0);
+      if (cleanRacks.length > 0) {
+        const rackRows = await DataFind(
+          `SELECT rack_name FROM tbl_racks WHERE id IN (${cleanRacks.join(",")}) AND delet_flage = 0`
+        );
+        if (rackRows && rackRows.length > 0) {
+          rackNames = rackRows.map((r) => r.rack_name).join(", ");
+        }
+      }
+    }
+
+    const waMessage = formatWhatsAppInvoiceMessage({ order, items, customer, store, master, rackNames });
+    const rawPhone = customer?.number || "";
+    const waNumber = formatWhatsAppNumber(rawPhone);
+    const waUrl = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}` : "";
+
+    return res.status(200).json({
+      success: true,
+      orderId: order.id,
+      orderCode: order.order_id,
+      customerName: customer ? (customer.name || `${customer.first_name || ''} ${customer.last_name || ''}`.trim()) : "Walk In Customer",
+      customerEmail: customer?.email || "",
+      phone: rawPhone,
+      waNumber,
+      message: waMessage,
+      waUrl
+    });
+  } catch (error) {
+    console.error("Error generating WhatsApp invoice payload:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 });
 

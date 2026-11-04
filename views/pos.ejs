@@ -30,9 +30,9 @@
       return (hh !== '00' || mm !== '00') ? `${hh}:${mm}` : fallback;
     };
 
-    const currentOrderType = cart.order_type || 'Counter & Counter';
-    const isRoutePickup = ['Route & Route', 'Route & Counter', 'R & R', 'R & C', 'Store collection & Store delivery', 'Pick-up & Delivery', 'Pick-up & Counter'].includes(currentOrderType);
-    const isRouteDelivery = ['Route & Route', 'Counter & Route', 'R & R', 'C & R', 'Counter & Delivery', 'Pick-up & Delivery', 'Customer drop-off & Store delivery', 'Store collection & Store delivery'].includes(currentOrderType);
+    const currentOrderType = cart.order_type || 'Counter • Counter';
+    const isRoutePickup = ['Route • Route', 'Route • Counter', 'R • R', 'R • C', 'Store collection & Store delivery', 'Pick-up & Delivery', 'Pick-up & Counter'].includes(currentOrderType);
+    const isRouteDelivery = ['Route • Route', 'Counter • Route', 'R • R', 'C • R', 'Counter & Delivery', 'Pick-up & Delivery', 'Customer drop-off & Store delivery', 'Store collection & Store delivery'].includes(currentOrderType);
 
     const fullDate = formatLocalDate(cart.order_date) || formatLocalDate(new Date());
     const ready_fullDate = formatLocalDate(cart.ready_date || cart.delivery_date || cart.order_date) || fullDate;
@@ -518,9 +518,11 @@
                       <label class="pos-field-label mb-0">
                         <%= language.Select_Customer || 'Select Customer' %> <span class="text-danger">*</span>
                       </label>
-                      <a href="javascript:void(0)" class="btn btn-xs btn-primary-subtle text-primary border rounded-pill px-2 py-0 fw-semibold d-inline-flex align-items-center gap-1 fs-11" data-bs-toggle="modal" data-bs-target="#addcustomer">
-                        <i class="fa fa-plus fs-10"></i> <%= language.Add || 'New Customer' %>
-                      </a>
+                      <div class="d-flex align-items-center gap-1">
+                        <a href="javascript:void(0)" class="btn btn-xs btn-primary-subtle text-primary border rounded-pill px-2 py-0 fw-semibold d-inline-flex align-items-center gap-1 fs-11" data-bs-toggle="modal" data-bs-target="#addcustomer">
+                          <i class="fa fa-plus fs-10"></i> <%= language.Add || 'New Customer' %>
+                        </a>
+                      </div>
                     </div>
                     <div class="input-group input-group-sm pos-cust-selector-trigger" id="pos_customer_trigger_box" role="button" tabindex="0" title="Click to search and select customer">
                       <span class="input-group-text bg-light-subtle border-end-0 py-0 px-2 text-primary">
@@ -545,7 +547,7 @@
                         }
                         let isSelected = (selectedCustomerObj && selectedCustomerObj.id == x.id) ? 'selected' : '';
                       %>
-                      <option value="<%= x.id %>" data-customer-type="<%= x.customer_type || 'Counter & Counter' %>" data-address="<%= x.address || '' %>" data-city="<%= x.city || '' %>" data-state="<%= x.state || '' %>" data-zipcode="<%= x.zipcode || '' %>" <%= isSelected %>>
+                      <option value="<%= x.id %>" data-customer-type="<%= x.customer_type || 'Counter • Counter' %>" data-address="<%= x.address || '' %>" data-city="<%= x.city || '' %>" data-state="<%= x.state || '' %>" data-zipcode="<%= x.zipcode || '' %>" <%= isSelected %>>
                         <%= x.name %><% if (showExtra) { %> (<%= showExtra %>)<% } %>
                       </option>
                       <% }); %>
@@ -562,15 +564,18 @@
                     <option value="" disabled <%= (!cart.order_type || cart.order_type === '') ? 'selected' : '' %>><%= language.Select_Customer_Type || 'Select Customer Type' %></option>
                     <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
                     <% customer_types.forEach(function(ct, idx) { %>
-                    <option value="<%= ct.name %>" data-code="<%= ct.code || '' %>" title="<%= ct.name %><%= ct.description ? ' - ' + ct.description : '' %>" <%= (cart.order_type === ct.name || cart.order_type === ct.code || (!cart.order_type && (ct.name === 'Counter & Counter' || ct.code === 'C & C' || idx === 0))) ? 'selected' : '' %>><%= ct.name || ct.code %></option>
+                    <option value="<%= ct.name %>" data-code="<%= ct.code || '' %>" title="<%= ct.name %><%= ct.description ? ' - ' + ct.description : '' %>" <%= (cart.order_type === ct.name || cart.order_type === ct.code || (!cart.order_type && (ct.name === 'Counter • Counter' || ct.code === 'C • C' || idx === 0))) ? 'selected' : '' %>><%= ct.name || ct.code %></option>
                     <% }); %>
                     <% } %>
                   </select>
                 </div>
 
                 <!-- Total Orders -->
-                <div class="col-2">
-                  <div class="pos-cust-stat-tile tile-total" title="Total Lifetime Orders">
+                <div class="col-2 d-flex">
+                  <button type="button" id="btn_pos_open_racks" class="me-2 btn btn-xs btn-outline-primary rounded-pill px-2 py-0 fw-bold d-inline-flex align-items-center gap-1 fs-11" title="View Customer Racks & Pickup (Active Invoices)" style="min-height: 22px;">
+                    <span class="badge bg-primary text-white rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 14px; height: 14px; font-size: 10px;">R</span>
+                  </button>
+                  <div class="pos-cust-stat-tile tile-total w-100" title="Total Lifetime Orders">
                     <div class="stat-meta">
                       <span class="stat-num" id="pos_cust_stat_total">0</span>
                       <span class="stat-lbl">Orders</span>
@@ -583,7 +588,7 @@
                   <div class="pos-cust-stat-tile tile-unpaid" title="Orders Unpaid / Partially Paid">
                     <div class="stat-meta">
                       <span class="stat-num" id="pos_cust_stat_unpaid">0</span>
-                      <span class="stat-lbl">Unpaid Orders</span>
+                      <span class="stat-lbl">Unpaid</span>
                     </div>
                   </div>
                 </div>
@@ -593,7 +598,7 @@
                   <div class="pos-cust-stat-tile tile-balance" title="Total Outstanding Balance">
                     <div class="stat-meta">
                       <span class="stat-num" id="pos_cust_stat_balance"><%= accessdata?.symbol || '$' %> 0</span>
-                      <span class="stat-lbl">Total Due</span>
+                      <span class="stat-lbl">Dues</span>
                     </div>
                   </div>
                 </div>
@@ -906,7 +911,7 @@
         </div>
 
         <div class="modal-body p-3" id="payment_sum">
-          <input type="hidden" name="order_type" id="edit_modal_order_type" value="<%= cart.order_type || 'Counter & Counter' %>">
+          <input type="hidden" name="order_type" id="edit_modal_order_type" value="<%= cart.order_type || 'Counter • Counter' %>">
           <input type="hidden" name="pickupdate" id="edit_pickupdate" value="<%= pick_fullDate %>">
           <input type="hidden" name="pickuptime" id="edit_pickuptime" value="<%= pick_time %>">
           <input type="hidden" name="pickupdate_hidden" id="edit_pickupdate_hidden">
@@ -1067,7 +1072,7 @@
         </div>
 
         <div class="modal-body p-3" id="payment_sum">
-          <input type="hidden" name="order_type" id="modal_order_type" value="<%= cart.order_type || 'Counter & Counter' %>">
+          <input type="hidden" name="order_type" id="modal_order_type" value="<%= cart.order_type || 'Counter • Counter' %>">
           <input type="hidden" name="customer_id" id="modal_customer_id" value="<%= cart.customer_id || '0' %>">
           <input type="hidden" name="store_id" id="modal_store_id" value="<%= cart.store_id || '' %>">
 
@@ -1301,7 +1306,7 @@
                       <h6 class="fw-bold mb-0 text-primary d-flex align-items-center">
                         <i class="fa fa-id-card me-2"></i><%= language.Customer_Details || 'Customer Details' %>
                       </h6>
-                      <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fs-11" id="pos_cd_type_badge">Counter & Counter</span>
+                      <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fs-11" id="pos_cd_type_badge">Counter • Counter</span>
                     </div>
 
                     <!-- Profile Header -->
@@ -1451,10 +1456,10 @@
                 <option value="<%= ct.name %>" <%= idx === 0 ? 'selected' : '' %>><%= ct.name %><% if (ct.description) { %> - <%= ct.description %><% } %></option>
                 <% }); %>
                 <% } else { %>
-                <option value="Counter & Counter" selected>Counter & Counter - Customer will drop-off and customer will pickup</option>
-                <option value="Counter & Route">Counter & Route - Customer will drop-off and store will deliver</option>
-                <option value="Route & Route">Route & Route - Store will pickup and store will deliver</option>
-                <option value="Route & Counter">Route & Counter - Store will pickup and customer will pickup</option>
+                <option value="Counter • Counter" selected>Counter • Counter - Customer will drop-off and customer will pickup</option>
+                <option value="Counter • Route">Counter • Route - Customer will drop-off and store will deliver</option>
+                <option value="Route • Route">Route • Route - Store will pickup and store will deliver</option>
+                <option value="Route • Counter">Route • Counter - Store will pickup and customer will pickup</option>
                 <% } %>
               </select>
             </div>
@@ -1599,6 +1604,127 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal: POS Customer Active Orders, Racks & Pickup -->
+  <div class="modal fade" id="pos_customer_racks_modal" tabindex="-1" aria-labelledby="posCustomerRacksModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom py-3 px-4 bg-light-subtle d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary text-white rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 14px; font-weight: bold;">R</span>
+            <div>
+              <h5 class="modal-title fw-bold text-dark mb-0" id="posCustomerRacksModalLabel">Customer Racks &amp; Order Pickup</h5>
+              <small class="text-muted" id="pos_racks_modal_cust_subtitle">Active and outstanding invoices for customer</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div id="pos_racks_loading" class="text-center py-5">
+            <i class="fa fa-spinner fa-spin fa-2x text-primary mb-2"></i>
+            <div class="text-muted small">Loading active orders and rack locations...</div>
+          </div>
+
+          <div id="pos_racks_empty" class="text-center py-5 d-none">
+            <i class="fa fa-box-open fa-3x text-muted mb-2"></i>
+            <h6 class="fw-bold text-dark">No Active Outstanding Orders</h6>
+            <p class="text-muted small mb-0">This customer has no active orders pending pickup or in process.</p>
+          </div>
+
+          <div id="pos_racks_content" class="d-none">
+            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 fs-12 fw-semibold" id="pos_racks_order_count_badge">
+                0 Active Orders
+              </span>
+              <small class="text-muted"><i class="fa fa-info-circle me-1 text-primary"></i>View assigned racks, edit rack locations, or release orders upon pickup.</small>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0" id="pos_racks_orders_table">
+                <thead class="table-light fs-12 text-uppercase">
+                  <tr>
+                    <th>Invoice #</th>
+                    <th>Order Date</th>
+                    <th>Target Ready</th>
+                    <th>Status</th>
+                    <th>Assigned Rack(s)</th>
+                    <th>Balance</th>
+                    <th class="text-end">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="pos_racks_orders_tbody" class="fs-13"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top py-2 px-4 bg-light-subtle d-flex justify-content-between">
+          <small class="text-muted"><i class="fa fa-info-circle text-primary me-1"></i>Use <strong>Open in POS</strong> to load and edit, or <strong>Release Order</strong> upon customer pickup.</small>
+          <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Assign / Edit Rack from POS -->
+  <div class="modal fade" id="pos_edit_rack_modal" tabindex="-1" aria-labelledby="posEditRackModalLabel" aria-hidden="true" style="z-index: 1065;">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom py-3 px-4">
+          <h5 class="modal-title fw-bold" id="posEditRackModalLabel">
+            <i class="fa fa-layer-group text-primary me-2"></i>Assign / Edit Storage Rack
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="pos_assign_rack_form">
+          <input type="hidden" id="pos_assign_order_id" name="order_id" value="">
+          <input type="hidden" id="pos_assign_force_confirm" name="force_confirm" value="0">
+          <div class="modal-body p-4">
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+              <div>
+                <span class="text-muted small">ORDER NUMBER</span>
+                <div class="fw-bold fs-6 text-dark" id="pos_assign_order_display">#---</div>
+              </div>
+              <div class="text-end">
+                <span class="text-muted small">STATUS</span>
+                <div><span class="badge bg-primary-subtle text-primary" id="pos_assign_status_display">---</span></div>
+              </div>
+            </div>
+
+            <!-- Collision Alert Box -->
+            <div id="pos_rack_collision_alert" class="alert alert-warning py-2 px-3 small d-none mb-3 border-warning">
+              <div class="d-flex align-items-start gap-2">
+                <i class="fa fa-exclamation-triangle text-warning fs-5 mt-1"></i>
+                <div>
+                  <strong class="d-block text-dark">Rack Collision Warning:</strong>
+                  <span id="pos_rack_collision_msg">This rack is currently occupied by another order.</span>
+                  <div class="mt-2">
+                    <button type="button" class="btn btn-xs btn-warning fw-bold px-2 py-1" id="btn_confirm_shared_rack">
+                      <i class="fa fa-check me-1"></i>Yes, Share Rack Position
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold small mb-1">
+                Select Storage Rack(s) <span class="text-danger">*</span>
+              </label>
+              <div id="pos_rack_checkboxes_container" class="border rounded p-3 bg-light-subtle" style="max-height: 220px; overflow-y: auto;">
+                <div class="text-muted small text-center py-2">Loading available racks...</div>
+              </div>
+              <small class="text-muted d-block mt-1">You may select multiple racks if garments span across several hangers/shelves.</small>
+            </div>
+          </div>
+          <div class="modal-footer border-top py-2 px-4">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm px-3" id="btn_save_pos_rack">
+              <i class="fa fa-save me-1"></i>Save Rack Position
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -2492,7 +2618,7 @@
           const email = (c.email && String(c.email).trim() !== '') ? String(c.email).trim() : '—';
           const addrParts = [c.address, c.city, c.state, c.zipcode].map(function(p) { return (p || '').trim(); }).filter(Boolean);
           const fullAddress = addrParts.length > 0 ? addrParts.join(', ') : 'No address on file';
-          const custType = (c.customer_type && String(c.customer_type).trim() !== '') ? String(c.customer_type).trim() : 'Counter & Counter';
+          const custType = (c.customer_type && String(c.customer_type).trim() !== '') ? String(c.customer_type).trim() : 'Counter • Counter';
           const storeName = (c.store_name && String(c.store_name).trim() !== '') ? String(c.store_name).trim() : 'Store Customer';
           const memo = (c.memo && String(c.memo).trim() !== '') ? String(c.memo).trim() : '';
           const taxNum = (c.taxnumber && String(c.taxnumber).trim() !== '') ? ('Tax ID: ' + String(c.taxnumber).trim()) : '';
@@ -2582,7 +2708,7 @@
             const fullName = escapeHtml(formatPosCustomerName(c));
             const phone = c.number ? escapeHtml(c.number) : '';
             const email = c.email ? escapeHtml(c.email) : '';
-            const custType = escapeHtml(c.customer_type || 'Counter & Counter');
+            const custType = escapeHtml(c.customer_type || 'Counter • Counter');
             const initials = escapeHtml(getCustomerInitials(c));
 
             let subLine = '';
@@ -2624,7 +2750,7 @@
             $select.append(
               $('<option></option>')
                 .attr('value', found.id)
-                .attr('data-customer-type', found.customer_type || 'Counter & Counter')
+                .attr('data-customer-type', found.customer_type || 'Counter • Counter')
                 .attr('data-address', found.address || '')
                 .attr('data-city', found.city || '')
                 .attr('data-state', found.state || '')
@@ -2797,6 +2923,297 @@
 
         $('#pos_add_cust_password').on('input', function() {
           $(this).data('manual-edit', true);
+        });
+
+        // ==========================================
+        // Feature: POS "R" Button (Customer Racks & Order Pickup)
+        // ==========================================
+        let currentPosAvailableRacks = [];
+
+        function loadStoreRacksForPos(callback) {
+          const storeId = $('#pos_store_id').val() || '0';
+          $.ajax({
+            url: '/order/get-order-racks?order_id=0&store_id=' + encodeURIComponent(storeId),
+            type: 'GET',
+            dataType: 'json',
+            success: function(res) {
+              currentPosAvailableRacks = (res && res.racks) ? res.racks : [];
+              if (callback) callback(currentPosAvailableRacks);
+            },
+            error: function() {
+              currentPosAvailableRacks = [];
+              if (callback) callback([]);
+            }
+          });
+        }
+
+        $(document).on('click', '#btn_pos_open_racks', function() {
+          const customerId = $('#single-select').val();
+          if (!customerId || customerId === '0') {
+            if (typeof toastr !== 'undefined') {
+              toastr.warning('Please select a customer first to view their active racks and orders.');
+            } else {
+              alert('Please select a customer first.');
+            }
+            $('#pos_customer_display_input').trigger('click');
+            return;
+          }
+
+          const custDisplayName = $('#pos_customer_display_input').val() || 'Customer';
+          $('#pos_racks_modal_cust_subtitle').text('Active outstanding invoices for ' + custDisplayName);
+          $('#pos_racks_loading').removeClass('d-none');
+          $('#pos_racks_content').addClass('d-none');
+          $('#pos_racks_empty').addClass('d-none');
+          $('#pos_customer_racks_modal').modal('show');
+
+          loadCustomerActiveOrdersForPos(customerId);
+        });
+
+        function loadCustomerActiveOrdersForPos(customerId) {
+          $.ajax({
+            url: '/order/customer-active-orders/' + encodeURIComponent(customerId),
+            type: 'GET',
+            dataType: 'json',
+            success: function(res) {
+              $('#pos_racks_loading').addClass('d-none');
+              if (!res || !res.orders || res.orders.length === 0) {
+                $('#pos_racks_empty').removeClass('d-none');
+                $('#pos_racks_content').addClass('d-none');
+                return;
+              }
+
+              $('#pos_racks_empty').addClass('d-none');
+              $('#pos_racks_content').removeClass('d-none');
+              $('#pos_racks_order_count_badge').text(res.orders.length + ' Active Order' + (res.orders.length > 1 ? 's' : ''));
+
+              const tbody = $('#pos_racks_orders_tbody');
+              tbody.empty();
+
+              res.orders.forEach(function(ord) {
+                const isReady = ord.is_ready;
+                const statusBadge = isReady
+                  ? '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="fa fa-check-circle me-1"></i>Ready for Pickup</span>'
+                  : '<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i class="fa fa-sync-alt fa-spin me-1"></i>' + escapeHtml(ord.status_name) + '</span>';
+
+                let rackDisplay = '<span class="text-muted fst-italic">Unassigned</span>';
+                if (ord.rack_names) {
+                  rackDisplay = '<span class="badge bg-primary text-white fs-12 px-2 py-1"><i class="fa fa-layer-group me-1"></i>' + escapeHtml(ord.rack_names) + '</span>';
+                }
+
+                const balDue = parseFloat(ord.balance_amount) || 0;
+                const balClass = balDue > 0 ? 'text-danger fw-bold' : 'text-success fw-bold';
+                const balDisplay = '$' + balDue.toFixed(2);
+
+                const tr = $(`
+                  <tr>
+                    <td>
+                      <a href="/order/view/${ord.id}" target="_blank" class="fw-bold text-primary fs-14 text-decoration-none" title="View Order #${escapeHtml(ord.order_id)}">#${escapeHtml(ord.order_id)}</a>
+                    </td>
+                    <td class="text-muted small">${ord.order_date ? ord.order_date.split('T')[0] : '---'}</td>
+                    <td class="small fw-semibold text-dark">${ord.ready_date ? ord.ready_date.split('T')[0] : '---'}</td>
+                    <td>${statusBadge}</td>
+                    <td>${rackDisplay}</td>
+                    <td class="${balClass}">${balDisplay}</td>
+                    <td class="text-end">
+                      <div class="d-flex align-items-center justify-content-end gap-1 flex-wrap">
+                        <a href="/admin/edit/${ord.id}" class="btn btn-xs btn-outline-info py-1 px-2 btn-pos-open-order"
+                          title="Open and edit this order in POS">
+                          <i class="fa fa-cash-register me-1"></i>Open in POS
+                        </a>
+                        <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2 btn-pos-edit-order-rack"
+                          data-order-id="${ord.id}"
+                          data-order-no="${escapeHtml(ord.order_id)}"
+                          data-status-name="${escapeHtml(ord.status_name)}"
+                          data-rack-ids="${escapeHtml(ord.rack_ids || '')}"
+                          title="Assign or change storage rack">
+                          <i class="fa fa-layer-group me-1"></i>${ord.rack_ids ? 'Edit Rack' : 'Assign Rack'}
+                        </button>
+                        <button type="button" class="btn btn-xs ${isReady ? 'btn-success' : 'btn-outline-success'} py-1 px-2 btn-pos-release-order"
+                          data-order-id="${ord.id}"
+                          data-balance="${balDue}"
+                          title="Pickup & Release Order">
+                          <i class="fa fa-hand-holding me-1"></i>${balDue > 0 ? 'Pay & Release' : 'Release Order'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                `);
+                tbody.append(tr);
+              });
+            },
+            error: function(xhr) {
+              $('#pos_racks_loading').addClass('d-none');
+              $('#pos_racks_empty').removeClass('d-none');
+              $('#pos_racks_content').addClass('d-none');
+              if (typeof toastr !== 'undefined') {
+                toastr.error('Failed to load customer orders.');
+              }
+            }
+          });
+        }
+
+        // Open Rack Assignment Modal from POS
+        $(document).on('click', '.btn-pos-edit-order-rack', function() {
+          const orderId = $(this).attr('data-order-id');
+          const orderNo = $(this).attr('data-order-no');
+          const statusName = $(this).attr('data-status-name');
+          const currentRackIds = ($(this).attr('data-rack-ids') || '').split(',').map(function(s){ return s.trim(); });
+
+          $('#pos_assign_order_id').val(orderId);
+          $('#pos_assign_force_confirm').val('0');
+          $('#pos_assign_order_display').text('#' + orderNo);
+          $('#pos_assign_status_display').text(statusName);
+          $('#pos_rack_collision_alert').addClass('d-none');
+
+          const container = $('#pos_rack_checkboxes_container');
+          container.html('<div class="text-muted small text-center py-2"><i class="fa fa-spinner fa-spin me-1"></i>Loading racks...</div>');
+          $('#pos_edit_rack_modal').modal('show');
+
+          const fallbackStoreId = $('#pos_store_id').val() || '';
+          $.ajax({
+            url: '/order/get-order-racks?order_id=' + encodeURIComponent(orderId) + '&store_id=' + encodeURIComponent(fallbackStoreId),
+            type: 'GET',
+            dataType: 'json',
+            success: function(res) {
+              container.empty();
+              const racks = (res && res.racks) ? res.racks : [];
+              if (racks.length === 0) {
+                container.html('<div class="text-muted small text-center py-2">No racks configured yet for this store.</div>');
+                return;
+              }
+
+              racks.forEach(function(r) {
+                const isChecked = currentRackIds.includes(String(r.id)) ||
+                  (res.currentRackIds && res.currentRackIds.map(String).includes(String(r.id))) ||
+                  (res.selectedRackIds && res.selectedRackIds.map(String).includes(String(r.id))) ||
+                  Boolean(r.selected);
+                const occCount = (typeof r.active_orders_count !== 'undefined') ? r.active_orders_count : (r.orderCount || 0);
+                const occLabel = (occCount > 0 && !isChecked)
+                  ? `<span class="badge bg-warning-subtle text-dark border ms-2" style="font-size: 10px;">Occupied (${occCount} ord)</span>`
+                  : '';
+
+                const row = $(`
+                  <div class="form-check py-1 border-bottom d-flex align-items-center">
+                    <input class="form-check-input pos-rack-cb" type="checkbox" name="rack_ids[]" value="${r.id}" id="pos_rack_cb_${r.id}" ${isChecked ? 'checked' : ''}>
+                    <label class="form-check-label ms-2 fw-semibold text-dark cursor-pointer d-flex align-items-center" for="pos_rack_cb_${r.id}">
+                      <span>${escapeHtml(r.rack_name)}</span>
+                      ${occLabel}
+                    </label>
+                  </div>
+                `);
+                container.append(row);
+              });
+            },
+            error: function() {
+              container.html('<div class="text-danger small text-center py-2">Failed to load racks.</div>');
+            }
+          });
+        });
+
+        // Submit POS Rack Assignment Form
+        $('#pos_assign_rack_form').on('submit', function(e) {
+          e.preventDefault();
+          submitPosRackAssignment();
+        });
+
+        $('#btn_confirm_shared_rack').on('click', function() {
+          $('#pos_assign_force_confirm').val('1');
+          submitPosRackAssignment();
+        });
+
+        function submitPosRackAssignment() {
+          const orderId = $('#pos_assign_order_id').val();
+          const forceConfirm = $('#pos_assign_force_confirm').val();
+          const selected = [];
+          $('.pos-rack-cb:checked').each(function() {
+            selected.push($(this).val());
+          });
+
+          if (selected.length === 0) {
+            if (typeof toastr !== 'undefined') toastr.warning('Please select at least one rack.');
+            else alert('Please select at least one rack.');
+            return;
+          }
+
+          const $btn = $('#btn_save_pos_rack');
+          $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i>Saving...');
+
+          $.ajax({
+            url: '/order/assign-racks',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+              order_id: orderId,
+              rack_ids: selected,
+              force_confirm: forceConfirm
+            }),
+            success: function(res) {
+              $btn.prop('disabled', false).html('<i class="fa fa-save me-1"></i>Save Rack Position');
+              if (res.status === 'warning' && res.requires_confirmation) {
+                if (typeof toastr !== 'undefined') {
+                  toastr.warning(res.message, 'Rack Collision Warning', { timeOut: 7000, closeButton: true });
+                }
+                $('#pos_rack_collision_msg').text(res.message);
+                $('#pos_rack_collision_alert').removeClass('d-none');
+                return;
+              }
+
+              if (res.status === 'success') {
+                if (typeof toastr !== 'undefined') toastr.success(res.message);
+                $('#pos_edit_rack_modal').modal('hide');
+                const custId = $('#single-select').val();
+                if (custId) loadCustomerActiveOrdersForPos(custId);
+              } else {
+                if (typeof toastr !== 'undefined') toastr.error(res.message || 'Error saving rack');
+                else alert(res.message || 'Error saving rack');
+              }
+            },
+            error: function(xhr) {
+              $btn.prop('disabled', false).html('<i class="fa fa-save me-1"></i>Save Rack Position');
+              let msg = 'Failed to save rack assignment.';
+              try {
+                const parsed = JSON.parse(xhr.responseText);
+                if (parsed && parsed.message) msg = parsed.message;
+              } catch(e) {}
+              if (typeof toastr !== 'undefined') toastr.error(msg);
+              else alert(msg);
+            }
+          });
+        }
+
+        // Release / Pay Order from POS Racks Modal
+        $(document).on('click', '.btn-pos-release-order', function() {
+          const orderId = $(this).attr('data-order-id');
+          const bal = parseFloat($(this).attr('data-balance')) || 0;
+
+          if (bal > 0) {
+            // Open Payment Modal
+            if (typeof open_patment_model === 'function') {
+              $('#pos_customer_racks_modal').modal('hide');
+              open_patment_model(orderId);
+            } else {
+              window.location.href = '/order/view/' + encodeURIComponent(orderId);
+            }
+          } else {
+            // Balance is 0 -> Quick Confirmation to Release as Delivered
+            if (!confirm('Customer balance is settled ($0.00). Mark Order #' + orderId + ' as Delivered / Released?')) {
+              return;
+            }
+
+            $.ajax({
+              url: '/order/updateorderstatus/' + encodeURIComponent(orderId),
+              type: 'POST',
+              data: { status: '4' }, // 4 = Deliver
+              success: function(res) {
+                if (typeof toastr !== 'undefined') toastr.success('Order released & marked Delivered successfully!');
+                const custId = $('#single-select').val();
+                if (custId) loadCustomerActiveOrdersForPos(custId);
+              },
+              error: function(xhr) {
+                if (typeof toastr !== 'undefined') toastr.error('Failed to update status.');
+              }
+            });
+          }
         });
 
         // Order Placement & POS Print Handler

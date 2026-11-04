@@ -90,7 +90,7 @@ router.post("/register", async (req, res) => {
       store,
     } = req.body;
     const check_number = await DataFind(
-      "SELECT * FROM tbl_customer WHERE number='" + number + "'"
+      "SELECT * FROM tbl_customer WHERE number='" + number + "' AND delet_flage = 0"
     );
     if (check_number.length > 0) {
       return res.status(200).json({
@@ -101,7 +101,7 @@ router.post("/register", async (req, res) => {
     }
 
     const check_username = await DataFind(
-      "SELECT * FROM tbl_customer WHERE username='" + username + "'"
+      "SELECT * FROM tbl_customer WHERE username='" + username + "' AND delet_flage = 0"
     );
     if (check_username.length > 0) {
       return res.status(200).json({

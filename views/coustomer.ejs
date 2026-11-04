@@ -172,10 +172,10 @@
                           <option value="<%= ct.name %>"><%= ct.name %><% if (ct.description) { %> - <%= ct.description %><% } %></option>
                         <% }); %>
                       <% } else { %>
-                        <option value="Counter & Counter">Counter & Counter - Customer will drop-off and customer will pickup</option>
-                        <option value="Counter & Route">Counter & Route - Customer will drop-off and store will deliver</option>
-                        <option value="Route & Route">Route & Route - Store will pickup and store will deliver</option>
-                        <option value="Route & Counter">Route & Counter - Store will pickup and customer will pickup</option>
+                        <option value="Counter • Counter">Counter • Counter - Customer will drop-off and customer will pickup</option>
+                        <option value="Counter • Route">Counter • Route - Customer will drop-off and store will deliver</option>
+                        <option value="Route • Route">Route • Route - Store will pickup and store will deliver</option>
+                        <option value="Route • Counter">Route • Counter - Store will pickup and customer will pickup</option>
                       <% } %>
                     </select>
                   </div>
@@ -300,10 +300,10 @@
                           </option>
                         <% }); %>
                       <% } else { %>
-                        <option value="Counter & Counter" selected>Counter & Counter - Customer will drop-off and customer will pickup</option>
-                        <option value="Counter & Route">Counter & Route - Customer will drop-off and store will deliver</option>
-                        <option value="Route & Route">Route & Route - Store will pickup and store will deliver</option>
-                        <option value="Route & Counter">Route & Counter - Store will pickup and customer will pickup</option>
+                        <option value="Counter • Counter" selected>Counter • Counter - Customer will drop-off and customer will pickup</option>
+                        <option value="Counter • Route">Counter • Route - Customer will drop-off and store will deliver</option>
+                        <option value="Route • Route">Route • Route - Store will pickup and store will deliver</option>
+                        <option value="Route • Counter">Route • Counter - Store will pickup and customer will pickup</option>
                       <% } %>
                     </select>
                   </div>
@@ -447,8 +447,8 @@
       {
         data: 'customer_type',
         render: function (data, type, row) {
-          const typeName = escapeHtml(row.customer_type || data || 'Counter & Counter');
-          const code = escapeHtml(row.customer_type_code || 'C & C');
+          const typeName = escapeHtml(row.customer_type || data || 'Counter • Counter');
+          const code = escapeHtml(row.customer_type_code || 'C • C');
           const desc = escapeHtml(row.customer_type_description || '');
 
           return `
@@ -520,7 +520,7 @@
         data-zipcode="${escapeHtml(row.zipcode || '')}"
         data-addresh="${escapeHtml(row.address || '')}"
         data-memo="${escapeHtml(row.memo || '')}"
-        data-customer-type="${escapeHtml(row.customer_type || 'Counter & Counter')}"
+        data-customer-type="${escapeHtml(row.customer_type || 'Counter • Counter')}"
         data-tax="${escapeHtml(row.taxnumber)}" 
         data-approved="${row.approved}" 
         data-active="${row.delet_flage}" 
@@ -639,7 +639,7 @@
     $('#state').val($(this).attr('data-state') || '');
     $('#zipcode').val($(this).attr('data-zipcode') || '');
     $('#memo').val($(this).attr('data-memo') || '');
-    $('#edit_customer_type').val($(this).attr('data-customer-type') || 'Counter & Counter');
+    $('#edit_customer_type').val($(this).attr('data-customer-type') || 'Counter • Counter');
     $('#tax').val($(this).attr('data-tax'));
     $("#coustomer_form").attr('action', act);
     if (approved == 1) {

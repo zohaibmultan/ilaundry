@@ -184,6 +184,204 @@
       border-color: #94a3b8;
     }
 
+    .btn-email-invoice {
+      background: #ffffff;
+      color: #2563eb;
+      border: 1px solid #bfdbfe;
+    }
+
+    .btn-email-invoice:hover:not(:disabled) {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      transform: translateY(-1px);
+    }
+
+    .btn-sms-invoice {
+      background: #ffffff;
+      color: #0284c7;
+      border: 1px solid #bae6fd;
+    }
+
+    .btn-sms-invoice:hover:not(:disabled) {
+      background: #f0f9ff;
+      border-color: #0284c7;
+      transform: translateY(-1px);
+    }
+
+    .btn-whatsapp-invoice {
+      background: #16a34a;
+      color: #ffffff;
+      border: 1px solid #15803d;
+      box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
+    }
+
+    .btn-whatsapp-invoice:hover:not(:disabled) {
+      background: #15803d;
+      transform: translateY(-1px);
+    }
+
+    /* Send Invoice Modal Overlay & Dialog */
+    .invoice-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .invoice-modal-card {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 480px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: modalFadeIn 0.18s ease-out;
+      border: 1px solid #e2e8f0;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96) translateY(-8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .invoice-modal-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafc;
+    }
+
+    .invoice-modal-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    .invoice-modal-close-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: #64748b;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+    }
+    .invoice-modal-close-btn:hover {
+      color: #0f172a;
+    }
+
+    .invoice-modal-body {
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-size: 12.5px;
+      color: #334155;
+    }
+
+    .modal-info-notice {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #0369a1;
+      line-height: 1.4;
+    }
+
+    .modal-form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .modal-form-label {
+      font-weight: 600;
+      font-size: 12px;
+      color: #1e293b;
+    }
+
+    .modal-form-input {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      font-size: 13px;
+      color: #0f172a;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .modal-form-input:focus {
+      border-color: #0284c7;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+
+    .modal-form-textarea {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      font-size: 12px;
+      color: #0f172a;
+      outline: none;
+      resize: vertical;
+      font-family: inherit;
+    }
+    .modal-form-textarea:focus {
+      border-color: #0284c7;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+
+    .modal-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #475569;
+      cursor: pointer;
+    }
+
+    .modal-status-text {
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .modal-status-text.error {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+    .modal-status-text.success {
+      background: #f0fdf4;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+
+    .invoice-modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid #e2e8f0;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
     /* Print Mode Selector Segmented Pills */
     .print-mode-selector {
       display: inline-flex;
@@ -765,6 +963,33 @@
         <span id="btn_print_text">Print All (Invoice + Tags)</span>
       </button>
 
+      <button type="button" class="toolbar-btn btn-email-invoice" id="btn_posprint_email" onclick="openSendInvoiceModal('email')"
+        title="Send Invoice to Customer Email">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+          <polyline points="22,6 12,13 2,6"></polyline>
+        </svg>
+        Email Invoice
+      </button>
+
+      <button type="button" class="toolbar-btn btn-sms-invoice" id="btn_posprint_sms" onclick="openSendInvoiceModal('sms')"
+        title="Send Invoice to Customer via SMS">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        SMS Invoice
+      </button>
+
+      <button type="button" class="toolbar-btn btn-whatsapp-invoice" id="btn_posprint_whatsapp" onclick="openSendInvoiceModal('whatsapp')"
+        title="Share Invoice via WhatsApp">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+        </svg>
+        WhatsApp Invoice
+      </button>
+
       <button type="button" class="toolbar-btn btn-cancel" id="btn_cancel" onclick="cancelAndBack()"
         title="Return to Previous Screen">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -774,6 +999,48 @@
         </svg>
         Cancel
       </button>
+    </div>
+  </div>
+
+  <!-- Send Invoice Confirmation Modal Dialog -->
+  <div id="sendInvoiceModalOverlay" class="invoice-modal-overlay no-print" style="display: none;" onclick="if(event.target===this) closeSendInvoiceModal()">
+    <div class="invoice-modal-card" role="dialog" aria-modal="true" aria-labelledby="sendInvoiceModalTitle">
+      <div class="invoice-modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h3 id="sendInvoiceModalTitle" class="invoice-modal-title">Send Invoice</h3>
+        </div>
+        <button type="button" class="invoice-modal-close-btn" onclick="closeSendInvoiceModal()" title="Close">&times;</button>
+      </div>
+
+      <div class="invoice-modal-body">
+        <div id="sendInvoiceModalNotice" class="modal-info-notice"></div>
+
+        <div class="modal-form-group">
+          <label id="sendInvoiceRecipientLabel" class="modal-form-label" for="sendInvoiceRecipientInput">Recipient:</label>
+          <input type="text" id="sendInvoiceRecipientInput" class="modal-form-input" placeholder="" />
+        </div>
+
+        <div id="sendInvoiceMessageGroup" class="modal-form-group" style="display: none;">
+          <label class="modal-form-label" for="sendInvoiceMessagePreview">Message Preview (will open in WhatsApp chat):</label>
+          <textarea id="sendInvoiceMessagePreview" class="modal-form-textarea" rows="7"></textarea>
+        </div>
+
+        <div class="modal-checkbox-label" id="sendInvoiceUpdateCustomerGroup">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="sendInvoiceUpdateCustomerCheck" checked />
+            <span>Update customer's saved profile if contact is missing</span>
+          </label>
+        </div>
+
+        <div id="sendInvoiceModalStatus" class="modal-status-text" style="display: none;"></div>
+      </div>
+
+      <div class="invoice-modal-footer">
+        <button type="button" class="toolbar-btn btn-cancel" onclick="closeSendInvoiceModal()">Cancel</button>
+        <button type="button" class="toolbar-btn btn-primary-print" id="sendInvoiceConfirmBtn" onclick="executeSendInvoice()">
+          <span id="sendInvoiceConfirmBtnText">Send</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1057,8 +1324,8 @@
                         <% } %>
 
                         <% 
-                          const hasRoutePickup = (order.order_type === 'Route & Counter' || order.order_type === 'Route & Route' || order.order_type === 'R & C' || order.order_type === 'R & R' || order.order_type === 'Pick-up & Counter' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Store collection & Store delivery' || order.order_type === 'Store collection & Customer pick-up');
-                          const hasRouteDelivery = (order.order_type === 'Counter & Route' || order.order_type === 'Route & Route' || order.order_type === 'C & R' || order.order_type === 'R & R' || order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery');
+                          const hasRoutePickup = (order.order_type === 'Route • Counter' || order.order_type === 'Route • Route' || order.order_type === 'R • C' || order.order_type === 'R • R' || order.order_type === 'Pick-up & Counter' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Store collection & Store delivery' || order.order_type === 'Store collection & Customer pick-up');
+                          const hasRouteDelivery = (order.order_type === 'Counter • Route' || order.order_type === 'Route • Route' || order.order_type === 'C • R' || order.order_type === 'R • R' || order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery');
                         %>
                         <% if (order.order_type) { %>
                         <tr>
@@ -1154,8 +1421,8 @@
     const orderData = <%- JSON.stringify(order || {}) %>;
     const customerData = <%- JSON.stringify((Array.isArray(customer) && customer.length > 0) ? customer[0] : (customer || {})) %>;
     const storeName = "<%= (shope && shope.name) ? shope.name : (accessdata && accessdata.masterstore ? accessdata.masterstore.app_name : '') %>";
-    const orderType = "<%= (order && order.order_type) ? order.order_type : 'Counter & Counter' %>";
-    const isDelivery = "<%= (order && (order.order_type === 'Counter & Route' || order.order_type === 'Route & Route' || order.order_type === 'C & R' || order.order_type === 'R & R' || order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery')) ? '1' : '0' %>" === "1";
+    const orderType = "<%= (order && order.order_type) ? order.order_type : 'Counter • Counter' %>";
+    const isDelivery = "<%= (order && (order.order_type === 'Counter • Route' || order.order_type === 'Route • Route' || order.order_type === 'C • R' || order.order_type === 'R • R' || order.order_type === 'Counter & Delivery' || order.order_type === 'Pick-up & Delivery' || order.order_type === 'Customer drop-off & Store delivery' || order.order_type === 'Store collection & Store delivery')) ? '1' : '0' %>" === "1";
     const readyDate = "<%= (typeof rdate !== 'undefined' && rdate) ? rdate : (isDelivery ? ddate : (pdate || ddate)) %>";
 
     const tagDateSuffix = isDelivery ? " [Del]" : " [Pick]";
@@ -1635,6 +1902,181 @@
       } finally {
         if (btn) btn.disabled = false;
         if (btnText) btnText.textContent = originalText;
+      }
+    }
+
+    let currentSendChannel = 'email'; // 'email' | 'sms' | 'whatsapp'
+    let currentWaPayload = null;
+
+    async function openSendInvoiceModal(channel) {
+      currentSendChannel = channel;
+      const overlay = document.getElementById("sendInvoiceModalOverlay");
+      const titleEl = document.getElementById("sendInvoiceModalTitle");
+      const noticeEl = document.getElementById("sendInvoiceModalNotice");
+      const labelEl = document.getElementById("sendInvoiceRecipientLabel");
+      const inputEl = document.getElementById("sendInvoiceRecipientInput");
+      const msgGroup = document.getElementById("sendInvoiceMessageGroup");
+      const msgPreview = document.getElementById("sendInvoiceMessagePreview");
+      const confirmBtnText = document.getElementById("sendInvoiceConfirmBtnText");
+      const confirmBtn = document.getElementById("sendInvoiceConfirmBtn");
+      const statusEl = document.getElementById("sendInvoiceModalStatus");
+
+      if (statusEl) {
+        statusEl.style.display = "none";
+        statusEl.textContent = "";
+      }
+
+      if (channel === 'email') {
+        titleEl.textContent = "Email Invoice";
+        noticeEl.innerHTML = "Send invoice email to customer immediately, even if automated notifications are disabled in settings.";
+        labelEl.textContent = "Customer Email Address:";
+        inputEl.type = "email";
+        inputEl.value = (customerData && customerData.email) ? customerData.email : "";
+        inputEl.placeholder = "e.g. customer@example.com";
+        msgGroup.style.display = "none";
+        confirmBtnText.textContent = "Send Email";
+        confirmBtn.className = "toolbar-btn btn-primary-print";
+      } else if (channel === 'sms') {
+        titleEl.textContent = "SMS Invoice";
+        noticeEl.innerHTML = "Send invoice SMS notification to customer immediately, even if automated notifications are disabled in settings.";
+        labelEl.textContent = "Customer Mobile Number:";
+        inputEl.type = "tel";
+        inputEl.value = (customerData && (customerData.number || customerData.mobile_no || customerData.phone)) ? (customerData.number || customerData.mobile_no || customerData.phone) : "";
+        inputEl.placeholder = "e.g. +1 555-123-4567";
+        msgGroup.style.display = "none";
+        confirmBtnText.textContent = "Send SMS";
+        confirmBtn.className = "toolbar-btn btn-invoice";
+      } else if (channel === 'whatsapp') {
+        titleEl.textContent = "WhatsApp Invoice";
+        noticeEl.innerHTML = "Review recipient number and message details, then click to open WhatsApp chat with pre-filled invoice message.";
+        labelEl.textContent = "Customer WhatsApp Phone Number:";
+        inputEl.type = "tel";
+        inputEl.value = (customerData && (customerData.number || customerData.mobile_no || customerData.phone)) ? (customerData.number || customerData.mobile_no || customerData.phone) : "";
+        inputEl.placeholder = "e.g. 15551234567";
+        msgGroup.style.display = "flex";
+        confirmBtnText.textContent = "Open in WhatsApp";
+        confirmBtn.className = "toolbar-btn btn-whatsapp-invoice";
+
+        try {
+          confirmBtn.disabled = true;
+          confirmBtnText.textContent = "Loading preview...";
+          const resp = await fetch('/order/whatsapp-invoice-payload/' + (orderData.id || '<%= order.id %>'));
+          const data = await resp.json();
+          if (data && data.success) {
+            currentWaPayload = data;
+            if (data.phone && !inputEl.value) {
+              inputEl.value = data.phone;
+            }
+            if (msgPreview) {
+              msgPreview.value = data.message || "";
+            }
+          }
+        } catch (err) {
+          console.warn("Could not load WhatsApp invoice preview:", err);
+        } finally {
+          confirmBtn.disabled = false;
+          confirmBtnText.textContent = "Open in WhatsApp";
+        }
+      }
+
+      overlay.style.display = "flex";
+      inputEl.focus();
+    }
+
+    function closeSendInvoiceModal() {
+      const overlay = document.getElementById("sendInvoiceModalOverlay");
+      if (overlay) overlay.style.display = "none";
+    }
+
+    async function executeSendInvoice() {
+      const inputEl = document.getElementById("sendInvoiceRecipientInput");
+      const statusEl = document.getElementById("sendInvoiceModalStatus");
+      const confirmBtnText = document.getElementById("sendInvoiceConfirmBtnText");
+      const confirmBtn = document.getElementById("sendInvoiceConfirmBtn");
+      const updateCheck = document.getElementById("sendInvoiceUpdateCustomerCheck");
+      const msgPreview = document.getElementById("sendInvoiceMessagePreview");
+
+      const recipient = (inputEl ? inputEl.value : "").trim();
+      if (!recipient) {
+        if (statusEl) {
+          statusEl.className = "modal-status-text error";
+          statusEl.textContent = currentSendChannel === 'email' ? "Please enter an email address." : "Please enter a phone number.";
+          statusEl.style.display = "block";
+        }
+        if (inputEl) inputEl.focus();
+        return;
+      }
+
+      if (currentSendChannel === 'whatsapp') {
+        let cleanDigits = recipient.replace(/\D/g, "");
+        if (cleanDigits.length === 10) {
+          cleanDigits = "1" + cleanDigits;
+        }
+        if (!cleanDigits) {
+          if (statusEl) {
+            statusEl.className = "modal-status-text error";
+            statusEl.textContent = "Please enter a valid phone number with digits.";
+            statusEl.style.display = "block";
+          }
+          return;
+        }
+
+        const msg = (msgPreview ? msgPreview.value : (currentWaPayload ? currentWaPayload.message : "Invoice details"));
+        const waUrl = "https://wa.me/" + cleanDigits + "?text=" + encodeURIComponent(msg);
+
+        // Save contact update & notification log asynchronously
+        fetch('/order/send-manual-invoice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order_id: orderData.id || '<%= order.id %>',
+            channel: 'whatsapp',
+            recipient: recipient,
+            update_customer: updateCheck ? updateCheck.checked : false
+          })
+        }).catch(function(e) { console.warn("WhatsApp manual log error:", e); });
+
+        closeSendInvoiceModal();
+        window.open(waUrl, '_blank');
+        showNotification("<b>WhatsApp Ready:</b> Chat window opened for " + recipient + ".", "success");
+        return;
+      }
+
+      // Email or SMS dispatch via server
+      const origText = confirmBtnText.textContent;
+      confirmBtn.disabled = true;
+      confirmBtnText.textContent = "Sending...";
+      if (statusEl) statusEl.style.display = "none";
+
+      try {
+        const resp = await fetch('/order/send-manual-invoice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order_id: orderData.id || '<%= order.id %>',
+            channel: currentSendChannel,
+            recipient: recipient,
+            update_customer: updateCheck ? updateCheck.checked : false
+          })
+        });
+        const resData = await resp.json();
+
+        if (resData && resData.success) {
+          closeSendInvoiceModal();
+          showNotification("<b>Success:</b> " + (resData.message || 'Invoice dispatched successfully.'), "success");
+        } else {
+          throw new Error((resData && resData.message) || ("Failed to dispatch invoice via " + currentSendChannel + "."));
+        }
+      } catch (err) {
+        console.error("Error sending manual invoice:", err);
+        if (statusEl) {
+          statusEl.className = "modal-status-text error";
+          statusEl.textContent = err.message || "Failed to send invoice.";
+          statusEl.style.display = "block";
+        }
+      } finally {
+        confirmBtn.disabled = false;
+        confirmBtnText.textContent = origText;
       }
     }
 

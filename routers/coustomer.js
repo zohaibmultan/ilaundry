@@ -214,28 +214,30 @@ router.get("/list/data", auth, async (req, res) => {
             ? `${lName}, ${fName}`
             : (cust.name || fName || lName || '');
 
-          let typeName = cust.customer_type || 'Counter & Counter';
-          let typeCode = cust.customer_type_code || '';
+          let rawType = cust.customer_type || 'Counter • Counter';
+          let typeName = String(rawType).replace(/\s*&\s*/g, ' • ').trim();
+          let typeCode = (cust.customer_type_code || '').replace(/\s*&\s*/g, ' • ').trim();
           let typeDesc = cust.customer_type_description || '';
 
           if (!typeCode) {
-            if (typeName === 'Counter & Counter') {
-              typeCode = 'C & C';
+            if (typeName === 'Counter • Counter' || typeName === 'Counter & Counter') {
+              typeName = 'Counter • Counter';
+              typeCode = 'C • C';
               typeDesc = typeDesc || 'Customer will drop-off and customer will pickup';
-            } else if (typeName === 'Counter & Route' || typeName === 'Counter & Delivery' || typeName === 'Customer drop-off & Store delivery') {
-              typeCode = 'C & R';
-              typeName = 'Counter & Route';
+            } else if (typeName === 'Counter • Route' || typeName === 'Counter & Route' || typeName === 'Counter & Delivery' || typeName === 'Customer drop-off & Store delivery') {
+              typeCode = 'C • R';
+              typeName = 'Counter • Route';
               typeDesc = typeDesc || 'Customer will drop-off and store will deliver';
-            } else if (typeName === 'Route & Route' || typeName === 'Pick-up & Delivery' || typeName === 'Store collection & Store delivery') {
-              typeCode = 'R & R';
-              typeName = 'Route & Route';
+            } else if (typeName === 'Route • Route' || typeName === 'Route & Route' || typeName === 'Pick-up & Delivery' || typeName === 'Store collection & Store delivery') {
+              typeCode = 'R • R';
+              typeName = 'Route • Route';
               typeDesc = typeDesc || 'Store will pickup and store will deliver';
-            } else if (typeName === 'Route & Counter' || typeName === 'Pick-up & Counter') {
-              typeCode = 'R & C';
-              typeName = 'Route & Counter';
+            } else if (typeName === 'Route • Counter' || typeName === 'Route & Counter' || typeName === 'Pick-up & Counter') {
+              typeCode = 'R • C';
+              typeName = 'Route • Counter';
               typeDesc = typeDesc || 'Store will pickup and customer will pickup';
             } else {
-              typeCode = 'C & C';
+              typeCode = 'C • C';
             }
           }
 
@@ -410,61 +412,67 @@ router.post("/register", auth, async (req, res) => {
         return res.redirect(req.get("Referrer") || "/");
       }
 
-      const check_number = await DataFind(
-        "SELECT * FROM tbl_customer WHERE number='" + number + "'"
-      );
-      if (check_number.length > 0) {
-        req.flash("error", "This Mobile Number Alredy Register!!!!");
-        return res.redirect(req.get("Referrer") || "/");
-      }else{
-        let check_usernameinadmin = await DataFind(
-        "SELECT * FROM tbl_admin WHERE number='" + number + "'"
-      );
-
-      if (check_usernameinadmin.length > 0  && check_usernameinadmin[0].username != '') {
-        req.flash("error", "This Mobile Number Alredy Register!!!!");
-        return res.redirect(req.get("Referrer") || "/");
-      }
-    }
-
       const rawNumber = (number ? String(number).trim() : '');
+      const safeNumber = rawNumber.replace(/'/g, "\'");
       let cleanUsername = (username && String(username).trim() !== '') ? String(username).trim() : rawNumber;
       let cleanPassword = (password && String(password).trim() !== '') ? String(password).trim() : rawNumber;
+      const safeUsername = cleanUsername.replace(/'/g, "\'");
+      const cleanEmail = (email ? String(email).trim() : '');
+      const safeEmail = cleanEmail.replace(/'/g, "\'");
 
-      const check_username = await DataFind(
-        "SELECT * FROM tbl_customer WHERE username='" + cleanUsername + "'"
-      );
-      if (check_username.length > 0  && check_username[0].username != '') {
-        req.flash("error", "This UserName Alredy Register!!!!");
-        return res.redirect(req.get("Referrer") || "/");
-      }else{
-        let check_usernameinadmin = await DataFind(
-        "SELECT * FROM tbl_admin WHERE username='" + cleanUsername + "'"
-      );
-
-      if (check_usernameinadmin.length > 0  && check_usernameinadmin[0].username != '') {
-        req.flash("error", "This UserName Alredy Register!!!!");
-        return res.redirect(req.get("Referrer") || "/");
+      if (safeNumber) {
+        const check_number = await DataFind(
+          "SELECT * FROM tbl_customer WHERE number='" + safeNumber + "' AND delet_flage = 0"
+        );
+        if (check_number.length > 0) {
+          req.flash("error", "This Mobile Number Alredy Register!!!!");
+          return res.redirect(req.get("Referrer") || "/");
+        } else {
+          let check_usernameinadmin = await DataFind(
+            "SELECT * FROM tbl_admin WHERE number='" + safeNumber + "' AND delet_flage = 0"
+          );
+          if (check_usernameinadmin.length > 0 && check_usernameinadmin[0].username != '') {
+            req.flash("error", "This Mobile Number Alredy Register!!!!");
+            return res.redirect(req.get("Referrer") || "/");
+          }
+        }
       }
+
+      if (safeUsername) {
+        const check_username = await DataFind(
+          "SELECT * FROM tbl_customer WHERE username='" + safeUsername + "' AND delet_flage = 0"
+        );
+        if (check_username.length > 0 && check_username[0].username != '') {
+          req.flash("error", "This UserName Alredy Register!!!!");
+          return res.redirect(req.get("Referrer") || "/");
+        } else {
+          let check_usernameinadmin = await DataFind(
+            "SELECT * FROM tbl_admin WHERE username='" + safeUsername + "' AND delet_flage = 0"
+          );
+          if (check_usernameinadmin.length > 0 && check_usernameinadmin[0].username != '') {
+            req.flash("error", "This UserName Alredy Register!!!!");
+            return res.redirect(req.get("Referrer") || "/");
+          }
+        }
       }
 
-    const check_email = await DataFind(
-        "SELECT * FROM tbl_customer WHERE email='" + email + "'"
-      );
-
-      if (check_email.length > 0) {
-        req.flash("error", "This Email Alredy Register!!!!");
-        return res.redirect(req.get("Referrer") || "/");
-      }else{
-        let check_usernameinadmin = await DataFind(
-        "SELECT * FROM tbl_admin WHERE email='" + email + "'"
-      );
-
-      if (check_usernameinadmin.length > 0  && check_usernameinadmin[0].username != '') {
-        req.flash("error", "This Email Alredy Register!!!!");
-        return res.redirect(req.get("Referrer") || "/");
+      if (cleanEmail) {
+        const check_email = await DataFind(
+          "SELECT * FROM tbl_customer WHERE email='" + safeEmail + "' AND delet_flage = 0"
+        );
+        if (check_email.length > 0) {
+          req.flash("error", "This Email Alredy Register!!!!");
+          return res.redirect(req.get("Referrer") || "/");
+        } else {
+          let check_usernameinadmin = await DataFind(
+            "SELECT * FROM tbl_admin WHERE email='" + safeEmail + "' AND delet_flage = 0"
+          );
+          if (check_usernameinadmin.length > 0 && check_usernameinadmin[0].username != '') {
+            req.flash("error", "This Email Alredy Register!!!!");
+            return res.redirect(req.get("Referrer") || "/");
+          }
+        }
       }
-    }
       let main_roll = await DataFind(
         "SELECT * FROM tbl_roll WHERE rollType='customer'"
       );
@@ -493,16 +501,13 @@ router.post("/register", auth, async (req, res) => {
       const safeFirstName = fName.replace(/'/g, "\\'");
       const safeLastName = lName.replace(/'/g, "\\'");
       const safeName = combinedName.replace(/'/g, "\\'");
-      const safeNumber = rawNumber.replace(/'/g, "\\'");
-      const safeEmail = (email || '').trim().replace(/'/g, "\\'");
       const safeAddress = (address || '').trim().replace(/'/g, "\\'");
       const safeCity = (city || '').trim().replace(/'/g, "\\'");
       const safeState = (state || '').trim().replace(/'/g, "\\'");
       const safeZipcode = (zipcode || req.body.zip_code || '').trim().replace(/'/g, "\\'");
       const safeTaxNumber = (taxnumber || '').trim().replace(/'/g, "\\'");
-      const safeCustomerType = (customer_type || 'Counter & Counter').trim().replace(/'/g, "\\'");
+      const safeCustomerType = (customer_type || 'Counter • Counter').replace(/\s*&\s*/g, ' • ').trim().replace(/'/g, "\\'");
       const safeMemo = (memo || '').trim().replace(/'/g, "\\'");
-      const safeUsername = cleanUsername.replace(/'/g, "\\'");
 
       const data = await DataInsert(
         `tbl_customer`,

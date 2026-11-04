@@ -88,7 +88,7 @@ const NOTIFICATION_EVENTS = [
     category: "intake",
     categoryTitle: "1. Order Intake & Placement",
     categoryIcon: "fa-shopping-basket",
-    title: "Route Pick-up Scheduled (R & R / R & C)",
+    title: "Route Pick-up Scheduled (R • R / R • C)",
     triggerBadge: "Route Order Intake",
     description: "Sent when a Route Pick-up order (including 0-item pending intake) is scheduled, confirming the pickup date and 1-hour driver time slot.",
     defaultEmail: true,
@@ -172,7 +172,7 @@ const NOTIFICATION_EVENTS = [
     category: "ready",
     categoryTitle: "3. Ready for Pickup & Route Delivery",
     categoryIcon: "fa-check-double",
-    title: "Order Ready for Counter Pickup (C & C / R & C)",
+    title: "Order Ready for Counter Pickup (C • C / R • C)",
     triggerBadge: "Status: Ready (Counter)",
     description: "Sent when a Counter Pickup order is marked Ready, including total garment pieces, store address/phone, and remaining balance due.",
     defaultEmail: true,
@@ -188,7 +188,7 @@ const NOTIFICATION_EVENTS = [
     category: "ready",
     categoryTitle: "3. Ready for Pickup & Route Delivery",
     categoryIcon: "fa-check-double",
-    title: "Out for Route Delivery (C & R / R & R)",
+    title: "Out for Route Delivery (C • R / R • R)",
     triggerBadge: "Status: Ready / En Route",
     description: "Sent when a Route Delivery order is marked Ready or Out for Delivery, notifying the customer of the scheduled delivery window and balance due.",
     defaultEmail: true,
@@ -824,7 +824,7 @@ function buildNotificationContent({ eventKey, customer, store, master, order, it
   const custName = formatCustomerDisplayName(customer);
 
   const orderCode = order ? (order.order_id || order.id) : (extraData?.orderCode || "");
-  const orderType = order ? (order.order_type || "Counter & Counter") : "Counter & Counter";
+  const orderType = order ? (order.order_type || "Counter • Counter") : "Counter • Counter";
   const grossTotal = order ? `${sym}${parseFloat(order.gross_total || 0).toFixed(2)}` : `${sym}0.00`;
   const paidAmount = order ? `${sym}${parseFloat(order.paid_amount || 0).toFixed(2)}` : `${sym}0.00`;
   const balanceDue = order ? `${sym}${parseFloat(order.balance_amount || 0).toFixed(2)}` : `${sym}0.00`;
@@ -1035,7 +1035,10 @@ async function dispatchCustomerNotification({
   customerId,
   orderId = null,
   extraData = {},
-  accessdata = null
+  accessdata = null,
+  forceEmail = false,
+  forceSms = false,
+  overrideRecipient = null
 }) {
   try {
     let orderObj = null;
@@ -1079,9 +1082,9 @@ async function dispatchCustomerNotification({
     const settings = await getEffectiveNotificationSettings(effectiveStoreId);
     const eventCfg = settings.events[eventKey] || { email: false, sms: false };
 
-    const shouldSendEmail = Boolean(settings.email_enabled && eventCfg.email);
-    const shouldSendSms = Boolean(settings.sms_enabled && eventCfg.sms);
-    const shouldSendPush = Boolean(settings.push_enabled);
+    const shouldSendEmail = Boolean(forceEmail || (settings.email_enabled && eventCfg.email));
+    const shouldSendSms = Boolean(forceSms || (settings.sms_enabled && eventCfg.sms));
+    const shouldSendPush = Boolean(!forceEmail && !forceSms && settings.push_enabled);
 
     if (!shouldSendEmail && !shouldSendSms && !shouldSendPush) {
       return { sentEmail: false, sentSms: false, sentPush: false, skipped: true };
@@ -1124,8 +1127,12 @@ async function dispatchCustomerNotification({
     let sentSms = false;
     let sentPush = false;
 
-    // 1. Send Email if enabled and customer has email
-    if (shouldSendEmail && !isWalkIn && customerObj && customerObj.email && String(customerObj.email).trim() !== "") {
+    // 1. Send Email if enabled/forced and recipient email is available
+    const targetEmail = (overrideRecipient && forceEmail)
+      ? String(overrideRecipient).trim()
+      : ((!isWalkIn && customerObj && customerObj.email) ? String(customerObj.email).trim() : "");
+
+    if (shouldSendEmail && targetEmail !== "") {
       const smtp = await resolveSmtpConfig(effectiveStoreId);
       if (smtp && smtp.host && smtp.port && smtp.username && smtp.password && smtp.frommail) {
         try {
@@ -1137,45 +1144,53 @@ async function dispatchCustomerNotification({
               pass: smtp.password
             }
           });
-          transporter.sendMail(
-            {
-              from: smtp.frommail,
-              to: String(customerObj.email).trim(),
-              subject: subject,
-              html: htmlBody
-            },
-            (err) => {
-              if (err) console.error(`[NotificationService] Email error (${eventKey}):`, err.message);
-            }
-          );
+          await transporter.sendMail({
+            from: smtp.frommail,
+            to: targetEmail,
+            subject: subject,
+            html: htmlBody
+          });
           sentEmail = true;
         } catch (emailErr) {
-          console.error(`[NotificationService] Transporter error (${eventKey}):`, emailErr.message);
+          console.error(`[NotificationService] Email error (${eventKey}):`, emailErr.message);
+          if (forceEmail) throw emailErr;
         }
+      } else if (forceEmail) {
+        throw new Error("SMTP mail server is not configured yet. Please configure Mail Settings first.");
       }
+    } else if (forceEmail && targetEmail === "") {
+      throw new Error("Recipient email address is required.");
     }
 
-    // 2. Send SMS if enabled and customer has phone number
-    if (shouldSendSms && !isWalkIn && customerObj && customerObj.number && String(customerObj.number).trim() !== "") {
+    // 2. Send SMS if enabled/forced and recipient phone is available
+    const targetPhone = (overrideRecipient && forceSms)
+      ? String(overrideRecipient).trim()
+      : ((!isWalkIn && customerObj && customerObj.number) ? String(customerObj.number).trim() : "");
+
+    if (shouldSendSms && targetPhone !== "") {
       const twilioCfg = await resolveTwilioConfig(storeObj, masterObj);
-      const formattedTo = formatE164Phone(customerObj.number);
+      const formattedTo = formatE164Phone(targetPhone);
       if (twilioCfg.isConfigured && formattedTo) {
         try {
           const clientSms = require("twilio")(twilioCfg.sid, twilioCfg.token);
-          clientSms.messages
-            .create({
-              body: smsBody,
-              from: twilioCfg.fromPhone,
-              to: formattedTo
-            })
-            .catch((smsErr) => {
-              console.error(`[NotificationService] SMS error (${eventKey}):`, smsErr.message);
-            });
+          await clientSms.messages.create({
+            body: smsBody,
+            from: twilioCfg.fromPhone,
+            to: formattedTo
+          });
           sentSms = true;
         } catch (twilioErr) {
-          console.error(`[NotificationService] Twilio init error (${eventKey}):`, twilioErr.message);
+          console.error(`[NotificationService] Twilio error (${eventKey}):`, twilioErr.message);
+          if (forceSms) throw twilioErr;
         }
+      } else if (forceSms) {
+        if (!formattedTo) {
+          throw new Error("Invalid recipient phone number format.");
+        }
+        throw new Error("Twilio SMS is not configured yet. Please configure Twilio Settings first.");
       }
+    } else if (forceSms && targetPhone === "") {
+      throw new Error("Recipient phone number is required.");
     }
 
     // 3. Send Push Notification via OneSignal if enabled
@@ -1306,6 +1321,83 @@ async function sendTestNotification({ storeId = 0, channel = "email", recipient 
   return { success: false, message: "Unsupported test channel." };
 }
 
+/**
+ * Format structured WhatsApp Invoice Receipt message
+ */
+function formatWhatsAppInvoiceMessage({ order, items, customer, store, master, rackNames = "" }) {
+  const sym = (master && master.currency_symbol) ? master.currency_symbol : "$";
+  const storeName = (store && store.name) ? store.name : ((master && master.app_name) ? master.app_name : "iCleaners");
+  const storePhone = (store && store.mobile_number) ? store.mobile_number : "";
+  const custName = formatCustomerDisplayName(customer);
+
+  const orderCode = order ? (order.order_id || order.id) : "";
+  const grossTotal = order ? `${sym}${parseFloat(order.gross_total || 0).toFixed(2)}` : `${sym}0.00`;
+  const paidAmount = order ? `${sym}${parseFloat(order.paid_amount || 0).toFixed(2)}` : `${sym}0.00`;
+  const balanceDue = order ? `${sym}${parseFloat(order.balance_amount || 0).toFixed(2)}` : `${sym}0.00`;
+  const readyDateStr = order ? formatDateTimeReadable(order.ready_date || order.delivery_date) : "TBD";
+  const orderDateStr = order ? formatDateTimeReadable(order.order_date, true) : "Today";
+
+  let totalPieces = 0;
+  let itemsLines = [];
+
+  if (Array.isArray(items) && items.length > 0) {
+    items.forEach((it) => {
+      const sName = it.service_name || "Service";
+      const qty = parseFloat(it.service_quntity || 1) || 1;
+      const pcs = parseInt(it.no_of_items || 1, 10) || 1;
+      const totalPcsLine = qty * pcs;
+      totalPieces += totalPcsLine;
+      const pcsBadge = pcs > 1 ? ` (${pcs} Pcs)` : "";
+      const price = parseFloat(it.service_price || 0) * qty;
+      itemsLines.push(`• ${sName}${pcsBadge} x ${qty} = ${sym}${price.toFixed(2)}`);
+    });
+  }
+
+  let lines = [
+    `*${storeName}*`,
+    `🧾 *INVOICE RECEIPT*`,
+    `--------------------------------`,
+    `Hello *${custName}*, here is your order receipt:`,
+    ``,
+    `📋 *Order #:* #${orderCode}`,
+    `📅 *Order Date:* ${orderDateStr}`,
+    `⏰ *Target Ready:* ${readyDateStr}`,
+    `👕 *Total Pieces:* ${totalPieces > 0 ? totalPieces + " Pcs" : "1 Pc"}`
+  ];
+
+  if (rackNames && String(rackNames).trim() !== "") {
+    lines.push(`📍 *Storage Rack:* ${rackNames}`);
+  }
+
+  if (itemsLines.length > 0) {
+    lines.push(``);
+    lines.push(`*ITEMIZED SERVICES:*`);
+    lines = lines.concat(itemsLines);
+  }
+
+  lines.push(`--------------------------------`);
+  lines.push(`💰 *Gross Total:* ${grossTotal}`);
+  lines.push(`💳 *Paid Amount:* ${paidAmount}`);
+  lines.push(`❗ *Balance Due:* *${balanceDue}*`);
+  lines.push(`--------------------------------`);
+
+  if (storePhone) {
+    lines.push(`📞 Questions? Call us at ${storePhone}`);
+  }
+  lines.push(`Thank you for choosing ${storeName}!`);
+
+  return lines.join("\n");
+}
+
+function formatWhatsAppNumber(phone) {
+  if (!phone) return "";
+  const digits = String(phone).replace(/\D/g, "");
+  if (!digits) return "";
+  // 10-digit number without country code (US/Canada assumption) -> 1XXXXXXXXXX
+  if (digits.length === 10) return `1${digits}`;
+  return digits;
+}
+
 module.exports = {
   NOTIFICATION_EVENTS,
   TEMPLATE_VARIABLES,
@@ -1322,6 +1414,8 @@ module.exports = {
   sendTestNotification,
   resolveSmtpConfig,
   resolveTwilioConfig,
+  formatWhatsAppInvoiceMessage,
+  formatWhatsAppNumber,
   isRouteDeliveryOrderType,
   isRoutePickupOrderType
 };

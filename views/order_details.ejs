@@ -15,7 +15,7 @@
   <div class="content-body">
 
     <div class="container-fluid" style="min-height: 100vh;">
-      <% 
+      <%
                     const isMaster = (accessdata?.logas === 'master' || (accessdata?.roll && accessdata.roll.rollType === 'master'));
                     const canEditOrder = accessdata?.logas != 'custmor' && (isMaster || (accessdata?.roll?.orders && accessdata.roll.orders.includes('edit')));
                     const canDeleteOrder = accessdata?.logas != 'custmor' && (isMaster || (accessdata?.roll?.orders && accessdata.roll.orders.includes('delete')));
@@ -163,14 +163,14 @@
                       <i class="fa fa-layer-group"></i>
                       <span>Rack<%= orderAssignedRacks.length > 1 ? 's' : '' %>: <strong><%= orderAssignedRacks.map(r => r.rack_name).join(', ') %></strong></span>
                     </span>
-                    <% if (canEditOrder && !isOrderTerminalStatus) { %>
+                    <% if (canEditOrder) { %>
                     <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2" onclick="openOrderRacksModal(null)" title="Change Assigned Racks">
                       <i class="fas fa-pencil-alt me-1"></i>Change Racks
                     </button>
                     <% } %>
                   </div>
-                  <% } else if (canEditOrder && Number(order.order_status) === 3 && !isOrderTerminalStatus) { %>
-                  <button type="button" class="btn btn-xs btn-outline-info py-1 px-2 ms-1" onclick="openOrderRacksModal(null)">
+                  <% } else if (canEditOrder) { %>
+                  <button type="button" class="btn btn-xs btn-outline-info py-1 px-2 ms-1" onclick="openOrderRacksModal(null)" title="Assign Storage Rack">
                     <i class="fa fa-layer-group me-1"></i>Assign Racks
                   </button>
                   <% } %>
@@ -724,7 +724,7 @@
                       <!-- 5. Payment Milestones -->
                       <% if (payments && payments.length > 0) { %>
                       <% payments.forEach(function(pay) { %>
-                      <% 
+                      <%
                                                                     let pDate = new Date(pay.payment_date);
                                                                     let pDay = (pDate.getDate() < 10 ? '0' : '') + pDate.getDate();
                                                                     let pMonth = ((pDate.getMonth() + 1) < 10 ? '0' : '') + (pDate.getMonth() + 1);
@@ -749,6 +749,14 @@
 
 
                     <div class="row">
+                      <% if (canEditOrder) { %>
+                      <div class="col-12">
+                        <button type="button" class="btn btn-outline-primary mb-3 w-100" id="btn_edit_order_racks">
+                          <i class="fa fa-layer-group me-2"></i>
+                          <%= (orderAssignedRacks.length > 0) ? (language.Edit_Rack || 'Edit Storage Rack') : (language.Assign_Rack || 'Assign Storage Rack') %>
+                        </button>
+                      </div>
+                      <% } %>
                       <% if (canEditOrder && order.order_status != 6) { %>
                       <div class="col-12">
                         <a href="/admin/edit/<%= order.id %>" class="btn btn-primary mb-3 w-100">
@@ -774,6 +782,21 @@
                         <a href="/admin/posprint?id=<%= order.id %>&mode=tags" target="_blank" class="btn btn-info mb-2 w-100">
                           <i class="fa fa-tags me-2"></i> <%= language.Print_Cloth_Tag || language.Print_Barcode || 'Print Cloth Tag' %>
                         </a>
+                      </div>
+                      <div class="col-12">
+                        <button type="button" class="btn btn-outline-primary mb-2 w-100" id="btn_order_email_invoice" onclick="openSendInvoiceModal('email')">
+                          <i class="fa fa-envelope me-2"></i> <%= language.Email_Invoice || 'Email Invoice' %>
+                        </button>
+                      </div>
+                      <div class="col-12">
+                        <button type="button" class="btn btn-outline-info mb-2 w-100" id="btn_order_sms_invoice" onclick="openSendInvoiceModal('sms')">
+                          <i class="fa fa-sms me-2"></i> <%= language.SMS_Invoice || 'SMS Invoice' %>
+                        </button>
+                      </div>
+                      <div class="col-12">
+                        <button type="button" class="btn btn-outline-success mb-2 w-100" id="btn_order_whatsapp_invoice" onclick="openSendInvoiceModal('whatsapp')">
+                          <i class="fab fa-whatsapp me-2"></i> <%= language.WhatsApp_Invoice || 'WhatsApp Invoice' %>
+                        </button>
                       </div>
                       <% if (canDeleteOrder) { %>
                       <div class="col-12">
@@ -1296,6 +1319,81 @@
   </div>
   <% } %>
 
+
+  <!-- Send Invoice Confirmation Modal (Email, SMS, WhatsApp) -->
+  <div class="modal fade" id="sendInvoiceModal" tabindex="-1" aria-labelledby="sendInvoiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 490px;">
+      <div class="modal-content">
+        <div class="modal-header border-bottom py-3 px-4">
+          <h5 class="modal-title fw-bold d-flex align-items-center mb-0" id="sendInvoiceModalLabel">
+            <i id="send_invoice_modal_icon" class="fa fa-envelope text-primary me-2"></i>
+            <span id="send_invoice_modal_title">Send Invoice</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          <div id="send_invoice_notice_box" class="alert alert-info border border-info py-2 px-3 mb-3 fs-13">
+            <div class="d-flex align-items-start gap-2">
+              <i class="fa fa-info-circle text-info mt-1 flex-shrink-0"></i>
+              <div id="send_invoice_notice_text">
+                Send invoice immediately to the recipient, even if automated notifications are turned off.
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3 bg-light-subtle rounded border mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="text-muted fs-12">Order Number:</span>
+              <strong class="text-dark">#<%= order.order_id %></strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="text-muted fs-12">Customer:</span>
+              <strong class="text-dark"><%= (customer && customer.name) ? customer.name : 'Walk in customer' %></strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="text-muted fs-12">Total Amount:</span>
+              <strong class="symbol text-primary"><%= order.gross_total.toFixed(2) %></strong>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold text-dark fs-13 mb-1" id="send_invoice_recipient_label" for="send_invoice_recipient_input">
+              Recipient Contact
+            </label>
+            <input type="text" class="form-control" id="send_invoice_recipient_input" placeholder="" />
+          </div>
+
+          <div class="mb-3 d-none" id="send_invoice_wa_preview_group">
+            <label class="form-label fw-bold text-dark fs-13 mb-1" for="send_invoice_message_preview">
+              Message Preview (will open in WhatsApp chat):
+            </label>
+            <textarea class="form-control fs-12 font-monospace" id="send_invoice_message_preview" rows="7"></textarea>
+          </div>
+
+          <div class="form-check" id="send_invoice_update_profile_group">
+            <input class="form-check-input" type="checkbox" id="send_invoice_update_profile_check" checked>
+            <label class="form-check-label text-muted fs-12" for="send_invoice_update_profile_check">
+              Update customer's profile if contact is missing
+            </label>
+          </div>
+
+          <div id="send_invoice_status_alert" class="alert alert-danger py-2 px-3 mt-3 d-none fs-13"></div>
+        </div>
+
+        <div class="modal-footer border-top py-2 px-4">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+          </button>
+          <button type="button" class="btn btn-primary" id="btn_confirm_send_invoice" onclick="executeSendInvoice()">
+            <i class="fa fa-paper-plane me-2" id="send_invoice_confirm_icon"></i>
+            <span id="send_invoice_confirm_text">Send Invoice</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Transfer Store Modal (Step 1: Select Active Store) -->
   <div class="modal fade" id="transferStoreModal" tabindex="-1" aria-labelledby="transferStoreModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -1404,6 +1502,25 @@
         </div>
 
         <div class="modal-body p-4">
+          <!-- Collision Alert / Confirmation inside Modal -->
+          <div id="order_rack_collision_alert" class="alert alert-warning border border-warning d-none mb-3 py-2 px-3">
+            <div class="d-flex align-items-start gap-2">
+              <i class="fa fa-exclamation-triangle text-warning fs-5 mt-1 flex-shrink-0"></i>
+              <div class="flex-grow-1">
+                <strong class="d-block text-dark">Rack Collision Warning:</strong>
+                <span id="order_rack_collision_msg" class="small d-block mb-2 text-dark"></span>
+                <div class="d-flex align-items-center gap-2">
+                  <button type="button" class="btn btn-warning btn-sm fw-bold px-3 text-dark" id="btn_confirm_shared_rack_inline">
+                    <i class="fa fa-check me-1"></i>Yes, Share Rack Position
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm" onclick="$('#order_rack_collision_alert').addClass('d-none');">
+                    Choose Different Rack
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Search & Quick Add Rack Toolbar -->
           <div class="row g-2 mb-3">
             <div class="col-12 col-sm-6">
@@ -1442,6 +1559,34 @@
             </button>
             <button type="button" class="btn btn-primary btn-sm" id="btn_confirm_order_racks" onclick="submitOrderRacksSelection()">
               <i class="fa fa-check me-1"></i><span>Confirm Selection</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Rack Collision Modal (Step 2: Confirmation Warning in Modal) -->
+  <div class="modal fade" id="confirmRackCollisionModal" tabindex="-1" aria-labelledby="confirmRackCollisionModalLabel" aria-hidden="true" style="z-index: 1070;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+      <div class="modal-content text-center p-3 border-0 shadow">
+        <div class="modal-body pt-3 pb-2">
+          <div class="mb-3">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); display: inline-flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 26px;">
+              <i class="fa fa-exclamation-triangle"></i>
+            </div>
+          </div>
+          <h4 class="mb-2 fw-bold text-dark" id="confirmRackCollisionModalLabel">Rack Collision Warning</h4>
+          <div class="alert alert-warning text-start mb-3 py-2 px-3 fs-13" id="confirm_rack_collision_modal_msg">
+            Rack collision detected.
+          </div>
+          <p class="text-muted fs-13 mb-3">Do you wish to share this rack position and assign this order to the same rack?</p>
+          <div class="d-flex gap-2 justify-content-center">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+            </button>
+            <button type="button" class="btn btn-warning fw-bold text-dark" id="btn_confirm_rack_collision_proceed">
+              <i class="fa fa-check me-2"></i> Yes, Share Rack
             </button>
           </div>
         </div>
@@ -1856,13 +2001,15 @@
 
         html +=
           '<label class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3 border rounded cursor-pointer mb-0 ' + (isChecked ? 'border-primary bg-primary-subtle' : '') + '">' +
-            '<div class="d-flex align-items-center gap-3">' +
-              '<input class="form-check-input flex-shrink-0 m-0 order-rack-checkbox" type="checkbox" value="' + escapeRackHtml(rIdStr) + '" ' + (isChecked ? 'checked' : '') + '>' +
-              '<div>' +
-                '<div class="fw-bold text-dark"><i class="fa fa-layer-group text-primary me-1"></i>' + escapeRackHtml(r.rack_name) + '</div>' +
+            '<div class="d-flex align-items-center justify-content-between gap-3">' +
+              '<div class="d-flex align-items-center gap-3">' +
+                '<input class="form-check-input flex-shrink-0 m-0 order-rack-checkbox" type="checkbox" value="' + escapeRackHtml(rIdStr) + '" ' + (isChecked ? 'checked' : '') + '>' +
+                '<div>' +
+                  '<div class="fw-bold text-dark"><i class="fa fa-layer-group text-primary me-1"></i>' + escapeRackHtml(r.rack_name) + '</div>' +
+                '</div>' +
               '</div>' +
+              loadBadge +
             '</div>' +
-            loadBadge +
           '</label>';
       });
 
@@ -1898,6 +2045,8 @@
       }
 
       $('#modal_rack_search_input').val('');
+      $('#order_rack_collision_alert').addClass('d-none');
+      isRackCollisionConfirmed = false;
       renderOrderRacksChecklist('');
 
       var modalEl = document.getElementById('assignOrderRacksModal');
@@ -1976,7 +2125,35 @@
       }
     });
 
-    function submitOrderRacksSelection() {
+    $(document).on('click', '#btn_edit_order_racks', function() {
+      openOrderRacksModal(null);
+    });
+
+    var isRackCollisionConfirmed = false;
+
+    $(document).on('click', '#btn_confirm_shared_rack_inline', function() {
+      submitOrderRacksSelection(true);
+    });
+
+    $(document).on('click', '#btn_confirm_rack_collision_proceed', function() {
+      isRackCollisionConfirmed = true;
+      var confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmRackCollisionModal'));
+      if (confirmModal) {
+        confirmModal.hide();
+      }
+      submitOrderRacksSelection(true);
+    });
+
+    $('#confirmRackCollisionModal').on('hidden.bs.modal', function() {
+      if (!isRackCollisionConfirmed) {
+        setTimeout(function() {
+          var assignModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('assignOrderRacksModal'));
+          assignModal.show();
+        }, 200);
+      }
+    });
+
+    function submitOrderRacksSelection(forceConfirm) {
       var rackIds = Array.from(selectedOrderRackIds);
       if (rackIds.length === 0) {
         if (typeof toastr !== 'undefined') {
@@ -2000,10 +2177,37 @@
         data: JSON.stringify({
           order_id: '<%= order.id %>',
           rack_ids: rackIds,
-          status_id: pendingRackStatusId
+          status_id: pendingRackStatusId,
+          force_confirm: forceConfirm ? true : false
         }),
         dataType: 'json',
         success: function(res) {
+          if (res && res.status === 'warning' && res.requires_confirmation) {
+            if (btnEl) {
+              btnEl.disabled = false;
+              btnEl.innerHTML = '<i class="fa fa-check me-1"></i><span>Confirm Selection</span>';
+            }
+            if (typeof toastr !== 'undefined') {
+              toastr.warning(res.message, 'Rack Collision Warning', { timeOut: 7000, closeButton: true });
+            }
+
+            isRackCollisionConfirmed = false;
+            $('#confirm_rack_collision_modal_msg').text(res.message);
+            $('#order_rack_collision_msg').text(res.message);
+            $('#order_rack_collision_alert').removeClass('d-none');
+
+            var assignModal = bootstrap.Modal.getInstance(document.getElementById('assignOrderRacksModal'));
+            if (assignModal) {
+              assignModal.hide();
+            }
+
+            setTimeout(function() {
+              var confirmModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmRackCollisionModal'));
+              confirmModal.show();
+            }, 250);
+            return;
+          }
+
           if (res && res.status === 'success') {
             if (typeof toastr !== 'undefined') {
               toastr.success(res.message || 'Order racks saved successfully');
@@ -2028,6 +2232,221 @@
           }
           var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error saving rack assignment';
           if (typeof toastr !== 'undefined') toastr.error(msg);
+        }
+      });
+    }
+    // ==========================================
+    // MANUAL INVOICE DISPATCH (EMAIL, SMS, WHATSAPP)
+    // ==========================================
+    var currentSendChannel = 'email';
+    var currentWaPayload = null;
+    var orderCustomerEmail = "<%= (customer && customer.email) ? customer.email : '' %>";
+    var orderCustomerPhone = "<%= (customer && (customer.number || customer.mobile_no || customer.phone)) ? (customer.number || customer.mobile_no || customer.phone) : '' %>";
+
+    function openSendInvoiceModal(channel) {
+      currentSendChannel = channel;
+      var iconEl = document.getElementById('send_invoice_modal_icon');
+      var titleEl = document.getElementById('send_invoice_modal_title');
+      var noticeText = document.getElementById('send_invoice_notice_text');
+      var labelEl = document.getElementById('send_invoice_recipient_label');
+      var inputEl = document.getElementById('send_invoice_recipient_input');
+      var waGroup = document.getElementById('send_invoice_wa_preview_group');
+      var waPreview = document.getElementById('send_invoice_message_preview');
+      var confirmBtn = document.getElementById('btn_confirm_send_invoice');
+      var confirmIcon = document.getElementById('send_invoice_confirm_icon');
+      var confirmText = document.getElementById('send_invoice_confirm_text');
+      var statusAlert = document.getElementById('send_invoice_status_alert');
+
+      if (statusAlert) {
+        statusAlert.classList.add('d-none');
+        statusAlert.textContent = '';
+      }
+
+      if (channel === 'email') {
+        iconEl.className = 'fa fa-envelope text-primary me-2';
+        titleEl.textContent = 'Email Invoice';
+        noticeText.textContent = 'Send invoice email to customer immediately, even if automated notifications are disabled in settings.';
+        labelEl.textContent = 'Customer Email Address:';
+        inputEl.type = 'email';
+        inputEl.value = orderCustomerEmail;
+        inputEl.placeholder = 'e.g. customer@example.com';
+        waGroup.classList.add('d-none');
+        confirmBtn.className = 'btn btn-primary';
+        confirmIcon.className = 'fa fa-paper-plane me-2';
+        confirmText.textContent = 'Send Email';
+      } else if (channel === 'sms') {
+        iconEl.className = 'fa fa-sms text-info me-2';
+        titleEl.textContent = 'SMS Invoice';
+        noticeText.textContent = 'Send invoice SMS notification to customer immediately, even if automated notifications are disabled in settings.';
+        labelEl.textContent = 'Customer Mobile Number:';
+        inputEl.type = 'tel';
+        inputEl.value = orderCustomerPhone;
+        inputEl.placeholder = 'e.g. +1 555-123-4567';
+        waGroup.classList.add('d-none');
+        confirmBtn.className = 'btn btn-info text-white';
+        confirmIcon.className = 'fa fa-paper-plane me-2';
+        confirmText.textContent = 'Send SMS';
+      } else if (channel === 'whatsapp') {
+        iconEl.className = 'fab fa-whatsapp text-success me-2';
+        titleEl.textContent = 'WhatsApp Invoice';
+        noticeText.textContent = 'Review recipient phone number and itemized message, then click to open WhatsApp chat with pre-filled invoice message.';
+        labelEl.textContent = 'Customer WhatsApp Phone Number:';
+        inputEl.type = 'tel';
+        inputEl.value = orderCustomerPhone;
+        inputEl.placeholder = 'e.g. 15551234567';
+        waGroup.classList.remove('d-none');
+        confirmBtn.className = 'btn btn-success text-white';
+        confirmIcon.className = 'fab fa-whatsapp me-2';
+        confirmText.textContent = 'Open in WhatsApp';
+
+        // Load preview payload from backend
+        confirmBtn.disabled = true;
+        confirmText.textContent = 'Loading preview...';
+        $.ajax({
+          type: 'GET',
+          url: '/order/whatsapp-invoice-payload/<%= order.id %>',
+          dataType: 'json',
+          success: function(data) {
+            if (data && data.success) {
+              currentWaPayload = data;
+              if (data.phone && !inputEl.value) {
+                inputEl.value = data.phone;
+              }
+              if (waPreview) {
+                waPreview.value = data.message || '';
+              }
+            }
+          },
+          error: function(err) {
+            console.warn('Could not load WhatsApp invoice preview:', err);
+          },
+          complete: function() {
+            confirmBtn.disabled = false;
+            confirmText.textContent = 'Open in WhatsApp';
+          }
+        });
+      }
+
+      var modalEl = document.getElementById('sendInvoiceModal');
+      if (modalEl) {
+        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+      }
+      setTimeout(function() { inputEl.focus(); }, 300);
+    }
+
+    function executeSendInvoice() {
+      var inputEl = document.getElementById('send_invoice_recipient_input');
+      var statusAlert = document.getElementById('send_invoice_status_alert');
+      var confirmBtn = document.getElementById('btn_confirm_send_invoice');
+      var confirmIcon = document.getElementById('send_invoice_confirm_icon');
+      var confirmText = document.getElementById('send_invoice_confirm_text');
+      var updateCheck = document.getElementById('send_invoice_update_profile_check');
+      var waPreview = document.getElementById('send_invoice_message_preview');
+
+      var recipient = (inputEl ? inputEl.value : '').trim();
+      if (!recipient) {
+        if (statusAlert) {
+          statusAlert.textContent = currentSendChannel === 'email' ? 'Please enter a valid email address.' : 'Please enter a valid phone number.';
+          statusAlert.classList.remove('d-none');
+        }
+        if (inputEl) inputEl.focus();
+        return;
+      }
+
+      if (currentSendChannel === 'whatsapp') {
+        var cleanDigits = recipient.replace(/\D/g, '');
+        if (cleanDigits.length === 10) {
+          cleanDigits = '1' + cleanDigits;
+        }
+        if (!cleanDigits) {
+          if (statusAlert) {
+            statusAlert.textContent = 'Please enter a valid phone number with digits.';
+            statusAlert.classList.remove('d-none');
+          }
+          return;
+        }
+
+        var msg = (waPreview ? waPreview.value : (currentWaPayload ? currentWaPayload.message : 'Invoice details'));
+        var waUrl = 'https://wa.me/' + cleanDigits + '?text=' + encodeURIComponent(msg);
+
+        // Record WhatsApp dispatch in background
+        $.ajax({
+          type: 'POST',
+          url: '/order/send-manual-invoice',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            order_id: '<%= order.id %>',
+            channel: 'whatsapp',
+            recipient: recipient,
+            update_customer: updateCheck ? updateCheck.checked : false
+          })
+        });
+
+        var modalEl = document.getElementById('sendInvoiceModal');
+        if (modalEl) {
+          bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+        }
+        window.open(waUrl, '_blank');
+        if (typeof toastr !== 'undefined') {
+          toastr.success('WhatsApp chat opened for ' + recipient, 'WhatsApp Ready');
+        }
+        return;
+      }
+
+      // Email / SMS send
+      var origIcon = confirmIcon.className;
+      var origText = confirmText.textContent;
+      confirmBtn.disabled = true;
+      confirmIcon.className = 'fa fa-spinner fa-spin me-2';
+      confirmText.textContent = 'Sending...';
+      if (statusAlert) statusAlert.classList.add('d-none');
+
+      $.ajax({
+        type: 'POST',
+        url: '/order/send-manual-invoice',
+        contentType: 'application/json',
+        data: JSON.stringify({
+          order_id: '<%= order.id %>',
+          channel: currentSendChannel,
+          recipient: recipient,
+          update_customer: updateCheck ? updateCheck.checked : false
+        }),
+        dataType: 'json',
+        success: function(res) {
+          if (res && res.success) {
+            var modalEl = document.getElementById('sendInvoiceModal');
+            if (modalEl) {
+              bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+            }
+            if (typeof toastr !== 'undefined') {
+              toastr.success(res.message || 'Invoice dispatched successfully', 'Sent');
+            }
+          } else {
+            var errMessage = (res && res.message) || ('Failed to send invoice via ' + currentSendChannel);
+            if (statusAlert) {
+              statusAlert.textContent = errMessage;
+              statusAlert.classList.remove('d-none');
+            }
+            if (typeof toastr !== 'undefined') {
+              toastr.error(errMessage);
+            }
+          }
+        },
+        error: function(xhr) {
+          var errMessage = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : ('Error dispatching invoice via ' + currentSendChannel);
+          if (statusAlert) {
+            statusAlert.textContent = errMessage;
+            statusAlert.classList.remove('d-none');
+          }
+          if (typeof toastr !== 'undefined') {
+            toastr.error(errMessage);
+          }
+        },
+        complete: function() {
+          confirmBtn.disabled = false;
+          confirmIcon.className = origIcon;
+          confirmText.textContent = origText;
         }
       });
     }

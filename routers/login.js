@@ -368,26 +368,26 @@ router.post("/login", async (req, res) => {
     // }
 
     let data = await DataFind(
-      "SELECT * FROM tbl_customer WHERE username='" +
+      "SELECT * FROM tbl_customer WHERE (username='" +
         username +
         "' OR email = '" +
         username +
         "' OR number = '" +
         username +
-        "' AND delet_flage=0 AND approved=1",
+        "') AND delet_flage=0 AND approved=1",
     );
     // console.log(111111, data);
 
     if (data.length == 0) {
       loginas = 1;
       data = await DataFind(
-        "SELECT * FROM tbl_admin WHERE username='" +
+        "SELECT * FROM tbl_admin WHERE (username='" +
           username +
           "' OR email = '" +
           username +
           "' OR number = '" +
           username +
-          "'  AND delet_flage=0",
+          "') AND delet_flage=0",
       );
       console.log(data);
 
@@ -650,11 +650,11 @@ router.post("/register", async (req, res) => {
     const safeState = (state || '').trim().replace(/'/g, "\\'");
     const safeZipcode = (zipcode || req.body.zip_code || '').trim().replace(/'/g, "\\'");
     const safeTaxNumber = (taxnumber || '').trim().replace(/'/g, "\\'");
-    const safeCustomerType = (customer_type || 'Counter & Counter').trim().replace(/'/g, "\\'");
+    const safeCustomerType = (customer_type || 'Counter • Counter').trim().replace(/'/g, "\\'");
     const safeUsername = (username || '').trim().replace(/'/g, "\\'");
 
     const check_number = await DataFind(
-      "SELECT * FROM tbl_customer WHERE number='" + safeNumber + "'",
+      "SELECT * FROM tbl_customer WHERE number='" + safeNumber + "' AND delet_flage = 0",
     );
 
     if (check_number.length > 0) {
@@ -662,13 +662,26 @@ router.post("/register", async (req, res) => {
       return res.redirect(req.get("Referrer") || "/");
     }
 
-    const check_username = await DataFind(
-      "SELECT * FROM tbl_customer WHERE username='" + safeUsername + "'",
-    );
+    if (safeUsername) {
+      const check_username = await DataFind(
+        "SELECT * FROM tbl_customer WHERE username='" + safeUsername + "' AND delet_flage = 0",
+      );
 
-    if (check_username.length > 0) {
-      req.flash("error", "This UserName Alredy Register!!!!");
-      return res.redirect(req.get("Referrer") || "/");
+      if (check_username.length > 0) {
+        req.flash("error", "This UserName Alredy Register!!!!");
+        return res.redirect(req.get("Referrer") || "/");
+      }
+    }
+
+    if (safeEmail) {
+      const check_email = await DataFind(
+        "SELECT * FROM tbl_customer WHERE email='" + safeEmail + "' AND delet_flage = 0",
+      );
+
+      if (check_email.length > 0) {
+        req.flash("error", "This Email Alredy Register!!!!");
+        return res.redirect(req.get("Referrer") || "/");
+      }
     }
 
     const autoApproval = await DataFind(
@@ -1003,7 +1016,7 @@ function enrichRecentOrders(orders, accessdata, isMaster = false) {
       formattedPickupDate,
       formattedReadyDate,
       isZeroItemOrder,
-      order_type: order.order_type || 'Counter & Counter',
+      order_type: order.order_type || 'Counter • Counter',
       statusClass,
       balance_amount: balance,
       canDelete,
@@ -1536,7 +1549,7 @@ router.post("/updatecustompro", auth, upload.single("image"), async (req, res) =
         number +
         "' AND id !=" +
         id +
-        "",
+        " AND delet_flage = 0",
     );
     if (check_number.length > 0) {
       req.flash("error", "This Mobile Number Alredy Register!!!!");
@@ -1548,7 +1561,7 @@ router.post("/updatecustompro", auth, upload.single("image"), async (req, res) =
         username +
         "' AND id !=" +
         id +
-        "",
+        " AND delet_flage = 0",
     );
     if (check_username.length > 0) {
       req.flash("error", "This UserName Alredy Register!!!!");
