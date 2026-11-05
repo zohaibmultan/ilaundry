@@ -383,6 +383,19 @@
             $('#update_account_edit').attr('checked', rolldata.account.includes('edit'))
             $('#update_account_delete').attr('checked', rolldata.account.includes('delete'))
 
+            $('#update_notification_setting_read').prop('checked', Boolean(rolldata.notification_setting && rolldata.notification_setting.includes('read')))
+            $('#update_notification_setting_edit').prop('checked', Boolean(rolldata.notification_setting && rolldata.notification_setting.includes('edit')))
+
+            $('#update_notification_templates_read').prop('checked', Boolean(rolldata.notification_templates && rolldata.notification_templates.includes('read')))
+            $('#update_notification_templates_edit').prop('checked', Boolean(rolldata.notification_templates && rolldata.notification_templates.includes('edit')))
+
+            $('#update_store_setting_read').prop('checked', Boolean(rolldata.store_setting && rolldata.store_setting.includes('read')))
+            $('#update_store_setting_edit').prop('checked', Boolean(rolldata.store_setting && rolldata.store_setting.includes('edit')))
+
+            $('#update_printer_setting_read').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('read')))
+            $('#update_printer_setting_edit').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('edit')))
+
+
 
             $('#rollactive').attr('checked', rolldata.delet_flage == 0 ? true : false)
 
@@ -493,6 +506,19 @@
             $('#updatestore_account_write').attr('checked', rolldata.account.includes('write'))
             $('#updatestore_account_edit').attr('checked', rolldata.account.includes('edit'))
             $('#updatestore_account_delete').attr('checked', rolldata.account.includes('delete'))
+
+            $('#updatestore_notification_setting_read').prop('checked', Boolean(rolldata.notification_setting && rolldata.notification_setting.includes('read')))
+            $('#updatestore_notification_setting_edit').prop('checked', Boolean(rolldata.notification_setting && rolldata.notification_setting.includes('edit')))
+
+            $('#updatestore_notification_templates_read').prop('checked', Boolean(rolldata.notification_templates && rolldata.notification_templates.includes('read')))
+            $('#updatestore_notification_templates_edit').prop('checked', Boolean(rolldata.notification_templates && rolldata.notification_templates.includes('edit')))
+
+            $('#updatestore_store_setting_read').prop('checked', Boolean(rolldata.store_setting && rolldata.store_setting.includes('read')))
+            $('#updatestore_store_setting_edit').prop('checked', Boolean(rolldata.store_setting && rolldata.store_setting.includes('edit')))
+
+            $('#updatestore_printer_setting_read').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('read')))
+            $('#updatestore_printer_setting_edit').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('edit')))
+
 
 
             $('#rollactive').attr('checked', rolldata.delet_flage == 0 ? true : false)
@@ -5901,6 +5927,19 @@
             $('#update_account_edit').attr('checked', rolldata.account.includes('edit'))
             $('#update_account_delete').attr('checked', rolldata.account.includes('delete'))
 
+            $('#update_notification_setting_read').prop('checked', Boolean(rolldata.notification_setting && rolldata.notification_setting.includes('read')))
+            $('#update_notification_setting_edit').prop('checked', Boolean(rolldata.notification_setting && rolldata.notification_setting.includes('edit')))
+
+            $('#update_notification_templates_read').prop('checked', Boolean(rolldata.notification_templates && rolldata.notification_templates.includes('read')))
+            $('#update_notification_templates_edit').prop('checked', Boolean(rolldata.notification_templates && rolldata.notification_templates.includes('edit')))
+
+            $('#update_store_setting_read').prop('checked', Boolean(rolldata.store_setting && rolldata.store_setting.includes('read')))
+            $('#update_store_setting_edit').prop('checked', Boolean(rolldata.store_setting && rolldata.store_setting.includes('edit')))
+
+            $('#update_printer_setting_read').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('read')))
+            $('#update_printer_setting_edit').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('edit')))
+
+
 
             $('#rollactive').attr('checked', rolldata.delet_flage == 0 ? true : false)
 
@@ -6009,6 +6048,19 @@
             $('#updatestore_account_write').attr('checked', rolldata.account.includes('write'))
             $('#updatestore_account_edit').attr('checked', rolldata.account.includes('edit'))
             $('#updatestore_account_delete').attr('checked', rolldata.account.includes('delete'))
+
+            $('#updatestore_notification_setting_read').prop('checked', Boolean(rolldata.notification_setting && rolldata.notification_setting.includes('read')))
+            $('#updatestore_notification_setting_edit').prop('checked', Boolean(rolldata.notification_setting && rolldata.notification_setting.includes('edit')))
+
+            $('#updatestore_notification_templates_read').prop('checked', Boolean(rolldata.notification_templates && rolldata.notification_templates.includes('read')))
+            $('#updatestore_notification_templates_edit').prop('checked', Boolean(rolldata.notification_templates && rolldata.notification_templates.includes('edit')))
+
+            $('#updatestore_store_setting_read').prop('checked', Boolean(rolldata.store_setting && rolldata.store_setting.includes('read')))
+            $('#updatestore_store_setting_edit').prop('checked', Boolean(rolldata.store_setting && rolldata.store_setting.includes('edit')))
+
+            $('#updatestore_printer_setting_read').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('read')))
+            $('#updatestore_printer_setting_edit').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('edit')))
+
 
 
             $('#rollactive').attr('checked', rolldata.delet_flage == 0 ? true : false)

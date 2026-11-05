@@ -207,6 +207,10 @@ router.post("/addroll", auth, async (req, res) => {
         master_setting,
         couponname,
         accountname,
+        notification_setting,
+        notification_templates,
+        store_setting,
+        printer_setting,
       } = req.body;
       var storeid = req.body.storeid;
       storeid ? storeid : (storeid = store);
@@ -288,6 +292,10 @@ router.post("/addroll", auth, async (req, res) => {
           ? (accountname = accountname.join(","))
           : accountname
         : (accountname = "");
+      notification_setting = notification_setting ? (Array.isArray(notification_setting) ? notification_setting.join(",") : notification_setting) : "";
+      notification_templates = notification_templates ? (Array.isArray(notification_templates) ? notification_templates.join(",") : notification_templates) : "";
+      store_setting = store_setting ? (Array.isArray(store_setting) ? store_setting.join(",") : store_setting) : "";
+      printer_setting = printer_setting ? (Array.isArray(printer_setting) ? printer_setting.join(",") : printer_setting) : "";
 
       //       var qury = `
       // INSERT INTO tbl_roll (
@@ -340,8 +348,8 @@ router.post("/addroll", auth, async (req, res) => {
 
       const newroll = await DataInsert(
         `tbl_roll`,
-        `roll, rollType, customers,orders,  expense, service, reports, tools,  mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out,roll_status,delet_flage`,
-        `'${name}','${name}','${customers}','${orders}','${expense}','${service}','${reports}','${tools}','${mail}','${master}','${sms}','${staff}','${pos}','${rollname}','${accountname}','${couponname}','${branch_n_store}','${master_setting}','${Pay_Out}','${"active"}',0`,
+        `roll, rollType, customers,orders,  expense, service, reports, tools,  mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, roll_status, delet_flage`,
+        `'${name}','${name}','${customers}','${orders}','${expense}','${service}','${reports}','${tools}','${mail}','${master}','${sms}','${staff}','${pos}','${rollname}','${accountname}','${couponname}','${branch_n_store}','${master_setting}','${Pay_Out}', '${notification_setting}', '${notification_templates}', '${store_setting}', '${printer_setting}', 'active', 0`,
         req.hostname,
         req.protocol,
       );
@@ -469,6 +477,10 @@ router.post("/updateroll/:id", auth, async (req, res) => {
         active,
         couponname,
         accountname,
+        notification_setting,
+        notification_templates,
+        store_setting,
+        printer_setting,
       } = req.body;
 
       orders
@@ -548,6 +560,10 @@ router.post("/updateroll/:id", auth, async (req, res) => {
           ? (accountname = accountname.join(","))
           : accountname
         : (accountname = "");
+      notification_setting = notification_setting ? (Array.isArray(notification_setting) ? notification_setting.join(",") : notification_setting) : "";
+      notification_templates = notification_templates ? (Array.isArray(notification_templates) ? notification_templates.join(",") : notification_templates) : "";
+      store_setting = store_setting ? (Array.isArray(store_setting) ? store_setting.join(",") : store_setting) : "";
+      printer_setting = printer_setting ? (Array.isArray(printer_setting) ? printer_setting.join(",") : printer_setting) : "";
 
       // var qury = `UPDATE tbl_roll SET roll='${name_update}',orders='${orders}',expense='${expense}',customers='${customers}',service='${service}',master_setting='${master_setting}',reports='${reports}',
       //           tools='${tools}',mail='${mail}',master='${master}',sms='${sms}',staff='${staff}',pos='${pos}',Pay_Out='${Pay_Out}',rollType='${rollType}',rollaccess='${rollname}',
@@ -574,7 +590,11 @@ router.post("/updateroll/:id", auth, async (req, res) => {
    rollaccess='${rollname}', 
    account='${accountname}', 
    coupon='${couponname}', 
-   branch_n_store='${branch_n_store}'`,
+   branch_n_store='${branch_n_store}',
+    notification_setting='${notification_setting}',
+    notification_templates='${notification_templates}',
+    store_setting='${store_setting}',
+    printer_setting='${printer_setting}'`,
         `id=${rollid}`,
         req.hostname,
         req.protocol,
@@ -624,6 +644,18 @@ router.get("/storesetting", auth, async (req, res) => {
       }
     }
 
+    const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === "master";
+    const hasReadPermission =
+      (isMaster && accessdata.mutibranch === false) ||
+      (accessdata.roll?.store_setting?.includes("read")) ||
+      (rolldetail.length > 0 && rolldetail[0].store_setting && rolldetail[0].store_setting.includes("read")) ||
+      (!isMaster && rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("read"));
+
+    if (!hasReadPermission && !isMaster) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
     let storedata = [];
     let update = false;
 
@@ -638,9 +670,10 @@ router.get("/storesetting", auth, async (req, res) => {
       `);
 
       const hasEditPermission =
-        rolldetail.length > 0 &&
-        rolldetail[0].master &&
-        rolldetail[0].master.includes("edit");
+        isMaster ||
+        (accessdata.roll?.store_setting?.includes("edit")) ||
+        (rolldetail.length > 0 && rolldetail[0].store_setting && rolldetail[0].store_setting.includes("edit")) ||
+        (!isMaster && rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("edit"));
       update =
         (rolldetail.length > 0 &&
           rolldetail[0].rollType === "master" &&
@@ -723,9 +756,10 @@ router.post(
       const isMaster =
         rolldetail.length > 0 && rolldetail[0].rollType === "master";
       const hasEdit =
-        rolldetail.length > 0 &&
-        rolldetail[0].master &&
-        rolldetail[0].master.includes("edit");
+        isMaster ||
+        (accessdata.roll?.store_setting?.includes("edit")) ||
+        (rolldetail.length > 0 && rolldetail[0].store_setting && rolldetail[0].store_setting.includes("edit")) ||
+        (!isMaster && rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("edit"));
       const isStoreAuthorized =
         isMaster || (userStore == req.params.id && hasEdit);
 
@@ -1755,8 +1789,8 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
       const RollAdd = await DataInsert(
         `tbl_staff_roll`,
         `customers, orders, expense, service, reports, tools, mail,master, sms, staff, pos, rollaccess, account, coupon,
-                                         branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id,is_staff`,
-        `'${RollFind[0].customers || RollFind[0].customer || "read,write,edit,delete"}', '${RollFind[0].orders}', '${RollFind[0].expense}', '${RollFind[0].service}', '${RollFind[0].reports}', '${RollFind[0].tools}', '${RollFind[0].mail}','${RollFind[0].master}', '${RollFind[0].sms}', '${RollFind[0].staff}', '${RollFind[0].pos}', '${RollFind[0].rollaccess}', '${RollFind[0].account}', '${RollFind[0].coupon || "read,write,edit,delete"}','${RollFind[0].branch_n_store}', '${RollFind[0].master_setting}', '${RollFind[0].Pay_Out}','${RollFind[0].id}','${newid}','0'`,
+                                         branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, main_roll_id, staff_id,is_staff`,
+        `'${RollFind[0].customers || RollFind[0].customer || "read,write,edit,delete"}', '${RollFind[0].orders}', '${RollFind[0].expense}', '${RollFind[0].service}', '${RollFind[0].reports}', '${RollFind[0].tools}', '${RollFind[0].mail}','${RollFind[0].master}', '${RollFind[0].sms}', '${RollFind[0].staff}', '${RollFind[0].pos}', '${RollFind[0].rollaccess}', '${RollFind[0].account}', '${RollFind[0].coupon || "read,write,edit,delete"}','${RollFind[0].branch_n_store}', '${RollFind[0].master_setting}', '${RollFind[0].Pay_Out}','${RollFind[0].notification_setting || ''}','${RollFind[0].notification_templates || ''}','${RollFind[0].store_setting || ''}','${RollFind[0].printer_setting || ''}','${RollFind[0].id}','${newid}','0'`,
         req.hostname,
         req.protocol,
       );
@@ -2207,9 +2241,9 @@ router.post("/addstaff", auth, async (req, res) => {
         `tbl_staff_roll`,
         `customers, orders, expense, service, reports, tools, mail,
            master, sms, staff, pos, rollaccess, account, coupon,
-           branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id,is_staff`,
+           branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, main_roll_id, staff_id,is_staff`,
         `'${RollFind[0].customer}', '${RollFind[0].orders}', '${RollFind[0].expense}', '${RollFind[0].service}', '${RollFind[0].reports}', '${RollFind[0].tools}', '${RollFind[0].mail}',
-           '${RollFind[0].master}', '${RollFind[0].sms}', '${RollFind[0].staff}', '${RollFind[0].pos}', '${RollFind[0].rollaccess}', '${RollFind[0].account}', '${RollFind[0].coupon}','${RollFind[0].branch_n_store}', '${RollFind[0].master_setting}', '${RollFind[0].Pay_Out}','${RollFind[0].id}','${newroll.insertId}','1'`,
+           '${RollFind[0].master}', '${RollFind[0].sms}', '${RollFind[0].staff}', '${RollFind[0].pos}', '${RollFind[0].rollaccess}', '${RollFind[0].account}', '${RollFind[0].coupon}','${RollFind[0].branch_n_store}', '${RollFind[0].master_setting}', '${RollFind[0].Pay_Out}','${RollFind[0].notification_setting || ''}','${RollFind[0].notification_templates || ''}','${RollFind[0].store_setting || ''}','${RollFind[0].printer_setting || ''}','${RollFind[0].id}','${newroll.insertId}','1'`,
         req.hostname,
         req.protocol,
       );
@@ -2928,6 +2962,16 @@ router.get("/printersetting", auth, async (req, res) => {
     `);
 
     const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === "master";
+    const hasReadPermission =
+      isMaster ||
+      (accessdata.roll?.printer_setting?.includes("read")) ||
+      (rolldetail.length > 0 && rolldetail[0].printer_setting && rolldetail[0].printer_setting.includes("read")) ||
+      (!isMaster && rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("read"));
+
+    if (!hasReadPermission) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
 
     let targetStoreId = req.query.store_id || store;
     if (!targetStoreId || targetStoreId === " " || targetStoreId === "" || targetStoreId == 0) {
@@ -2983,7 +3027,11 @@ router.get("/printersetting", auth, async (req, res) => {
         ? storeData.ocr_server_url : (ms.ocr_server_url || 'http://127.0.0.1:5000/api/scan')
     };
 
-    const hasEditPermission = rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("edit");
+    const hasEditPermission =
+      isMaster ||
+      (accessdata.roll?.printer_setting?.includes("edit")) ||
+      (rolldetail.length > 0 && rolldetail[0].printer_setting && rolldetail[0].printer_setting.includes("edit")) ||
+      (!isMaster && rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("edit"));
     const canEdit = isMaster || hasEditPermission;
 
     res.render("printer_setting", {
@@ -3028,7 +3076,11 @@ router.post("/printersetting/:id", auth, async (req, res) => {
     `);
 
     const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === "master";
-    const hasEditPermission = rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("edit");
+    const hasEditPermission =
+      isMaster ||
+      (accessdata.roll?.printer_setting?.includes("edit")) ||
+      (rolldetail.length > 0 && rolldetail[0].printer_setting && rolldetail[0].printer_setting.includes("edit")) ||
+      (!isMaster && rolldetail.length > 0 && rolldetail[0].master && rolldetail[0].master.includes("edit"));
 
     let userStore = store;
     if (!userStore || userStore === " " || userStore === "") {
@@ -3553,6 +3605,10 @@ router.post("/rollUp/:id", async (req, res) => {
       master_setting,
       coupon,
       account,
+      notification_setting,
+      notification_templates,
+      store_setting,
+      printer_setting,
     } = req.body;
     // var storeid = req.body.storeid;
     // storeid ? storeid : (storeid = store);
@@ -3630,6 +3686,10 @@ router.post("/rollUp/:id", async (req, res) => {
         ? (account = account.join(","))
         : account
       : (account = "");
+    notification_setting = notification_setting ? (Array.isArray(notification_setting) ? notification_setting.join(",") : notification_setting) : "";
+    notification_templates = notification_templates ? (Array.isArray(notification_templates) ? notification_templates.join(",") : notification_templates) : "";
+    store_setting = store_setting ? (Array.isArray(store_setting) ? store_setting.join(",") : store_setting) : "";
+    printer_setting = printer_setting ? (Array.isArray(printer_setting) ? printer_setting.join(",") : printer_setting) : "";
 
     const findroll = await DataFind(
       `SELECT * FROM tbl_staff_roll WHERE id='${req.params.id}'`,
@@ -3714,10 +3774,10 @@ router.post("/rollUp/:id", async (req, res) => {
         `tbl_staff_roll`,
         `customers, orders, expense, service, reports, tools, mail,
          master, sms, staff, pos, rollaccess, account, coupon,
-         branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id,is_staff`,
+         branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, main_roll_id, staff_id,is_staff`,
         `'${customers}', '${orders}', '${expense}', '${service}', '${reports}', '${tools}', '${mail}',
          '${master}', '${sms}', '${staff}', '${pos}', '${rollaccess}', '${account}', '${coupon}',
-         '${branch_n_store}', '${master_setting}', '${Pay_Out}','${findtype[0].id}','${req.params.id}'`,
+         '${branch_n_store}', '${master_setting}', '${Pay_Out}', '${notification_setting}', '${notification_templates}', '${store_setting}', '${printer_setting}','${findtype[0].id}','${req.params.id}'`,
         req.hostname,
         req.protocol,
       );
@@ -3887,6 +3947,8 @@ router.get("/notificationsetting", auth, async (req, res) => {
     const hasReadAccess =
       isMaster ||
       accessdata.mutibranch === false ||
+      (accessdata.roll?.notification_setting?.includes("read")) ||
+      (rolldetail.length > 0 && rolldetail[0].notification_setting && rolldetail[0].notification_setting.includes("read")) ||
       (rolldetail.length > 0 &&
         ((rolldetail[0].mail && rolldetail[0].mail.includes("read")) ||
           (rolldetail[0].sms && rolldetail[0].sms.includes("read")) ||
@@ -3900,12 +3962,14 @@ router.get("/notificationsetting", auth, async (req, res) => {
 
     const hasEditPermission =
       isMaster ||
-      accessdata.mutibranch === false ||
-      (rolldetail.length > 0 &&
-        ((rolldetail[0].mail && rolldetail[0].mail.includes("edit")) ||
-          (rolldetail[0].sms && rolldetail[0].sms.includes("edit")) ||
-          (rolldetail[0].master && rolldetail[0].master.includes("edit")) ||
-          (rolldetail[0].master_setting && rolldetail[0].master_setting.includes("edit"))));
+      (accessdata.roll?.notification_setting?.includes("edit")) ||
+      (rolldetail.length > 0 && rolldetail[0].notification_setting && rolldetail[0].notification_setting.includes("edit")) ||
+      (accessdata.mutibranch === false &&
+        (rolldetail.length > 0 &&
+          ((rolldetail[0].mail && rolldetail[0].mail.includes("edit")) ||
+            (rolldetail[0].sms && rolldetail[0].sms.includes("edit")) ||
+            (rolldetail[0].master && rolldetail[0].master.includes("edit")) ||
+            (rolldetail[0].master_setting && rolldetail[0].master_setting.includes("edit")))));
 
     const stores = await DataFind(
       "SELECT id, name, city FROM tbl_store WHERE delete_flage=0 AND status=1 ORDER BY id ASC"
@@ -4002,6 +4066,21 @@ router.post("/notificationsetting", auth, async (req, res) => {
     `);
 
     const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === "master";
+    const hasEditPermission =
+      isMaster ||
+      (accessdata.roll?.notification_setting?.includes("edit")) ||
+      (rolldetail.length > 0 && rolldetail[0].notification_setting && rolldetail[0].notification_setting.includes("edit")) ||
+      (accessdata.mutibranch === false &&
+        (rolldetail.length > 0 &&
+          ((rolldetail[0].mail && rolldetail[0].mail.includes("edit")) ||
+            (rolldetail[0].sms && rolldetail[0].sms.includes("edit")) ||
+            (rolldetail[0].master && rolldetail[0].master.includes("edit")) ||
+            (rolldetail[0].master_setting && rolldetail[0].master_setting.includes("edit")))));
+
+    if (!hasEditPermission) {
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
     let targetStoreId = parseInt(req.body.target_store_id, 10) || 0;
 
     if (!isMaster) {
@@ -4125,6 +4204,8 @@ router.get("/notification-templates", auth, async (req, res) => {
     const hasReadAccess =
       isMaster ||
       accessdata.mutibranch === false ||
+      (accessdata.roll?.notification_templates?.includes("read")) ||
+      (rolldetail.length > 0 && rolldetail[0].notification_templates && rolldetail[0].notification_templates.includes("read")) ||
       (rolldetail.length > 0 &&
         ((rolldetail[0].mail && rolldetail[0].mail.includes("read")) ||
           (rolldetail[0].sms && rolldetail[0].sms.includes("read")) ||
@@ -4138,12 +4219,14 @@ router.get("/notification-templates", auth, async (req, res) => {
 
     const hasEditPermission =
       isMaster ||
-      accessdata.mutibranch === false ||
-      (rolldetail.length > 0 &&
-        ((rolldetail[0].mail && rolldetail[0].mail.includes("edit")) ||
-          (rolldetail[0].sms && rolldetail[0].sms.includes("edit")) ||
-          (rolldetail[0].master && rolldetail[0].master.includes("edit")) ||
-          (rolldetail[0].master_setting && rolldetail[0].master_setting.includes("edit"))));
+      (accessdata.roll?.notification_templates?.includes("edit")) ||
+      (rolldetail.length > 0 && rolldetail[0].notification_templates && rolldetail[0].notification_templates.includes("edit")) ||
+      (accessdata.mutibranch === false &&
+        (rolldetail.length > 0 &&
+          ((rolldetail[0].mail && rolldetail[0].mail.includes("edit")) ||
+            (rolldetail[0].sms && rolldetail[0].sms.includes("edit")) ||
+            (rolldetail[0].master && rolldetail[0].master.includes("edit")) ||
+            (rolldetail[0].master_setting && rolldetail[0].master_setting.includes("edit")))));
 
     const stores = await DataFind(
       "SELECT id, name, city FROM tbl_store WHERE delete_flage=0 AND status=1 ORDER BY id ASC"
@@ -4219,6 +4302,21 @@ router.post("/notification-templates", auth, async (req, res) => {
     `);
 
     const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === "master";
+    const hasEditPermission =
+      isMaster ||
+      (accessdata.roll?.notification_templates?.includes("edit")) ||
+      (rolldetail.length > 0 && rolldetail[0].notification_templates && rolldetail[0].notification_templates.includes("edit")) ||
+      (accessdata.mutibranch === false &&
+        (rolldetail.length > 0 &&
+          ((rolldetail[0].mail && rolldetail[0].mail.includes("edit")) ||
+            (rolldetail[0].sms && rolldetail[0].sms.includes("edit")) ||
+            (rolldetail[0].master && rolldetail[0].master.includes("edit")) ||
+            (rolldetail[0].master_setting && rolldetail[0].master_setting.includes("edit")))));
+
+    if (!hasEditPermission) {
+      req.flash("error", "You Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
     let targetStoreId = parseInt(req.body.target_store_id, 10) || 0;
 
     if (!isMaster) {

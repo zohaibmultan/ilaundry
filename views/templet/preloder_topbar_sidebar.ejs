@@ -487,23 +487,19 @@
           </ul>
         </li>
         <% } %>
-        <% const showMail=( (accessdata.logas==='master' &&
-                                                  accessdata.mutibranch===false) || (accessdata.logas !=='master' &&
-                                                  accessdata.roll?.mail?.includes('read')) ); const
-                                                  showRoll=(accessdata.logas==='master' &&
-                                                  accessdata.roll?.rollaccess?.includes('read')); const
-                                                  showMasterSetting=(accessdata.logas==='master' &&
-                                                  accessdata.roll?.master_setting?.includes('read')); const
-                                                  showStoreSetting=( (accessdata.logas==='master' &&
-                                                  accessdata.mutibranch===false) || (accessdata.topbardata?.store_ID &&
-                                                  accessdata.topbardata.store_ID !='' ) || (accessdata.logas==='store'
-                                                  && accessdata.roll?.master?.includes('read')) ); const
-                                                  showPayOut=(accessdata.logas==='master' &&
-                                                  accessdata.mutibranch===true &&
-                                                  accessdata.roll?.Pay_Out?.includes('read')); const
-                                                  showStaff=accessdata.roll?.staff?.includes('read'); const
-                                                  showTools=accessdata?.logas !=='custmor' && (showMail || showRoll ||
-                                                  showMasterSetting || showStoreSetting || showPayOut || showStaff); %>
+        <% 
+          const isMaster = accessdata.logas === 'master';
+          const showMail = ( (isMaster && accessdata.mutibranch === false) || (!isMaster && accessdata.roll?.mail?.includes('read')) );
+          const showRoll = (isMaster && accessdata.roll?.rollaccess?.includes('read'));
+          const showMasterSetting = (isMaster && accessdata.roll?.master_setting?.includes('read'));
+          const showStoreSetting = ( (isMaster && accessdata.mutibranch === false) || accessdata.roll?.store_setting?.includes('read') || (!isMaster && accessdata.roll?.master?.includes('read')) );
+          const showPrinterSetting = ( isMaster || accessdata.roll?.printer_setting?.includes('read') );
+          const showNotificationSetting = ( isMaster || accessdata.roll?.notification_setting?.includes('read') );
+          const showNotificationTemplates = ( isMaster || accessdata.roll?.notification_templates?.includes('read') );
+          const showPayOut = (isMaster && accessdata.mutibranch === true && accessdata.roll?.Pay_Out?.includes('read'));
+          const showStaff = Boolean(accessdata.roll?.staff?.includes('read'));
+          const showTools = accessdata?.logas !== 'custmor' && (showMail || showRoll || showMasterSetting || showStoreSetting || showPrinterSetting || showNotificationSetting || showNotificationTemplates || showPayOut || showStaff);
+        %>
         <% if(showTools){ %>
         <li class="has-menu"><a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
             <i class="fa fa-tools"></i>
@@ -531,26 +527,20 @@
                 <%= language.Master_Settings %>
               </a></li>
             <% } %>
-            <% if((accessdata.logas=='master' && accessdata.roll?.master_setting?.includes('read')) ||
-                  (accessdata.logas=='master' && accessdata.mutibranch==false) ||
-                  (accessdata.topbardata?.store_ID && accessdata.topbardata.store_ID !='' ) ||
-                  (accessdata.roll?.master?.includes('read') && accessdata.logas=='store') ||
-                  (accessdata.roll?.mail?.includes('read'))){ %>
+            <% if (showNotificationSetting) { %>
             <li><a href="/tool/notificationsetting"><%= language.Notification_Settings || 'Notification Settings' %></a></li>
+            <% } %>
+            <% if (showNotificationTemplates) { %>
             <li><a href="/tool/notification-templates"><%= language.Notification_Templates || 'Notification Templates' %></a></li>
             <% } %>
-            <% if((accessdata.logas=='master' &&
-                                                                      accessdata.mutibranch==false)||
-                                                                      (accessdata.topbardata?.store_ID &&
-                                                                      accessdata.topbardata.store_ID !='' )||
-                                                                      (accessdata.roll.master.includes('read') &&
-                                                                      accessdata.logas=='store' )){ %>
+            <% if (showStoreSetting) { %>
             <li><a href="/tool/storesetting">
                 <%= language.Store_Settings %>
               </a></li>
+            <% } %>
+            <% if (showPrinterSetting) { %>
             <li><a href="/tool/printersetting">
-                <%= language.Printer_Settings
-                                                                            || 'Printer Settings' %>
+                <%= language.Printer_Settings || 'Printer Settings' %>
               </a></li>
             <% } %>
             <% if(accessdata.logas=='master' &&
