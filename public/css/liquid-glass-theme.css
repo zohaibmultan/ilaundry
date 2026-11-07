@@ -3534,6 +3534,19 @@ table.dataTable td.text-center {
   color: #38bdf8 !important;
 }
 
+.header-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #ef4444 !important;
+  transform: translateY(-1px) !important;
+}
+
+[data-theme-version="dark"] .header-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  color: #f87171 !important;
+}
+
 .header-icon-btn svg {
   width: 20px !important;
   height: 20px !important;

@@ -21,7 +21,7 @@ const verifyData = [
   "orders", "expense", "service", "reports", "tools", "mail", "master",
   "sms", "staff", "pos", "customer", "customers", "master_setting", "branch_n_store",
   "Pay_Out", "account", "coupon", "rollaccess",
-  "notification_setting", "notification_templates", "store_setting", "printer_setting"
+  "notification_setting", "notification_templates", "store_setting", "printer_setting", "all_staff_records"
 ];
 
   

@@ -140,21 +140,28 @@
                     <a href="/register" class="role-segment-btn active">
                         <i class="fas fa-user me-1"></i> Customer Account
                     </a>
-                    <% if (data?.type=='1' ) { %>
+                    <% if (data?.type == '1' && (typeof enable_store_signup === 'undefined' || enable_store_signup)) { %>
                         <a href="/shopregister" class="role-segment-btn">
                             <i class="fas fa-store me-1"></i> Store / Branch Owner
                         </a>
-                        <% } %>
+                    <% } %>
                 </div>
 
                 <form action="/register" method="POST" class="needs-validation" id="register_form">
                     <div class="row g-3">
-                        <!-- Full Name -->
+                        <!-- First Name -->
                         <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Full Name</strong> <span
+                            <label class="form-label mb-1"><strong>First Name</strong> <span
                                     class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="name" placeholder="John Doe" required
+                            <input type="text" class="form-control" name="first_name" id="first_name" placeholder="John" required
                                 autofocus>
+                        </div>
+
+                        <!-- Last Name -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>Last Name</strong> <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="last_name" id="last_name" placeholder="Doe" required>
                         </div>
 
                         <!-- Email Address -->
@@ -191,6 +198,13 @@
                                     <option value="Route • Counter">Route • Counter - Store will pickup and customer will pickup</option>
                                 <% } %>
                             </select>
+                        </div>
+
+                        <!-- Date of Birth (Optional) -->
+                        <div class="col-md-6">
+                            <label class="form-label mb-1"><strong>Date of Birth</strong> <span
+                                    class="text-muted fs-12 fw-normal">(Optional)</span></label>
+                            <input type="date" class="form-control" name="dob" id="dob" placeholder="YYYY-MM-DD">
                         </div>
 
                         <!-- Address Fields -->

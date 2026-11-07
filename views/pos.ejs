@@ -30,9 +30,18 @@
       return (hh !== '00' || mm !== '00') ? `${hh}:${mm}` : fallback;
     };
 
+    const normalizeOrderTypeStr = (str) => {
+      if (!str) return 'Counter • Counter';
+      let s = String(str).trim();
+      s = s.replace(/\b(Counter|Route)\s*[-]\s*(Counter|Route)\b/gi, (m, a, b) => a + ' • ' + b);
+      s = s.replace(/\s*([•&–—]|\s-\s)\s*/g, ' • ');
+      s = s.replace(/^([CR])\s*[-•&]\s*([CR])$/i, (m, a, b) => a.toUpperCase() + ' • ' + b.toUpperCase());
+      return s;
+    };
     const currentOrderType = cart.order_type || 'Counter • Counter';
-    const isRoutePickup = ['Route • Route', 'Route • Counter', 'R • R', 'R • C', 'Store collection & Store delivery', 'Pick-up & Delivery', 'Pick-up & Counter'].includes(currentOrderType);
-    const isRouteDelivery = ['Route • Route', 'Counter • Route', 'R • R', 'C • R', 'Counter & Delivery', 'Pick-up & Delivery', 'Customer drop-off & Store delivery', 'Store collection & Store delivery'].includes(currentOrderType);
+    const normalizedOT = normalizeOrderTypeStr(currentOrderType);
+    const isRoutePickup = /^(R • R|R • C|Route • Route|Route • Counter|Pick-up • Delivery|Pick-up • Counter|Store collection • Store delivery)/i.test(normalizedOT);
+    const isRouteDelivery = /^(R • R|C • R|Route • Route|Counter • Route|Pick-up • Delivery|Counter • Delivery|Customer drop-off • Store delivery|Store collection • Store delivery)/i.test(normalizedOT);
 
     const fullDate = formatLocalDate(cart.order_date) || formatLocalDate(new Date());
     const ready_fullDate = formatLocalDate(cart.ready_date || cart.delivery_date || cart.order_date) || fullDate;
@@ -225,6 +234,7 @@
                 </button>
 
                 <!-- Notifications Dropdown -->
+                <% if (Boolean(accessdata?.logas === 'master' || (accessdata?.roll?.orders && accessdata.roll.orders.includes('read')))) { %>
                 <div class="dropdown pos-notification-dropdown">
                   <button class="btn btn-sm pos-header-icon-btn position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="<%= language.Notifications || 'Notifications' %>">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -276,6 +286,7 @@
                     </div>
                   </div>
                 </div>
+                <% } %>
 
                 <!-- User Profile Dropdown -->
                 <%
@@ -564,7 +575,7 @@
                     <option value="" disabled <%= (!cart.order_type || cart.order_type === '') ? 'selected' : '' %>><%= language.Select_Customer_Type || 'Select Customer Type' %></option>
                     <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
                     <% customer_types.forEach(function(ct, idx) { %>
-                    <option value="<%= ct.name %>" data-code="<%= ct.code || '' %>" title="<%= ct.name %><%= ct.description ? ' - ' + ct.description : '' %>" <%= (cart.order_type === ct.name || cart.order_type === ct.code || (!cart.order_type && (ct.name === 'Counter • Counter' || ct.code === 'C • C' || idx === 0))) ? 'selected' : '' %>><%= ct.name || ct.code %></option>
+                    <option value="<%= ct.name %>" data-code="<%= ct.code || '' %>" title="<%= ct.name %><%= ct.description ? ' - ' + ct.description : '' %>" <%= (cart.order_type === ct.name || cart.order_type === ct.code || normalizedOT === ct.name || normalizedOT === ct.code || (!cart.order_type && (ct.name === 'Counter • Counter' || ct.code === 'C • C' || idx === 0))) ? 'selected' : '' %>><%= ct.name || ct.code %></option>
                     <% }); %>
                     <% } %>
                   </select>
@@ -648,7 +659,7 @@
                 </div>
 
                 <!-- Delivery Date & Hour -->
-                <div class="col-6" id="<%= isEditMode ? 'edit_pos_delivery_date_group' : 'pos_delivery_date_group' %>">
+                <div class="col-6" id="<%= isEditMode ? 'edit_pos_delivery_date_group' : 'pos_delivery_date_group' %>" style="<%= !isRouteDelivery ? 'display: none;' : '' %>">
                   <label class="pos-field-label mb-0">
                     <%= language.Route_Delivery_Date || 'Route Delivery Schedule' %>
                   </label>
@@ -1462,6 +1473,11 @@
                 <option value="Route • Counter">Route • Counter - Store will pickup and customer will pickup</option>
                 <% } %>
               </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Date of Birth <span class="text-muted fw-normal fs-12">(Optional)</span></label>
+              <input type="date" class="form-control" name="dob" id="pos_add_cust_dob" placeholder="YYYY-MM-DD">
             </div>
 
             <div class="col-md-6">
@@ -2375,6 +2391,11 @@
           window.updatePosCheckoutBtnState();
         }
 
+        const activeOT = $('#edit_pos_order_type').length ? $('#edit_pos_order_type').val() : $('#pos_order_type').val();
+        if (typeof window.updatePosScheduleGroupsVisibility === 'function') {
+          window.updatePosScheduleGroupsVisibility(activeOT, $('#edit_pos_order_type').length > 0);
+        }
+
         // Quick Memo Editing Handlers
         const btnEditMemo = document.getElementById('btn_toggle_pos_memo_edit');
         const btnCancelMemo = document.getElementById('btn_cancel_pos_memo');
@@ -2761,6 +2782,9 @@
 
           $select.val(String(custId)).trigger('change');
           window.syncPosCustomerDisplay(custId);
+          if (found && found.customer_type && typeof window.applyCustomerTypeToPos === 'function') {
+            window.applyCustomerTypeToPos(found.customer_type);
+          }
           $('#pos_customer_select_modal').modal('hide');
         }
 

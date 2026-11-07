@@ -25,6 +25,7 @@ const {
   dispatchCustomerNotification,
   isRoutePickupOrderType,
 } = require("../services/notificationService");
+const OrderTypes = require("../public/js/shared/orderTypes");
 
 function formatMySQLDateTime(d, fallbackTime = "16:00:00") {
   if (!d) return null;
@@ -1527,21 +1528,8 @@ router.get("/newcustomerid/:id", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
     var customerid = req.params.id;
-
-    let cart = await DataUpdate(
-      `tbl_cart`,
-      `customer_id=${customerid}`,
-      `created_by='${loginas},${id}'`,
-      req.hostname,
-      req.protocol,
-    );
-
-    if (cart == -1) {
-      req.flash("errors", process.env.dataerror);
-      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
-    }
-
     const cleanCustomerId = String(customerid).trim().replace(/'/g, "\\'");
+
     let stats = {
       total_orders: 0,
       unpaid_orders: 0,
@@ -1549,7 +1537,7 @@ router.get("/newcustomerid/:id", auth, async (req, res) => {
       memo: ""
     };
 
-    let custType = "Counter & Counter";
+    let custType = "Counter • Counter";
     if (cleanCustomerId && cleanCustomerId !== "0" && cleanCustomerId !== "null" && cleanCustomerId !== "undefined") {
       const custData = await DataFind(`SELECT id, name, memo, customer_type, address, city, state, zipcode FROM tbl_customer WHERE id='${cleanCustomerId}' LIMIT 1`);
       if (custData && custData.length > 0) {
@@ -1573,6 +1561,20 @@ router.get("/newcustomerid/:id", auth, async (req, res) => {
         stats.unpaid_orders = parseInt(orderStats[0].unpaid_orders) || 0;
         stats.unpaid_amount = parseFloat(orderStats[0].unpaid_amount) || 0;
       }
+    }
+
+    const cleanCustType = String(custType).replace(/'/g, "\\'");
+    let cart = await DataUpdate(
+      `tbl_cart`,
+      `customer_id=${customerid}, order_type='${cleanCustType}'`,
+      `created_by='${loginas},${id}'`,
+      req.hostname,
+      req.protocol,
+    );
+
+    if (cart == -1) {
+      req.flash("errors", process.env.dataerror);
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
     return res.status(200).json({ status: 200, success: true, stats, customer_type: custType });
@@ -1768,7 +1770,13 @@ router.post("/pos_order_type", auth, async (req, res) => {
       let fullPickup = formatMySQLDateTime(pickup_date, pickup_time || "10:00:00");
       updateParts.push(`pickup_date='${fullPickup}'`);
     }
-    if (delivery_date) {
+    if (delivery_date && OrderTypes.hasDelivery(order_type)) {
+      let fullDelivery = formatMySQLDateTime(delivery_date, delivery_time || "16:00:00");
+      updateParts.push(`delivery_date='${fullDelivery}'`);
+    } else if (order_type && !OrderTypes.hasDelivery(order_type) && ready_date) {
+      let fullReady = formatMySQLDateTime(ready_date, ready_time || "16:00:00");
+      updateParts.push(`delivery_date='${fullReady}'`);
+    } else if (delivery_date) {
       let fullDelivery = formatMySQLDateTime(delivery_date, delivery_time || "16:00:00");
       updateParts.push(`delivery_date='${fullDelivery}'`);
     }
@@ -1962,7 +1970,13 @@ router.post("/edit_pos_order_type", auth, async (req, res) => {
       let fullPickup = formatMySQLDateTime(pickup_date, pickup_time || "10:00:00");
       updateParts.push(`pickup_date='${fullPickup}'`);
     }
-    if (delivery_date) {
+    if (delivery_date && OrderTypes.hasDelivery(order_type)) {
+      let fullDelivery = formatMySQLDateTime(delivery_date, delivery_time || "16:00:00");
+      updateParts.push(`delivery_date='${fullDelivery}'`);
+    } else if (order_type && !OrderTypes.hasDelivery(order_type) && ready_date) {
+      let fullReady = formatMySQLDateTime(ready_date, ready_time || "16:00:00");
+      updateParts.push(`delivery_date='${fullReady}'`);
+    } else if (delivery_date) {
       let fullDelivery = formatMySQLDateTime(delivery_date, delivery_time || "16:00:00");
       updateParts.push(`delivery_date='${fullDelivery}'`);
     }
@@ -5015,8 +5029,8 @@ router.post("/order", auth, async (req, res) => {
     let order_year = order_date.getFullYear();
     let order_fullDate = `${order_year}-${order_month}-${order_day}`;
     let order_type = req.body.order_type || cart[0].order_type || "Counter & Counter";
-    let isRoutePickup = (order_type === 'Route & Route' || order_type === 'Route & Counter' || order_type === 'R & R' || order_type === 'R & C' || order_type === 'Store collection & Store delivery' || order_type === 'Pick-up & Delivery' || order_type === 'Pick-up & Counter');
-    let isRouteDelivery = (order_type === 'Route & Route' || order_type === 'Counter & Route' || order_type === 'R & R' || order_type === 'C & R' || order_type === 'Counter & Delivery' || order_type === 'Pick-up & Delivery' || order_type === 'Customer drop-off & Store delivery' || order_type === 'Store collection & Store delivery');
+    let isRoutePickup = OrderTypes.hasPickup(order_type);
+    let isRouteDelivery = OrderTypes.hasDelivery(order_type);
 
     let finalReadyDate = req.body.readydate
       ? formatMySQLDateTime(req.body.readydate, req.body.readytime || "16:00:00")
@@ -5400,8 +5414,8 @@ router.post("/save_order", auth, async (req, res) => {
     let order_year = order_date.getFullYear();
     let order_fullDate = `${order_year}-${order_month}-${order_day}`;
     let order_type = req.body.order_type || cart[0].order_type || "Counter & Counter";
-    let isDelivery = (order_type === 'Counter & Route' || order_type === 'Route & Route' || order_type === 'C & R' || order_type === 'R & R' || order_type === 'Counter & Delivery' || order_type === 'Pick-up & Delivery' || order_type === 'Customer drop-off & Store delivery' || order_type === 'Store collection & Store delivery');
-    let isRoutePickup = (order_type === 'Route & Route' || order_type === 'Route & Counter' || order_type === 'R & R' || order_type === 'R & C' || order_type === 'Store collection & Store delivery' || order_type === 'Pick-up & Delivery' || order_type === 'Pick-up & Counter');
+    let isDelivery = OrderTypes.hasDelivery(order_type);
+    let isRoutePickup = OrderTypes.hasPickup(order_type);
 
     let finalReadyDate = req.body.readydate
       ? formatMySQLDateTime(req.body.readydate, req.body.readytime || "16:00:00")
@@ -5845,6 +5859,16 @@ router.get("/notification", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
     const accessdata = await access(req.user);
 
+    const hasOrderRead = Boolean(
+      accessdata.logas === "master" ||
+      (accessdata.roll?.orders && accessdata.roll.orders.includes("read"))
+    );
+
+    if (!hasOrderRead) {
+      req.flash("error", "You do not have permission to access notifications.");
+      return res.redirect(accessdata.topbardata?.is_staff ? "/staff/dashboard" : "/");
+    }
+
     res.render("notification", {
       accessdata,
       notification_data: [],
@@ -5872,6 +5896,19 @@ router.get("/notification/data", auth, async (req, res) => {
     }
 
     const accessdata = await access(req.user);
+    const hasOrderRead = Boolean(
+      accessdata.logas === "master" ||
+      (accessdata.roll?.orders && accessdata.roll.orders.includes("read"))
+    );
+
+    if (!hasOrderRead) {
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
+    }
 
     let scopeConditions = [];
     if (accessdata.logas == "master") {

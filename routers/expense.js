@@ -865,9 +865,17 @@ router.get("/list/data", auth, async (req, res) => {
     const canEdit = rolldetail[0].expense.includes("edit");
     const canDelete = rolldetail[0].expense.includes("delete");
 
+    const canViewAllStaff = Boolean(
+      (!isStaff && loginas !== 'staff') ||
+      (rolldetail && rolldetail.length > 0 && rolldetail[0].all_staff_records && rolldetail[0].all_staff_records.includes('read'))
+    );
+
     const scopeConditions = [`tbl_expense.delet_flage = 0`];
     if (!isMaster) {
       scopeConditions.push(`tbl_expense.store_ID = '${assignedStore}'`);
+    }
+    if (!canViewAllStaff) {
+      scopeConditions.push(`(tbl_expense.created_by = '${id}' OR tbl_expense.created_by = '1,${id}')`);
     }
 
     const filterConditions = [];
@@ -1130,6 +1138,16 @@ router.post("/updateexp/:id", auth, async (req, res) => {
       return res.redirect("/expense/list");
     }
 
+    const canViewAllStaff = Boolean(
+      (!isStaff && loginas !== 'staff') ||
+      (rolldetail && rolldetail.length > 0 && rolldetail[0].all_staff_records && rolldetail[0].all_staff_records.includes('read'))
+    );
+    const expenseCreator = String(expense[0].created_by || '');
+    if (!canViewAllStaff && expenseCreator !== String(id) && expenseCreator !== `1,${id}`) {
+      req.flash("error", "You can only update expenses created by you");
+      return res.redirect("/expense/list");
+    }
+
     const expenseStoreId = expense[0].store_ID;
 
     let {
@@ -1289,6 +1307,16 @@ router.get("/deletexpe/:id", auth, async (req, res) => {
 
     if (!isMaster && String(expense[0].store_ID) !== String(assignedStore)) {
       req.flash("error", "You can only delete expenses for your assigned store");
+      return res.redirect("/expense/list");
+    }
+
+    const canViewAllStaff = Boolean(
+      (!isStaff && loginas !== 'staff') ||
+      (rolldetail && rolldetail.length > 0 && rolldetail[0].all_staff_records && rolldetail[0].all_staff_records.includes('read'))
+    );
+    const expenseCreator = String(expense[0].created_by || '');
+    if (!canViewAllStaff && expenseCreator !== String(id) && expenseCreator !== `1,${id}`) {
+      req.flash("error", "You can only delete expenses created by you");
       return res.redirect("/expense/list");
     }
 

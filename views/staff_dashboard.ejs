@@ -90,10 +90,10 @@
                                     <%= Number(data?.totalorder || 0).toLocaleString('en-US') %>
                                 </h3>
                                 <div class="text-dark fw-semibold fs-14 mb-1">
-                                    <%= language.Total_Orders || 'Total Orders Created by You' %>
+                                    <%= (typeof canViewAllStaffRecords !== 'undefined' && canViewAllStaffRecords) ? (language.Total_Store_Orders || 'Total Store Orders') : (language.Total_Orders || 'Total Orders Created by You') %>
                                 </div>
                                 <small class="text-muted fs-12">
-                                    <%= language.Staff_Orders_Note || 'Lifetime valid customer orders booked under your login' %>
+                                    <%= (typeof canViewAllStaffRecords !== 'undefined' && canViewAllStaffRecords) ? (language.Store_Orders_Note || 'Lifetime valid customer orders booked across this store') : (language.Staff_Orders_Note || 'Lifetime valid customer orders booked under your login') %>
                                 </small>
                             </div>
                         </div>
@@ -117,10 +117,10 @@
                                     <%= accessdata?.masterstore?.currency_symbol || accessdata?.symbol || '$' %> <%= Number(data?.tottalsales || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
                                 </h3>
                                 <div class="text-dark fw-semibold fs-14 mb-1">
-                                    <%= language.Total_Sales || 'Total Sales Revenue Generated' %>
+                                    <%= (typeof canViewAllStaffRecords !== 'undefined' && canViewAllStaffRecords) ? (language.Total_Store_Sales || 'Total Store Sales Revenue') : (language.Total_Sales || 'Total Sales Revenue Generated') %>
                                 </div>
                                 <small class="text-muted fs-12">
-                                    <%= language.Staff_Sales_Note || 'Accumulated order value from bookings created by you' %>
+                                    <%= (typeof canViewAllStaffRecords !== 'undefined' && canViewAllStaffRecords) ? (language.Store_Sales_Note || 'Accumulated order value from bookings across this store') : (language.Staff_Sales_Note || 'Accumulated order value from bookings created by you') %>
                                 </small>
                             </div>
                         </div>
@@ -138,10 +138,10 @@
                                     </div>
                                     <div>
                                         <h4 class="card-title mb-0 fw-bold text-dark fs-6">
-                                            <%= language.Recent_Order || 'My Recent Orders' %> (Top 10)
+                                            <%= (typeof canViewAllStaffRecords !== 'undefined' && canViewAllStaffRecords) ? (language.Store_Recent_Orders || 'Store Recent Orders') : (language.Recent_Order || 'My Recent Orders') %> (Top 10)
                                         </h4>
                                         <small class="text-muted fs-12">
-                                            <%= language.Staff_Recent_Orders_Subtitle || 'Live list of the most recent bookings created under your account' %>
+                                            <%= (typeof canViewAllStaffRecords !== 'undefined' && canViewAllStaffRecords) ? (language.Store_Recent_Orders_Subtitle || 'Live list of the most recent bookings created across this store') : (language.Staff_Recent_Orders_Subtitle || 'Live list of the most recent bookings created under your account') %>
                                         </small>
                                     </div>
                                 </div>

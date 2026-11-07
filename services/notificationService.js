@@ -727,16 +727,28 @@ function isRouteDeliveryOrderType(orderType) {
 
 function isRoutePickupOrderType(orderType) {
   if (!orderType) return false;
-  const t = String(orderType).trim();
-  return (
-    t === "Route & Route" ||
-    t === "Route & Counter" ||
-    t === "R & R" ||
-    t === "R & C" ||
-    t === "Pick-up & Delivery" ||
-    t === "Pick-up & Counter" ||
-    t === "Store collection & Store delivery"
-  );
+  try {
+    const OrderTypes = require("../public/js/shared/orderTypes");
+    return OrderTypes.hasPickup(orderType);
+  } catch (e) {
+    const t = String(orderType).trim();
+    return (
+      t === "Route • Route" ||
+      t === "Route • Counter" ||
+      t === "R • R" ||
+      t === "R • C" ||
+      t === "Route & Route" ||
+      t === "Route & Counter" ||
+      t === "R & R" ||
+      t === "R & C" ||
+      t === "Pick-up • Delivery" ||
+      t === "Pick-up • Counter" ||
+      t === "Pick-up & Delivery" ||
+      t === "Pick-up & Counter" ||
+      t === "Store collection • Store delivery" ||
+      t === "Store collection & Store delivery"
+    );
+  }
 }
 
 /**
@@ -1136,18 +1148,27 @@ async function dispatchCustomerNotification({
       const smtp = await resolveSmtpConfig(effectiveStoreId);
       if (smtp && smtp.host && smtp.port && smtp.username && smtp.password && smtp.frommail) {
         try {
+          const port = Number(smtp.port) || 465;
           const transporter = nodemailer.createTransport({
             host: smtp.host,
-            port: Number(smtp.port),
+            port: port,
+            secure: port === 465,
             auth: {
               user: smtp.username,
               pass: smtp.password
+            },
+            tls: {
+              rejectUnauthorized: false
             }
           });
+          const senderName = (storeObj && storeObj.name) ? storeObj.name.replace(/"/g, "'") : ((masterObj && masterObj.name) ? masterObj.name.replace(/"/g, "'") : "iCleaners");
+          const replyToEmail = (storeObj && storeObj.email) ? storeObj.email : ((masterObj && masterObj.email) ? masterObj.email : smtp.frommail);
           await transporter.sendMail({
-            from: smtp.frommail,
+            from: `"${senderName}" <${smtp.frommail}>`,
+            replyTo: replyToEmail,
             to: targetEmail,
             subject: subject,
+            text: smsBody || subject,
             html: htmlBody
           });
           sentEmail = true;
@@ -1254,19 +1275,27 @@ async function sendTestNotification({ storeId = 0, channel = "email", recipient 
     }
 
     try {
+      const port = Number(smtp.port) || 465;
       const transporter = nodemailer.createTransport({
         host: smtp.host,
-        port: Number(smtp.port) || 587,
+        port: port,
+        secure: port === 465,
         auth: {
           user: smtp.username,
           pass: smtp.password
+        },
+        tls: {
+          rejectUnauthorized: false
         }
       });
 
+      const senderName = storeName ? storeName.replace(/"/g, "'") : "iCleaners";
       await transporter.sendMail({
-        from: smtp.frommail,
+        from: `"${senderName}" <${smtp.frommail}>`,
+        replyTo: smtp.frommail,
         to: cleanRecipient,
         subject: `[Test] ${storeName} Notification System Verification`,
+        text: `This is a test notification verifying that the ${storeName} email notification system is functioning properly.`,
         html: `
           <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#ffffff;">
             <div style="background:#2563eb;color:#ffffff;padding:18px 24px;">

@@ -213,9 +213,17 @@ async function buildOrderListQuery(
       WHERE sr.id = ${roll}
     `);
 
+    const canViewAll = Boolean(
+      !isStaff ||
+      (rolldetail && rolldetail.length > 0 && rolldetail[0].all_staff_records && rolldetail[0].all_staff_records.includes("read"))
+    );
+
     if (isStaff && staffStoreId) {
       login = "store";
       scopeConditions.push(`tbl_order.store_id = '${staffStoreId}'`);
+      if (!canViewAll) {
+        scopeConditions.push(`(tbl_order.created_by = '1,${id}' OR tbl_order.created_by = '${id}')`);
+      }
     } else if (
       rolldetail &&
       rolldetail.length > 0 &&
@@ -308,9 +316,17 @@ router.get("/list/data", auth, async (req, res) => {
         WHERE sr.id = ${roll}
       `);
 
+      const canViewAll = Boolean(
+        !isStaff ||
+        (rolldetail && rolldetail.length > 0 && rolldetail[0].all_staff_records && rolldetail[0].all_staff_records.includes("read"))
+      );
+
       if (isStaff && staffStoreId) {
         login = "store";
         scopeConditions.push(`tbl_order.store_id = '${staffStoreId}'`);
+        if (!canViewAll) {
+          scopeConditions.push(`(tbl_order.created_by = '1,${id}' OR tbl_order.created_by = '${id}')`);
+        }
       } else if (
         rolldetail &&
         rolldetail.length > 0 &&
@@ -1584,6 +1600,12 @@ router.get("/calendar/events", optionalAuth, async (req, res) => {
 
       if (isStaff && staffStoreId) {
         storeCondition = `AND o.store_id = '${staffStoreId}'`;
+        const canViewAll = Boolean(
+          accessdata.roll?.all_staff_records && accessdata.roll.all_staff_records.includes("read")
+        );
+        if (!canViewAll) {
+          storeCondition += ` AND (o.created_by = '1,${id}' OR o.created_by = '${id}')`;
+        }
       } else if (accessdata.login === "store") {
         storeCondition = `AND o.store_id = '${store}'`;
       } else if (store_id && store_id !== "all" && store_id !== "") {
@@ -3054,4 +3076,5 @@ router.get("/whatsapp-invoice-payload/:orderId", auth, async (req, res) => {
   }
 });
 
+router.buildOrderListQuery = buildOrderListQuery;
 module.exports = router;

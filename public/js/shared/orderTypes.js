@@ -30,8 +30,12 @@
     'R • C',
     'Route & Route',
     'Route & Counter',
+    'Pick-up • Delivery',
+    'Pick-up • Counter',
     'Pick-up & Delivery',
     'Pick-up & Counter',
+    'Store collection • Store delivery',
+    'Store collection • Customer pick-up',
     'Store collection & Store delivery',
     'Store collection & Store pickup',
     'R & R',
@@ -45,9 +49,13 @@
     'C • R',
     'Route & Route',
     'Counter & Route',
-    'Pick-up & Delivery',
+    'Counter • Delivery',
     'Counter & Delivery',
+    'Pick-up • Delivery',
+    'Pick-up & Delivery',
+    'Customer drop-off • Store delivery',
     'Customer drop-off & Store delivery',
+    'Store collection • Store delivery',
     'Store collection & Store delivery',
     'R & R',
     'C & R'
@@ -57,14 +65,20 @@
     'Route • Route',
     'R • R',
     'Route & Route',
+    'Pick-up • Delivery',
     'Pick-up & Delivery',
+    'Store collection • Store delivery',
     'Store collection & Store delivery',
     'R & R'
   ]);
 
   function normalize(type) {
     if (!type) return '';
-    return String(type).trim().replace(/\s*&\s*/g, ' • ');
+    let str = String(type).trim();
+    str = str.replace(/\b(Counter|Route)\s*[-]\s*(Counter|Route)\b/gi, (m, a, b) => a + ' • ' + b);
+    str = str.replace(/\s*([•&–—]|\s-\s)\s*/g, ' • ');
+    str = str.replace(/^([CR])\s*[-•&]\s*([CR])$/i, (m, a, b) => a.toUpperCase() + ' • ' + b.toUpperCase());
+    return str;
   }
 
   function formatDisplay(type) {

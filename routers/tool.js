@@ -34,8 +34,8 @@ const {
 router.get("/roll", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
-
     const accessdata = await access(req.user);
+
     console.log("accessdata", accessdata);
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
@@ -44,10 +44,10 @@ router.get("/roll", auth, async (req, res) => {
     const multiy = await DataFind("SELECT type FROM tbl_master_shop");
 
     const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
+  SELECT
+    sr.*,
+    r.roll_status,
+    r.rollType
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
@@ -173,16 +173,17 @@ router.post("/addroll", auth, async (req, res) => {
       return res.redirect(req.get("Referrer") || "/");
     }
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
 
     const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
+  SELECT
+    sr.*,
+    r.roll_status,
+    r.rollType
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
@@ -211,6 +212,7 @@ router.post("/addroll", auth, async (req, res) => {
         notification_templates,
         store_setting,
         printer_setting,
+        all_staff_records,
       } = req.body;
       var storeid = req.body.storeid;
       storeid ? storeid : (storeid = store);
@@ -296,6 +298,16 @@ router.post("/addroll", auth, async (req, res) => {
       notification_templates = notification_templates ? (Array.isArray(notification_templates) ? notification_templates.join(",") : notification_templates) : "";
       store_setting = store_setting ? (Array.isArray(store_setting) ? store_setting.join(",") : store_setting) : "";
       printer_setting = printer_setting ? (Array.isArray(printer_setting) ? printer_setting.join(",") : printer_setting) : "";
+      all_staff_records = all_staff_records ? (Array.isArray(all_staff_records) ? all_staff_records.join(",") : all_staff_records) : "";
+      if (store_setting && !master) {
+        master = store_setting;
+      }
+      all_staff_records = all_staff_records ? (Array.isArray(all_staff_records) ? all_staff_records.join(",") : all_staff_records) : "";
+    if (store_setting && !master) {
+      master = store_setting;
+    } else if (master && !store_setting) {
+      store_setting = master;
+    }
 
       //       var qury = `
       // INSERT INTO tbl_roll (
@@ -348,8 +360,8 @@ router.post("/addroll", auth, async (req, res) => {
 
       const newroll = await DataInsert(
         `tbl_roll`,
-        `roll, rollType, customers,orders,  expense, service, reports, tools,  mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, roll_status, delet_flage`,
-        `'${name}','${name}','${customers}','${orders}','${expense}','${service}','${reports}','${tools}','${mail}','${master}','${sms}','${staff}','${pos}','${rollname}','${accountname}','${couponname}','${branch_n_store}','${master_setting}','${Pay_Out}', '${notification_setting}', '${notification_templates}', '${store_setting}', '${printer_setting}', 'active', 0`,
+        `roll, rollType, customers,orders,  expense, service, reports, tools,  mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, all_staff_records, roll_status, delet_flage`,
+        `'${name}','${name}','${customers}','${orders}','${expense}','${service}','${reports}','${tools}','${mail}','${master}','${sms}','${staff}','${pos}','${rollname}','${accountname}','${couponname}','${branch_n_store}','${master_setting}','${Pay_Out}', '${notification_setting}', '${notification_templates}', '${store_setting}', '${printer_setting}', '${all_staff_records}', 'active', 0`,
         req.hostname,
         req.protocol,
       );
@@ -377,16 +389,17 @@ router.get("/deletroll/:id", auth, async (req, res) => {
       return res.redirect(req.get("Referrer") || "/");
     }
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
 
     const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
+  SELECT
+    sr.*,
+    r.roll_status,
+    r.rollType
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
@@ -441,15 +454,16 @@ router.post("/updateroll/:id", auth, async (req, res) => {
       return res.redirect(req.get("Referrer") || "/");
     }
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
     const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
+  SELECT
+    sr.*,
+    r.roll_status,
+    r.rollType
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
@@ -481,6 +495,7 @@ router.post("/updateroll/:id", auth, async (req, res) => {
         notification_templates,
         store_setting,
         printer_setting,
+        all_staff_records,
       } = req.body;
 
       orders
@@ -564,6 +579,7 @@ router.post("/updateroll/:id", auth, async (req, res) => {
       notification_templates = notification_templates ? (Array.isArray(notification_templates) ? notification_templates.join(",") : notification_templates) : "";
       store_setting = store_setting ? (Array.isArray(store_setting) ? store_setting.join(",") : store_setting) : "";
       printer_setting = printer_setting ? (Array.isArray(printer_setting) ? printer_setting.join(",") : printer_setting) : "";
+      all_staff_records = all_staff_records ? (Array.isArray(all_staff_records) ? all_staff_records.join(",") : all_staff_records) : "";
 
       // var qury = `UPDATE tbl_roll SET roll='${name_update}',orders='${orders}',expense='${expense}',customers='${customers}',service='${service}',master_setting='${master_setting}',reports='${reports}',
       //           tools='${tools}',mail='${mail}',master='${master}',sms='${sms}',staff='${staff}',pos='${pos}',Pay_Out='${Pay_Out}',rollType='${rollType}',rollaccess='${rollname}',
@@ -572,29 +588,30 @@ router.post("/updateroll/:id", auth, async (req, res) => {
 
       const newroll = await DataUpdate(
         "tbl_roll",
-        `roll='${name_update}', 
-   orders='${orders}', 
-   expense='${expense}', 
-   customers='${customers}', 
-   service='${service}', 
-   master_setting='${master_setting}', 
-   reports='${reports}', 
-   tools='${tools}', 
-   mail='${mail}', 
-   master='${master}', 
-   sms='${sms}', 
-   staff='${staff}', 
-   pos='${pos}', 
-   Pay_Out='${Pay_Out}', 
-   rollType='${rollType}', 
-   rollaccess='${rollname}', 
-   account='${accountname}', 
-   coupon='${couponname}', 
+        `roll='${name_update}',
+   orders='${orders}',
+   expense='${expense}',
+   customers='${customers}',
+   service='${service}',
+   master_setting='${master_setting}',
+   reports='${reports}',
+   tools='${tools}',
+   mail='${mail}',
+   master='${master}',
+   sms='${sms}',
+   staff='${staff}',
+   pos='${pos}',
+   Pay_Out='${Pay_Out}',
+   rollType='${rollType}',
+   rollaccess='${rollname}',
+   account='${accountname}',
+   coupon='${couponname}',
    branch_n_store='${branch_n_store}',
     notification_setting='${notification_setting}',
     notification_templates='${notification_templates}',
     store_setting='${store_setting}',
-    printer_setting='${printer_setting}'`,
+    printer_setting='${printer_setting}',
+     all_staff_records='${all_staff_records}'`,
         `id=${rollid}`,
         req.hostname,
         req.protocol,
@@ -625,10 +642,10 @@ router.get("/storesetting", auth, async (req, res) => {
       return res.redirect(req.get("Referrer") || "/");
     }
     const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
+  SELECT
+    sr.*,
+    r.roll_status,
+    r.rollType
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
@@ -661,8 +678,8 @@ router.get("/storesetting", auth, async (req, res) => {
 
     if (targetStoreId && targetStoreId !== " " && targetStoreId != 0) {
       storedata = await DataFind(`
-        SELECT 
-        tbl_store.*, 
+        SELECT
+        tbl_store.*,
         tbl_customer.name AS customer_name
         FROM tbl_store
         LEFT JOIN tbl_customer ON tbl_customer.store_id = tbl_store.id AND tbl_customer.approved = 1 AND tbl_customer.delet_flage = 0 AND (tbl_customer.username IS NULL OR tbl_customer.username = '' OR tbl_customer.name LIKE '%Walk%in%')
@@ -729,16 +746,17 @@ router.post(
       }
 
       const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
       if (loginas == 0) {
         req.flash("error", "Your Are Not Authorized For this");
         return res.redirect(req.get("Referrer") || "/");
       }
 
       const rolldetail = await DataFind(`
-        SELECT 
-          sr.*, 
-          r.roll_status, 
-          r.rollType 
+        SELECT
+          sr.*,
+          r.roll_status,
+          r.rollType
         FROM tbl_staff_roll sr
         JOIN tbl_roll r ON sr.main_roll_id = r.id
         WHERE sr.id = ${roll}
@@ -935,10 +953,10 @@ router.get("/storelist", auth, async (req, res) => {
       return res.redirect(req.get("Referrer") || "/");
     }
     const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
+  SELECT
+    sr.*,
+    r.roll_status,
+    r.rollType
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
@@ -1040,16 +1058,17 @@ router.get("/deletestore/:id", auth, async (req, res) => {
     }
 
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
     if (loginas == 0) {
       req.flash("error", "You are not authorized for this action");
       return res.redirect(req.get("Referrer") || "/tool/storelist");
     }
 
     const rolldetail = await DataFind(`
-      SELECT 
-        sr.*, 
-        r.roll_status, 
-        r.rollType 
+      SELECT
+        sr.*,
+        r.roll_status,
+        r.rollType
       FROM tbl_staff_roll sr
       JOIN tbl_roll r ON sr.main_roll_id = r.id
       WHERE sr.id = ${roll}
@@ -1280,18 +1299,18 @@ router.get("/approvedshop/:id", auth, async (req, res) => {
       return res.redirect(req.get("Referrer") || "/");
     }
     const rolldetail = await DataFind(`
-                                      SELECT 
-                                      sr.*, 
-                                      r.roll_status, 
-                                      r.rollType 
+                                      SELECT
+                                      sr.*,
+                                      r.roll_status,
+                                      r.rollType
                                       FROM tbl_staff_roll sr
                                       JOIN tbl_roll r ON sr.main_roll_id = r.id
                                       WHERE sr.id = ${roll}
                                       `);
     if (rolldetail[0].rollType === "master") {
       var storedata = await DataFind(
-        `SELECT tbl_store.*, tbl_customer.name AS customer_name 
-         FROM tbl_store 
+        `SELECT tbl_store.*, tbl_customer.name AS customer_name
+         FROM tbl_store
          LEFT JOIN tbl_customer ON tbl_customer.store_ID = tbl_store.id AND tbl_customer.approved = 1 AND tbl_customer.delet_flage = 0 AND (tbl_customer.username IS NULL OR tbl_customer.username = '' OR tbl_customer.name LIKE '%Walk%in%')
          WHERE tbl_store.id = ${req.params.id} LIMIT 1`,
       );
@@ -1337,15 +1356,16 @@ router.post(
         return res.redirect(req.get("Referrer") || "/");
       }
       const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
       if (loginas == 0) {
         req.flash("error", "Your Are Not Authorized For this");
         return res.redirect(req.get("Referrer") || "/");
       }
       const rolldetail = await DataFind(`
-                                          SELECT 
-                                            sr.*, 
-                                            r.roll_status, 
-                                            r.rollType 
+                                          SELECT
+                                            sr.*,
+                                            r.roll_status,
+                                            r.rollType
                                           FROM tbl_staff_roll sr
                                           JOIN tbl_roll r ON sr.main_roll_id = r.id
                                           WHERE sr.id = ${roll}
@@ -1520,8 +1540,8 @@ router.post(
             if (RollFind.length > 0) {
               const RollAdd = await DataInsert(
                 `tbl_staff_roll`,
-                `customers, orders, expense, service, reports, tools, mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id, is_staff`,
-                `'${RollFind[0].customers || "read,write,edit,delete"}', '${RollFind[0].orders || "read,write,edit,delete"}', '${RollFind[0].expense || "read,write,edit,delete"}', '${RollFind[0].service || "read,write,edit,delete"}', '${RollFind[0].reports || "read"}', '${RollFind[0].tools || "read"}', '${RollFind[0].mail || "read,edit"}', '${RollFind[0].master || "read,edit"}', '${RollFind[0].sms || "read,write,edit,delete"}', '${RollFind[0].staff || "read,write,edit,delete"}', '${RollFind[0].pos || "read,write,edit"}', '', '${RollFind[0].account || "read,write,edit,delete"}', '${RollFind[0].coupon || "read,write,edit,delete"}', '', '', '', '${RollFind[0].id}', '${adminid[0].admin_id}', '0'`,
+                `customers, orders, expense, service, reports, tools, mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, all_staff_records, main_roll_id, staff_id, is_staff`,
+                `'${RollFind[0].customers || "read,write,edit,delete"}', '${RollFind[0].orders || "read,write,edit,delete"}', '${RollFind[0].expense || "read,write,edit,delete"}', '${RollFind[0].service || "read,write,edit,delete"}', '${RollFind[0].reports || "read"}', '${RollFind[0].tools || "read"}', '${RollFind[0].mail || "read,edit"}', '${RollFind[0].master || "read,edit"}', '${RollFind[0].sms || "read,write,edit,delete"}', '${RollFind[0].staff || "read,write,edit,delete"}', '${RollFind[0].pos || "read,write,edit"}', '', '${RollFind[0].account || "read,write,edit,delete"}', '${RollFind[0].coupon || "read,write,edit,delete"}', '', '', '', '${RollFind[0].notification_setting || ""}', '${RollFind[0].notification_templates || ""}', '${RollFind[0].store_setting || ""}', '${RollFind[0].printer_setting || ""}', '${RollFind[0].all_staff_records || ""}', '${RollFind[0].id}', '${adminid[0].admin_id}', '0'`,
                 req.hostname,
                 req.protocol,
               );
@@ -1596,10 +1616,10 @@ router.get("/addshop", auth, async (req, res) => {
       return res.redirect(req.get("Referrer") || "/");
     }
     const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
+  SELECT
+    sr.*,
+    r.roll_status,
+    r.rollType
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
@@ -1627,15 +1647,16 @@ router.get("/addshop", auth, async (req, res) => {
 router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
     const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
+  SELECT
+    sr.*,
+    r.roll_status,
+    r.rollType
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
@@ -1789,8 +1810,8 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
       const RollAdd = await DataInsert(
         `tbl_staff_roll`,
         `customers, orders, expense, service, reports, tools, mail,master, sms, staff, pos, rollaccess, account, coupon,
-                                         branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, main_roll_id, staff_id,is_staff`,
-        `'${RollFind[0].customers || RollFind[0].customer || "read,write,edit,delete"}', '${RollFind[0].orders}', '${RollFind[0].expense}', '${RollFind[0].service}', '${RollFind[0].reports}', '${RollFind[0].tools}', '${RollFind[0].mail}','${RollFind[0].master}', '${RollFind[0].sms}', '${RollFind[0].staff}', '${RollFind[0].pos}', '${RollFind[0].rollaccess}', '${RollFind[0].account}', '${RollFind[0].coupon || "read,write,edit,delete"}','${RollFind[0].branch_n_store}', '${RollFind[0].master_setting}', '${RollFind[0].Pay_Out}','${RollFind[0].notification_setting || ''}','${RollFind[0].notification_templates || ''}','${RollFind[0].store_setting || ''}','${RollFind[0].printer_setting || ''}','${RollFind[0].id}','${newid}','0'`,
+                                         branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, all_staff_records, main_roll_id, staff_id,is_staff`,
+        `'${RollFind[0].customers || RollFind[0].customer || "read,write,edit,delete"}', '${RollFind[0].orders}', '${RollFind[0].expense}', '${RollFind[0].service}', '${RollFind[0].reports}', '${RollFind[0].tools}', '${RollFind[0].mail}','${RollFind[0].master}', '${RollFind[0].sms}', '${RollFind[0].staff}', '${RollFind[0].pos}', '${RollFind[0].rollaccess}', '${RollFind[0].account}', '${RollFind[0].coupon || "read,write,edit,delete"}','${RollFind[0].branch_n_store}', '${RollFind[0].master_setting}', '${RollFind[0].Pay_Out}','${RollFind[0].notification_setting || ''}','${RollFind[0].notification_templates || ''}','${RollFind[0].store_setting || ''}','${RollFind[0].printer_setting || ''}','${RollFind[0].all_staff_records || ''}','${RollFind[0].id}','${newid}','0'`,
         req.hostname,
         req.protocol,
       );
@@ -1903,10 +1924,10 @@ router.get("/staff", auth, async (req, res) => {
     }
 
     const rolldetail = await DataFind(`
-  SELECT 
-  sr.*, 
-  r.roll_status, 
-  r.rollType 
+  SELECT
+  sr.*,
+  r.roll_status,
+  r.rollType
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}`);
@@ -1982,7 +2003,7 @@ router.get("/staff/data", auth, async (req, res) => {
     }
 
     const rolldetail = await DataFind(`
-      SELECT sr.*, r.roll_status, r.rollType 
+      SELECT sr.*, r.roll_status, r.rollType
       FROM tbl_staff_roll sr
       JOIN tbl_roll r ON sr.main_roll_id = r.id
       WHERE sr.id = ${roll}
@@ -2054,10 +2075,10 @@ router.get("/staff/data", auth, async (req, res) => {
     );
 
     const result = await paginateDataTable(req, {
-      select: `tbl_admin.*, 
-               COALESCE(tbl_store.name, 'Not Assigned') as store, 
-               COALESCE(tbl_roll.roll, '') as roll, 
-               COALESCE(tbl_roll.rollType, 'store') as rollType, 
+      select: `tbl_admin.*,
+               COALESCE(tbl_store.name, 'Not Assigned') as store,
+               COALESCE(tbl_roll.roll, '') as roll,
+               COALESCE(tbl_roll.rollType, 'store') as rollType,
                tbl_staff_roll.main_roll_id`,
       from: `tbl_admin
              LEFT JOIN tbl_store ON tbl_admin.store_ID = tbl_store.id
@@ -2116,15 +2137,16 @@ router.get("/deletstaff/:id", auth, async (req, res) => {
       return res.redirect(req.get("Referrer") || "/");
     }
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
     const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
+  SELECT
+    sr.*,
+    r.roll_status,
+    r.rollType
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
@@ -2175,10 +2197,10 @@ router.post("/addstaff", auth, async (req, res) => {
       return res.redirect(req.get("Referrer") || "/");
     }
     const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
+  SELECT
+    sr.*,
+    r.roll_status,
+    r.rollType
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
@@ -2290,15 +2312,16 @@ router.post("/updatestaff/:id", auth, async (req, res) => {
       return res.redirect(req.get("Referrer") || "/");
     }
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
     if (loginas == 0) {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
     const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
+  SELECT
+    sr.*,
+    r.roll_status,
+    r.rollType
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
@@ -2399,10 +2422,10 @@ router.get("/setting", auth, async (req, res) => {
       return res.redirect(req.get("Referrer") || "/");
     }
     const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
+  SELECT
+    sr.*,
+    r.roll_status,
+    r.rollType
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
@@ -2452,6 +2475,7 @@ router.post(
         return res.redirect(req.get("Referrer") || "/");
       }
       const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
 
       if (loginas == 0) {
         req.flash("error", "Your Are Not Authorized For this");
@@ -2459,10 +2483,10 @@ router.post(
       }
 
       const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
+  SELECT
+    sr.*,
+    r.roll_status,
+    r.rollType
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
@@ -2952,10 +2976,10 @@ router.get("/printersetting", auth, async (req, res) => {
     }
 
     const rolldetail = await DataFind(`
-      SELECT 
-        sr.*, 
-        r.roll_status, 
-        r.rollType 
+      SELECT
+        sr.*,
+        r.roll_status,
+        r.rollType
       FROM tbl_staff_roll sr
       JOIN tbl_roll r ON sr.main_roll_id = r.id
       WHERE sr.id = ${roll}
@@ -3001,29 +3025,29 @@ router.get("/printersetting", auth, async (req, res) => {
 
     // Consolidate effective printer settings with fallback to mastershop
     const printerSettings = {
-      invoice_printer_format: (storeData && storeData.invoice_printer_format !== null && storeData.invoice_printer_format !== undefined) 
+      invoice_printer_format: (storeData && storeData.invoice_printer_format !== null && storeData.invoice_printer_format !== undefined)
         ? storeData.invoice_printer_format : (ms.invoice_printer_format !== undefined ? ms.invoice_printer_format : 1),
-      invoice_printer_name: (storeData && storeData.invoice_printer_name !== null && storeData.invoice_printer_name !== undefined && storeData.invoice_printer_name !== '') 
+      invoice_printer_name: (storeData && storeData.invoice_printer_name !== null && storeData.invoice_printer_name !== undefined && storeData.invoice_printer_name !== '')
         ? storeData.invoice_printer_name : (ms.invoice_printer_name || ''),
-      tag_printer_format: (storeData && storeData.tag_printer_format !== null && storeData.tag_printer_format !== undefined) 
+      tag_printer_format: (storeData && storeData.tag_printer_format !== null && storeData.tag_printer_format !== undefined)
         ? storeData.tag_printer_format : (ms.tag_printer_format !== undefined ? ms.tag_printer_format : 1),
-      tag_printer_name: (storeData && storeData.tag_printer_name !== null && storeData.tag_printer_name !== undefined && storeData.tag_printer_name !== '') 
+      tag_printer_name: (storeData && storeData.tag_printer_name !== null && storeData.tag_printer_name !== undefined && storeData.tag_printer_name !== '')
         ? storeData.tag_printer_name : (ms.tag_printer_name || ''),
-      printing_server_url: (storeData && storeData.printing_server_url) 
+      printing_server_url: (storeData && storeData.printing_server_url)
         ? storeData.printing_server_url : (ms.printing_server_url || 'http://127.0.0.1:4321'),
-      silent_print_enabled: (storeData && storeData.silent_print_enabled !== null && storeData.silent_print_enabled !== undefined) 
+      silent_print_enabled: (storeData && storeData.silent_print_enabled !== null && storeData.silent_print_enabled !== undefined)
         ? storeData.silent_print_enabled : (ms.silent_print_enabled !== undefined ? ms.silent_print_enabled : 1),
-      printer_auto_cut: (storeData && storeData.printer_auto_cut !== null && storeData.printer_auto_cut !== undefined) 
+      printer_auto_cut: (storeData && storeData.printer_auto_cut !== null && storeData.printer_auto_cut !== undefined)
         ? storeData.printer_auto_cut : (ms.printer_auto_cut !== undefined ? ms.printer_auto_cut : 1),
-      printer_open_cash_drawer: (storeData && storeData.printer_open_cash_drawer !== null && storeData.printer_open_cash_drawer !== undefined) 
+      printer_open_cash_drawer: (storeData && storeData.printer_open_cash_drawer !== null && storeData.printer_open_cash_drawer !== undefined)
         ? storeData.printer_open_cash_drawer : (ms.printer_open_cash_drawer !== undefined ? ms.printer_open_cash_drawer : 0),
-      printer_copies: (storeData && storeData.printer_copies) 
+      printer_copies: (storeData && storeData.printer_copies)
         ? storeData.printer_copies : (ms.printer_copies || 1),
       invoice_barcode_enabled: (storeData && storeData.invoice_barcode_enabled !== null && storeData.invoice_barcode_enabled !== undefined)
         ? storeData.invoice_barcode_enabled : (ms.invoice_barcode_enabled !== undefined ? ms.invoice_barcode_enabled : 1),
       tag_barcode_enabled: (storeData && storeData.tag_barcode_enabled !== null && storeData.tag_barcode_enabled !== undefined)
         ? storeData.tag_barcode_enabled : (ms.tag_barcode_enabled !== undefined ? ms.tag_barcode_enabled : 1),
-      ocr_server_url: (storeData && storeData.ocr_server_url) 
+      ocr_server_url: (storeData && storeData.ocr_server_url)
         ? storeData.ocr_server_url : (ms.ocr_server_url || 'http://127.0.0.1:5000/api/scan')
     };
 
@@ -3060,16 +3084,17 @@ router.post("/printersetting/:id", auth, async (req, res) => {
     }
 
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
     if (loginas == 0) {
       req.flash("error", "You Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
 
     const rolldetail = await DataFind(`
-      SELECT 
-        sr.*, 
-        r.roll_status, 
-        r.rollType 
+      SELECT
+        sr.*,
+        r.roll_status,
+        r.rollType
       FROM tbl_staff_roll sr
       JOIN tbl_roll r ON sr.main_roll_id = r.id
       WHERE sr.id = ${roll}
@@ -3447,10 +3472,10 @@ router.get("/mail", auth, async (req, res) => {
       return res.redirect(req.get("Referrer") || "/");
     }
     const rolldetail = await DataFind(`
-  SELECT 
-    sr.*, 
-    r.roll_status, 
-    r.rollType 
+  SELECT
+    sr.*,
+    r.roll_status,
+    r.rollType
   FROM tbl_staff_roll sr
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
@@ -3609,6 +3634,7 @@ router.post("/rollUp/:id", async (req, res) => {
       notification_templates,
       store_setting,
       printer_setting,
+      all_staff_records,
     } = req.body;
     // var storeid = req.body.storeid;
     // storeid ? storeid : (storeid = store);
@@ -3690,9 +3716,15 @@ router.post("/rollUp/:id", async (req, res) => {
     notification_templates = notification_templates ? (Array.isArray(notification_templates) ? notification_templates.join(",") : notification_templates) : "";
     store_setting = store_setting ? (Array.isArray(store_setting) ? store_setting.join(",") : store_setting) : "";
     printer_setting = printer_setting ? (Array.isArray(printer_setting) ? printer_setting.join(",") : printer_setting) : "";
+    all_staff_records = all_staff_records ? (Array.isArray(all_staff_records) ? all_staff_records.join(",") : all_staff_records) : "";
+    if (store_setting && !master) {
+      master = store_setting;
+    } else if (master && !store_setting) {
+      store_setting = master;
+    }
 
     const findroll = await DataFind(
-      `SELECT * FROM tbl_staff_roll WHERE id='${req.params.id}'`,
+      `SELECT * FROM tbl_staff_roll WHERE id='${req.params.id}' OR staff_id='${req.params.id}' ORDER BY id DESC LIMIT 1`,
     );
     console.log("findroll", findroll);
     console.log("req.body", req.body);
@@ -3739,16 +3771,33 @@ router.post("/rollUp/:id", async (req, res) => {
   coupon = '${coupon}',
   branch_n_store = '${branch_n_store}',
   master_setting = '${master_setting}',
-  Pay_Out = '${Pay_Out}'
+  Pay_Out = '${Pay_Out}',
+  notification_setting = '${notification_setting}',
+  notification_templates = '${notification_templates}',
+  store_setting = '${store_setting}',
+  printer_setting = '${printer_setting}',
+  all_staff_records = '${all_staff_records}'
 `;
 
       const newroll = await DataUpdate(
         "tbl_staff_roll",
         rollUpdateFields,
-        `id = '${req.params.id}'`,
+        `id = '${findroll[0].id}'`,
         req.hostname,
         req.protocol,
       );
+
+      // Ensure tbl_admin.roll_id is linked to this staff_roll record
+      const targetStaffId = findroll[0].staff_id || req.params.id;
+      if (targetStaffId) {
+        await DataUpdate(
+          "tbl_admin",
+          `roll_id = '${findroll[0].id}'`,
+          `id = '${targetStaffId}'`,
+          req.hostname,
+          req.protocol,
+        );
+      }
 
       if (newroll === -1) {
         req.flash("error", "Action failed, please check input and try again");
@@ -3774,10 +3823,10 @@ router.post("/rollUp/:id", async (req, res) => {
         `tbl_staff_roll`,
         `customers, orders, expense, service, reports, tools, mail,
          master, sms, staff, pos, rollaccess, account, coupon,
-         branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, main_roll_id, staff_id,is_staff`,
+         branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, all_staff_records, main_roll_id, staff_id,is_staff`,
         `'${customers}', '${orders}', '${expense}', '${service}', '${reports}', '${tools}', '${mail}',
          '${master}', '${sms}', '${staff}', '${pos}', '${rollaccess}', '${account}', '${coupon}',
-         '${branch_n_store}', '${master_setting}', '${Pay_Out}', '${notification_setting}', '${notification_templates}', '${store_setting}', '${printer_setting}','${findtype[0].id}','${req.params.id}'`,
+         '${branch_n_store}', '${master_setting}', '${Pay_Out}', '${notification_setting}', '${notification_templates}', '${store_setting}', '${printer_setting}','${all_staff_records}','${findtype[0].id}','${req.params.id}','1'`,
         req.hostname,
         req.protocol,
       );
@@ -3818,7 +3867,7 @@ router.get("/rolldetailstaff/:id", async (req, res) => {
     console.log("req.params.id", req.params.id);
 
     const newroll = await DataFind(
-      "SELECT * FROM tbl_staff_roll WHERE id=" + id + " ",
+      "SELECT * FROM tbl_staff_roll WHERE id = '" + id + "' OR staff_id = '" + id + "' ORDER BY id DESC LIMIT 1",
     );
     console.log(newroll);
 
@@ -3934,10 +3983,10 @@ router.get("/notificationsetting", auth, async (req, res) => {
     }
 
     const rolldetail = await DataFind(`
-      SELECT 
-        sr.*, 
-        r.roll_status, 
-        r.rollType 
+      SELECT
+        sr.*,
+        r.roll_status,
+        r.rollType
       FROM tbl_staff_roll sr
       JOIN tbl_roll r ON sr.main_roll_id = r.id
       WHERE sr.id = ${roll}
@@ -4050,16 +4099,17 @@ router.post("/notificationsetting", auth, async (req, res) => {
     }
 
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
     if (loginas == 0) {
       req.flash("error", "You Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
 
     const rolldetail = await DataFind(`
-      SELECT 
-        sr.*, 
-        r.roll_status, 
-        r.rollType 
+      SELECT
+        sr.*,
+        r.roll_status,
+        r.rollType
       FROM tbl_staff_roll sr
       JOIN tbl_roll r ON sr.main_roll_id = r.id
       WHERE sr.id = ${roll}
@@ -4118,12 +4168,13 @@ router.post("/notificationsetting/reset", auth, async (req, res) => {
     }
 
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
     if (loginas == 0) {
       return res.status(403).json({ success: false, message: "Not authorized" });
     }
 
     const rolldetail = await DataFind(`
-      SELECT sr.*, r.rollType 
+      SELECT sr.*, r.rollType
       FROM tbl_staff_roll sr
       JOIN tbl_roll r ON sr.main_roll_id = r.id
       WHERE sr.id = ${roll}
@@ -4191,10 +4242,10 @@ router.get("/notification-templates", auth, async (req, res) => {
     }
 
     const rolldetail = await DataFind(`
-      SELECT 
-        sr.*, 
-        r.roll_status, 
-        r.rollType 
+      SELECT
+        sr.*,
+        r.roll_status,
+        r.rollType
       FROM tbl_staff_roll sr
       JOIN tbl_roll r ON sr.main_roll_id = r.id
       WHERE sr.id = ${roll}
@@ -4286,16 +4337,17 @@ router.post("/notification-templates", auth, async (req, res) => {
     }
 
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
     if (loginas == 0) {
       req.flash("error", "You Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     }
 
     const rolldetail = await DataFind(`
-      SELECT 
-        sr.*, 
-        r.roll_status, 
-        r.rollType 
+      SELECT
+        sr.*,
+        r.roll_status,
+        r.rollType
       FROM tbl_staff_roll sr
       JOIN tbl_roll r ON sr.main_roll_id = r.id
       WHERE sr.id = ${roll}
@@ -4353,12 +4405,13 @@ router.post("/notification-templates/reset", auth, async (req, res) => {
     }
 
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
     if (loginas == 0) {
       return res.status(403).json({ success: false, message: "Not authorized" });
     }
 
     const rolldetail = await DataFind(`
-      SELECT sr.*, r.rollType 
+      SELECT sr.*, r.rollType
       FROM tbl_staff_roll sr
       JOIN tbl_roll r ON sr.main_roll_id = r.id
       WHERE sr.id = ${roll}

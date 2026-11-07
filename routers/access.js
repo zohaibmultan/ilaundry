@@ -26,7 +26,8 @@ let main_roll = await DataFind(`SELECT * FROM tbl_roll WHERE id = '${staff_roll[
 const verifyData = [
   "orders", "expense", "service", "reports", "tools", "mail", "master",
   "sms", "staff", "pos", "customer", "customers", "master_setting", "branch_n_store",
-  "Pay_Out", "account", "coupon", "rollaccess"
+  "Pay_Out", "account", "coupon", "rollaccess",
+  "notification_setting", "notification_templates", "store_setting", "printer_setting", "all_staff_records"
 ];
 
   

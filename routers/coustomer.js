@@ -246,6 +246,7 @@ router.get("/list/data", auth, async (req, res) => {
             name: displayName,
             first_name: fName,
             last_name: lName,
+            dob: cust.dob ? String(cust.dob).split('T')[0] : '',
             number: cust.number || '',
             email: cust.email || '',
             address: cust.address || '',
@@ -281,7 +282,7 @@ router.post("/update/:id", async (req, res) => {
   try {
     const id = req.params.id;
 
-    const { first_name, last_name, name, number, email, tax, address, city, state, zipcode, memo, customer_type } = req.body;
+    const { first_name, last_name, name, dob, number, email, tax, address, city, state, zipcode, memo, customer_type } = req.body;
 
     var approved;
     req.body.approved == 1 ? (approved = 1) : (approved = 0);
@@ -306,6 +307,8 @@ router.post("/update/:id", async (req, res) => {
     const safeFirstName = fName.replace(/'/g, "\\'");
     const safeLastName = lName.replace(/'/g, "\\'");
     const safeName = combinedName.replace(/'/g, "\\'");
+    const cleanDob = (dob && String(dob).trim() !== '') ? String(dob).trim().replace(/'/g, "\\'") : null;
+    const safeDobSQL = cleanDob ? `'${cleanDob}'` : 'NULL';
     const safeNumber = (number || '').trim().replace(/'/g, "\\'");
     const safeEmail = (email || '').trim().replace(/'/g, "\\'");
     const safeAddress = (address || '').trim().replace(/'/g, "\\'");
@@ -319,6 +322,7 @@ router.post("/update/:id", async (req, res) => {
     let updateFields = `name='${safeName}',
        first_name='${safeFirstName}',
        last_name='${safeLastName}',
+       dob=${safeDobSQL},
        number='${safeNumber}',
        email='${safeEmail}',
        address='${safeAddress}',
@@ -386,7 +390,7 @@ router.post("/register", auth, async (req, res) => {
       req.flash("error", "Your Are Not Authorized For this");
       return res.redirect(req.get("Referrer") || "/");
     } else {
-      const { first_name, last_name, name, number, email, customer_type, taxnumber, address, city, state, zipcode, memo, username, password } =
+      const { first_name, last_name, name, dob, number, email, customer_type, taxnumber, address, city, state, zipcode, memo, username, password } =
         req.body;
       const verfiyStore = await DataFind(`SELECT * FROM tbl_admin WHERE id=${id}`);
       const isStaff = verfiyStore.length > 0 && verfiyStore[0].is_staff != 0;
@@ -501,6 +505,8 @@ router.post("/register", auth, async (req, res) => {
       const safeFirstName = fName.replace(/'/g, "\\'");
       const safeLastName = lName.replace(/'/g, "\\'");
       const safeName = combinedName.replace(/'/g, "\\'");
+      const cleanDob = (dob && String(dob).trim() !== '') ? String(dob).trim().replace(/'/g, "\\'") : null;
+      const safeDobSQL = cleanDob ? `'${cleanDob}'` : 'NULL';
       const safeAddress = (address || '').trim().replace(/'/g, "\\'");
       const safeCity = (city || '').trim().replace(/'/g, "\\'");
       const safeState = (state || '').trim().replace(/'/g, "\\'");
@@ -511,8 +517,8 @@ router.post("/register", auth, async (req, res) => {
 
       const data = await DataInsert(
         `tbl_customer`,
-        `name,first_name,last_name,number,email,address,city,state,zipcode,customer_type,memo,taxnumber,username,password,store_ID,reffstore,main_roll_id,approved`,
-        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeCity}','${safeState}','${safeZipcode}','${safeCustomerType}','${safeMemo}','${safeTaxNumber}','${safeUsername}','${hashpass}','${storeid}','${storeid}',${main_roll[0].id},1`,
+        `name,first_name,last_name,dob,number,email,address,city,state,zipcode,customer_type,memo,taxnumber,username,password,store_ID,reffstore,main_roll_id,approved`,
+        `'${safeName}','${safeFirstName}','${safeLastName}',${safeDobSQL},'${safeNumber}','${safeEmail}','${safeAddress}','${safeCity}','${safeState}','${safeZipcode}','${safeCustomerType}','${safeMemo}','${safeTaxNumber}','${safeUsername}','${hashpass}','${storeid}','${storeid}',${main_roll[0].id},1`,
         req.hostname,
         req.protocol
       );

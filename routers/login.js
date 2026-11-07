@@ -520,6 +520,9 @@ router.post("/login", async (req, res) => {
 
 // customer register render router
 router.get("/register", async (req, res) => {
+  const isStoreSignupEnabled = process.env.enable_store_signup !== undefined
+    ? String(process.env.enable_store_signup).trim().toLowerCase() === "true"
+    : true;
   const data = await DataFind(
     "SELECT type , customer_selection FROM tbl_master_shop",
   );
@@ -564,6 +567,7 @@ router.get("/register", async (req, res) => {
       nameCode,
       CountryCode,
       customer_types: customerTypes,
+      enable_store_signup: isStoreSignupEnabled,
     });
   } else {
     res.render("register", {
@@ -573,6 +577,7 @@ router.get("/register", async (req, res) => {
       nameCode,
       CountryCode,
       customer_types: customerTypes,
+      enable_store_signup: isStoreSignupEnabled,
     });
   }
 });
@@ -611,6 +616,7 @@ router.post("/register", async (req, res) => {
       first_name,
       last_name,
       name,
+      dob,
       number,
       email,
       customer_type,
@@ -643,6 +649,8 @@ router.post("/register", async (req, res) => {
     const safeFirstName = fName.replace(/'/g, "\\'");
     const safeLastName = lName.replace(/'/g, "\\'");
     const safeName = combinedName.replace(/'/g, "\\'");
+    const cleanDob = (dob && String(dob).trim() !== '') ? String(dob).trim().replace(/'/g, "\\'") : null;
+    const safeDobSQL = cleanDob ? `'${cleanDob}'` : 'NULL';
     const safeNumber = (number || '').trim().replace(/'/g, "\\'");
     const safeEmail = (email || '').trim().replace(/'/g, "\\'");
     const safeAddress = (address || '').trim().replace(/'/g, "\\'");
@@ -704,8 +712,8 @@ router.post("/register", async (req, res) => {
     if (store) {
       const customerInsert = await DataInsert(
         `tbl_customer`,
-        `name,first_name,last_name,number,email,address,city,state,zipcode,customer_type,taxnumber,username,password,main_roll_id,approved,store_ID`,
-        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeCity}','${safeState}','${safeZipcode}','${safeCustomerType}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved},'${store}'`,
+        `name,first_name,last_name,dob,number,email,address,city,state,zipcode,customer_type,taxnumber,username,password,main_roll_id,approved,store_ID`,
+        `'${safeName}','${safeFirstName}','${safeLastName}',${safeDobSQL},'${safeNumber}','${safeEmail}','${safeAddress}','${safeCity}','${safeState}','${safeZipcode}','${safeCustomerType}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved},'${store}'`,
         req.hostname,
         req.protocol,
       );
@@ -720,8 +728,8 @@ router.post("/register", async (req, res) => {
     } else {
       const customerInsert = await DataInsert(
         `tbl_customer`,
-        `name,first_name,last_name,number,email,address,city,state,zipcode,customer_type,taxnumber,username,password,main_roll_id,approved`,
-        `'${safeName}','${safeFirstName}','${safeLastName}','${safeNumber}','${safeEmail}','${safeAddress}','${safeCity}','${safeState}','${safeZipcode}','${safeCustomerType}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved}`,
+        `name,first_name,last_name,dob,number,email,address,city,state,zipcode,customer_type,taxnumber,username,password,main_roll_id,approved`,
+        `'${safeName}','${safeFirstName}','${safeLastName}',${safeDobSQL},'${safeNumber}','${safeEmail}','${safeAddress}','${safeCity}','${safeState}','${safeZipcode}','${safeCustomerType}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved}`,
         req.hostname,
         req.protocol,
       );
@@ -740,9 +748,11 @@ router.post("/register", async (req, res) => {
       "success",
       "Your information will be sent to the administration for approval.!",
     );
-    res.redirect("/");
+    return res.redirect("/");
   } catch (error) {
     console.log(error);
+    req.flash("error", "An error occurred during registration. Please try again.");
+    return res.redirect("back");
   }
 });
 
@@ -1084,14 +1094,26 @@ router.get("/index", auth, async (req, res) => {
       );
       const canReadOrders = Boolean(rolldetail[0]?.orders && rolldetail[0].orders.includes("read"));
       const canReadReports = Boolean(rolldetail[0]?.reports && rolldetail[0].reports.includes("read"));
+      const canViewAllStaffRecords = Boolean(
+        accessdata.logas === 'master' ||
+        (rolldetail[0]?.all_staff_records && rolldetail[0].all_staff_records.includes("read"))
+      );
+
+      const staffOrderFilter = canViewAllStaffRecords
+        ? `store_id = '${userStoreId}'`
+        : `store_id = '${userStoreId}' AND (created_by = '1,${id}' OR created_by = '${id}')`;
 
       const staffStats = await DataFind(`
         SELECT 
           COALESCE(SUM(CASE WHEN order_status != '6' THEN gross_total ELSE 0 END), 0) AS staff_sales,
           COUNT(CASE WHEN order_status != '6' THEN id ELSE NULL END) AS staff_orders
         FROM tbl_order
-        WHERE (created_by = '1,${id}' OR created_by = '${id}')
+        WHERE ${staffOrderFilter}
       `);
+
+      const recentOrderFilter = canViewAllStaffRecords
+        ? `tbl_order.store_id = '${userStoreId}'`
+        : `tbl_order.store_id = '${userStoreId}' AND (tbl_order.created_by = '1,${id}' OR tbl_order.created_by = '${id}')`;
 
       const rawRecentOrder = await DataFind(`
         SELECT 
@@ -1114,7 +1136,7 @@ router.get("/index", auth, async (req, res) => {
         LEFT JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id  
         LEFT JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
         LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
-        WHERE (tbl_order.created_by = '1,${id}' OR tbl_order.created_by = '${id}')
+        WHERE ${recentOrderFilter}
           AND tbl_order.order_status != '6'
         ORDER BY tbl_order.id DESC, tbl_order.order_id DESC 
         LIMIT 10
@@ -1136,7 +1158,8 @@ router.get("/index", auth, async (req, res) => {
         isStaff: true,
         canAccessPos,
         canReadOrders,
-        canReadReports
+        canReadReports,
+        canViewAllStaffRecords
       });
     }
 
@@ -1339,18 +1362,27 @@ router.get("/api/dashboard-stats", auth, async (req, res) => {
     const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
 
     if (isStaff) {
+      const canViewAllStaffRecords = Boolean(
+        accessdata.logas === 'master' ||
+        (accessdata.roll?.all_staff_records && accessdata.roll.all_staff_records.includes("read"))
+      );
+      const staffOrderFilter = canViewAllStaffRecords
+        ? `store_id = '${userStoreId}'`
+        : `store_id = '${userStoreId}' AND (created_by = '1,${id}' OR created_by = '${id}')`;
+
       const staffStats = await DataFind(`
         SELECT 
           COALESCE(SUM(CASE WHEN order_status != '6' THEN gross_total ELSE 0 END), 0) AS tottalsales,
           COUNT(CASE WHEN order_status != '6' THEN id ELSE NULL END) AS totalorder
         FROM tbl_order
-        WHERE (created_by = '1,${id}' OR created_by = '${id}')
+        WHERE ${staffOrderFilter}
       `);
 
       return res.status(200).json({
         success: true,
         data: staffStats[0] || { tottalsales: 0, totalorder: 0 },
-        isStaff: true
+        isStaff: true,
+        canViewAllStaffRecords
       });
     }
 

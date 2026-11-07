@@ -394,6 +394,7 @@
 
             $('#update_printer_setting_read').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('read')))
             $('#update_printer_setting_edit').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('edit')))
+            $('#update_all_staff_records_read').prop('checked', Boolean(rolldata.all_staff_records && rolldata.all_staff_records.includes('read')))
 
 
 
@@ -518,6 +519,7 @@
 
             $('#updatestore_printer_setting_read').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('read')))
             $('#updatestore_printer_setting_edit').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('edit')))
+            $('#updatestore_all_staff_records_read').prop('checked', Boolean(rolldata.all_staff_records && rolldata.all_staff_records.includes('read')))
 
 
 
@@ -1140,15 +1142,25 @@
    })
 
    function applyCustomerTypeToPos(rawType) {
-      if (!rawType || !$('#pos_order_type').length) return;
+      if (!rawType) return;
+      var $select = $('#edit_pos_order_type').length ? $('#edit_pos_order_type') : $('#pos_order_type');
+      if (!$select.length) return;
+
       var clean = String(rawType).trim();
-      var $select = $('#pos_order_type');
+      var norm = clean.replace(/\b(Counter|Route)\s*[-]\s*(Counter|Route)\b/gi, function(m, a, b) { return a + ' • ' + b; })
+                      .replace(/\s*([•&–—]|\s-\s)\s*/g, ' • ')
+                      .replace(/^([CR])\s*[-•&]\s*([CR])$/i, function(m, a, b) {
+                         return a.toUpperCase() + ' • ' + b.toUpperCase();
+                      });
+
       var matchedVal = null;
 
-      // 1. Exact value match
+      // 1. Exact value match or normalized match against option value
       $select.find('option').each(function () {
-         if ($(this).val().toLowerCase() === clean.toLowerCase()) {
-            matchedVal = $(this).val();
+         var v = $(this).val();
+         if (!v) return;
+         if (v.toLowerCase() === clean.toLowerCase() || v.toLowerCase() === norm.toLowerCase()) {
+            matchedVal = v;
             return false;
          }
       });
@@ -1158,79 +1170,86 @@
          $select.find('option').each(function () {
             var code = $(this).attr('data-code');
             var text = $(this).text().trim();
-            if ((code && code.toLowerCase() === clean.toLowerCase()) || text.toLowerCase() === clean.toLowerCase()) {
+            if (code && (code.toLowerCase() === clean.toLowerCase() || code.toLowerCase() === norm.toLowerCase())) {
+               matchedVal = $(this).val();
+               return false;
+            }
+            if (text && (text.toLowerCase() === clean.toLowerCase() || text.toLowerCase() === norm.toLowerCase())) {
                matchedVal = $(this).val();
                return false;
             }
          });
       }
 
-      // 3. Synonym/Canonical mapping
+      // 3. Canonical code mappings
       if (!matchedVal) {
-         var lower = clean.toLowerCase();
-         var targetKey = '';
-         if (lower === 'c & c' || lower === 'counter & counter' || lower === 'customer drop-off & customer pick-up') {
-            targetKey = 'counter & counter';
-         } else if (lower === 'c & r' || lower === 'counter & route' || lower === 'counter & delivery' || lower === 'customer drop-off & store delivery') {
-            targetKey = 'counter & route';
-         } else if (lower === 'r & r' || lower === 'route & route' || lower === 'pick-up & delivery' || lower === 'store collection & store delivery') {
-            targetKey = 'route & route';
-         } else if (lower === 'r & c' || lower === 'route & counter' || lower === 'pick-up & counter' || lower === 'store collection & customer pick-up') {
-            targetKey = 'route & counter';
-         }
-
-         if (targetKey) {
-            $select.find('option').each(function () {
-               var val = ($(this).val() || '').toLowerCase();
-               var code = ($(this).attr('data-code') || '').toLowerCase();
-               var text = $(this).text().trim().toLowerCase();
-               if (val.includes(targetKey) || code.includes(targetKey) || text.includes(targetKey) ||
-                   (targetKey === 'counter & route' && (val.includes('delivery') || code === 'c & r')) ||
-                   (targetKey === 'route & route' && (val.includes('delivery') || code === 'r & r')) ||
-                   (targetKey === 'route & counter' && (val.includes('counter') || code === 'r & c')) ||
-                   (targetKey === 'counter & counter' && (val.includes('counter') || code === 'c & c'))) {
-                  matchedVal = $(this).val();
-                  return false;
-               }
-            });
-         }
+         var codeMap = {
+            'c • c': 'counter • counter',
+            'c • r': 'counter • route',
+            'r • r': 'route • route',
+            'r • c': 'route • counter'
+         };
+         var targetKey = codeMap[norm.toLowerCase()] || norm.toLowerCase();
+         $select.find('option').each(function () {
+            var v = ($(this).val() || '').toLowerCase();
+            var c = ($(this).attr('data-code') || '').toLowerCase();
+            if (v.includes(targetKey) || c.includes(targetKey)) {
+               matchedVal = $(this).val();
+               return false;
+            }
+         });
       }
 
-      if (matchedVal && $select.val() !== matchedVal) {
-         $select.val(matchedVal).trigger('change');
+      if (matchedVal) {
+         $select.val(matchedVal);
+         $select.trigger('change');
+         var isEdit = $('#edit_pos_order_type').length > 0;
+         updatePosScheduleGroupsVisibility(matchedVal, isEdit);
       }
    }
    window.applyCustomerTypeToPos = applyCustomerTypeToPos;
 
    function isPosRoutePickup(orderType) {
       if (!orderType) return false;
-      var t = String(orderType).trim();
-      return (
-         t === 'Route & Counter' ||
-         t === 'Route & Route' ||
-         t === 'R & C' ||
-         t === 'R & R' ||
-         t === 'Pick-up & Counter' ||
-         t === 'Pick-up & Delivery' ||
-         t === 'Store collection & Store delivery' ||
-         t === 'Store collection & Customer pick-up'
-      );
+      if (typeof window.OrderTypes !== 'undefined' && typeof window.OrderTypes.hasPickup === 'function') {
+         return window.OrderTypes.hasPickup(orderType);
+      }
+      var str = String(orderType).trim();
+      var norm = str.replace(/\b(Counter|Route)\s*[-]\s*(Counter|Route)\b/gi, function(m, a, b) { return a + ' • ' + b; })
+                    .replace(/\s*([•&–—]|\s-\s)\s*/g, ' • ')
+                    .replace(/^([CR])\s*[-•&]\s*([CR])$/i, function(m, a, b) {
+                       return a.toUpperCase() + ' • ' + b.toUpperCase();
+                    });
+      var pickupList = [
+         'Route • Route', 'Route • Counter', 'R • R', 'R • C',
+         'Route & Route', 'Route & Counter', 'R & R', 'R & C',
+         'Pick-up • Delivery', 'Pick-up • Counter', 'Pick-up & Delivery', 'Pick-up & Counter',
+         'Store collection • Store delivery', 'Store collection • Customer pick-up',
+         'Store collection & Store delivery', 'Store collection & Store pickup'
+      ];
+      return pickupList.includes(norm) || pickupList.includes(str);
    }
    window.isPosRoutePickup = isPosRoutePickup;
 
    function isPosRouteDelivery(orderType) {
       if (!orderType) return false;
-      var t = String(orderType).trim();
-      return (
-         t === 'Counter & Route' ||
-         t === 'Route & Route' ||
-         t === 'C & R' ||
-         t === 'R & R' ||
-         t === 'Counter & Delivery' ||
-         t === 'Pick-up & Delivery' ||
-         t === 'Customer drop-off & Store delivery' ||
-         t === 'Store collection & Store delivery'
-      );
+      if (typeof window.OrderTypes !== 'undefined' && typeof window.OrderTypes.hasDelivery === 'function') {
+         return window.OrderTypes.hasDelivery(orderType);
+      }
+      var str = String(orderType).trim();
+      var norm = str.replace(/\b(Counter|Route)\s*[-]\s*(Counter|Route)\b/gi, function(m, a, b) { return a + ' • ' + b; })
+                    .replace(/\s*([•&–—]|\s-\s)\s*/g, ' • ')
+                    .replace(/^([CR])\s*[-•&]\s*([CR])$/i, function(m, a, b) {
+                       return a.toUpperCase() + ' • ' + b.toUpperCase();
+                    });
+      var deliveryList = [
+         'Route • Route', 'Counter • Route', 'R • R', 'C • R',
+         'Route & Route', 'Counter & Route', 'R & R', 'C & R',
+         'Counter • Delivery', 'Counter & Delivery', 'Pick-up • Delivery', 'Pick-up & Delivery',
+         'Customer drop-off • Store delivery', 'Customer drop-off & Store delivery',
+         'Store collection • Store delivery', 'Store collection & Store delivery'
+      ];
+      return deliveryList.includes(norm) || deliveryList.includes(str);
    }
    window.isPosRouteDelivery = isPosRouteDelivery;
 
@@ -1661,32 +1680,38 @@
    window.isPosEditReadyScheduleManual = false;
 
    function updatePosScheduleGroupsVisibility(orderType, isEdit) {
+      if (typeof isEdit === 'undefined') {
+         isEdit = $('#edit_pos_order_type').length > 0;
+      }
+      orderType = orderType || 'Counter • Counter';
       const prefix = isEdit ? '#edit_' : '#';
       const hasPickup = isPosRoutePickup(orderType);
       const hasDelivery = isPosRouteDelivery(orderType);
 
       if (hasPickup) {
-         $(prefix + 'pos_pickup_date_group').show();
-         $(prefix + 'modal_pickup_group').show();
+         $(prefix + 'pos_pickup_date_group').removeClass('d-none').show();
+         $(prefix + 'modal_pickup_group').removeClass('d-none').show();
       } else {
          $(prefix + 'pos_pickup_date_group').hide();
          $(prefix + 'modal_pickup_group').hide();
       }
 
       // Ready schedule is ALWAYS visible across all 4 customer types
-      $(prefix + 'pos_ready_date_group').show();
-      $(prefix + 'modal_ready_group').show();
+      $(prefix + 'pos_ready_date_group').removeClass('d-none').show();
+      $(prefix + 'modal_ready_group').removeClass('d-none').show();
 
       if (hasDelivery) {
-         $(prefix + 'pos_delivery_date_group').show();
-         $(prefix + 'modal_delivery_group').show();
+         $(prefix + 'pos_delivery_date_group').removeClass('d-none').show();
+         $(prefix + 'modal_delivery_group').removeClass('d-none').show();
       } else {
          $(prefix + 'pos_delivery_date_group').hide();
          $(prefix + 'modal_delivery_group').hide();
       }
 
       $(prefix + 'modal_pos_order_type').val(orderType);
-      if (!isEdit) {
+      if (isEdit) {
+         $('#edit_modal_order_type').val(orderType);
+      } else {
          $('#modal_order_type').val(orderType);
       }
    }
