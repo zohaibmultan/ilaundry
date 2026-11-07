@@ -1797,4 +1797,14 @@ router.get("/terms-of-service", (req, res) => {
   return res.redirect(301, "/terms-and-conditions");
 });
 
+router.get("/compliance/sms-opt-in", async (req, res) => {
+  try {
+    const legalData = await resolveLegalBrandDetails(req);
+    return res.render("compliance_optin", legalData);
+  } catch (err) {
+    console.error("Error rendering compliance opt-in page:", err);
+    return res.status(500).send("Error loading Compliance Exhibit");
+  }
+});
+
 module.exports = router;

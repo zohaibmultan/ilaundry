@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2P 10DLC SMS Opt-In Evidence &amp; Compliance Proof | <%= brandName || 'iCleaners' %></title>
+    <link href="/vendor/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/vendor/fontawesome/css/all.min.css" rel="stylesheet">
+    <link href="/css/liquid-glass-theme.css" rel="stylesheet">
+</head>
+<body class="bg-light text-dark">
+    <div class="container py-5" style="max-width: 960px;">
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1.5 rounded-pill fs-12 fw-bold mb-2">
+                <i class="fas fa-shield-alt me-1"></i> CTIA &amp; TCR Carrier Compliance Exhibit
+            </span>
+            <h1 class="fw-bold text-dark mb-2"><%= brandName || 'FOUR SEASONS iCLEANERS' %></h1>
+            <h5 class="text-muted fw-normal">A2P 10DLC Messaging Program &amp; Customer Opt-In Consent Documentation</h5>
+            <div class="d-flex justify-content-center gap-3 mt-3">
+                <a href="/terms-and-conditions" class="btn btn-sm btn-outline-primary fw-semibold"><i class="fas fa-file-contract me-1"></i> Terms &amp; Conditions</a>
+                <a href="/privacy-policy" class="btn btn-sm btn-outline-secondary fw-semibold"><i class="fas fa-user-shield me-1"></i> Privacy Policy</a>
+                <a href="/register" class="btn btn-sm btn-primary fw-semibold"><i class="fas fa-user-plus me-1"></i> Live Registration Form</a>
+            </div>
+        </div>
+
+        <!-- Summary Alert -->
+        <div class="alert alert-info border-info-subtle rounded-3 p-4 mb-5 shadow-sm">
+            <h5 class="fw-bold text-primary mb-2"><i class="fas fa-info-circle me-2"></i>Campaign Reviewer Notice</h5>
+            <p class="mb-0 fs-14">
+                This document provides verifiable proof of opt-in consent mechanisms implemented by <strong><%= brandName || 'iCleaners' %></strong> for transactional garment cleaning updates. Below are the three active opt-in methods, including live URLs, direct image exhibits, and full disclosure verbiage satisfying all CTIA Messaging Principles and Best Practices.
+            </p>
+        </div>
+
+        <!-- Exhibit 1: Web Registration Form -->
+        <div class="card border rounded-3 shadow-sm mb-5 overflow-hidden">
+            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="badge bg-primary text-white me-2">EXHIBIT 1</span>
+                    <strong class="fs-15 text-dark">Web Registration Form (Customer Portal)</strong>
+                </div>
+                <a href="/compliance/web-registration-optin.png" target="_blank" class="btn btn-xs btn-outline-primary">
+                    <i class="fas fa-external-link-alt me-1"></i> View Full Image
+                </a>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted fs-14 mb-3">
+                    <strong>Live Form URL:</strong> <a href="https://icleaners.net/register" target="_blank" class="text-primary fw-bold">https://icleaners.net/register</a><br>
+                    <strong>Description:</strong> Online customers create an account to schedule pickups and track garment cleaning. The registration form presents an explicit, optional SMS checkbox and mandatory CTIA disclosure directly above the registration submit button.
+                </p>
+                <div class="text-center p-3 bg-light rounded-3 border mb-3">
+                    <img src="/compliance/web-registration-optin.png" class="img-fluid rounded border shadow-sm" alt="Web Registration SMS Opt-in Form" style="max-height: 550px;">
+                </div>
+                <div class="p-3 bg-light-subtle rounded-3 border">
+                    <h6 class="fw-bold fs-13 text-dark mb-1">Verbatim On-Screen Disclosure:</h6>
+                    <p class="fs-12 text-muted mb-0 font-monospace">
+                        "I agree to receive automated transactional SMS notifications from iCleaners regarding my garment cleaning orders (order intake confirmations, ready for pickup alerts, route delivery schedules, and digital payment receipts). Message frequency varies based on order activity. Message &amp; data rates may apply. Reply STOP to cancel at any time, or reply HELP for help. View our Terms of Service and Privacy Policy."
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exhibit 2: In-Store Counter Printed Signage -->
+        <div class="card border rounded-3 shadow-sm mb-5 overflow-hidden">
+            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="badge bg-success text-white me-2">EXHIBIT 2</span>
+                    <strong class="fs-15 text-dark">In-Store Retail Counter Printed Signage</strong>
+                </div>
+                <a href="/compliance/counter-signage-optin.png" target="_blank" class="btn btn-xs btn-outline-primary">
+                    <i class="fas fa-external-link-alt me-1"></i> View Full Image
+                </a>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted fs-14 mb-3">
+                    <strong>Direct Image URL:</strong> <a href="https://icleaners.net/compliance/counter-signage-optin.png" target="_blank" class="text-primary fw-bold">https://icleaners.net/compliance/counter-signage-optin.png</a><br>
+                    <strong>Location:</strong> Displayed prominently in acrylic stands on the intake checkout counter at our retail store location (<%= supportAddress || '138 Mill Road, Valley Stream, NY 11581' %>).
+                </p>
+                <div class="text-center p-3 bg-light rounded-3 border mb-3">
+                    <img src="/compliance/counter-signage-optin.png" class="img-fluid rounded border shadow-sm" alt="Retail Counter Printed Signage" style="max-height: 550px;">
+                </div>
+                <div class="p-3 bg-light-subtle rounded-3 border">
+                    <h6 class="fw-bold fs-13 text-dark mb-1">Printed Sign Disclosures:</h6>
+                    <ul class="fs-12 text-muted mb-0 ps-3">
+                        <li><strong>Program Name:</strong> iCleaners Order Notifications</li>
+                        <li><strong>Frequency:</strong> Recurring messages per active order (approx 1-4 msgs/order)</li>
+                        <li><strong>Rates:</strong> Message and data rates may apply</li>
+                        <li><strong>Opt-Out:</strong> Text STOP to (845) 613-4369 to cancel</li>
+                        <li><strong>Help:</strong> Text HELP to (845) 613-4369 for support</li>
+                        <li><strong>Links:</strong> https://icleaners.net/terms-and-conditions and https://icleaners.net/privacy-policy</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exhibit 3: Digital Tablet Screen Notice -->
+        <div class="card border rounded-3 shadow-sm mb-5 overflow-hidden">
+            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="badge bg-dark text-white me-2">EXHIBIT 3</span>
+                    <strong class="fs-15 text-dark">Digital Customer-Facing POS Tablet Screen</strong>
+                </div>
+                <a href="/compliance/pos-tablet-optin.png" target="_blank" class="btn btn-xs btn-outline-primary">
+                    <i class="fas fa-external-link-alt me-1"></i> View Full Image
+                </a>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted fs-14 mb-3">
+                    <strong>Direct Image URL:</strong> <a href="https://icleaners.net/compliance/pos-tablet-optin.png" target="_blank" class="text-primary fw-bold">https://icleaners.net/compliance/pos-tablet-optin.png</a><br>
+                    <strong>Description:</strong> At drop-off, the customer confirms their phone number and views the real-time consent status with CTIA disclosures on the counter tablet before the garment order ticket is generated.
+                </p>
+                <div class="text-center p-3 bg-light rounded-3 border mb-3">
+                    <img src="/compliance/pos-tablet-optin.png" class="img-fluid rounded border shadow-sm" alt="Digital Tablet Customer Intake Notice" style="max-height: 500px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Carrier Footer -->
+        <div class="text-center text-muted fs-13 pt-3 border-top">
+            <p class="mb-1">
+                <strong><%= brandName || 'FOUR SEASONS iCLEANERS' %></strong> &bull; <%= supportAddress || '138 Mill Road, Valley Stream, NY 11581' %> &bull; Phone: <%= supportPhone || '(845) 613-4369' %>
+            </p>
+            <p class="mb-0">
+                All mobile information is strictly confidential. No mobile data is shared with third parties for marketing purposes.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
