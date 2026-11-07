@@ -271,6 +271,15 @@
                                         </button>
                                     </div>
                                 </div>
+                        <!-- SMS Opt-In Consent Checkbox (CTIA & A2P 10DLC Mandatory Compliance) -->
+                        <div class="col-12 mt-2">
+                            <div class="form-check p-3 rounded-3 bg-light border">
+                                <input class="form-check-input ms-0 me-2" type="checkbox" name="sms_opt_in" id="sms_opt_in" value="1">
+                                <label class="form-check-label fs-13 text-dark lh-sm" for="sms_opt_in">
+                                    I agree to receive automated transactional SMS notifications from <strong><%= data?.app_name || 'iCleaners' %></strong> regarding my garment cleaning orders (order intake confirmations, ready for pickup alerts, route delivery schedules, and digital payment receipts). Message frequency varies based on order activity. Message &amp; data rates may apply. Reply STOP to cancel at any time, or reply HELP for help. View our <a href="/terms-and-conditions" target="_blank" class="text-primary text-decoration-underline fw-semibold">Terms of Service</a> and <a href="/privacy-policy" target="_blank" class="text-primary text-decoration-underline fw-semibold">Privacy Policy</a>.
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     <button type="submit" class="auth-submit-btn mt-4" id="submit_register_btn">
