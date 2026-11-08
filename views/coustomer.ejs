@@ -124,15 +124,14 @@
       <!-- Modal update -->
       <div class="modal fade" id="coustomer" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg modal-fullscreen-sm-down" role="document">
-          <div class="modal-content">
+          <form action="/coustomer/update/" id="coustomer_form" method="post" class="modal-content need-validation">
             <div class="modal-header">
               <h5 class="modal-title">
                 <%= language.Customer_Detail %>
               </h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="/coustomer/update/" id="coustomer_form" method="post" class="need-validation">
-              <div class="modal-body">
+            <div class="modal-body">
                 <div class="row g-3">
                   <div class="col-md-6">
                     <label class="form-label fw-bold">
@@ -248,22 +247,20 @@
                 </button>
               </div>
             </form>
-          </div>
         </div>
       </div>
 
       <!-- Modal add -->
       <div class="modal fade" id="addcoustomer" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg modal-fullscreen-sm-down" role="document">
-          <div class="modal-content">
+          <form action="/coustomer/register" method="post" class="modal-content need-validation">
             <div class="modal-header">
               <h5 class="modal-title">
-                <%= language.Customer_Detail %>
+                <%= language.Add_Customer || language.Customer_Detail %>
               </h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="/coustomer/register" method="post" class="need-validation">
-              <div class="modal-body">
+            <div class="modal-body">
                 <input type="hidden" name="storeid" value="<%= (typeof assigned_store_id !== 'undefined' && assigned_store_id) ? assigned_store_id : (typeof staff_store_id !== 'undefined' && staff_store_id ? staff_store_id : ((typeof storeList !== 'undefined' && storeList.length > 0) ? storeList[0].id : '')) %>">
 
                 <div class="row g-3">
@@ -374,15 +371,14 @@
               </div>
 
               <div class="modal-footer">
-                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                   <i class="fa fa-times me-2"></i><%= language.Cancel %>
                 </button>
-                <button type="submit" class="btn btn-sm btn-primary">
+                <button type="submit" class="btn btn-primary">
                   <i class="fa fa-save me-2"></i><%= language.Save %>
                 </button>
               </div>
             </form>
-          </div>
         </div>
       </div>
     </div>
@@ -669,6 +665,15 @@
       $('#active').prop('checked', false);
     }
     $('#customroll').val($(this).attr('data-roll'));
+  });
+
+  $('#coustomer_form').on('submit', function (e) {
+    const action = $(this).attr('action');
+    if (!action || action === '' || action.endsWith('/') || action.includes('undefined')) {
+      e.preventDefault();
+      alert('Invalid destination: please re-open the dialog and try again.');
+      return false;
+    }
   });
 
   $(document).on('click', '.btn-delete-customer', function () {
