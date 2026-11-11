@@ -391,7 +391,7 @@
         <li><a href="/order/pickup-requests" class="has-arrow ai-icon" aria-expanded="false">
             <i class="fa fa-truck-loading"></i>
             <span class="nav-text">
-              <%= language.Pickup_Requests || 'Pickup Requests' %>
+              <%= language.Pickup_Requests || 'Route' %>
               <% const pendingPickupCnt = Number(accessdata?.submitted_pickup_count || 0); %>
               <span id="sidebar_pickup_requests_badge" class="badge bg-warning text-dark rounded-pill ms-1 <%= pendingPickupCnt > 0 ? '' : 'd-none' %>"><%= pendingPickupCnt %></span>
             </span>
