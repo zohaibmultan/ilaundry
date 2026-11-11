@@ -4,6 +4,7 @@ const auth = require("../middelwer/auth");
 const access = require("../middelwer/access");
 const bcrypt = require('bcrypt')
 var {DataDelete,DataUpdate,DataInsert,DataFind} = require("../middelwer/databaseQurey")
+const { mySqlQury } = require("../middelwer/db");
 
 const { paginateDataTable } = require("../middelwer/dataTableHelper");
 const { dispatchCustomerNotification } = require("../services/notificationService");
@@ -165,6 +166,13 @@ router.get("/list/data", auth, async (req, res) => {
     const canDelete = Boolean(
       accessdata && accessdata.roll && accessdata.roll.customers && accessdata.roll.customers.includes('delete')
     );
+    const canResetCredentials = Boolean(
+      loginas != 0 &&
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.customer_credentials &&
+      accessdata.roll.customer_credentials.includes('edit')
+    );
 
     const result = await paginateDataTable(req, {
       select: `tbl_customer.*,
@@ -183,6 +191,7 @@ router.get("/list/data", auth, async (req, res) => {
         'tbl_customer.name',
         'tbl_customer.first_name',
         'tbl_customer.last_name',
+        'tbl_customer.username',
         'tbl_customer.customer_type',
         'tbl_customer_type.code',
         'tbl_customer.number',
@@ -246,6 +255,7 @@ router.get("/list/data", auth, async (req, res) => {
             name: displayName,
             first_name: fName,
             last_name: lName,
+            username: cust.username || '',
             dob: cust.dob ? String(cust.dob).split('T')[0] : '',
             number: cust.number || '',
             email: cust.email || '',
@@ -264,6 +274,7 @@ router.get("/list/data", auth, async (req, res) => {
             customer_type_description: typeDesc,
             canEdit,
             canDelete,
+            canResetCredentials,
             login
           };
         });
@@ -380,6 +391,153 @@ router.post("/update-memo", auth, async (req, res) => {
   } catch (error) {
     console.error("Error updating customer memo:", error);
     return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update Customer Username & Reset Password (AJAX JSON endpoint, permission-gated)
+router.post("/update-credentials/:id", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      return res.status(403).json({
+        success: false,
+        message: "For demo purpose we disabled crud operations!!",
+      });
+    }
+
+    const { store, loginas } = req.user;
+    const accessdata = await access(req.user);
+
+    const canResetCredentials = Boolean(
+      loginas != 0 &&
+      accessdata &&
+      accessdata.roll &&
+      accessdata.roll.customer_credentials &&
+      accessdata.roll.customer_credentials.includes("edit")
+    );
+
+    if (!canResetCredentials) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to update customer credentials.",
+      });
+    }
+
+    const customerId = Number(req.params.id);
+    if (!Number.isInteger(customerId) || customerId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid customer ID provided.",
+      });
+    }
+
+    const existingCustomers = await mySqlQury(
+      "SELECT id, store_ID, username, name FROM tbl_customer WHERE id = ? AND delet_flage = 0 LIMIT 1",
+      [customerId]
+    );
+
+    if (!existingCustomers || existingCustomers.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer record not found.",
+      });
+    }
+
+    const targetCustomer = existingCustomers[0];
+
+    // Enforce branch/store scoping for non-master roles
+    if (accessdata.logas !== "master") {
+      const callerStoreId = accessdata?.topbardata?.store_ID || store || "";
+      if (String(targetCustomer.store_ID || "") !== String(callerStoreId)) {
+        return res.status(403).json({
+          success: false,
+          message: "Unauthorized: you can only update credentials for customers in your assigned store.",
+        });
+      }
+    }
+
+    const cleanUsername = String(req.body.username || "").trim();
+    const newPassword =
+      req.body.new_password !== undefined && req.body.new_password !== null
+        ? String(req.body.new_password)
+        : "";
+    const confirmPassword =
+      req.body.confirm_password !== undefined && req.body.confirm_password !== null
+        ? String(req.body.confirm_password)
+        : "";
+
+    if (!cleanUsername) {
+      return res.status(400).json({
+        success: false,
+        message: "Username is required and cannot be blank.",
+      });
+    }
+
+    if (newPassword.length > 0) {
+      if (newPassword.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: "New password must be at least 6 characters long.",
+        });
+      }
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "New password and confirm password do not match.",
+        });
+      }
+    }
+
+    // Check username uniqueness across active customer and admin/staff accounts
+    const dupCustomer = await mySqlQury(
+      "SELECT id FROM tbl_customer WHERE username = ? AND id != ? AND delet_flage = 0 LIMIT 1",
+      [cleanUsername, customerId]
+    );
+    if (dupCustomer && dupCustomer.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "This username is already taken by another customer.",
+      });
+    }
+
+    const dupAdmin = await mySqlQury(
+      "SELECT id FROM tbl_admin WHERE username = ? AND delet_flage = 0 LIMIT 1",
+      [cleanUsername]
+    );
+    if (dupAdmin && dupAdmin.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "This username is already in use by an admin or staff account.",
+      });
+    }
+
+    if (newPassword.length > 0) {
+      const salt = bcrypt.genSaltSync(10);
+      const hashedPassword = bcrypt.hashSync(newPassword, salt);
+      await mySqlQury(
+        "UPDATE tbl_customer SET username = ?, password = ? WHERE id = ?",
+        [cleanUsername, hashedPassword, customerId]
+      );
+    } else {
+      await mySqlQury(
+        "UPDATE tbl_customer SET username = ? WHERE id = ?",
+        [cleanUsername, customerId]
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message:
+        newPassword.length > 0
+          ? "Customer username and password updated successfully."
+          : "Customer username updated successfully.",
+      username: cleanUsername,
+    });
+  } catch (error) {
+    console.error("Error updating customer credentials:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update customer credentials. Please try again.",
+    });
   }
 });
 

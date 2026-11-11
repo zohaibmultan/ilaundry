@@ -10,8 +10,28 @@ var {
   DataUpdate,
   DataInsert,
   DataFind,
+  FullDataInsert,
 } = require("../middelwer/databaseQurey");
 const { paginateDataTable } = require("../middelwer/dataTableHelper");
+const OrderTypes = require("../public/js/shared/orderTypes");
+const {
+  getEffectiveReadySchedule,
+  calculateReadyDateTime,
+} = require("../middelwer/readyScheduleHelper");
+const {
+  ORDER_STATUS_SUBMITTED,
+  ORDER_STATUS_ACCEPTED,
+  ensurePickupAddressSchema,
+  truncateText,
+  normalizeCustomerOrderType,
+  parseCustomerPickupDateTime,
+  extractLocalDateIso,
+  extractLocalTimeIso,
+  formatCustomerProfileAddress,
+  formatCustomerName,
+  formatHumanDateTime,
+  resolveCustomerStoreContext,
+} = require("../middelwer/customerPortalHelper");
 
 const {
   addClient,
@@ -23,6 +43,7 @@ const {
   dispatchCustomerNotification,
   isRouteDeliveryOrderType,
   formatWhatsAppInvoiceMessage,
+  formatWhatsAppPickupAcceptedMessage,
   formatWhatsAppNumber,
 } = require("../services/notificationService");
 
@@ -222,7 +243,7 @@ async function buildOrderListQuery(
       login = "store";
       scopeConditions.push(`tbl_order.store_id = '${staffStoreId}'`);
       if (!canViewAll) {
-        scopeConditions.push(`(tbl_order.created_by = '1,${id}' OR tbl_order.created_by = '${id}')`);
+        scopeConditions.push(`(tbl_order.created_by = '1,${id}' OR tbl_order.created_by = '${id}' OR tbl_order.created_by LIKE '0,%')`);
       }
     } else if (
       rolldetail &&
@@ -273,6 +294,10 @@ async function buildOrderListQuery(
   }
 
   const allConditions = [...scopeConditions];
+  if (loginas != 0) {
+    // Unaccepted customer pickup requests ('Submitted') live on the dedicated Pickup Requests page
+    allConditions.push(`tbl_order.order_status != ${ORDER_STATUS_SUBMITTED}`);
+  }
   if (statusCondition) allConditions.push(statusCondition);
   if (searchCondition) allConditions.push(searchCondition);
 
@@ -325,7 +350,7 @@ router.get("/list/data", auth, async (req, res) => {
         login = "store";
         scopeConditions.push(`tbl_order.store_id = '${staffStoreId}'`);
         if (!canViewAll) {
-          scopeConditions.push(`(tbl_order.created_by = '1,${id}' OR tbl_order.created_by = '${id}')`);
+          scopeConditions.push(`(tbl_order.created_by = '1,${id}' OR tbl_order.created_by = '${id}' OR tbl_order.created_by LIKE '0,%')`);
         }
       } else if (
         rolldetail &&
@@ -371,6 +396,11 @@ router.get("/list/data", auth, async (req, res) => {
           }
         }
       }
+    }
+
+    if (loginas != 0) {
+      // Submitted customer pickup requests remain on Pickup Requests until Accepted
+      scopeConditions.push(`tbl_order.order_status != ${ORDER_STATUS_SUBMITTED}`);
     }
 
     const filterConditions = [];
@@ -431,17 +461,30 @@ router.get("/list/data", auth, async (req, res) => {
       filterConditions.push(`DATE(tbl_order.order_date) <= '${cleanEndDate}'`);
     }
 
-    const canDelete = Boolean(
+    const isMasterRole = Boolean(
       accessdata &&
+      (accessdata.logas === "master" || accessdata.roll?.rollType === "master"),
+    );
+    const canDelete = Boolean(
+      isMasterRole ||
+      (accessdata &&
       accessdata.roll &&
       accessdata.roll.orders &&
-      accessdata.roll.orders.includes("delete"),
+      accessdata.roll.orders.includes("delete")),
     );
     const canEdit = Boolean(
-      accessdata &&
+      isMasterRole ||
+      (accessdata &&
       accessdata.roll &&
       accessdata.roll.orders &&
-      accessdata.roll.orders.includes("edit"),
+      accessdata.roll.orders.includes("edit")),
+    );
+    const canCollectPayment = Boolean(
+      isMasterRole ||
+      (accessdata &&
+      accessdata.roll &&
+      accessdata.roll.order_payment_collect &&
+      accessdata.roll.order_payment_collect.includes("write")),
     );
 
     const result = await paginateDataTable(req, {
@@ -535,6 +578,12 @@ router.get("/list/data", auth, async (req, res) => {
           } else if (order.order_status == 8) {
             statusClass = "status-draft";
             order.orderStatusName = "Draft";
+          } else if (order.order_status == 9) {
+            statusClass = "status-submitted";
+            order.orderStatusName = order.orderStatusName || "Submitted";
+          } else if (order.order_status == 10) {
+            statusClass = "status-accepted";
+            order.orderStatusName = order.orderStatusName || "Accepted";
           }
 
           let rackNames = [];
@@ -561,6 +610,7 @@ router.get("/list/data", auth, async (req, res) => {
             rackNames,
             canDelete,
             canEdit,
+            canCollectPayment,
             isMaster: login === "master",
           };
 
@@ -591,7 +641,9 @@ router.get("/list", auth, async (req, res) => {
     }
 
     const orderlist = await DataFind(built.query);
-    const Ordersatus = await DataFind("SELECT * FROM tbl_orderstatus ");
+    const Ordersatus = await DataFind(
+      `SELECT * FROM tbl_orderstatus WHERE id != ${ORDER_STATUS_SUBMITTED} ORDER BY id ASC`
+    );
     const storeList = await DataFind(
       "SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0",
     );
@@ -749,6 +801,11 @@ router.get("/view/:id", auth, async (req, res) => {
       return res.redirect("/order/list");
     }
 
+    if (loginas == 0 && String(order[0].customer_id) !== String(id)) {
+      req.flash("error", "You are not authorized to view this order");
+      return res.redirect("/index");
+    }
+
     const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
     if (isStaff && staffStoreId && order[0].store_id != staffStoreId) {
       req.flash(
@@ -763,7 +820,9 @@ router.get("/view/:id", auth, async (req, res) => {
     const storedata = await DataFind(
       "SELECT * FROM tbl_store WHERE id=" + order[0].store_id + "",
     );
-    const Ordersatus = await DataFind("SELECT * FROM tbl_orderstatus");
+    const Ordersatus = await DataFind(
+      `SELECT * FROM tbl_orderstatus WHERE id != ${ORDER_STATUS_SUBMITTED} ORDER BY id ASC`
+    );
     const rawServiceList = (order[0].service_list || "").trim();
     const orderServiceList = (rawServiceList && rawServiceList !== "0")
       ? await DataFind(
@@ -1003,6 +1062,8 @@ router.get("/changestatus/:id", auth, async (req, res) => {
         statusEventKey = isRouteDeliveryOrderType(order_date[0].order_type)
           ? "order_out_for_delivery"
           : "order_ready_pickup";
+      } else if (sIdNum === 10 || statusLower.includes("accept")) {
+        statusEventKey = "pickup_request_accepted";
       } else {
         statusEventKey = "order_processing";
       }
@@ -1185,6 +1246,17 @@ router.post("/addpayment", auth, async (req, res) => {
     }
     const { paid, orderid, balan, payment } = req.body;
     const { id, loginas } = req.user;
+    if (loginas == 0) {
+      return res.status(403).json({ status: "error", message: "Unauthorized to collect order payments" });
+    }
+    const accessdata = await access(req.user);
+    const isMasterRole = accessdata?.logas === "master" || accessdata?.roll?.rollType === "master";
+    if (!isMasterRole && (!accessdata?.roll?.order_payment_collect || !accessdata.roll.order_payment_collect.includes("write"))) {
+      return res.status(403).json({
+        status: "error",
+        message: "You do not have permission to collect order payments.",
+      });
+    }
     const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
 
     const orderdata = await DataFind(
@@ -1322,6 +1394,17 @@ router.post("/addpayment", auth, async (req, res) => {
 router.get("/paymodel/:id", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
+    if (loginas == 0) {
+      return res.status(403).json({ status: "error", message: "Unauthorized" });
+    }
+    const accessdata = await access(req.user);
+    const isMasterRole = accessdata?.logas === "master" || accessdata?.roll?.rollType === "master";
+    if (!isMasterRole && (!accessdata?.roll?.order_payment_collect || !accessdata.roll.order_payment_collect.includes("write"))) {
+      return res.status(403).json({
+        status: "error",
+        message: "You do not have permission to collect order payments.",
+      });
+    }
     const orderid = req.params.id;
 
     const order = await DataFind(
@@ -1597,6 +1680,13 @@ router.get("/calendar/events", optionalAuth, async (req, res) => {
       const { id, store, loginas } = req.user;
       const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
       const accessdata = await access(req.user);
+      const isMasterRole = accessdata?.logas === "master" || accessdata?.roll?.rollType === "master";
+      if (
+        accessdata?.logas === "custmor" ||
+        (!isMasterRole && (!accessdata?.roll?.route_calendar || !accessdata.roll.route_calendar.includes("read")))
+      ) {
+        return res.status(403).json([]);
+      }
 
       if (isStaff && staffStoreId) {
         storeCondition = `AND o.store_id = '${staffStoreId}'`;
@@ -1604,9 +1694,9 @@ router.get("/calendar/events", optionalAuth, async (req, res) => {
           accessdata.roll?.all_staff_records && accessdata.roll.all_staff_records.includes("read")
         );
         if (!canViewAll) {
-          storeCondition += ` AND (o.created_by = '1,${id}' OR o.created_by = '${id}')`;
+          storeCondition += ` AND (o.created_by = '1,${id}' OR o.created_by = '${id}' OR o.created_by LIKE '0,%')`;
         }
-      } else if (accessdata.login === "store") {
+      } else if (accessdata.logas === "store") {
         storeCondition = `AND o.store_id = '${store}'`;
       } else if (store_id && store_id !== "all" && store_id !== "") {
         storeCondition = `AND o.store_id = '${String(store_id).replace(/'/g, "\\'")}'`;
@@ -1633,6 +1723,8 @@ router.get("/calendar/events", optionalAuth, async (req, res) => {
       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     }
 
+    await ensurePickupAddressSchema();
+
     // Exclude Counter & Counter per Rule 1: "Counter & Counter: don't show any event on calendar"
     const query = `
       SELECT 
@@ -1641,6 +1733,7 @@ router.get("/calendar/events", optionalAuth, async (req, res) => {
         o.order_type,
         o.order_date,
         o.pickup_date,
+        o.pickup_address,
         o.ready_date,
         o.delivery_date,
         o.order_status,
@@ -1652,6 +1745,7 @@ router.get("/calendar/events", optionalAuth, async (req, res) => {
         o.paid_amount,
         o.balance_amount,
         o.service_list,
+        o.note,
         o.store_id,
         s.name AS store_name,
         c.id AS customer_id,
@@ -1667,6 +1761,7 @@ router.get("/calendar/events", optionalAuth, async (req, res) => {
       LEFT JOIN tbl_customer c ON o.customer_id = c.id
       LEFT JOIN tbl_store s ON o.store_id = s.id
       WHERE o.order_type NOT IN ('Counter • Counter', 'Counter & Counter', 'Customer drop-off & Store collection')
+        AND COALESCE(o.order_status, 1) NOT IN (6, ${ORDER_STATUS_SUBMITTED})
         ${storeCondition}
         ${searchCondition}
       ORDER BY o.order_date DESC
@@ -1677,16 +1772,9 @@ router.get("/calendar/events", optionalAuth, async (req, res) => {
 
     orders.forEach((ord) => {
       const type = ord.order_type || "";
-      const isRouteRoute =
-        type === "Route & Route" ||
-        type === "Pick-up & Delivery" ||
-        type === "Store collection & Store delivery";
-      const isRouteCounter =
-        type === "Route & Counter" || type === "Pick-up & Counter";
-      const isCounterRoute =
-        type === "Counter & Route" ||
-        type === "Counter & Delivery" ||
-        type === "Customer drop-off & Store delivery";
+      const isRouteRoute = OrderTypes.isRouteRoute(type);
+      const isRouteCounter = OrderTypes.hasPickup(type) && !OrderTypes.hasDelivery(type);
+      const isCounterRoute = !OrderTypes.hasPickup(type) && OrderTypes.hasDelivery(type);
 
       const customerName =
         ord.last_name || ord.first_name
@@ -1695,9 +1783,12 @@ router.get("/calendar/events", optionalAuth, async (req, res) => {
               .replace(/^,\s*|,\s*$/g, "")
           : ord.legacy_customer_name || "Customer";
       const customerPhone = ord.mobile_no || "";
-      const customerAddress = [ord.address, ord.city, ord.state, ord.zip_code]
-        .filter(Boolean)
-        .join(", ");
+      const customerAddress =
+        ord.pickup_address && String(ord.pickup_address).trim() !== ""
+          ? String(ord.pickup_address).trim()
+          : [ord.address, ord.city, ord.state, ord.zip_code]
+              .filter(Boolean)
+              .join(", ");
 
       const commonDetails = {
         orderId: ord.id,
@@ -1707,6 +1798,7 @@ router.get("/calendar/events", optionalAuth, async (req, res) => {
         customerName,
         customerPhone,
         customerAddress,
+        orderNote: ord.note || "",
         grossTotal: parseFloat(ord.gross_total || 0).toFixed(2),
         paidAmount: parseFloat(ord.paid_amount || 0).toFixed(2),
         balanceAmount: parseFloat(ord.balance_amount || 0).toFixed(2),
@@ -1829,6 +1921,18 @@ router.get("/calendar/events", optionalAuth, async (req, res) => {
 // 4. Toggle Pick-up or Delivery Status
 router.post("/calendar/toggle-status", auth, async (req, res) => {
   try {
+    const accessdata = await access(req.user);
+    const isMasterRole = accessdata?.logas === "master" || accessdata?.roll?.rollType === "master";
+    const canToggleCalendar = Boolean(
+      accessdata?.logas !== "custmor" &&
+      (isMasterRole || Boolean(accessdata?.roll?.route_calendar?.includes("edit")))
+    );
+    if (!canToggleCalendar) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to update route pick-up or delivery status.",
+      });
+    }
     const { order_id, field, status } = req.body;
     if (!order_id || !field) {
       return res
@@ -1846,10 +1950,7 @@ router.post("/calendar/toggle-status", auth, async (req, res) => {
     }
 
     const order = orderRows[0];
-    const isRouteRoute =
-      order.order_type === "Route & Route" ||
-      order.order_type === "Pick-up & Delivery" ||
-      order.order_type === "Store collection & Store delivery";
+    const isRouteRoute = OrderTypes.isRouteRoute(order.order_type);
     const targetStatus =
       status === "1" || status === 1 || status === true || status === "true"
         ? "1"
@@ -1989,18 +2090,23 @@ router.get(["/calendar", "/calendar/:storeId"], optionalAuth, async (req, res) =
     }
 
     const accessdata = await access(req.user);
+    const isMasterRole = accessdata?.logas === "master" || accessdata?.roll?.rollType === "master";
     if (
-      accessdata?.logas === "custmor" &&
-      (!accessdata?.roll?.orders || !accessdata.roll.orders.includes("read"))
+      accessdata?.logas === "custmor" ||
+      (!isMasterRole && (!accessdata?.roll?.route_calendar || !accessdata.roll.route_calendar.includes("read")))
     ) {
       req.flash("error", "You Are Not Authorized For this");
       return res.redirect("/");
     }
 
+    const canEditCalendar = Boolean(
+      isMasterRole || Boolean(accessdata?.roll?.route_calendar?.includes("edit"))
+    );
+
     const { id, store, loginas } = req.user;
     const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
     const effectiveStoreId = isStaff ? staffStoreId : store;
-    const selectedStoreId = accessdata?.login === "master"
+    const selectedStoreId = isMasterRole
       ? (urlStoreId || "all")
       : String(effectiveStoreId || "");
 
@@ -2010,6 +2116,7 @@ router.get(["/calendar", "/calendar/:storeId"], optionalAuth, async (req, res) =
       storeList: storeList || [],
       isGuest: false,
       isStaff,
+      canEditCalendar,
       staffStoreId,
       currentStoreId: effectiveStoreId,
       selectedStoreId,
@@ -2038,10 +2145,10 @@ router.get("/racks", auth, async (req, res) => {
     }
 
     const accessdata = await access(req.user);
+    const isMasterRole = accessdata?.logas === "master" || accessdata?.roll?.rollType === "master";
     if (
       accessdata?.logas === "custmor" ||
-      (!accessdata?.roll?.orders?.includes("read") &&
-        !accessdata?.roll?.service?.includes("read"))
+      (!isMasterRole && (!accessdata?.roll?.racks || !accessdata.roll.racks.includes("read")))
     ) {
       req.flash("error", "You Are Not Authorized For this");
       return res.redirect("/");
@@ -2051,7 +2158,7 @@ router.get("/racks", auth, async (req, res) => {
     const multiy = await DataFind("SELECT type FROM tbl_master_shop");
     const ismulty =
       !isStaff &&
-      accessdata.login === "master" &&
+      accessdata.logas === "master" &&
       multiy &&
       multiy.length > 0 &&
       multiy[0].type == 1;
@@ -2088,11 +2195,15 @@ router.get("/racks/data", auth, async (req, res) => {
     }
 
     const accessdata = await access(req.user);
+    const isMasterRole = accessdata?.logas === "master" || accessdata?.roll?.rollType === "master";
+    if (!isMasterRole && (!accessdata?.roll?.racks || !accessdata.roll.racks.includes("read"))) {
+      return res.status(403).json({ error: "Unauthorized", data: [] });
+    }
     const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
     const multiy = await DataFind("SELECT type FROM tbl_master_shop");
     const ismulty =
       !isStaff &&
-      accessdata.login === "master" &&
+      accessdata.logas === "master" &&
       multiy &&
       multiy.length > 0 &&
       multiy[0].type == 1;
@@ -2115,16 +2226,14 @@ router.get("/racks/data", auth, async (req, res) => {
       filterWhere.push(`tbl_racks.store_id = '${cleanStore}'`);
     }
 
-    const isMaster = accessdata.logas === "master" || (accessdata.roll && accessdata.roll.rollType === "master");
+    const isMaster = isMasterRole;
     const canEdit = Boolean(
       isMaster ||
-        (accessdata?.roll?.orders && accessdata.roll.orders.includes("edit")) ||
-        (accessdata?.roll?.service && accessdata.roll.service.includes("edit"))
+        (accessdata?.roll?.racks && accessdata.roll.racks.includes("edit"))
     );
     const canDelete = Boolean(
       isMaster ||
-        (accessdata?.roll?.orders && accessdata.roll.orders.includes("delete")) ||
-        (accessdata?.roll?.service && accessdata.roll.service.includes("delete"))
+        (accessdata?.roll?.racks && accessdata.roll.racks.includes("delete"))
     );
 
     const usageMap = await computeRackUsageMap();
@@ -2187,6 +2296,20 @@ router.post("/racks/add", auth, async (req, res) => {
       if (isAjax) return res.status(403).json({ success: false, message: "Unauthorized" });
       req.flash("error", "You Are Not Authorized For this");
       return res.redirect("/");
+    }
+
+    const accessdata = await access(req.user);
+    const isMasterRole = accessdata?.logas === "master" || accessdata?.roll?.rollType === "master";
+    const canAddRack = Boolean(
+      isMasterRole ||
+      accessdata?.roll?.racks?.includes("write") ||
+      (isAjax && accessdata?.roll?.racks?.includes("edit"))
+    );
+    if (!canAddRack) {
+      const msg = "You do not have permission to add storage racks.";
+      if (isAjax) return res.status(403).json({ success: false, message: msg });
+      req.flash("error", msg);
+      return res.redirect("/order/racks");
     }
 
     const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
@@ -2270,6 +2393,15 @@ router.post("/racks/update/:id", auth, async (req, res) => {
     }
 
     await ensureRacksSchema();
+    const accessdata = await access(req.user);
+    const isMasterRole = accessdata?.logas === "master" || accessdata?.roll?.rollType === "master";
+    if (
+      req.user.loginas == 0 ||
+      (!isMasterRole && (!accessdata?.roll?.racks || !accessdata.roll.racks.includes("edit")))
+    ) {
+      req.flash("error", "You do not have permission to edit storage racks.");
+      return res.redirect("/order/racks");
+    }
     const rackId = parseInt(req.params.id, 10);
     const rawName = String(req.body.rack_name_update || req.body.rack_name || "").trim();
     if (!rackId || !rawName) {
@@ -2327,6 +2459,15 @@ router.get("/racks/delete/:id", auth, async (req, res) => {
     }
 
     await ensureRacksSchema();
+    const accessdata = await access(req.user);
+    const isMasterRole = accessdata?.logas === "master" || accessdata?.roll?.rollType === "master";
+    if (
+      req.user.loginas == 0 ||
+      (!isMasterRole && (!accessdata?.roll?.racks || !accessdata.roll.racks.includes("delete")))
+    ) {
+      req.flash("error", "You do not have permission to delete storage racks.");
+      return res.redirect("/order/racks");
+    }
     const rackId = parseInt(req.params.id, 10);
     if (!rackId) {
       req.flash("error", "Invalid rack ID.");
@@ -2510,17 +2651,16 @@ router.post("/assign-racks", auth, async (req, res) => {
     }
 
     const accessdata = await access(req.user);
-    const rolldetail = await DataFind(`
-      SELECT sr.*, r.roll_status, r.rollType
-      FROM tbl_staff_roll sr
-      JOIN tbl_roll r ON sr.main_roll_id = r.id
-      WHERE sr.id = ${roll}
-    `);
-
-    if (!rolldetail || !rolldetail[0] || !rolldetail[0].orders.includes("edit")) {
+    const isMasterRole = accessdata?.logas === "master" || accessdata?.roll?.rollType === "master";
+    const canAssignRack = Boolean(
+      isMasterRole ||
+      accessdata?.roll?.racks?.includes("edit") ||
+      accessdata?.roll?.orders?.includes("edit")
+    );
+    if (!canAssignRack) {
       return res.status(403).json({
         status: "error",
-        message: "You are not authorized to edit orders.",
+        message: "You are not authorized to assign storage racks.",
       });
     }
 
@@ -2779,8 +2919,15 @@ router.get("/racks/search-invoice", auth, async (req, res) => {
 
     const { loginas } = req.user;
     const accessdata = await access(req.user);
+    const isMasterRole = accessdata?.logas === "master" || accessdata?.roll?.rollType === "master";
+    if (
+      loginas == 0 ||
+      (!isMasterRole && (!accessdata?.roll?.racks || !accessdata.roll.racks.includes("read")))
+    ) {
+      return res.status(403).json({ success: false, message: "You do not have permission to search storage racks." });
+    }
     let storeCondition = "";
-    if (loginas != 1 && accessdata?.topbardata?.store_ID) {
+    if (!isMasterRole && accessdata?.topbardata?.store_ID) {
       storeCondition = `AND o.store_id = '${accessdata.topbardata.store_ID}'`;
     }
 
@@ -2852,6 +2999,14 @@ router.get("/racks/search-invoice", auth, async (req, res) => {
 // <<<<<<<<<<<< Rack Drilldown: Get all orders currently assigned to a specific rack >>>>>>>>>>>>>
 router.get("/racks/orders-by-rack/:rackId", auth, async (req, res) => {
   try {
+    const accessdata = await access(req.user);
+    const isMasterRole = accessdata?.logas === "master" || accessdata?.roll?.rollType === "master";
+    if (
+      req.user.loginas == 0 ||
+      (!isMasterRole && (!accessdata?.roll?.racks || !accessdata.roll.racks.includes("read")))
+    ) {
+      return res.status(403).json({ success: false, message: "You do not have permission to view storage racks." });
+    }
     const rackId = req.params.rackId;
     if (!rackId) {
       return res.status(400).json({ success: false, message: "Rack ID is required." });
@@ -3073,6 +3228,943 @@ router.get("/whatsapp-invoice-payload/:orderId", auth, async (req, res) => {
   } catch (error) {
     console.error("Error generating WhatsApp invoice payload:", error);
     return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ==========================================
+// CUSTOMER SELF-SERVICE PICK-UP REQUEST API
+// ==========================================
+
+async function loadModifiableCustomerPickupOrder(orderId, customerId) {
+  await ensurePickupAddressSchema();
+  const rows = await DataFind(
+    `SELECT o.*, st.name AS store_name, st.mobile_number AS store_phone
+     FROM tbl_order o
+     LEFT JOIN tbl_store st ON o.store_id = st.id
+     WHERE o.id = ?
+     LIMIT 1`,
+    [orderId]
+  );
+
+  if (!rows || rows.length === 0) {
+    return { errorStatus: 404, errorMessage: "Pick-up request not found." };
+  }
+
+  const order = rows[0];
+  if (String(order.customer_id) !== String(customerId)) {
+    return { errorStatus: 403, errorMessage: "You are not authorized to modify this request." };
+  }
+
+  if (!OrderTypes.hasPickup(order.order_type)) {
+    return {
+      errorStatus: 400,
+      errorMessage: "Only route pick-up requests can be edited or cancelled from the customer portal.",
+    };
+  }
+
+  if (Number(order.order_status) !== ORDER_STATUS_SUBMITTED || String(order.is_picked_up || "0") === "1") {
+    const storeContact = order.store_phone
+      ? ` Please contact ${order.store_name || "the store"} at ${order.store_phone}.`
+      : " Please contact the store for assistance.";
+    const isAlreadyAccepted = Number(order.order_status) === ORDER_STATUS_ACCEPTED;
+    return {
+      errorStatus: 400,
+      errorMessage:
+        (isAlreadyAccepted
+          ? "This pick-up request has already been accepted by the store and its date/time can no longer be changed online."
+          : "This pick-up request can no longer be changed or cancelled because it is already accepted, picked up, or in processing.") +
+        storeContact,
+    };
+  }
+
+  return { order };
+}
+
+async function resolveAdminPickupRequestsScope(req) {
+  const { id, roll, store, loginas } = req.user;
+  if (Number(loginas) === 0) {
+    return { authorized: false, status: 403, message: "Only Admin or Staff can manage pickup requests." };
+  }
+  const accessdata = await access(req.user);
+  const { isStaff, staffStoreId } = await getStaffScope(id, loginas);
+
+  const isMasterRole = accessdata?.logas === "master" || accessdata?.roll?.rollType === "master";
+  const canReadPickupRequests = Boolean(
+    isMasterRole ||
+    (accessdata?.roll?.pickup_requests &&
+      (accessdata.roll.pickup_requests.includes("read") || accessdata.roll.pickup_requests.includes("edit")))
+  );
+  const canAcceptPickupRequests = Boolean(
+    isMasterRole ||
+    (accessdata?.roll?.pickup_requests && accessdata.roll.pickup_requests.includes("edit"))
+  );
+  if (!canReadPickupRequests) {
+    return { authorized: false, status: 403, message: "You are not authorized to access Pickup Requests." };
+  }
+
+  let login = "store";
+  let scopedStoreId = null;
+
+  if (isStaff && staffStoreId) {
+    login = "store";
+    scopedStoreId = String(staffStoreId);
+  } else if (accessdata?.logas === "master") {
+    const multiy = await DataFind("SELECT type FROM tbl_master_shop");
+    if (multiy && multiy.length > 0 && multiy[0].type == 1) {
+      login = "master";
+    } else {
+      login = "store";
+      scopedStoreId = String(accessdata?.topbardata?.store_ID || store || "");
+    }
+  } else {
+    login = "store";
+    scopedStoreId = String(accessdata?.topbardata?.store_ID || store || "");
+  }
+
+  return {
+    authorized: true,
+    canAccept: canAcceptPickupRequests,
+    accessdata,
+    login,
+    isStaff,
+    staffStoreId,
+    scopedStoreId,
+    userId: id,
+    roll,
+  };
+}
+
+function parseAdminScheduleDateTime(dateStr, timeStr) {
+  const cleanDate = String(dateStr || "").trim();
+  const cleanTime = String(timeStr || "").trim();
+  const dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(cleanDate);
+  const tm = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(cleanTime);
+  if (!dm || !tm) return { valid: false, message: "Invalid pick-up date or time format." };
+
+  const y = parseInt(dm[1], 10);
+  const m = parseInt(dm[2], 10);
+  const d = parseInt(dm[3], 10);
+  const hh = parseInt(tm[1], 10);
+  const min = parseInt(tm[2], 10);
+  if (m < 1 || m > 12 || d < 1 || d > 31 || hh > 23 || min > 59) {
+    return { valid: false, message: "Invalid pick-up date or time values." };
+  }
+  const dateObj = new Date(y, m - 1, d, hh, min, 0, 0);
+  if (
+    isNaN(dateObj.getTime()) ||
+    dateObj.getFullYear() !== y ||
+    dateObj.getMonth() !== m - 1 ||
+    dateObj.getDate() !== d
+  ) {
+    return { valid: false, message: "Please provide a valid calendar date." };
+  }
+  const hhPad = String(hh).padStart(2, "0");
+  const minPad = String(min).padStart(2, "0");
+  return {
+    valid: true,
+    mysqlDateTime: `${cleanDate} ${hhPad}:${minPad}:00`,
+    dateObj,
+  };
+}
+
+async function recordPortalNotification(invoice, dateStr, senderId, receiverId, message) {
+  try {
+    await FullDataInsert(
+      `INSERT INTO tbl_notification (invoice, date, sender, received, notification) VALUES (?, ?, ?, ?, ?)`,
+      [
+        truncateText(invoice, 45),
+        truncateText(dateStr, 45),
+        truncateText(senderId, 45),
+        truncateText(receiverId, 45),
+        truncateText(message, 250),
+      ]
+    );
+  } catch (err) {
+    console.warn("Non-fatal portal notification insert warning:", err.message);
+  }
+}
+
+router.post("/customer/pickup-request", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      return res.status(403).json({ success: false, message: "Database writes are disabled in demo mode." });
+    }
+    if (Number(req.user.loginas) !== 0) {
+      return res.status(403).json({ success: false, message: "Only logged-in customers can submit pick-up requests." });
+    }
+
+    await ensurePickupAddressSchema();
+    const { customer, store } = await resolveCustomerStoreContext(req.user.id, req.user.store);
+    if (!customer || !store) {
+      return res.status(404).json({ success: false, message: "Customer or assigned store record not found." });
+    }
+
+    const parsedDT = parseCustomerPickupDateTime(req.body.pickup_date, req.body.pickup_time);
+    if (!parsedDT.valid) {
+      return res.status(400).json({ success: false, message: parsedDT.message });
+    }
+
+    const orderType = normalizeCustomerOrderType(req.body.order_type);
+    const rawAddress = truncateText(req.body.pickup_address, 255);
+    const pickupAddress = rawAddress || truncateText(formatCustomerProfileAddress(customer), 255);
+    if (!pickupAddress) {
+      return res.status(400).json({ success: false, message: "Please provide a pick-up address." });
+    }
+
+    const saveAddress =
+      req.body.save_address === true ||
+      req.body.save_address === "true" ||
+      req.body.save_address === "1" ||
+      req.body.save_address === "on";
+    if (saveAddress && rawAddress && rawAddress !== String(customer.address || "").trim()) {
+      await DataFind(`UPDATE tbl_customer SET address = ? WHERE id = ?`, [rawAddress, customer.id]);
+    }
+
+    const note = truncateText(req.body.note, 255);
+    const orderCode = await idfororder(store.id);
+    const readySchedule = await getEffectiveReadySchedule(store.id);
+    const readyResult = calculateReadyDateTime(parsedDT.dateObj, readySchedule);
+    const readyTimestamp = readyResult.combinedTimestamp;
+    const taxRate = parseFloat(store.tax_percent || 0) || 0;
+    const todayDateStr = extractLocalDateIso(new Date());
+
+    const insertResult = await FullDataInsert(
+      `INSERT INTO tbl_order (
+        order_id, order_type, order_date, ready_date, delivery_date, pickup_date, pickup_address,
+        order_status, service_list, customer_id, store_id, created_by,
+        addon_data, addon_price, sub_total, tax, coupon_id, coupon_discount, extra_discount,
+        gross_total, paid_amount, balance_amount, payment_data, tax_amount, note,
+        master_comission, commission_status, reference_number, is_picked_up, is_delivered
+      ) VALUES (?, ?, NOW(), ?, ?, ?, ?, ?, '', ?, ?, ?, '0', 0, 0, ?, '0', 0, 0, 0, 0, 0, '0', 0, ?, 0, '1', '', '0', '0')`,
+      [
+        orderCode,
+        orderType,
+        readyTimestamp,
+        readyTimestamp,
+        parsedDT.mysqlDateTime,
+        pickupAddress,
+        ORDER_STATUS_SUBMITTED,
+        String(customer.id),
+        String(store.id),
+        `0,${customer.id}`,
+        taxRate,
+        note,
+      ]
+    );
+
+    if (insertResult === -1 || !insertResult || !insertResult.insertId) {
+      return res.status(500).json({ success: false, message: "Failed to save pick-up request. Please try again." });
+    }
+
+    const insertedOrderId = insertResult.insertId;
+    const custName = formatCustomerName(customer);
+    const humanPickup = formatHumanDateTime(parsedDT.dateObj);
+    const storeNotifMsg = `New Pick-up Request #${orderCode} (${orderType}) submitted by ${custName} — Pick-up: ${humanPickup}`;
+    const custNotifMsg = `Your pick-up request #${orderCode} for ${humanPickup} has been submitted and is awaiting store acceptance.`;
+
+    await recordPortalNotification(orderCode, todayDateStr, customer.id, store.id, storeNotifMsg);
+    await recordPortalNotification(orderCode, todayDateStr, store.id, customer.id, custNotifMsg);
+
+    broadcastCalendarChange({
+      action: "order_created",
+      order_id: insertedOrderId,
+      order_code: orderCode,
+      store_id: store.id,
+      is_route_order_alert: true,
+      is_pickup_request_submitted: true,
+      target_url: "/order/pickup-requests",
+      order_type: orderType,
+      placed_by_role: "Customer",
+      placed_by_name: custName,
+      customer_name: custName,
+      schedule_summary: `Pick-up: ${humanPickup} (Submitted)`,
+      notification_text: storeNotifMsg,
+      date: todayDateStr,
+    });
+
+    dispatchCustomerNotification({
+      eventKey: "route_pickup_scheduled",
+      storeId: store.id,
+      customerId: customer.id,
+      orderId: insertedOrderId,
+    }).catch((e) => console.error("Customer portal pickup notification error:", e.message));
+
+    return res.status(200).json({
+      success: true,
+      message: `Pick-up request #${orderCode} submitted for ${humanPickup}.`,
+      orderId: insertedOrderId,
+      orderCode,
+    });
+  } catch (error) {
+    console.error("Error in POST /order/customer/pickup-request:", error);
+    return res.status(500).json({ success: false, message: "Server error submitting pick-up request." });
+  }
+});
+
+router.post("/customer/pickup-request/:id/update", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      return res.status(403).json({ success: false, message: "Database writes are disabled in demo mode." });
+    }
+    if (Number(req.user.loginas) !== 0) {
+      return res.status(403).json({ success: false, message: "Only logged-in customers can update pick-up requests." });
+    }
+
+    const orderId = parseInt(req.params.id, 10);
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: "Invalid request ID." });
+    }
+
+    const check = await loadModifiableCustomerPickupOrder(orderId, req.user.id);
+    if (check.errorStatus) {
+      return res.status(check.errorStatus).json({ success: false, message: check.errorMessage });
+    }
+    const existing = check.order;
+
+    const parsedDT = parseCustomerPickupDateTime(req.body.pickup_date, req.body.pickup_time);
+    if (!parsedDT.valid) {
+      return res.status(400).json({ success: false, message: parsedDT.message });
+    }
+
+    const orderType = normalizeCustomerOrderType(req.body.order_type || existing.order_type);
+    const { customer } = await resolveCustomerStoreContext(req.user.id, existing.store_id);
+    const rawAddress = truncateText(req.body.pickup_address, 255);
+    const pickupAddress =
+      rawAddress ||
+      truncateText(existing.pickup_address, 255) ||
+      truncateText(formatCustomerProfileAddress(customer), 255);
+    if (!pickupAddress) {
+      return res.status(400).json({ success: false, message: "Please provide a pick-up address." });
+    }
+
+    const saveAddress =
+      req.body.save_address === true ||
+      req.body.save_address === "true" ||
+      req.body.save_address === "1" ||
+      req.body.save_address === "on";
+    if (saveAddress && rawAddress && customer && rawAddress !== String(customer.address || "").trim()) {
+      await DataFind(`UPDATE tbl_customer SET address = ? WHERE id = ?`, [rawAddress, customer.id]);
+    }
+
+    const note = req.body.note !== undefined ? truncateText(req.body.note, 255) : truncateText(existing.note, 255);
+    const readySchedule = await getEffectiveReadySchedule(existing.store_id);
+    const readyResult = calculateReadyDateTime(parsedDT.dateObj, readySchedule);
+    const readyTimestamp = readyResult.combinedTimestamp;
+
+    const updateRes = await FullDataInsert(
+      `UPDATE tbl_order
+       SET order_type = ?, pickup_date = ?, pickup_address = ?, ready_date = ?, delivery_date = ?, note = ?
+       WHERE id = ? AND customer_id = ?`,
+      [
+        orderType,
+        parsedDT.mysqlDateTime,
+        pickupAddress,
+        readyTimestamp,
+        readyTimestamp,
+        note,
+        orderId,
+        String(req.user.id),
+      ]
+    );
+
+    if (updateRes === -1) {
+      return res.status(500).json({ success: false, message: "Failed to update pick-up request." });
+    }
+
+    const todayDateStr = extractLocalDateIso(new Date());
+    const humanPickup = formatHumanDateTime(parsedDT.dateObj);
+    const custName = formatCustomerName(customer);
+    const storeNotifMsg = `Customer (${custName}) updated Pick-up Request #${existing.order_id} to ${humanPickup}`;
+
+    await recordPortalNotification(existing.order_id, todayDateStr, req.user.id, existing.store_id, storeNotifMsg);
+    await recordPortalNotification(
+      existing.order_id,
+      todayDateStr,
+      existing.store_id,
+      req.user.id,
+      `Your pick-up request #${existing.order_id} was rescheduled to ${humanPickup}.`
+    );
+
+    broadcastCalendarChange({
+      action: "order_updated",
+      order_id: existing.id,
+      order_code: existing.order_id,
+      store_id: existing.store_id,
+    });
+
+    dispatchCustomerNotification({
+      eventKey: "schedule_rescheduled",
+      storeId: existing.store_id,
+      customerId: existing.customer_id,
+      orderId: existing.id,
+    }).catch((e) => console.error("Customer portal reschedule notification error:", e.message));
+
+    return res.status(200).json({
+      success: true,
+      message: `Pick-up request #${existing.order_id} updated to ${humanPickup}.`,
+    });
+  } catch (error) {
+    console.error("Error in POST /order/customer/pickup-request/:id/update:", error);
+    return res.status(500).json({ success: false, message: "Server error updating pick-up request." });
+  }
+});
+
+router.post("/customer/pickup-request/:id/cancel", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      return res.status(403).json({ success: false, message: "Database writes are disabled in demo mode." });
+    }
+    if (Number(req.user.loginas) !== 0) {
+      return res.status(403).json({ success: false, message: "Only logged-in customers can cancel pick-up requests." });
+    }
+
+    const orderId = parseInt(req.params.id, 10);
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: "Invalid request ID." });
+    }
+
+    const check = await loadModifiableCustomerPickupOrder(orderId, req.user.id);
+    if (check.errorStatus) {
+      return res.status(check.errorStatus).json({ success: false, message: check.errorMessage });
+    }
+    const existing = check.order;
+
+    const cancelReason = truncateText(req.body.reason || "Cancelled by customer", 200) || "Cancelled by customer";
+    const auditTag = `[CANCELLED BY CUSTOMER: ${cancelReason}]`;
+    const combinedNote = truncateText(
+      existing.note ? `${existing.note} | ${auditTag}` : auditTag,
+      255
+    );
+
+    const cancelRes = await FullDataInsert(
+      `UPDATE tbl_order
+       SET order_status = 6,
+           commission_status = '0',
+           void_reason = ?,
+           voided_by = ?,
+           note = ?,
+           stutus_change_date = CURRENT_TIMESTAMP
+       WHERE id = ? AND customer_id = ?`,
+      [cancelReason, `customer,${req.user.id}`, combinedNote, orderId, String(req.user.id)]
+    );
+
+    if (cancelRes === -1) {
+      return res.status(500).json({ success: false, message: "Failed to cancel pick-up request." });
+    }
+
+    const todayDateStr = extractLocalDateIso(new Date());
+    const { customer } = await resolveCustomerStoreContext(req.user.id, existing.store_id);
+    const custName = formatCustomerName(customer);
+    const storeNotifMsg = `Pick-up Request #${existing.order_id} cancelled by customer (${custName}). Reason: ${cancelReason}`;
+
+    await recordPortalNotification(existing.order_id, todayDateStr, req.user.id, existing.store_id, storeNotifMsg);
+    await recordPortalNotification(
+      existing.order_id,
+      todayDateStr,
+      existing.store_id,
+      req.user.id,
+      `Your pick-up request #${existing.order_id} has been cancelled.`
+    );
+
+    broadcastCalendarChange({
+      action: "order_updated",
+      order_id: existing.id,
+      order_code: existing.order_id,
+      store_id: existing.store_id,
+    });
+
+    dispatchCustomerNotification({
+      eventKey: "order_cancelled",
+      storeId: existing.store_id,
+      customerId: existing.customer_id,
+      orderId: existing.id,
+      extraData: { cancelReason },
+    }).catch((e) => console.error("Customer portal cancel notification error:", e.message));
+
+    return res.status(200).json({
+      success: true,
+      message: `Pick-up request #${existing.order_id} has been cancelled.`,
+    });
+  } catch (error) {
+    console.error("Error in POST /order/customer/pickup-request/:id/cancel:", error);
+    return res.status(500).json({ success: false, message: "Server error cancelling pick-up request." });
+  }
+});
+
+// ==========================================
+// ADMIN / STAFF PICKUP REQUESTS MANAGEMENT
+// ==========================================
+
+router.get("/pickup-requests", auth, async (req, res) => {
+  try {
+    await ensurePickupAddressSchema();
+    const scope = await resolveAdminPickupRequestsScope(req);
+    if (!scope.authorized) {
+      req.flash("error", scope.message || "You Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const storeList = await DataFind(
+      "SELECT id, name FROM tbl_store WHERE status=1 AND delete_flage=0 ORDER BY name ASC"
+    );
+
+    const storeFilterSql =
+      scope.login !== "master" && scope.scopedStoreId
+        ? ` AND store_id = '${String(scope.scopedStoreId).replace(/'/g, "\\'")}'`
+        : "";
+    const cntRows = await DataFind(
+      `SELECT COUNT(*) AS cnt FROM tbl_order WHERE order_status = ${ORDER_STATUS_SUBMITTED}${storeFilterSql}`
+    );
+    const pendingCount = cntRows && cntRows[0] ? Number(cntRows[0].cnt || 0) : 0;
+
+    return res.render("pickup_requests", {
+      login: scope.login,
+      isStaff: scope.isStaff,
+      staffStoreId: scope.staffStoreId,
+      scopedStoreId: scope.scopedStoreId,
+      storeList: storeList || [],
+      pendingCount,
+      accessdata: scope.accessdata,
+      language: req.language_data,
+      language_name: req.language_name,
+    });
+  } catch (error) {
+    console.error("GET /order/pickup-requests error:", error);
+    req.flash("error", "Error loading Pickup Requests");
+    return res.redirect(req.get("Referrer") || "/");
+  }
+});
+
+router.get("/pickup-requests/data", auth, async (req, res) => {
+  try {
+    await ensurePickupAddressSchema();
+    const scope = await resolveAdminPickupRequestsScope(req);
+    if (!scope.authorized) {
+      return res.status(403).json({ draw: parseInt(req.query.draw, 10) || 1, recordsTotal: 0, recordsFiltered: 0, data: [], error: scope.message });
+    }
+
+    const baseWhere = [`tbl_order.order_status = ${ORDER_STATUS_SUBMITTED}`];
+    if (scope.login !== "master" && scope.scopedStoreId) {
+      const cleanStore = String(scope.scopedStoreId).replace(/'/g, "\\'");
+      baseWhere.push(`tbl_order.store_id = '${cleanStore}'`);
+    }
+
+    const filterWhere = [];
+    const storeParam = req.query.store_filter || req.query.store_id;
+    if (
+      storeParam &&
+      scope.login === "master" &&
+      !["all", "ALL", "", "0"].includes(String(storeParam).trim())
+    ) {
+      const cleanStoreParam = String(storeParam).trim().replace(/'/g, "\\'");
+      filterWhere.push(`tbl_order.store_id = '${cleanStoreParam}'`);
+    }
+
+    const orderTypeParam = req.query.order_type;
+    if (orderTypeParam && !["all", "ALL", "", "0"].includes(String(orderTypeParam).trim())) {
+      const cleanOrderType = String(orderTypeParam).trim().replace(/'/g, "\\'");
+      filterWhere.push(`tbl_order.order_type = '${cleanOrderType}'`);
+    }
+
+    if (req.query.start_date) {
+      const cleanStart = String(req.query.start_date).trim().replace(/'/g, "\\'");
+      filterWhere.push(`DATE(tbl_order.pickup_date) >= '${cleanStart}'`);
+    }
+    if (req.query.end_date) {
+      const cleanEnd = String(req.query.end_date).trim().replace(/'/g, "\\'");
+      filterWhere.push(`DATE(tbl_order.pickup_date) <= '${cleanEnd}'`);
+    }
+
+    const result = await paginateDataTable(req, {
+      select: `
+        tbl_order.id,
+        tbl_order.order_id,
+        tbl_order.order_type,
+        tbl_order.order_date,
+        tbl_order.pickup_date,
+        tbl_order.pickup_address,
+        tbl_order.ready_date,
+        tbl_order.delivery_date,
+        tbl_order.note,
+        tbl_order.store_id,
+        tbl_order.customer_id,
+        tbl_order.order_status,
+        COALESCE(tbl_customer.name, '') AS customer_name,
+        COALESCE(tbl_customer.first_name, '') AS first_name,
+        COALESCE(tbl_customer.last_name, '') AS last_name,
+        COALESCE(tbl_customer.number, '') AS customer_number,
+        COALESCE(tbl_customer.email, '') AS customer_email,
+        COALESCE(tbl_customer.address, '') AS customer_address,
+        COALESCE(tbl_customer.city, '') AS customer_city,
+        COALESCE(tbl_customer.state, '') AS customer_state,
+        COALESCE(tbl_customer.zipcode, '') AS customer_zipcode,
+        COALESCE(tbl_store.name, '') AS storeName,
+        COALESCE(tbl_orderstatus.status, 'Submitted') AS orderStatusName
+      `,
+      from: `
+        tbl_order
+        LEFT JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id
+        LEFT JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id
+        LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id
+      `,
+      searchColumns: [
+        "tbl_order.order_id",
+        "tbl_customer.name",
+        "tbl_customer.first_name",
+        "tbl_customer.last_name",
+        "tbl_customer.number",
+        "tbl_customer.email",
+        "tbl_order.pickup_address",
+        "tbl_store.name",
+        "tbl_order.note",
+      ],
+      baseWhere,
+      filterWhere,
+      defaultOrder: "tbl_order.id DESC",
+      columnMap: {
+        0: "tbl_order.id",
+        1: "tbl_customer.last_name",
+        2: "tbl_order.order_type",
+        3: "tbl_order.pickup_date",
+        4: "tbl_order.pickup_address",
+        5: "tbl_store.name",
+      },
+      postProcess: async (rows) => {
+        return (rows || []).map((r) => {
+          const customerDisplayName = formatCustomerName({
+            first_name: r.first_name,
+            last_name: r.last_name,
+            name: r.customer_name,
+          });
+          const profileAddr = formatCustomerProfileAddress({
+            address: r.customer_address,
+            city: r.customer_city,
+            state: r.customer_state,
+            zipcode: r.customer_zipcode,
+          });
+          const effectiveAddress =
+            (r.pickup_address && String(r.pickup_address).trim()) || profileAddr || "No address provided";
+          const formattedOrderDate = formatHumanDateTime(r.order_date);
+          const formattedPickupDateTime = formatHumanDateTime(r.pickup_date);
+          const formattedReadyDateTime = formatHumanDateTime(r.ready_date || r.delivery_date);
+
+          return {
+            ...r,
+            customerDisplayName,
+            effectiveAddress,
+            orderTypeDisplay: OrderTypes.formatDisplay(r.order_type || OrderTypes.CANONICAL.PICKUP_DELIVERY),
+            pickupDateIso: extractLocalDateIso(r.pickup_date),
+            pickupTimeIso: extractLocalTimeIso(r.pickup_date) || "10:00",
+            formattedOrderDate,
+            formattedPickupDateTime,
+            formattedReadyDateTime,
+            isMaster: scope.login === "master",
+            canAccept: Boolean(scope.canAccept),
+          };
+        });
+      },
+    });
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("GET /order/pickup-requests/data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
+  }
+});
+
+router.post("/pickup-requests/:id/accept", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      return res.status(403).json({ success: false, message: "Database writes are disabled in demo mode." });
+    }
+    await ensurePickupAddressSchema();
+    const scope = await resolveAdminPickupRequestsScope(req);
+    if (!scope.authorized) {
+      return res.status(scope.status || 403).json({ success: false, message: scope.message });
+    }
+    if (!scope.canAccept) {
+      return res.status(403).json({ success: false, message: "You do not have permission to accept pickup requests." });
+    }
+
+    const orderId = parseInt(req.params.id, 10);
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: "Invalid pickup request ID." });
+    }
+
+    const ordRows = await DataFind("SELECT * FROM tbl_order WHERE id = ? LIMIT 1", [orderId]);
+    if (!ordRows || ordRows.length === 0) {
+      return res.status(404).json({ success: false, message: "Pickup request not found." });
+    }
+    const order = ordRows[0];
+
+    if (scope.login !== "master" && scope.scopedStoreId && String(order.store_id) !== String(scope.scopedStoreId)) {
+      return res.status(403).json({ success: false, message: "You are not authorized to accept requests for another store." });
+    }
+
+    if (Number(order.order_status) !== ORDER_STATUS_SUBMITTED) {
+      const msg = Number(order.order_status) === ORDER_STATUS_ACCEPTED
+        ? `Pickup request #${order.order_id} has already been accepted.`
+        : `Pickup request #${order.order_id} cannot be accepted in its current status.`;
+      return res.status(400).json({ success: false, message: msg });
+    }
+
+    let finalPickupDateTime = order.pickup_date;
+    let finalReadyDateTime = order.ready_date || order.delivery_date;
+    let finalDeliveryDateTime = order.delivery_date || order.ready_date;
+    let humanPickupStr = formatHumanDateTime(order.pickup_date);
+
+    const reqDate = req.body.pickup_date !== undefined ? String(req.body.pickup_date).trim() : "";
+    const reqTime = req.body.pickup_time !== undefined ? String(req.body.pickup_time).trim() : "";
+    if (reqDate && reqTime) {
+      const parsed = parseAdminScheduleDateTime(reqDate, reqTime);
+      if (!parsed.valid) {
+        return res.status(400).json({ success: false, message: parsed.message });
+      }
+      finalPickupDateTime = parsed.mysqlDateTime;
+      humanPickupStr = formatHumanDateTime(parsed.dateObj);
+
+      const readySchedule = await getEffectiveReadySchedule(order.store_id);
+      const readyResult = calculateReadyDateTime(parsed.dateObj, readySchedule);
+      finalReadyDateTime = readyResult.combinedTimestamp;
+      finalDeliveryDateTime = readyResult.combinedTimestamp;
+    }
+
+    const updatedNote =
+      req.body.note !== undefined ? truncateText(req.body.note, 255) : truncateText(order.note, 255);
+
+    const updateRes = await FullDataInsert(
+      `UPDATE tbl_order
+       SET order_status = ?,
+           pickup_date = ?,
+           ready_date = ?,
+           delivery_date = ?,
+           note = ?,
+           commission_status = '1',
+           stutus_change_date = CURRENT_TIMESTAMP
+       WHERE id = ? AND order_status = ?`,
+      [
+        ORDER_STATUS_ACCEPTED,
+        finalPickupDateTime,
+        finalReadyDateTime,
+        finalDeliveryDateTime,
+        updatedNote,
+        orderId,
+        ORDER_STATUS_SUBMITTED,
+      ]
+    );
+
+    if (updateRes === -1 || !updateRes || updateRes.affectedRows === 0) {
+      return res.status(409).json({
+        success: false,
+        message: "This pickup request could not be accepted because its status changed concurrently.",
+      });
+    }
+
+    const [updatedRows, custRows, storeRows, masterRows] = await Promise.all([
+      DataFind("SELECT * FROM tbl_order WHERE id = ? LIMIT 1", [orderId]),
+      order.customer_id && String(order.customer_id) !== "0"
+        ? DataFind("SELECT * FROM tbl_customer WHERE id = ? LIMIT 1", [order.customer_id])
+        : Promise.resolve([]),
+      order.store_id
+        ? DataFind("SELECT * FROM tbl_store WHERE id = ? LIMIT 1", [order.store_id])
+        : Promise.resolve([]),
+      DataFind("SELECT * FROM tbl_master_shop WHERE id = 1 LIMIT 1"),
+    ]);
+
+    const acceptedOrder = (updatedRows && updatedRows[0]) || {
+      ...order,
+      order_status: ORDER_STATUS_ACCEPTED,
+      pickup_date: finalPickupDateTime,
+      ready_date: finalReadyDateTime,
+      delivery_date: finalDeliveryDateTime,
+      note: updatedNote,
+    };
+    const customer = (custRows && custRows[0]) || null;
+    const storeObj = (storeRows && storeRows[0]) || null;
+    const masterObj = (masterRows && masterRows[0]) || (scope.accessdata?.masterstore || {});
+
+    const todayDateStr = extractLocalDateIso(new Date());
+    const staffName = scope.accessdata?.topbardata?.name || "Staff";
+    const senderActorId = scope.accessdata?.topbardata?.id || scope.userId;
+
+    await recordPortalNotification(
+      acceptedOrder.order_id,
+      todayDateStr,
+      senderActorId,
+      acceptedOrder.customer_id,
+      `Your pick-up request #${acceptedOrder.order_id} has been ACCEPTED! Confirmed pick-up: ${humanPickupStr}.`
+    );
+    await recordPortalNotification(
+      acceptedOrder.order_id,
+      todayDateStr,
+      senderActorId,
+      acceptedOrder.store_id,
+      `Pick-up Request #${acceptedOrder.order_id} accepted into Orders by ${staffName}.`
+    );
+
+    broadcastCalendarChange({
+      action: "order_updated",
+      order_id: acceptedOrder.id,
+      order_code: acceptedOrder.order_id,
+      store_id: acceptedOrder.store_id,
+      is_pickup_request_accepted: true,
+    });
+
+    let notifResult = { sentEmail: false, sentSms: false, sentPush: false };
+    try {
+      notifResult = await dispatchCustomerNotification({
+        eventKey: "pickup_request_accepted",
+        storeId: acceptedOrder.store_id,
+        customerId: acceptedOrder.customer_id,
+        orderId: acceptedOrder.id,
+        accessdata: scope.accessdata,
+      });
+    } catch (notifErr) {
+      console.error("Pickup acceptance notification dispatch error:", notifErr.message);
+      notifResult = { sentEmail: false, sentSms: false, sentPush: false, error: notifErr.message };
+    }
+
+    const waMessage = formatWhatsAppPickupAcceptedMessage({
+      order: acceptedOrder,
+      customer,
+      store: storeObj,
+      master: masterObj,
+    });
+    const rawPhone = customer?.number || "";
+    const waNumber = formatWhatsAppNumber(rawPhone);
+    const waUrl = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}` : "";
+
+    return res.status(200).json({
+      success: true,
+      message: `Pick-up request #${acceptedOrder.order_id} accepted and moved to active Orders.`,
+      orderId: acceptedOrder.id,
+      orderCode: acceptedOrder.order_id,
+      orderStatus: ORDER_STATUS_ACCEPTED,
+      notifications: {
+        emailSent: Boolean(notifResult?.sentEmail),
+        smsSent: Boolean(notifResult?.sentSms),
+        pushSent: Boolean(notifResult?.sentPush),
+        skipped: Boolean(notifResult?.skipped),
+        error: notifResult?.error || null,
+      },
+      whatsapp: {
+        customerName: formatCustomerName(customer),
+        customerEmail: customer?.email || "",
+        phone: rawPhone,
+        waNumber,
+        waUrl,
+        message: waMessage,
+      },
+    });
+  } catch (error) {
+    console.error("POST /order/pickup-requests/:id/accept error:", error);
+    return res.status(500).json({ success: false, message: "Server error accepting pickup request." });
+  }
+});
+
+router.post("/pickup-requests/:id/reject", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      return res.status(403).json({ success: false, message: "Database writes are disabled in demo mode." });
+    }
+    await ensurePickupAddressSchema();
+    const scope = await resolveAdminPickupRequestsScope(req);
+    if (!scope.authorized) {
+      return res.status(scope.status || 403).json({ success: false, message: scope.message });
+    }
+    if (!scope.canAccept) {
+      return res.status(403).json({ success: false, message: "You do not have permission to decline pickup requests." });
+    }
+
+    const orderId = parseInt(req.params.id, 10);
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: "Invalid pickup request ID." });
+    }
+
+    const ordRows = await DataFind("SELECT * FROM tbl_order WHERE id = ? LIMIT 1", [orderId]);
+    if (!ordRows || ordRows.length === 0) {
+      return res.status(404).json({ success: false, message: "Pickup request not found." });
+    }
+    const order = ordRows[0];
+
+    if (scope.login !== "master" && scope.scopedStoreId && String(order.store_id) !== String(scope.scopedStoreId)) {
+      return res.status(403).json({ success: false, message: "You are not authorized to reject requests for another store." });
+    }
+
+    if (Number(order.order_status) !== ORDER_STATUS_SUBMITTED) {
+      return res.status(400).json({
+        success: false,
+        message: `Pickup request #${order.order_id} is no longer in Submitted state.`,
+      });
+    }
+
+    const rejectReason = truncateText(req.body.reason || "Declined by store", 200) || "Declined by store";
+    const auditTag = `[REJECTED BY STORE: ${rejectReason}]`;
+    const combinedNote = truncateText(
+      order.note ? `${order.note} | ${auditTag}` : auditTag,
+      255
+    );
+
+    const updateRes = await FullDataInsert(
+      `UPDATE tbl_order
+       SET order_status = 6,
+           commission_status = '0',
+           void_reason = ?,
+           voided_by = ?,
+           note = ?,
+           stutus_change_date = CURRENT_TIMESTAMP
+       WHERE id = ? AND order_status = ?`,
+      [rejectReason, `staff,${scope.userId}`, combinedNote, orderId, ORDER_STATUS_SUBMITTED]
+    );
+
+    if (updateRes === -1 || !updateRes || updateRes.affectedRows === 0) {
+      return res.status(409).json({
+        success: false,
+        message: "Could not decline request because its status changed concurrently.",
+      });
+    }
+
+    const todayDateStr = extractLocalDateIso(new Date());
+    const senderActorId = scope.accessdata?.topbardata?.id || scope.userId;
+    await recordPortalNotification(
+      order.order_id,
+      todayDateStr,
+      senderActorId,
+      order.customer_id,
+      `Your pick-up request #${order.order_id} was declined. Reason: ${rejectReason}`
+    );
+    await recordPortalNotification(
+      order.order_id,
+      todayDateStr,
+      senderActorId,
+      order.store_id,
+      `Pick-up Request #${order.order_id} declined by ${scope.accessdata?.topbardata?.name || "Staff"}. Reason: ${rejectReason}`
+    );
+
+    broadcastCalendarChange({
+      action: "order_updated",
+      order_id: order.id,
+      order_code: order.order_id,
+      store_id: order.store_id,
+      is_pickup_request_rejected: true,
+    });
+
+    dispatchCustomerNotification({
+      eventKey: "order_cancelled",
+      storeId: order.store_id,
+      customerId: order.customer_id,
+      orderId: order.id,
+      extraData: { cancelReason: rejectReason },
+      accessdata: scope.accessdata,
+    }).catch((e) => console.error("Pickup reject notification error:", e.message));
+
+    return res.status(200).json({
+      success: true,
+      message: `Pick-up request #${order.order_id} has been declined and cancelled.`,
+    });
+  } catch (error) {
+    console.error("POST /order/pickup-requests/:id/reject error:", error);
+    return res.status(500).json({ success: false, message: "Server error declining pickup request." });
   }
 });
 

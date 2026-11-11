@@ -395,10 +395,26 @@
             $('#update_printer_setting_read').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('read')))
             $('#update_printer_setting_edit').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('edit')))
             $('#update_all_staff_records_read').prop('checked', Boolean(rolldata.all_staff_records && rolldata.all_staff_records.includes('read')))
+            $('#update_customer_credentials_edit').prop('checked', Boolean(rolldata.customer_credentials && rolldata.customer_credentials.includes('edit')))
+
+            $('#update_pickup_requests_read').prop('checked', Boolean(rolldata.pickup_requests && rolldata.pickup_requests.includes('read')))
+            $('#update_pickup_requests_edit').prop('checked', Boolean(rolldata.pickup_requests && rolldata.pickup_requests.includes('edit')))
+
+            $('#update_racks_read').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('read')))
+            $('#update_racks_write').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('write')))
+            $('#update_racks_edit').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('edit')))
+            $('#update_racks_delete').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('delete')))
+
+            $('#update_route_calendar_read').prop('checked', Boolean(rolldata.route_calendar && rolldata.route_calendar.includes('read')))
+            $('#update_route_calendar_edit').prop('checked', Boolean(rolldata.route_calendar && rolldata.route_calendar.includes('edit')))
+
+            $('#update_pos_price_discount_override_edit').prop('checked', Boolean(rolldata.pos_price_discount_override && rolldata.pos_price_discount_override.includes('edit')))
+            $('#update_order_payment_collect_write').prop('checked', Boolean(rolldata.order_payment_collect && rolldata.order_payment_collect.includes('write')))
+            $('#update_financial_reports_read').prop('checked', Boolean(rolldata.financial_reports && rolldata.financial_reports.includes('read')))
 
 
 
-            $('#rollactive').attr('checked', rolldata.delet_flage == 0 ? true : false)
+            $('#rollactive').prop('checked', rolldata.delet_flage == 0 ? true : false)
 
 
 
@@ -520,10 +536,26 @@
             $('#updatestore_printer_setting_read').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('read')))
             $('#updatestore_printer_setting_edit').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('edit')))
             $('#updatestore_all_staff_records_read').prop('checked', Boolean(rolldata.all_staff_records && rolldata.all_staff_records.includes('read')))
+            $('#updatestore_customer_credentials_edit').prop('checked', Boolean(rolldata.customer_credentials && rolldata.customer_credentials.includes('edit')))
+
+            $('#updatestore_pickup_requests_read').prop('checked', Boolean(rolldata.pickup_requests && rolldata.pickup_requests.includes('read')))
+            $('#updatestore_pickup_requests_edit').prop('checked', Boolean(rolldata.pickup_requests && rolldata.pickup_requests.includes('edit')))
+
+            $('#updatestore_racks_read').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('read')))
+            $('#updatestore_racks_write').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('write')))
+            $('#updatestore_racks_edit').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('edit')))
+            $('#updatestore_racks_delete').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('delete')))
+
+            $('#updatestore_route_calendar_read').prop('checked', Boolean(rolldata.route_calendar && rolldata.route_calendar.includes('read')))
+            $('#updatestore_route_calendar_edit').prop('checked', Boolean(rolldata.route_calendar && rolldata.route_calendar.includes('edit')))
+
+            $('#updatestore_pos_price_discount_override_edit').prop('checked', Boolean(rolldata.pos_price_discount_override && rolldata.pos_price_discount_override.includes('edit')))
+            $('#updatestore_order_payment_collect_write').prop('checked', Boolean(rolldata.order_payment_collect && rolldata.order_payment_collect.includes('write')))
+            $('#updatestore_financial_reports_read').prop('checked', Boolean(rolldata.financial_reports && rolldata.financial_reports.includes('read')))
 
 
 
-            $('#rollactive').attr('checked', rolldata.delet_flage == 0 ? true : false)
+            $('#rollactive').prop('checked', rolldata.delet_flage == 0 ? true : false)
 
 
 
@@ -1427,7 +1459,10 @@
    };
 
    function renderCartRowHTML(value, isEdit, orderId, loginas) {
-      var isRateDisabled = (loginas === 0 || loginas === '0');
+      var isCustomerDisabled = (loginas === 0 || loginas === '0');
+      var canOverridePrice = !isCustomerDisabled && ($('#can_override_pos_price_discount').val() !== '0');
+      var isRateDisabled = !canOverridePrice;
+      var brandColorDisabledAttr = isCustomerDisabled ? 'disabled' : '';
       var rateReadonly = isRateDisabled ? 'readonly' : '';
       var rateDisabledAttr = isRateDisabled ? 'disabled' : '';
       var rateStepperClass = isRateDisabled ? 'pos-stepper is-readonly' : 'pos-stepper';
@@ -1479,7 +1514,7 @@
          colorSwatchesHtml = '<i class="fa fa-palette me-1"></i><span class="pos-color-label text-truncate" style="max-width: 115px;">' + colorAndPatternLabel + '</span>';
       }
 
-      var colorBtnHtml = '<button type="button" class="btn btn-xs pos-btn-color ' + colorBtnClass + ' px-2 py-1 text-truncate d-inline-flex align-items-center" style="max-width: 145px; font-size: 11px;" data-id="' + value.id + '" data-primary-color="' + primColor.replace(/"/g, '&quot;') + '" data-secondary-color="' + secColor.replace(/"/g, '&quot;') + '" data-pattern="' + pattern.replace(/"/g, '&quot;') + '" data-brand-id="' + (value.brand_id || 0) + '" data-brand-label="' + brandLabel.replace(/"/g, '&quot;') + '" data-original-rate="' + origRate + '"' + orderAttr + ' title="' + colorTitle.replace(/"/g, '&quot;') + '" ' + rateDisabledAttr + '>' +
+      var colorBtnHtml = '<button type="button" class="btn btn-xs pos-btn-color ' + colorBtnClass + ' px-2 py-1 text-truncate d-inline-flex align-items-center" style="max-width: 145px; font-size: 11px;" data-id="' + value.id + '" data-primary-color="' + primColor.replace(/"/g, '&quot;') + '" data-secondary-color="' + secColor.replace(/"/g, '&quot;') + '" data-pattern="' + pattern.replace(/"/g, '&quot;') + '" data-brand-id="' + (value.brand_id || 0) + '" data-brand-label="' + brandLabel.replace(/"/g, '&quot;') + '" data-original-rate="' + origRate + '"' + orderAttr + ' title="' + colorTitle.replace(/"/g, '&quot;') + '" ' + brandColorDisabledAttr + '>' +
          colorSwatchesHtml +
          '</button>';
 
@@ -1491,7 +1526,7 @@
          '</div>' +
          '</td>' +
          '<td class="text-center">' +
-         '<button type="button" class="btn btn-xs ' + brandBtnClass + ' px-2 py-1 text-truncate pos-btn-brand" style="max-width: 85px; font-size: 11px;" data-id="' + value.id + '" data-brand-id="' + (value.brand_id || 0) + '" data-brand-label="' + brandLabel.replace(/"/g, '&quot;') + '" data-primary-color="' + primColor.replace(/"/g, '&quot;') + '" data-secondary-color="' + secColor.replace(/"/g, '&quot;') + '" data-pattern="' + pattern.replace(/"/g, '&quot;') + '" data-original-rate="' + origRate + '"' + orderAttr + ' title="' + brandTitle.replace(/"/g, '&quot;') + '" ' + rateDisabledAttr + '>' +
+         '<button type="button" class="btn btn-xs ' + brandBtnClass + ' px-2 py-1 text-truncate pos-btn-brand" style="max-width: 85px; font-size: 11px;" data-id="' + value.id + '" data-brand-id="' + (value.brand_id || 0) + '" data-brand-label="' + brandLabel.replace(/"/g, '&quot;') + '" data-primary-color="' + primColor.replace(/"/g, '&quot;') + '" data-secondary-color="' + secColor.replace(/"/g, '&quot;') + '" data-pattern="' + pattern.replace(/"/g, '&quot;') + '" data-original-rate="' + origRate + '"' + orderAttr + ' title="' + brandTitle.replace(/"/g, '&quot;') + '" ' + brandColorDisabledAttr + '>' +
          '<i class="fa fa-tag me-1"></i>' + brandBtnText +
          '</button>' +
          '</td>' +
@@ -1547,7 +1582,7 @@
                $.each(res.cartservice, function (index, value) {
                   $('#POS_service_added_list').append(renderCartRowHTML(value, false, null, res.loginas));
                })
-               if (res.loginas == 0) {
+               if (res.loginas == 0 || $('#can_override_pos_price_discount').val() === '0') {
                   $('input[name=service_type_price]').prop('readonly', true)
                }
 
@@ -1583,7 +1618,7 @@
                $.each(res.cartservice, function (index, value) {
                   $('#POS_service_added_list').append(renderCartRowHTML(value, true, res.order_date.id, res.loginas));
                })
-               if (res.loginas == 0) {
+               if (res.loginas == 0 || $('#can_override_pos_price_discount').val() === '0') {
                   $('input[name=service_type_price]').prop('readonly', true)
                }
 
@@ -1622,7 +1657,7 @@
             $.each(res.cartservice, function (index, value) {
                $('#POS_service_added_list').append(renderCartRowHTML(value, true, res.order_date.id, res.loginas));
             })
-            if (res.loginas == 0) {
+            if (res.loginas == 0 || $('#can_override_pos_price_discount').val() === '0') {
                $('input[name=service_type_price]').prop('readonly', true)
             }
             poscurrency()
@@ -1648,7 +1683,7 @@
             $.each(res.cartservice, function (index, value) {
                $('#POS_service_added_list').append(renderCartRowHTML(value, false, null, res.loginas));
             })
-            if (res.loginas == 0) {
+            if (res.loginas == 0 || $('#can_override_pos_price_discount').val() === '0') {
                $('input[name=service_type_price]').prop('readonly', true)
             }
             poscurrency()
@@ -3115,7 +3150,7 @@
                   $('#POS_service_added_list').append(renderCartRowHTML(value, false, null, res.loginas));
                });
             }
-            if (res.loginas == 0) {
+            if (res.loginas == 0 || $('#can_override_pos_price_discount').val() === '0') {
                $('input[name=service_type_price]').prop('readonly', true);
             }
             poscurrency();
@@ -3160,7 +3195,7 @@
             $.each(res.cartservice, function (index, value) {
                $('#POS_service_added_list').append(renderCartRowHTML(value, false, null, res.loginas));
             });
-            if (res.loginas == 0) {
+            if (res.loginas == 0 || $('#can_override_pos_price_discount').val() === '0') {
                $('input[name=service_type_price]').prop('readonly', true);
             }
             poscurrency();
@@ -3187,7 +3222,7 @@
             $.each(res.cartservice, function (index, value) {
                $('#POS_service_added_list').append(renderCartRowHTML(value, false, null, res.loginas));
             });
-            if (res.loginas == 0) {
+            if (res.loginas == 0 || $('#can_override_pos_price_discount').val() === '0') {
                $('input[name=service_type_price]').prop('readonly', true);
             }
             poscurrency();
@@ -3221,7 +3256,7 @@
             $.each(res.cartservice, function (index, value) {
                $('#POS_service_added_list').append(renderCartRowHTML(value, true, res.order_date.id, res.loginas));
             });
-            if (res.loginas == 0) {
+            if (res.loginas == 0 || $('#can_override_pos_price_discount').val() === '0') {
                $('input[name=service_type_price]').prop('readonly', true);
             }
             poscurrency();
@@ -3254,7 +3289,7 @@
             $.each(res.cartservice, function (index, value) {
                $('#POS_service_added_list').append(renderCartRowHTML(value, true, res.order_date.id, res.loginas));
             });
-            if (res.loginas == 0) {
+            if (res.loginas == 0 || $('#can_override_pos_price_discount').val() === '0') {
                $('input[name=service_type_price]').prop('readonly', true);
             }
             poscurrency();
@@ -3283,7 +3318,7 @@
             $.each(res.cartservice, function (index, value) {
                $('#POS_service_added_list').append(renderCartRowHTML(value, false, null, res.loginas));
             })
-            if (res.loginas == 0) {
+            if (res.loginas == 0 || $('#can_override_pos_price_discount').val() === '0') {
                $('input[name=service_type_price]').prop('readonly', true)
             }
             poscurrency()
@@ -3319,7 +3354,7 @@
             $.each(res.cartservice, function (index, value) {
                $('#POS_service_added_list').append(renderCartRowHTML(value, true, res.order_date.id, res.loginas));
             })
-            if (res.loginas == 0) {
+            if (res.loginas == 0 || $('#can_override_pos_price_discount').val() === '0') {
                $('input[name=service_type_price]').prop('readonly', true)
             }
             poscurrency()
@@ -3353,7 +3388,7 @@
             $.each(res.cartservice, function (index, value) {
                $('#POS_service_added_list').append(renderCartRowHTML(value, true, res.order_date.id, res.loginas));
             })
-            if (res.loginas == 0) {
+            if (res.loginas == 0 || $('#can_override_pos_price_discount').val() === '0') {
                $('input[name=service_type_price]').prop('readonly', true)
             }
             poscurrency()
@@ -3387,7 +3422,7 @@
             $.each(res.cartservice, function (index, value) {
                $('#POS_service_added_list').append(renderCartRowHTML(value, false, null, res.loginas));
             })
-            if (res.loginas == 0) {
+            if (res.loginas == 0 || $('#can_override_pos_price_discount').val() === '0') {
                $('input[name=service_type_price]').prop('readonly', true)
             }
             poscurrency()
@@ -5963,10 +5998,27 @@
 
             $('#update_printer_setting_read').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('read')))
             $('#update_printer_setting_edit').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('edit')))
+            $('#update_all_staff_records_read').prop('checked', Boolean(rolldata.all_staff_records && rolldata.all_staff_records.includes('read')))
+            $('#update_customer_credentials_edit').prop('checked', Boolean(rolldata.customer_credentials && rolldata.customer_credentials.includes('edit')))
+
+            $('#update_pickup_requests_read').prop('checked', Boolean(rolldata.pickup_requests && rolldata.pickup_requests.includes('read')))
+            $('#update_pickup_requests_edit').prop('checked', Boolean(rolldata.pickup_requests && rolldata.pickup_requests.includes('edit')))
+
+            $('#update_racks_read').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('read')))
+            $('#update_racks_write').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('write')))
+            $('#update_racks_edit').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('edit')))
+            $('#update_racks_delete').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('delete')))
+
+            $('#update_route_calendar_read').prop('checked', Boolean(rolldata.route_calendar && rolldata.route_calendar.includes('read')))
+            $('#update_route_calendar_edit').prop('checked', Boolean(rolldata.route_calendar && rolldata.route_calendar.includes('edit')))
+
+            $('#update_pos_price_discount_override_edit').prop('checked', Boolean(rolldata.pos_price_discount_override && rolldata.pos_price_discount_override.includes('edit')))
+            $('#update_order_payment_collect_write').prop('checked', Boolean(rolldata.order_payment_collect && rolldata.order_payment_collect.includes('write')))
+            $('#update_financial_reports_read').prop('checked', Boolean(rolldata.financial_reports && rolldata.financial_reports.includes('read')))
 
 
 
-            $('#rollactive').attr('checked', rolldata.delet_flage == 0 ? true : false)
+            $('#rollactive').prop('checked', rolldata.delet_flage == 0 ? true : false)
 
 
 
@@ -6085,10 +6137,27 @@
 
             $('#updatestore_printer_setting_read').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('read')))
             $('#updatestore_printer_setting_edit').prop('checked', Boolean(rolldata.printer_setting && rolldata.printer_setting.includes('edit')))
+            $('#updatestore_all_staff_records_read').prop('checked', Boolean(rolldata.all_staff_records && rolldata.all_staff_records.includes('read')))
+            $('#updatestore_customer_credentials_edit').prop('checked', Boolean(rolldata.customer_credentials && rolldata.customer_credentials.includes('edit')))
+
+            $('#updatestore_pickup_requests_read').prop('checked', Boolean(rolldata.pickup_requests && rolldata.pickup_requests.includes('read')))
+            $('#updatestore_pickup_requests_edit').prop('checked', Boolean(rolldata.pickup_requests && rolldata.pickup_requests.includes('edit')))
+
+            $('#updatestore_racks_read').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('read')))
+            $('#updatestore_racks_write').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('write')))
+            $('#updatestore_racks_edit').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('edit')))
+            $('#updatestore_racks_delete').prop('checked', Boolean(rolldata.racks && rolldata.racks.includes('delete')))
+
+            $('#updatestore_route_calendar_read').prop('checked', Boolean(rolldata.route_calendar && rolldata.route_calendar.includes('read')))
+            $('#updatestore_route_calendar_edit').prop('checked', Boolean(rolldata.route_calendar && rolldata.route_calendar.includes('edit')))
+
+            $('#updatestore_pos_price_discount_override_edit').prop('checked', Boolean(rolldata.pos_price_discount_override && rolldata.pos_price_discount_override.includes('edit')))
+            $('#updatestore_order_payment_collect_write').prop('checked', Boolean(rolldata.order_payment_collect && rolldata.order_payment_collect.includes('write')))
+            $('#updatestore_financial_reports_read').prop('checked', Boolean(rolldata.financial_reports && rolldata.financial_reports.includes('read')))
 
 
 
-            $('#rollactive').attr('checked', rolldata.delet_flage == 0 ? true : false)
+            $('#rollactive').prop('checked', rolldata.delet_flage == 0 ? true : false)
 
 
 

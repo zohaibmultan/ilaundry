@@ -41,7 +41,7 @@
                     <div class="input-group">
                       <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
                       <input class="form-control" type="search" id="dtCustomerSearch"
-                        placeholder="<%= language.Search || 'Search customers by name, phone, email, address...' %>">
+                        placeholder="Search customers by name, username, phone, email, address...">
                     </div>
                   </div>
                   <div class="<%= (ismulty && login==='master') ? 'col-6 col-sm-3 col-md-3 col-lg-3' : 'col-6 col-sm-4 col-md-3 col-lg-3' %>">
@@ -72,7 +72,7 @@
                       </select>
                     </div>
                   <% } %>
-                  
+
                   <div class="<%= (ismulty && login==='master') ? 'col-6 col-sm-3 col-md-2 col-lg-2' : 'col-12 col-sm-4 col-md-2 col-lg-2' %>">
                     <select class="form-select" id="dtCustomerPageLength">
                       <option value="10">10 <%= language.Entries || 'entries' %></option>
@@ -107,7 +107,7 @@
                         <th style="width: 110px;">
                           <%= language.Status %>
                         </th>
-                        <th class="text-center" style="width: 130px;">
+                        <th class="text-center" style="width: 165px;">
                           <%= language.Action %>
                         </th>
                       </tr>
@@ -417,6 +417,79 @@
       </div>
     </div>
 
+    <!-- Customer Credentials Update Modal -->
+    <div class="modal fade" id="customerCredentialsModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+        <form id="customer_credentials_form" action="/coustomer/update-credentials/" method="post" class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+              <i class="fa fa-key text-primary"></i>
+              <span><%= language.Update_Credentials || 'Update Username & Password' %></span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="p-2 px-3 mb-3 rounded-3 border bg-light-subtle d-flex align-items-center gap-2">
+              <i class="fa fa-user-circle text-primary fs-5"></i>
+              <div>
+                <small class="text-muted d-block"><%= language.Customer_Name || 'Customer' %></small>
+                <span class="fw-bold text-dark-emphasis" id="credCustomerName"></span>
+              </div>
+            </div>
+
+            <div class="alert alert-danger py-2 px-3 d-none" id="credErrorAlert" role="alert"></div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold" for="cred_username">
+                <%= language.Username || 'Username' %> <span class="text-danger">*</span>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fa fa-at text-muted"></i></span>
+                <input type="text" class="form-control" id="cred_username" name="username" placeholder="Enter login username" required autocomplete="off">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold" for="cred_new_password">
+                <%= language.New_Password || 'New Password' %>
+                <span class="text-muted fw-normal fs-12">(<%= language.Optional || 'Optional' %>)</span>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fa fa-lock text-muted"></i></span>
+                <input type="password" class="form-control" id="cred_new_password" name="new_password" minlength="6" placeholder="Leave blank to keep current password" autocomplete="new-password">
+                <button type="button" class="btn btn-outline-secondary btn-toggle-cred-pw" data-target="cred_new_password" title="Show/Hide Password">
+                  <i class="fa fa-eye"></i>
+                </button>
+              </div>
+              <small class="text-muted">Minimum 6 characters when changing password. Leave blank to update username only.</small>
+            </div>
+
+            <div class="mb-1">
+              <label class="form-label fw-bold" for="cred_confirm_password">
+                <%= language.Confirm_Password || 'Confirm New Password' %>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fa fa-check-double text-muted"></i></span>
+                <input type="password" class="form-control" id="cred_confirm_password" name="confirm_password" minlength="6" placeholder="Re-enter new password" autocomplete="new-password">
+                <button type="button" class="btn btn-outline-secondary btn-toggle-cred-pw" data-target="cred_confirm_password" title="Show/Hide Password">
+                  <i class="fa fa-eye"></i>
+                </button>
+              </div>
+              <div class="mt-1 small" id="credMatchFeedback"></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+            </button>
+            <button type="submit" class="btn btn-primary" id="btnSaveCredentials">
+              <i class="fa fa-save me-2"></i><%= language.Save || 'Save Changes' %>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <%- include('templet/footer')-%>
 </div>
 
@@ -451,7 +524,10 @@
                   const displayName = (row.last_name && row.first_name)
                     ? `${escapeHtml(row.last_name)}, ${escapeHtml(row.first_name)}`
                     : escapeHtml(data || row.first_name || row.last_name || '');
-                  return `<div class="fw-bold text-dark">${displayName}</div>`;
+                  const usernameHtml = row.username
+                    ? `<div class="text-xs text-muted fw-normal"><i class="fa fa-at me-1 opacity-75"></i>${escapeHtml(row.username)}</div>`
+                    : '';
+                  return `<div class="fw-bold text-dark">${displayName}</div>${usernameHtml}`;
         }
       },
       {
@@ -513,17 +589,20 @@
       searchable: false,
       className: 'text-center',
       render: function (data, type, row) {
+        const custDisplayName = (row.last_name && row.first_name)
+          ? `${row.last_name}, ${row.first_name}`
+          : (row.name || row.first_name || row.last_name || '');
         let html = '<div class="tbl-action-group justify-content-center">';
         if (row.canEdit) {
           html += `
-    <a href="#" class="btn-dt-action btn-edit btn-edit-customer" 
+    <a href="#" class="btn-dt-action btn-edit btn-edit-customer"
         data-bs-toggle="modal" data-bs-target="#coustomer"
-        data-id="${row.id}" 
-        data-name="${escapeHtml(row.name)}" 
+        data-id="${row.id}"
+        data-name="${escapeHtml(row.name)}"
                data-first-name="${escapeHtml(row.first_name || '')}"
                data-last-name="${escapeHtml(row.last_name || '')}"
-        data-number="${escapeHtml(row.number)}" 
-        data-email="${escapeHtml(row.email)}" 
+        data-number="${escapeHtml(row.number)}"
+        data-email="${escapeHtml(row.email)}"
         data-address="${escapeHtml(row.address || '')}"
         data-city="${escapeHtml(row.city || '')}"
         data-state="${escapeHtml(row.state || '')}"
@@ -532,13 +611,24 @@
         data-memo="${escapeHtml(row.memo || '')}"
         data-dob="${escapeHtml(row.dob || '')}"
         data-customer-type="${escapeHtml(row.customer_type || 'Counter • Counter')}"
-        data-tax="${escapeHtml(row.taxnumber)}" 
-        data-approved="${row.approved}" 
-        data-active="${row.delet_flage}" 
+        data-tax="${escapeHtml(row.taxnumber)}"
+        data-approved="${row.approved}"
+        data-active="${row.delet_flage}"
         data-roll="${row.roll_id}"
         title="<%= language.Edit || 'Edit' %>">
       <i class="fas fa-pencil-alt"></i>
     </a>`;
+        }
+        if (row.canResetCredentials) {
+          html += `
+    <button type="button" class="btn-dt-action btn-credentials btn-credentials-customer"
+            data-bs-toggle="modal" data-bs-target="#customerCredentialsModal"
+            data-id="${row.id}"
+            data-name="${escapeHtml(custDisplayName)}"
+            data-username="${escapeHtml(row.username || '')}"
+            title="<%= language.Update_Credentials || 'Update Username & Password' %>">
+      <i class="fa fa-key"></i>
+    </button>`;
         }
         if (row.transiction > 0) {
           html += `
@@ -547,13 +637,10 @@
     </a>`;
         }
         if (row.canDelete) {
-                  const custDisplayName = (row.last_name && row.first_name)
-                    ? `${row.last_name}, ${row.first_name}`
-                    : (row.name || row.first_name || row.last_name || '');
           html += `
     <button type="button" class="btn-dt-action btn-delete btn-delete-customer"
             data-bs-toggle="modal" data-bs-target="#deleteCustomerModal"
-                    data-id="${row.id}" 
+                    data-id="${row.id}"
                     data-name="${escapeHtml(custDisplayName)}"
                     data-first-name="${escapeHtml(row.first_name || '')}"
                     data-last-name="${escapeHtml(row.last_name || '')}"
@@ -685,6 +772,151 @@
               : ($(this).attr('data-name') || '');
     $('#deleteCustomerModalName').text(custName || '');
     $('#deleteCustomerConfirmBtn').attr('href', '/coustomer/delete/' + custId);
+  });
+
+  function populateCustomerCredentialsModal(triggerEl) {
+    const $btn = $(triggerEl).closest('.btn-credentials-customer, [data-bs-target="#customerCredentialsModal"], button, a');
+    const custId = $btn.attr('data-id') || '';
+    const custName = $btn.attr('data-name') || '';
+    const custUsername = $btn.attr('data-username') || '';
+
+    $('#credCustomerName').text(custName || ('#' + custId));
+    $('#cred_username').val(custUsername);
+    $('#cred_new_password').val('').attr('type', 'password');
+    $('#cred_confirm_password').val('').attr('type', 'password');
+    $('.btn-toggle-cred-pw i').removeClass('fa-eye-slash').addClass('fa-eye');
+    $('#credMatchFeedback').html('');
+    $('#credErrorAlert').addClass('d-none').text('');
+    $('#customer_credentials_form').attr('action', custId ? ('/coustomer/update-credentials/' + custId) : '/coustomer/update-credentials/');
+  }
+
+  $(document).on('click', '.btn-credentials-customer', function () {
+    populateCustomerCredentialsModal(this);
+  });
+
+  $('#customerCredentialsModal').on('show.bs.modal', function (e) {
+    if (e.relatedTarget) {
+      populateCustomerCredentialsModal(e.relatedTarget);
+    }
+  });
+
+  $(document).on('click', '.btn-toggle-cred-pw', function () {
+    const targetId = $(this).attr('data-target');
+    const $input = $('#' + targetId);
+    const $icon = $(this).find('i');
+    if (!$input.length) return;
+    if ($input.attr('type') === 'password') {
+      $input.attr('type', 'text');
+      $icon.removeClass('fa-eye').addClass('fa-eye-slash');
+    } else {
+      $input.attr('type', 'password');
+      $icon.removeClass('fa-eye-slash').addClass('fa-eye');
+    }
+  });
+
+  function updateCredPasswordMatch() {
+    const p1 = $('#cred_new_password').val() || '';
+    const p2 = $('#cred_confirm_password').val() || '';
+    const $fb = $('#credMatchFeedback');
+    if (!p1 && !p2) {
+      $fb.html('');
+      return;
+    }
+    if (p1.length > 0 && p1.length < 6) {
+      $fb.html('<span class="text-warning"><i class="fa fa-exclamation-triangle me-1"></i>Minimum 6 characters required.</span>');
+      return;
+    }
+    if (p2.length === 0) {
+      $fb.html('');
+      return;
+    }
+    if (p1 === p2) {
+      $fb.html('<span class="text-success"><i class="fa fa-check-circle me-1"></i>Passwords match.</span>');
+    } else {
+      $fb.html('<span class="text-danger"><i class="fa fa-times-circle me-1"></i>Passwords do not match.</span>');
+    }
+  }
+
+  $('#cred_new_password, #cred_confirm_password').on('input', updateCredPasswordMatch);
+
+  $('#customer_credentials_form').on('submit', function (e) {
+    e.preventDefault();
+
+    const $form = $(this);
+    const action = $form.attr('action');
+    const $err = $('#credErrorAlert');
+    const $saveBtn = $('#btnSaveCredentials');
+
+    $err.addClass('d-none').text('');
+
+    if (!action || action === '' || action.endsWith('/') || action.includes('undefined')) {
+      $err.text('Invalid destination: please close and re-open this dialog.').removeClass('d-none');
+      return false;
+    }
+
+    const username = ($('#cred_username').val() || '').trim();
+    const newPassword = $('#cred_new_password').val() || '';
+    const confirmPassword = $('#cred_confirm_password').val() || '';
+
+    if (!username) {
+      $err.text('Username is required and cannot be blank.').removeClass('d-none');
+      $('#cred_username').focus();
+      return false;
+    }
+
+    if (newPassword.length > 0 || confirmPassword.length > 0) {
+      if (newPassword.length < 6) {
+        $err.text('New password must be at least 6 characters long.').removeClass('d-none');
+        $('#cred_new_password').focus();
+        return false;
+      }
+      if (newPassword !== confirmPassword) {
+        $err.text('New password and confirm password do not match.').removeClass('d-none');
+        $('#cred_confirm_password').focus();
+        return false;
+      }
+    }
+
+    const originalBtnHtml = $saveBtn.html();
+    $saveBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-2"></i>Saving...');
+
+    $.ajax({
+      type: 'POST',
+      url: action,
+      data: {
+        username: username,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+      },
+      dataType: 'json',
+      success: function (res) {
+        if (res && res.success) {
+          const modalEl = document.getElementById('customerCredentialsModal');
+          if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+          } else {
+            $('#customerCredentialsModal').modal('hide');
+          }
+          if (typeof toastr !== 'undefined') {
+            toastr.success(res.message || 'Customer credentials updated successfully.');
+          }
+          if (window.customerTable && typeof window.customerTable.ajax === 'object') {
+            window.customerTable.ajax.reload(null, false);
+          }
+        } else {
+          $err.text((res && res.message) || 'Failed to update credentials.').removeClass('d-none');
+        }
+      },
+      error: function (xhr) {
+        const msg = (xhr.responseJSON && xhr.responseJSON.message)
+          ? xhr.responseJSON.message
+          : 'Unable to update credentials. Please check your input and try again.';
+        $err.text(msg).removeClass('d-none');
+      },
+      complete: function () {
+        $saveBtn.prop('disabled', false).html(originalBtnHtml);
+      }
+    });
   });
 </script>
 </body>

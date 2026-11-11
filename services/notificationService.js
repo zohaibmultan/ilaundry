@@ -1,7 +1,7 @@
 /**
  * Centralized Customer Notification Service (Email, SMS & Push)
  * Supports two-tier configuration (Global defaults + Per-store overrides)
- * and dispatches notifications across all 12 customer lifecycle events.
+ * and dispatches notifications across all customer lifecycle events.
  */
 const nodemailer = require("nodemailer");
 const sendNotification = require("../middelwer/send");
@@ -98,6 +98,22 @@ const NOTIFICATION_EVENTS = [
     defaultEmailBody: "Hi {customer_name}, your route garment pick-up with {store_name} has been scheduled for {pickup_date}. Once our driver brings your garments to the store, we will inspect, itemize, and send you your updated order total.",
     defaultSmsBody: "Hi {customer_name}, your garment pick-up (#{order_id}) with {store_name} is scheduled for {pickup_date}. Call {store_phone} for any special instructions.",
     sampleSms: "Hi {customer_name}, your garment pick-up (#{order_id}) with {store_name} is scheduled for {pickup_date}. Call {store_phone} for any special instructions."
+  },
+  {
+    key: "pickup_request_accepted",
+    category: "intake",
+    categoryTitle: "1. Order Intake & Placement",
+    categoryIcon: "fa-shopping-basket",
+    title: "Customer Pick-up Request Accepted",
+    triggerBadge: "Pickup Request Approved",
+    description: "Sent immediately when Admin or Staff accepts a customer's submitted pick-up request and converts it into an active order.",
+    defaultEmail: true,
+    defaultSms: true,
+    defaultEmailSubject: "Pick-up Request Accepted (#{order_id}) - {store_name}",
+    defaultEmailHeadline: "Your Pick-up Request Has Been Accepted!",
+    defaultEmailBody: "Hi {customer_name}, great news! Your clothes pick-up request #{order_id} with {store_name} has been accepted and scheduled for {pickup_date}. Our driver will collect your garments at the scheduled time.",
+    defaultSmsBody: "Hi {customer_name}, your pick-up request #{order_id} at {store_name} has been ACCEPTED! Confirmed pick-up: {pickup_date}. Call {store_phone} for any questions.",
+    sampleSms: "Hi {customer_name}, your pick-up request #{order_id} at {store_name} has been ACCEPTED! Confirmed pick-up: {pickup_date}. Call {store_phone} for any questions."
   },
   {
     key: "route_intake_priced",
@@ -712,17 +728,26 @@ function formatDateTimeReadable(val, dateOnly = false) {
 
 function isRouteDeliveryOrderType(orderType) {
   if (!orderType) return false;
-  const t = String(orderType).trim();
-  return (
-    t === "Counter & Route" ||
-    t === "Route & Route" ||
-    t === "C & R" ||
-    t === "R & R" ||
-    t === "Counter & Delivery" ||
-    t === "Pick-up & Delivery" ||
-    t === "Customer drop-off & Store delivery" ||
-    t === "Store collection & Store delivery"
-  );
+  try {
+    const OrderTypes = require("../public/js/shared/orderTypes");
+    return OrderTypes.hasDelivery(orderType);
+  } catch (e) {
+    const t = String(orderType).trim();
+    return (
+      t === "Counter • Route" ||
+      t === "Route • Route" ||
+      t === "C • R" ||
+      t === "R • R" ||
+      t === "Counter & Route" ||
+      t === "Route & Route" ||
+      t === "C & R" ||
+      t === "R & R" ||
+      t === "Counter & Delivery" ||
+      t === "Pick-up & Delivery" ||
+      t === "Customer drop-off & Store delivery" ||
+      t === "Store collection & Store delivery"
+    );
+  }
 }
 
 function isRoutePickupOrderType(orderType) {
@@ -891,6 +916,10 @@ function buildNotificationContent({ eventKey, customer, store, master, order, it
       badgeText = `Route Pick-up #${orderCode}`;
       badgeColor = "#0284c7";
       break;
+    case "pickup_request_accepted":
+      badgeText = `Pick-up Accepted #${orderCode}`;
+      badgeColor = "#16a34a";
+      break;
     case "route_intake_priced":
       badgeText = `Order #${orderCode} Itemized`;
       badgeColor = "#0d9488";
@@ -987,12 +1016,16 @@ function buildNotificationContent({ eventKey, customer, store, master, order, it
     const rackBadgeRow = resolvedRacks
       ? `<div><span style="color:#64748b;font-size:12px;">ASSIGNED RACK(S)</span><div style="font-weight:700;font-size:13px;color:#16a34a;">${resolvedRacks}</div></div>`
       : "";
+    const pickupBadgeRow = (order.pickup_date && isRoutePickupOrderType(orderType))
+      ? `<div><span style="color:#64748b;font-size:12px;">PICK-UP SCHEDULE</span><div style="font-weight:700;font-size:13px;color:#0284c7;">${pickupDateStr}</div></div>`
+      : "";
 
     orderDetailsHtml = `
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:18px 0;">
         <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;border-bottom:1px solid #e2e8f0;padding-bottom:10px;">
           <div><span style="color:#64748b;font-size:12px;">ORDER NUMBER</span><div style="font-weight:700;font-size:15px;color:#0f172a;">#${orderCode}</div></div>
           <div><span style="color:#64748b;font-size:12px;">SERVICE TYPE</span><div style="font-weight:600;font-size:13px;color:#0f172a;">${orderType}</div></div>
+          ${pickupBadgeRow}
           <div><span style="color:#64748b;font-size:12px;">READY / DELIVERY SCHEDULE</span><div style="font-weight:700;font-size:13px;color:#2563eb;">${readyDateStr}</div></div>
           ${rackBadgeRow}
         </div>
@@ -1427,6 +1460,52 @@ function formatWhatsAppNumber(phone) {
   return digits;
 }
 
+/**
+ * Format structured WhatsApp Pick-up Request Acceptance confirmation message
+ */
+function formatWhatsAppPickupAcceptedMessage({ order, customer, store, master }) {
+  const storeName = (store && store.name) ? store.name : ((master && master.app_name) ? master.app_name : "iCleaners");
+  const storePhone = (store && store.mobile_number) ? store.mobile_number : "";
+  const custName = formatCustomerDisplayName(customer);
+  const orderCode = order ? (order.order_id || order.id) : "";
+  const orderType = order && order.order_type ? order.order_type : "Pick-up & Delivery";
+  const pickupDateStr = order ? formatDateTimeReadable(order.pickup_date || order.order_date) : "Scheduled";
+  const readyDateStr = order && (order.ready_date || order.delivery_date) ? formatDateTimeReadable(order.ready_date || order.delivery_date) : "TBD";
+  const pickupAddress = (order && order.pickup_address && String(order.pickup_address).trim())
+    ? String(order.pickup_address).trim()
+    : [customer?.address, customer?.city, customer?.state, customer?.zipcode].filter(Boolean).join(", ");
+
+  const lines = [
+    `*${storeName}*`,
+    `✅ *PICK-UP REQUEST ACCEPTED*`,
+    `--------------------------------`,
+    `Hello *${custName}*,`,
+    `Your clothes pick-up request *#${orderCode}* has been accepted and scheduled into our route!`,
+    ``,
+    `📋 *Order #:* #${orderCode}`,
+    `🚚 *Service Type:* ${orderType}`,
+    `📅 *Confirmed Pick-up:* ${pickupDateStr}`,
+  ];
+
+  if (pickupAddress) {
+    lines.push(`📍 *Pick-up Address:* ${pickupAddress}`);
+  }
+  lines.push(`⏰ *Est. Ready Target:* ${readyDateStr}`);
+
+  if (order && order.note && String(order.note).trim() !== "") {
+    lines.push(`📝 *Note:* ${String(order.note).trim()}`);
+  }
+
+  lines.push(`--------------------------------`);
+  lines.push(`Our driver will collect your garments at the scheduled time. Itemized pricing will update once inspected at the store.`);
+  if (storePhone) {
+    lines.push(`📞 Questions? Call us at ${storePhone}`);
+  }
+  lines.push(`Thank you for choosing ${storeName}!`);
+
+  return lines.join("\n");
+}
+
 module.exports = {
   NOTIFICATION_EVENTS,
   TEMPLATE_VARIABLES,
@@ -1444,6 +1523,7 @@ module.exports = {
   resolveSmtpConfig,
   resolveTwilioConfig,
   formatWhatsAppInvoiceMessage,
+  formatWhatsAppPickupAcceptedMessage,
   formatWhatsAppNumber,
   isRouteDeliveryOrderType,
   isRoutePickupOrderType

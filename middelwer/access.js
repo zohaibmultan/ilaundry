@@ -21,7 +21,10 @@ const verifyData = [
   "orders", "expense", "service", "reports", "tools", "mail", "master",
   "sms", "staff", "pos", "customer", "customers", "master_setting", "branch_n_store",
   "Pay_Out", "account", "coupon", "rollaccess",
-  "notification_setting", "notification_templates", "store_setting", "printer_setting", "all_staff_records"
+  "notification_setting", "notification_templates", "store_setting", "printer_setting",
+  "all_staff_records", "customer_credentials",
+  "pickup_requests", "racks", "route_calendar", "pos_price_discount_override",
+  "order_payment_collect", "financial_reports"
 ];
 
   
@@ -165,6 +168,20 @@ verifyData.forEach((key) => {
     }
 // console.log("topbardata[0].id",topbardata[0].id);
 
+    let submitted_pickup_count = 0;
+    if (logas === "master" && (mutibranch || !topbardata[0]?.store_ID || topbardata[0].store_ID === "0")) {
+      const cntRows = await mySqlQury(
+        `SELECT COUNT(*) AS cnt FROM tbl_order WHERE order_status = 9`
+      );
+      submitted_pickup_count = cntRows && cntRows[0] ? Number(cntRows[0].cnt || 0) : 0;
+    } else if (logas !== "custmor" && topbardata[0]?.store_ID) {
+      const safeStoreId = String(topbardata[0].store_ID).replace(/'/g, "\\'");
+      const cntRows = await mySqlQury(
+        `SELECT COUNT(*) AS cnt FROM tbl_order WHERE order_status = 9 AND store_id = '${safeStoreId}'`
+      );
+      submitted_pickup_count = cntRows && cntRows[0] ? Number(cntRows[0].cnt || 0) : 0;
+    }
+
     return {
       logas,
       mutibranch,
@@ -176,6 +193,7 @@ verifyData.forEach((key) => {
       thousands_separator,
       masterstore: masterstore[0],
       notification_data,
+      submitted_pickup_count,
     };
   }catch(error){
     console.log(error);

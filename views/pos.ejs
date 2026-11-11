@@ -9,6 +9,11 @@
 <body class="pos-screen-layout">
   <%
     const isEditMode = Boolean((typeof isEdit !== 'undefined' && isEdit) || (typeof cart !== 'undefined' && cart && cart.isEdit));
+    const canOverridePrice = (login !== 'customer') && Boolean(
+      typeof canOverridePriceDiscount !== 'undefined'
+        ? canOverridePriceDiscount
+        : (accessdata?.logas === 'master' || accessdata?.roll?.pos_price_discount_override?.includes('edit'))
+    );
 
     // Defensive date & time formatting helpers using local timezone
     const formatLocalDate = (d) => {
@@ -135,6 +140,7 @@
           <input type="hidden" name="pls" value="<%= accessdata?.plac || '1' %>">
           <input type="hidden" name="thousands_separator" value="<%= accessdata?.thousands_separator || ',' %>">
           <input type="hidden" id="pos_override_rate_percent" value="<%= (typeof overrideRatePercent !== 'undefined' && overrideRatePercent !== null) ? overrideRatePercent : 10 %>">
+          <input type="hidden" id="can_override_pos_price_discount" value="<%= canOverridePrice ? '1' : '0' %>">
           <% if (isEditMode) { %>
           <input type="hidden" id="pos_mode" value="edit">
           <input type="hidden" id="order_id" name="order_id" value="<%= cart.id %>">
@@ -750,8 +756,8 @@
                       </td>
                       <td class="text-center">
                         <div class="d-inline-flex align-items-center justify-content-center gap-1">
-                          <input type="number" class="form-control pos-table-input" style="width: 72px; height: 30px !important;" value="<%= (x.item_value && parseFloat(x.item_value) > 0) ? x.item_value : '' %>" placeholder="0.00" name="item_value" id="<%= isEditMode ? 'edit_POSservice_item_value' : 'POSservice_item_value' %>" data-id="<%= x.id %>" data-original-rate="<%= (x.original_rate && parseFloat(x.original_rate) > 0) ? x.original_rate : x.service_type_price %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> min="0" step="0.25" <%= (login !== 'customer') ? '' : 'readonly' %>>
-                          <% if (login !== 'customer') { %>
+                          <input type="number" class="form-control pos-table-input" style="width: 72px; height: 30px !important;" value="<%= (x.item_value && parseFloat(x.item_value) > 0) ? x.item_value : '' %>" placeholder="0.00" name="item_value" id="<%= isEditMode ? 'edit_POSservice_item_value' : 'POSservice_item_value' %>" data-id="<%= x.id %>" data-original-rate="<%= (x.original_rate && parseFloat(x.original_rate) > 0) ? x.original_rate : x.service_type_price %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> min="0" step="0.25" <%= canOverridePrice ? '' : 'readonly' %>>
+                          <% if (canOverridePrice) { %>
                           <button type="button" class="btn btn-outline-secondary p-0 d-inline-flex align-items-center justify-content-center <%= isEditMode ? 'edit_reset_service_rate' : 'reset_service_rate' %>" style="width: 26px; height: 30px;" data-id="<%= x.id %>" data-original-rate="<%= (x.original_rate && parseFloat(x.original_rate) > 0) ? x.original_rate : x.service_type_price %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> title="Reset to original rate (<%= (x.original_rate && parseFloat(x.original_rate) > 0) ? Number(x.original_rate).toFixed(2) : Number(x.service_type_price).toFixed(2) %>)">
                             <i class="fa fa-undo" style="font-size: 11px;"></i>
                           </button>
@@ -759,10 +765,10 @@
                         </div>
                       </td>
                       <td class="text-center">
-                        <div class="pos-stepper pos-stepper-rate <%= (login !== 'customer') ? '' : 'is-readonly' %>">
-                          <button type="button" class="pos-stepper-btn pos-stepper-btn-minus" <%= (login !== 'customer') ? '' : 'disabled' %> tabindex="-1"></button>
-                          <input type="number" class="pos-stepper-input pos-table-input-price" value="<%= x.service_type_price %>" name="service_type_price" id="<%= isEditMode ? 'edit_POSservice_type_price' : 'POSservice_type_price' %>" data-id="<%= x.id %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> min="0" step="0.25" <%= (login !== 'customer') ? '' : 'readonly' %>>
-                          <button type="button" class="pos-stepper-btn pos-stepper-btn-plus" <%= (login !== 'customer') ? '' : 'disabled' %> tabindex="-1"></button>
+                        <div class="pos-stepper pos-stepper-rate <%= canOverridePrice ? '' : 'is-readonly' %>">
+                          <button type="button" class="pos-stepper-btn pos-stepper-btn-minus" <%= canOverridePrice ? '' : 'disabled' %> tabindex="-1"></button>
+                          <input type="number" class="pos-stepper-input pos-table-input-price" value="<%= x.service_type_price %>" name="service_type_price" id="<%= isEditMode ? 'edit_POSservice_type_price' : 'POSservice_type_price' %>" data-id="<%= x.id %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> min="0" step="0.25" <%= canOverridePrice ? '' : 'readonly' %>>
+                          <button type="button" class="pos-stepper-btn pos-stepper-btn-plus" <%= canOverridePrice ? '' : 'disabled' %> tabindex="-1"></button>
                         </div>
                       </td>
                       <td class="text-center">
@@ -956,18 +962,19 @@
                       <div class="pos-modal-field-header">
                         <label class="form-label mb-0" for="edit_POS_extra_discount_order">
                           <%= language.Extra_Discount %>
+                          <% if (!canOverridePrice) { %><i class="fa fa-lock text-muted ms-1 fs-11" title="Manual discount override requires permission"></i><% } %>
                         </label>
                         <div class="pos-discount-type-group" role="group" aria-label="Discount Type">
-                          <input type="radio" class="btn-check" name="edit_discount_type" id="edit_pos_disc_type_fixed" value="fixed" checked autocomplete="off">
+                          <input type="radio" class="btn-check" name="edit_discount_type" id="edit_pos_disc_type_fixed" value="fixed" checked autocomplete="off" <%= canOverridePrice ? '' : 'disabled' %>>
                           <label class="pos-disc-btn active" for="edit_pos_disc_type_fixed" id="edit_pos_disc_btn_fixed" title="Fixed Amount">Fix (<%= accessdata?.symbol || '$' %>)</label>
 
-                          <input type="radio" class="btn-check" name="edit_discount_type" id="edit_pos_disc_type_percent" value="percent" autocomplete="off">
+                          <input type="radio" class="btn-check" name="edit_discount_type" id="edit_pos_disc_type_percent" value="percent" autocomplete="off" <%= canOverridePrice ? '' : 'disabled' %>>
                           <label class="pos-disc-btn" for="edit_pos_disc_type_percent" id="edit_pos_disc_btn_percent" title="Percentage">% Percent</label>
                         </div>
                       </div>
                       <div class="input-group pos-discount-input-group">
                         <span class="input-group-text pos-discount-prefix" id="edit_pos_discount_prefix"><%= accessdata?.symbol || '$' %></span>
-                        <input type="number" id="edit_POS_extra_discount_order" class="form-control" placeholder="0.00" min="0" step="any" autocomplete="off">
+                        <input type="number" id="edit_POS_extra_discount_order" class="form-control" placeholder="0.00" min="0" step="any" autocomplete="off" <%= canOverridePrice ? '' : 'readonly' %>>
                       </div>
                       <input type="hidden" name="extradiscount" id="edit_POS_extradiscount_hidden" value="0">
                       <input type="hidden" id="edit_POS_extra_discount_order_hidden" value="0">
@@ -1122,12 +1129,13 @@
                       <div class="pos-modal-field-header">
                         <label class="form-label mb-0" for="POS_extra_discount_order">
                           <%= language.Extra_Discount %>
+                          <% if (!canOverridePrice) { %><i class="fa fa-lock text-muted ms-1 fs-11" title="Manual discount override requires permission"></i><% } %>
                         </label>
                         <div class="pos-discount-type-group" role="group" aria-label="Discount Type">
-                          <input type="radio" class="btn-check" name="discount_type" id="pos_disc_type_fixed" value="fixed" checked autocomplete="off">
+                          <input type="radio" class="btn-check" name="discount_type" id="pos_disc_type_fixed" value="fixed" checked autocomplete="off" <%= canOverridePrice ? '' : 'disabled' %>>
                           <label class="pos-disc-btn active pt-1" for="pos_disc_type_fixed" id="pos_disc_btn_fixed" title="Fixed Amount">Fix (<%= accessdata?.symbol || '$' %>)</label>
 
-                          <input type="radio" class="btn-check" name="discount_type" id="pos_disc_type_percent" value="percent" autocomplete="off">
+                          <input type="radio" class="btn-check" name="discount_type" id="pos_disc_type_percent" value="percent" autocomplete="off" <%= canOverridePrice ? '' : 'disabled' %>>
                           <label class="pos-disc-btn pt-1" for="pos_disc_type_percent" id="pos_disc_btn_percent" title="Percentage">% Percent</label>
                         </div>
                       </div>
@@ -1135,7 +1143,7 @@
                         <span class="input-group-text pos-discount-prefix" id="pos_discount_prefix">
                           <%= accessdata?.symbol || '$' %>
                         </span>
-                        <input type="number" id="POS_extra_discount_order" class="form-control" placeholder="0.00" min="0" step="any" autocomplete="off">
+                        <input type="number" id="POS_extra_discount_order" class="form-control" placeholder="0.00" min="0" step="any" autocomplete="off" <%= canOverridePrice ? '' : 'readonly' %>>
                       </div>
                       <input type="hidden" name="extradiscount" id="POS_extradiscount_hidden" value="0">
                     </div>

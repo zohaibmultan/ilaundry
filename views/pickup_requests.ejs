@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <%- include('templet/meta') -%>
+</head>
+
+<body>
+  <%- include('templet/preloder_topbar_sidebar', { titel: language.Pickup_Requests || 'Pickup Requests' }) -%>
+
+  <%
+    const isMasterView = (typeof login !== 'undefined' && login === 'master');
+    const stores = (typeof storeList !== 'undefined' && Array.isArray(storeList)) ? storeList : [];
+    const initPending = (typeof pendingCount !== 'undefined') ? Number(pendingCount || 0) : 0;
+  %>
+
+  <div class="content-body">
+    <div class="container-fluid pb-5">
+
+      <!-- Header Banner -->
+      <div class="settings-banner mb-4">
+        <div class="d-flex align-items-center gap-3">
+          <div class="settings-icon-badge badge-primary-glass">
+            <i class="fas fa-truck-loading fs-4"></i>
+          </div>
+          <div>
+            <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+              <h2 class="settings-card-title fs-4 mb-0">
+                <%= language.Customer_Pickup_Requests || 'Customer Pickup Requests' %>
+              </h2>
+              <span class="badge bg-primary-subtle rounded-pill fs-12" id="pickup_requests_total_badge">
+                <%= initPending %> Submitted
+              </span>
+            </div>
+            <p class="settings-card-subtitle mb-0">
+              Review submitted customer pick-up requests. Accepting a request moves it to Active Orders, updates the Route Calendar, and notifies the customer via Email, SMS &amp; WhatsApp.
+            </p>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center flex-wrap gap-2">
+          <a href="/order/list" class="btn btn-outline-primary fw-semibold px-3 py-2 d-inline-flex align-items-center gap-2">
+            <i class="fas fa-receipt"></i>
+            <span>View Active Orders</span>
+          </a>
+          <a href="/order/calendar" class="btn btn-outline-secondary fw-semibold px-3 py-2 d-inline-flex align-items-center gap-2">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Route Calendar</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Main Table Card -->
+      <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4">
+
+          <!-- Server-Side DataTable Toolbar -->
+          <div class="row g-2 mb-3">
+            <div class="col-12 col-md-5 col-lg-3">
+              <div class="input-group">
+                <span class="input-group-text"><i class="fa fa-search text-muted"></i></span>
+                <input type="search" class="form-control" id="pickup_req_search" placeholder="Search #, customer, phone, address...">
+              </div>
+            </div>
+
+            <div class="col-6 col-sm-6 col-md-3 col-lg-2">
+              <select class="form-select" id="pickup_req_type_filter">
+                <option value="" selected>All Return Options</option>
+                <option value="Route • Route">Pick-up &amp; Delivery</option>
+                <option value="Route • Counter">Pick-up &amp; Counter</option>
+              </select>
+            </div>
+
+            <% if (isMasterView && stores.length > 0) { %>
+            <div class="col-6 col-sm-6 col-md-4 col-lg-2">
+              <select class="form-select" id="pickup_req_store_filter">
+                <option value="" selected><%= language.All_Stores || 'All Stores' %></option>
+                <% stores.forEach(function (st) { %>
+                <option value="<%= st.id %>"><%= st.name %></option>
+                <% }); %>
+              </select>
+            </div>
+            <% } %>
+
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+              <input type="date" class="form-control" id="pickup_req_start_date" title="Pick-up From Date">
+            </div>
+
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+              <input type="date" class="form-control" id="pickup_req_end_date" title="Pick-up To Date">
+            </div>
+
+            <div class="col-12 col-sm-4 col-md-2 col-lg-1">
+              <select class="form-select" id="pickup_req_page_length">
+                <option value="10" selected>10 / page</option>
+                <option value="25">25 / page</option>
+                <option value="50">50 / page</option>
+                <option value="100">100 / page</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="server-datatable-wrapper">
+            <div class="table-responsive">
+              <table id="pickupRequestsTable" class="table display w-100">
+                <thead>
+                  <tr>
+                    <th>Request #</th>
+                    <th>Customer</th>
+                    <th>Return Option &amp; Store</th>
+                    <th>Requested Pick-up</th>
+                    <th>Address &amp; Notes</th>
+                    <th>Status</th>
+                    <th class="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL 1: Accept & Confirm Pick-up Request -->
+  <div class="modal fade" id="acceptPickupRequestModal" tabindex="-1" aria-labelledby="acceptPickupRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <form id="acceptPickupRequestForm" class="modal-content" novalidate>
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold server-dt-primary-text" id="acceptPickupRequestModalLabel">
+            <i class="fas fa-check-circle text-success me-2"></i>Accept Pick-up Request <span class="text-primary" id="accept_req_code"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          <input type="hidden" id="accept_req_id" value="">
+
+          <div class="border rounded-3 p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1">
+              <strong class="server-dt-primary-text fs-14" id="accept_req_customer"></strong>
+              <span class="badge bg-info-subtle" id="accept_req_type"></span>
+            </div>
+            <div class="server-dt-secondary-text mb-1" id="accept_req_contact"></div>
+            <div class="server-dt-secondary-text" id="accept_req_address"></div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6">
+              <label for="accept_pickup_date" class="form-label fw-semibold">Confirmed Pick-up Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="accept_pickup_date" name="pickup_date" required>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label for="accept_pickup_time" class="form-label fw-semibold">Confirmed Pick-up Time <span class="text-danger">*</span></label>
+              <input type="time" class="form-control" id="accept_pickup_time" name="pickup_time" required>
+            </div>
+            <div class="col-12">
+              <label for="accept_pickup_note" class="form-label fw-semibold">Notes / Driver Instructions</label>
+              <textarea class="form-control" id="accept_pickup_note" name="note" rows="2" maxlength="240" placeholder="Optional dispatch note or customer instructions..."></textarea>
+            </div>
+          </div>
+
+          <div class="alert alert-success py-2 px-3 fs-12 mb-3">
+            <i class="fas fa-bell me-1"></i>
+            Accepting moves this request to <strong>Active Orders</strong>, adds it to the <strong>Route Calendar</strong>, and automatically sends <strong>Email &amp; SMS</strong> confirmation to the customer.
+          </div>
+
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="accept_open_whatsapp" checked>
+            <label class="form-check-label fw-semibold fs-13" for="accept_open_whatsapp">
+              <i class="fab fa-whatsapp text-success me-1"></i>Prepare &amp; open WhatsApp confirmation message after accepting
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer border-top">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success fw-semibold" id="btnConfirmAcceptPickup">
+            <i class="fas fa-check me-1"></i>Accept &amp; Notify Customer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Acceptance Notification & WhatsApp Dispatch Summary -->
+  <div class="modal fade" id="pickupAcceptedConfirmModal" tabindex="-1" aria-labelledby="pickupAcceptedConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold text-success" id="pickupAcceptedConfirmModalLabel">
+            <i class="fas fa-check-double me-2"></i>Request Accepted <span class="text-primary" id="accepted_sum_code"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          <p class="server-dt-primary-text mb-3" id="accepted_sum_headline"></p>
+
+          <div class="d-flex flex-column gap-2 mb-3" id="accepted_notif_status_list"></div>
+
+          <div id="accepted_wa_section" class="border rounded-3 p-3 d-none">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <strong class="fs-13 text-success"><i class="fab fa-whatsapp me-1"></i>WhatsApp Confirmation Message</strong>
+              <button type="button" class="btn btn-xs btn-outline-secondary" id="btnCopyWaMessage">
+                <i class="fas fa-copy me-1"></i>Copy Text
+              </button>
+            </div>
+            <pre class="mb-3 p-2 border rounded small text-wrap" id="accepted_wa_preview"></pre>
+            <a href="#" target="_blank" rel="noopener" class="btn btn-success w-100 fw-semibold" id="btnOpenWaLink">
+              <i class="fab fa-whatsapp me-1"></i>Send WhatsApp Notification Now
+            </a>
+          </div>
+        </div>
+
+        <div class="modal-footer border-top">
+          <a href="#" id="accepted_view_order_link" class="btn btn-outline-primary fw-semibold">
+            <i class="fas fa-eye me-1"></i>View Order Details
+          </a>
+          <button type="button" class="btn btn-primary fw-semibold" data-bs-dismiss="modal">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Reject / Decline Pick-up Request -->
+  <div class="modal fade" id="rejectPickupRequestModal" tabindex="-1" aria-labelledby="rejectPickupRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form id="rejectPickupRequestForm" class="modal-content" novalidate>
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold text-danger" id="rejectPickupRequestModalLabel">
+            <i class="fas fa-ban me-2"></i>Decline Pick-up Request
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          <input type="hidden" id="reject_req_id" value="">
+          <p class="server-dt-primary-text mb-2">
+            Decline and cancel submitted pick-up request <strong class="text-primary" id="reject_req_code"></strong> for <strong id="reject_req_customer"></strong>?
+          </p>
+          <p class="text-muted fs-12 mb-3">
+            The customer will be notified that this request was declined.
+          </p>
+          <div>
+            <label for="reject_reason" class="form-label fw-semibold">Reason (Optional)</label>
+            <input type="text" class="form-control" id="reject_reason" name="reason" maxlength="180" placeholder="e.g., Outside route service area, requested slot full...">
+          </div>
+        </div>
+
+        <div class="modal-footer border-top">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep Request</button>
+          <button type="submit" class="btn btn-danger fw-semibold" id="btnConfirmRejectPickup">
+            <i class="fas fa-times-circle me-1"></i>Decline Request
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <%- include('templet/footer') -%>
+  <%- include('templet/script') -%>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var rowsById = {};
+      var pickupTable = null;
+
+      function escHtml(str) {
+        return String(str === undefined || str === null ? '' : str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function updateSubmittedCounters(totalCount) {
+        var count = Math.max(0, parseInt(totalCount, 10) || 0);
+        $('#pickup_requests_total_badge').text(count + ' Submitted');
+        var $sideBadge = $('#sidebar_pickup_requests_badge');
+        if ($sideBadge.length) {
+          $sideBadge.text(String(count));
+          if (count > 0) $sideBadge.removeClass('d-none');
+          else $sideBadge.addClass('d-none');
+        }
+      }
+
+      $(document).ready(function () {
+        pickupTable = window.initServerDataTable('#pickupRequestsTable', {
+          ajaxUrl: '/order/pickup-requests/data',
+          order: [[0, 'desc']],
+          searchInput: '#pickup_req_search',
+          pageLengthSelect: '#pickup_req_page_length',
+          filterInputs: '#pickup_req_type_filter, #pickup_req_store_filter, #pickup_req_start_date, #pickup_req_end_date',
+          getFilters: function () {
+            return {
+              order_type: $('#pickup_req_type_filter').val() || '',
+              store_filter: $('#pickup_req_store_filter').length ? ($('#pickup_req_store_filter').val() || '') : '',
+              start_date: $('#pickup_req_start_date').val() || '',
+              end_date: $('#pickup_req_end_date').val() || ''
+            };
+          },
+          onDraw: function (settings) {
+            if (settings && settings.json && settings.json.recordsTotal !== undefined) {
+              updateSubmittedCounters(settings.json.recordsTotal);
+            }
+          },
+          language: {
+            emptyTable: '<div class="py-4 text-center text-muted"><i class="fas fa-check-circle fs-2 mb-2 d-block text-success opacity-75"></i>All caught up! No pending customer pickup requests right now.</div>'
+          },
+          columns: [
+            {
+              data: 'order_id',
+              render: function (data, type, row) {
+                rowsById[String(row.id)] = row;
+                return '<div><a href="/order/view/' + row.id + '" class="fw-bold text-primary text-decoration-none">#' + escHtml(data || row.id) + '</a></div>' +
+                  '<div class="server-dt-secondary-text">Submitted: ' + escHtml(row.formattedOrderDate || '') + '</div>';
+              }
+            },
+            {
+              data: 'customerDisplayName',
+              render: function (data, type, row) {
+                var html = '<div class="server-dt-primary-text">' + escHtml(data || 'Customer') + '</div>';
+                if (row.customer_number) {
+                  html += '<div class="server-dt-secondary-text"><i class="fas fa-phone me-1"></i>' + escHtml(row.customer_number) + '</div>';
+                }
+                if (row.customer_email) {
+                  html += '<div class="server-dt-secondary-text"><i class="fas fa-envelope me-1"></i>' + escHtml(row.customer_email) + '</div>';
+                }
+                return html;
+              }
+            },
+            {
+              data: 'order_type',
+              render: function (data, type, row) {
+                var html = '<span class="badge bg-info-subtle">' + escHtml(row.orderTypeDisplay || data) + '</span>';
+                if (row.storeName) {
+                  html += '<div class="mt-1"><span class="badge bg-secondary-subtle"><i class="fas fa-store me-1"></i>' + escHtml(row.storeName) + '</span></div>';
+                }
+                return html;
+              }
+            },
+            {
+              data: 'pickup_date',
+              render: function (data, type, row) {
+                return '<div class="server-dt-primary-text"><i class="fas fa-calendar-day text-warning me-1"></i>' + escHtml(row.formattedPickupDateTime || '—') + '</div>' +
+                  '<div class="server-dt-secondary-text">Est. Ready: ' + escHtml(row.formattedReadyDateTime || '—') + '</div>';
+              }
+            },
+            {
+              data: 'effectiveAddress',
+              render: function (data, type, row) {
+                var html = '<div class="server-dt-primary-text fs-12"><i class="fas fa-map-marker-alt text-danger me-1"></i>' + escHtml(data || '—') + '</div>';
+                if (row.note && String(row.note).trim() !== '') {
+                  html += '<div class="server-dt-secondary-text mt-1"><i class="fas fa-comment-dots text-primary me-1"></i>' + escHtml(row.note) + '</div>';
+                }
+                return html;
+              }
+            },
+            {
+              data: 'orderStatusName',
+              orderable: false,
+              render: function (data) {
+                return '<span class="badge-status-pill status-submitted">' + escHtml(data || 'Submitted') + '</span>';
+              }
+            },
+            {
+              data: 'id',
+              orderable: false,
+              searchable: false,
+              className: 'text-center',
+              render: function (id, type, row) {
+                var html = '<div class="server-dt-actions justify-content-center">';
+                if (row.canAccept) {
+                  html += '<button type="button" class="btn-dt-action btn-accept btn-accept-pickup" data-bs-toggle="modal" data-bs-target="#acceptPickupRequestModal" data-id="' + escHtml(id) + '" title="Accept &amp; Convert to Order"><i class="fas fa-check"></i></button>' +
+                    '<button type="button" class="btn-dt-action btn-reject btn-reject-pickup" data-bs-toggle="modal" data-bs-target="#rejectPickupRequestModal" data-id="' + escHtml(id) + '" title="Decline / Cancel Request"><i class="fas fa-times"></i></button>';
+                }
+                html += '<a href="/order/view/' + escHtml(id) + '" class="btn-dt-action btn-view" title="View Request Details"><i class="fas fa-eye"></i></a>' +
+                  '</div>';
+                return html;
+              }
+            }
+          ]
+        });
+      });
+
+      function populateAcceptModal(id) {
+        var row = rowsById[String(id)];
+        if (!row) return;
+
+        $('#accept_req_id').val(row.id);
+        $('#accept_req_code').text('#' + (row.order_id || row.id));
+        $('#accept_req_customer').text(row.customerDisplayName || 'Customer');
+        $('#accept_req_type').text(row.orderTypeDisplay || row.order_type || '');
+        var contactParts = [];
+        if (row.customer_number) contactParts.push('Phone: ' + row.customer_number);
+        if (row.customer_email) contactParts.push('Email: ' + row.customer_email);
+        $('#accept_req_contact').text(contactParts.join(' · ') || 'No phone/email on file');
+        $('#accept_req_address').html('<i class="fas fa-map-marker-alt text-danger me-1"></i>' + escHtml(row.effectiveAddress || '—'));
+
+        $('#accept_pickup_date').val(row.pickupDateIso || '');
+        $('#accept_pickup_time').val(row.pickupTimeIso || '10:00');
+        $('#accept_pickup_note').val(row.note || '');
+        $('#accept_open_whatsapp').prop('checked', Boolean(row.customer_number));
+
+        $('#acceptPickupRequestForm').attr('data-target-url', '/order/pickup-requests/' + encodeURIComponent(row.id) + '/accept');
+      }
+
+      $(document).on('click', '.btn-accept-pickup', function () {
+        var id = $(this).closest('.btn-accept-pickup').attr('data-id');
+        if (id) populateAcceptModal(id);
+      });
+
+      $('#acceptPickupRequestModal').on('show.bs.modal', function (e) {
+        var $btn = $(e.relatedTarget).closest('.btn-accept-pickup, [data-bs-target="#acceptPickupRequestModal"]');
+        var id = $btn.attr('data-id');
+        if (id) populateAcceptModal(id);
+      });
+
+      $('#acceptPickupRequestForm').on('submit', function (e) {
+        e.preventDefault();
+        var reqId = $('#accept_req_id').val();
+        var targetUrl = $(this).attr('data-target-url') || '';
+        if (!reqId || !targetUrl || targetUrl.indexOf('undefined') !== -1) {
+          if (typeof toastr !== 'undefined') toastr.error('Invalid request destination. Please reopen the dialog.');
+          return false;
+        }
+
+        var pickupDate = $('#accept_pickup_date').val();
+        var pickupTime = $('#accept_pickup_time').val();
+        if (!pickupDate || !pickupTime) {
+          if (typeof toastr !== 'undefined') toastr.error('Pick-up date and time are required.');
+          return false;
+        }
+
+        var openWa = $('#accept_open_whatsapp').is(':checked');
+        var $btn = $('#btnConfirmAcceptPickup');
+        var origHtml = $btn.html();
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Accepting...');
+
+        $.ajax({
+          url: targetUrl,
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            pickup_date: pickupDate,
+            pickup_time: pickupTime,
+            note: ($('#accept_pickup_note').val() || '').trim()
+          }),
+          success: function (res) {
+            $btn.prop('disabled', false).html(origHtml);
+            if (!res || !res.success) {
+              if (typeof toastr !== 'undefined') toastr.error((res && res.message) || 'Failed to accept request.');
+              return;
+            }
+
+            $('#acceptPickupRequestModal').modal('hide');
+            if (typeof toastr !== 'undefined') toastr.success(res.message || 'Pick-up request accepted!');
+            if (pickupTable) pickupTable.ajax.reload(null, false);
+
+            // Populate Acceptance Summary & Notification / WhatsApp Modal
+            $('#accepted_sum_code').text('#' + (res.orderCode || res.orderId));
+            $('#accepted_sum_headline').text('Order #' + (res.orderCode || res.orderId) + ' has moved to Active Orders & Route Calendar.');
+            $('#accepted_view_order_link').attr('href', '/order/view/' + encodeURIComponent(res.orderId));
+
+            var n = res.notifications || {};
+            var wa = res.whatsapp || {};
+            var listHtml = '';
+
+            listHtml += '<div class="border rounded-3 p-2 d-flex justify-content-between align-items-center">' +
+              '<span><i class="fas fa-envelope text-primary me-2"></i>Email Notification' + (wa.customerEmail ? (' (' + escHtml(wa.customerEmail) + ')') : '') + '</span>' +
+              (n.emailSent
+                ? '<span class="badge bg-success-subtle">Sent</span>'
+                : '<span class="badge bg-secondary-subtle">' + (wa.customerEmail ? 'Skipped / Gateway not enabled' : 'No email on file') + '</span>') +
+              '</div>';
+
+            listHtml += '<div class="border rounded-3 p-2 d-flex justify-content-between align-items-center">' +
+              '<span><i class="fas fa-sms text-info me-2"></i>SMS Notification' + (wa.phone ? (' (' + escHtml(wa.phone) + ')') : '') + '</span>' +
+              (n.smsSent
+                ? '<span class="badge bg-success-subtle">Sent</span>'
+                : '<span class="badge bg-secondary-subtle">' + (wa.phone ? 'Skipped / Twilio not enabled' : 'No phone on file') + '</span>') +
+              '</div>';
+
+            $('#accepted_notif_status_list').html(listHtml);
+
+            if (wa.waUrl) {
+              $('#accepted_wa_section').removeClass('d-none');
+              $('#accepted_wa_preview').text(wa.message || '');
+              $('#btnOpenWaLink').attr('href', wa.waUrl);
+              if (openWa) {
+                window.open(wa.waUrl, '_blank', 'noopener');
+              }
+            } else {
+              $('#accepted_wa_section').addClass('d-none');
+            }
+
+            $('#pickupAcceptedConfirmModal').modal('show');
+          },
+          error: function (xhr) {
+            $btn.prop('disabled', false).html(origHtml);
+            var msg = (xhr.responseJSON && xhr.responseJSON.message) || 'Failed to accept pickup request.';
+            if (typeof toastr !== 'undefined') toastr.error(msg);
+          }
+        });
+      });
+
+      $('#btnCopyWaMessage').on('click', function () {
+        var text = $('#accepted_wa_preview').text() || '';
+        if (!text) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () {
+            if (typeof toastr !== 'undefined') toastr.success('WhatsApp message copied!');
+          });
+        }
+      });
+
+      function populateRejectModal(id) {
+        var row = rowsById[String(id)];
+        if (!row) return;
+        $('#reject_req_id').val(row.id);
+        $('#reject_req_code').text('#' + (row.order_id || row.id));
+        $('#reject_req_customer').text(row.customerDisplayName || 'Customer');
+        $('#reject_reason').val('');
+        $('#rejectPickupRequestForm').attr('data-target-url', '/order/pickup-requests/' + encodeURIComponent(row.id) + '/reject');
+      }
+
+      $(document).on('click', '.btn-reject-pickup', function () {
+        var id = $(this).closest('.btn-reject-pickup').attr('data-id');
+        if (id) populateRejectModal(id);
+      });
+
+      $('#rejectPickupRequestModal').on('show.bs.modal', function (e) {
+        var $btn = $(e.relatedTarget).closest('.btn-reject-pickup, [data-bs-target="#rejectPickupRequestModal"]');
+        var id = $btn.attr('data-id');
+        if (id) populateRejectModal(id);
+      });
+
+      $('#rejectPickupRequestForm').on('submit', function (e) {
+        e.preventDefault();
+        var reqId = $('#reject_req_id').val();
+        var targetUrl = $(this).attr('data-target-url') || '';
+        if (!reqId || !targetUrl || targetUrl.indexOf('undefined') !== -1) {
+          if (typeof toastr !== 'undefined') toastr.error('Invalid request destination. Please reopen the dialog.');
+          return false;
+        }
+
+        var $btn = $('#btnConfirmRejectPickup');
+        var origHtml = $btn.html();
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Declining...');
+
+        $.ajax({
+          url: targetUrl,
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            reason: ($('#reject_reason').val() || '').trim()
+          }),
+          success: function (res) {
+            $btn.prop('disabled', false).html(origHtml);
+            if (res && res.success) {
+              $('#rejectPickupRequestModal').modal('hide');
+              if (typeof toastr !== 'undefined') toastr.success(res.message || 'Pick-up request declined.');
+              if (pickupTable) pickupTable.ajax.reload(null, false);
+            } else {
+              if (typeof toastr !== 'undefined') toastr.error((res && res.message) || 'Could not decline request.');
+            }
+          },
+          error: function (xhr) {
+            $btn.prop('disabled', false).html(origHtml);
+            var msg = (xhr.responseJSON && xhr.responseJSON.message) || 'Failed to decline pickup request.';
+            if (typeof toastr !== 'undefined') toastr.error(msg);
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+
+</html>

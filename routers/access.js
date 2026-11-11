@@ -27,7 +27,10 @@ const verifyData = [
   "orders", "expense", "service", "reports", "tools", "mail", "master",
   "sms", "staff", "pos", "customer", "customers", "master_setting", "branch_n_store",
   "Pay_Out", "account", "coupon", "rollaccess",
-  "notification_setting", "notification_templates", "store_setting", "printer_setting", "all_staff_records"
+  "notification_setting", "notification_templates", "store_setting", "printer_setting",
+  "all_staff_records", "customer_credentials",
+  "pickup_requests", "racks", "route_calendar", "pos_price_discount_override",
+  "order_payment_collect", "financial_reports"
 ];
 
   

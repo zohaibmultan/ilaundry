@@ -16,8 +16,7 @@
         const isMaster = (accessdata?.logas === 'master' || (accessdata?.roll && accessdata.roll.rollType === 'master'));
         const canWriteRack = accessdata?.logas !== 'custmor' && (
           isMaster ||
-          (accessdata?.roll?.orders && (accessdata.roll.orders.includes('write') || accessdata.roll.orders.includes('edit'))) ||
-          (accessdata?.roll?.service && accessdata.roll.service.includes('write'))
+          (accessdata?.roll?.racks && accessdata.roll.racks.includes('write'))
         );
       %>
       <div class="row">

@@ -27,6 +27,17 @@ const {
 } = require("../services/notificationService");
 const OrderTypes = require("../public/js/shared/orderTypes");
 
+function canOverridePosPriceDiscount(accessdata) {
+  if (!accessdata || accessdata.logas === "custmor") return false;
+  if (accessdata.logas === "master" || accessdata.roll?.rollType === "master") {
+    return true;
+  }
+  return Boolean(
+    accessdata.roll?.pos_price_discount_override &&
+      String(accessdata.roll.pos_price_discount_override).includes("edit")
+  );
+}
+
 function formatMySQLDateTime(d, fallbackTime = "16:00:00") {
   if (!d) return null;
   if (typeof d === "string") {
@@ -631,6 +642,7 @@ router.get("/pos", auth, async (req, res) => {
     res.render("pos", {
       storePrinterConfig,
       overrideRatePercent,
+      canOverridePriceDiscount: canOverridePosPriceDiscount(accessdata),
       login,
       storeList,
       customer_types,
@@ -801,6 +813,7 @@ router.get("/edit/:id", auth, async (req, res) => {
     res.render("pos", {
       storePrinterConfig,
       overrideRatePercent,
+      canOverridePriceDiscount: canOverridePosPriceDiscount(accessdata),
       login: loginas == 0 ? "master" : (loginas == "staff" ? "staff" : "store"),
       storeList,
       customer_types,
@@ -2593,6 +2606,13 @@ async function resolveOriginalServiceRate(serviceRow) {
 router.post("/changevalue", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    if (!canOverridePosPriceDiscount(accessdata)) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to override item rates.",
+      });
+    }
     const { id: serviceid, item_value, reset } = req.body;
 
     const service = await DataFind(
@@ -2704,6 +2724,13 @@ router.post("/changevalue", auth, async (req, res) => {
 router.post("/edit_changevalue", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    if (!canOverridePosPriceDiscount(accessdata)) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to override item rates.",
+      });
+    }
     const { id: serviceid, item_value, reset, order_id } = req.body;
 
     const service = await DataFind(
@@ -3222,6 +3249,13 @@ router.post("/edit_changebrand", auth, async (req, res) => {
 router.post("/changeamount", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    if (!canOverridePosPriceDiscount(accessdata)) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to override item rates.",
+      });
+    }
 
     const { id: serviceid, price } = req.body;
 
@@ -3303,6 +3337,13 @@ router.post("/changeamount", auth, async (req, res) => {
 router.post("/edit_changeamount", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
+    const accessdata = await access(req.user);
+    if (!canOverridePosPriceDiscount(accessdata)) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to override item rates.",
+      });
+    }
 
     const { id: serviceid, price, order_id } = req.body;
 
@@ -4564,6 +4605,9 @@ router.post("/edit_order", auth, async (req, res) => {
     }
 
     const order = old_order[0];
+    if (!canOverridePosPriceDiscount(accessdata)) {
+      extradiscount = parseFloat(order.extra_discount) || 0;
+    }
     const sub_total = parseFloat(order.sub_total) || 0;
     const addon_price = parseFloat(order.addon_price) || 0;
     const coupon_discount = parseFloat(order.coupon_discount) || 0;
@@ -4996,6 +5040,13 @@ router.post("/order", auth, async (req, res) => {
 
     paid_amount ? (paid_amount = paid_amount) : (paid_amount = 0);
     extradiscount ? (extradiscount = extradiscount) : (extradiscount = 0);
+    if (!canOverridePosPriceDiscount(accessdata) && parseFloat(extradiscount) > 0) {
+      return res.status(403).json({
+        status: "error",
+        success: false,
+        message: "You do not have permission to apply manual discounts.",
+      });
+    }
     var payment_type = req.body.payment_type;
     payment_type ? payment_type : (payment_type = 0);
     const cart = await DataFind(
@@ -5349,6 +5400,12 @@ router.post("/save_order", auth, async (req, res) => {
 
     paid_amount = paid_amount ? parseFloat(paid_amount) || 0 : 0;
     extradiscount = extradiscount ? parseFloat(extradiscount) || 0 : 0;
+    if (!canOverridePosPriceDiscount(accessdata) && extradiscount > 0) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to apply manual discounts.",
+      });
+    }
     var payment_type = req.body.payment_type;
     payment_type = payment_type ? payment_type : 0;
 

@@ -23,11 +23,26 @@
                                     </h3>
                                     <small class="text-muted"><%= language.Order_List_Subtitle || 'Track customer laundry orders, processing stages, and delivery status' %></small>
                                 </div>
-                                <div>
+                                <div class="d-flex align-items-center flex-wrap gap-2">
+                                    <% if (accessdata?.logas === 'custmor') { %>
+                                    <a href="/index" class="btn btn-sm btn-primary">
+                                        <i class="fa fa-truck-pickup me-2"></i>
+                                        Request Pick-up
+                                    </a>
+                                    <% } else { %>
+                                    <% if (Number(accessdata?.submitted_pickup_count || 0) > 0 && (accessdata?.logas === 'master' || accessdata?.roll?.pickup_requests?.includes('read'))) { %>
+                                    <a href="/order/pickup-requests" class="btn btn-sm btn-outline-warning fw-semibold">
+                                        <i class="fa fa-truck-loading me-1"></i>
+                                        Pickup Requests (<%= Number(accessdata.submitted_pickup_count) %>)
+                                    </a>
+                                    <% } %>
+                                    <% if (accessdata?.logas === 'master' || accessdata?.roll?.pos?.includes('read')) { %>
                                     <a href="/admin/pos" class="btn btn-sm btn-primary">
                                         <i class="fa fa-plus me-2"></i>
                                         <%= language.Add_New_Orders %>
                                     </a>
+                                    <% } %>
+                                    <% } %>
                                 </div>
                             </div>
                             <div class="d-none">
@@ -377,10 +392,12 @@
                                         if (balance > 0) {
                                             if ('<%= accessdata.logas %>' === 'custmor') {
                                                 paymentBtn = '<span class="badge badge-warning light btn-xxs"><%= language.Pending || "Pending" %></span>';
-                                            } else {
+                                            } else if (row.canCollectPayment) {
                                                 paymentBtn = '<button type="button" onclick="open_patment_model(\'' + row.id + '\')" class="btn btn-xs btn-outline-success py-1 px-2">' +
                                                     '<i class="fa fa-plus-circle me-1"></i> <%= language.Add_Payment || "Add Payment" %>' +
                                                     '</button>';
+                                            } else {
+                                                paymentBtn = '<span class="badge bg-warning-subtle text-warning-emphasis border btn-xxs"><%= language.Balance_Due || "Balance Due" %></span>';
                                             }
                                         } else {
                                             paymentBtn = '<span class="badge badge-dark light btn-xxs"><%= language.Fully_Paid || "Fully Paid" %></span>';

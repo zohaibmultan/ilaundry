@@ -291,10 +291,12 @@
                                                                         <% if (balance > 0.001) { %>
                                                                             <% if (accessdata?.logas === 'custmor') { %>
                                                                                 <span class="badge badge-warning light btn-xxs"><%= language.Pending || 'Pending' %></span>
-                                                                            <% } else { %>
+                                                                            <% } else if (data.canCollectPayment) { %>
                                                                                 <button type="button" onclick="open_patment_model('<%= data.id %>')" class="btn btn-xs btn-outline-success py-1 px-2">
                                                                                     <i class="fa fa-plus-circle me-1"></i> <%= language.Add_Payment || 'Add Payment' %>
                                                                                 </button>
+                                                                            <% } else { %>
+                                                                                <span class="badge bg-warning-subtle text-warning-emphasis border btn-xxs"><%= language.Balance_Due || 'Balance Due' %></span>
                                                                             <% } %>
                                                                         <% } else { %>
                                                                             <span class="badge badge-dark light btn-xxs"><%= language.Fully_Paid || 'Fully Paid' %></span>

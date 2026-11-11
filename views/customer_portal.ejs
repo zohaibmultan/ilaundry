@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <%- include('templet/meta') -%>
+</head>
+
+<body>
+  <%- include('templet/preloder_topbar_sidebar', { titel: 'Customer Portal' }) -%>
+
+  <%
+    const activeCustomer = (typeof customer !== 'undefined' && customer) ? customer : {};
+    const custStore = (typeof customerStore !== 'undefined' && customerStore) ? customerStore : {};
+    const portalStats = (typeof stats !== 'undefined' && stats) ? stats : {
+      activeCount: 0,
+      pendingPickupsCount: 0,
+      completedCount: 0,
+      cancelledCount: 0,
+      outstandingBalance: 0,
+      totalCount: 0
+    };
+    const allOrders = (typeof customerOrders !== 'undefined' && Array.isArray(customerOrders)) ? customerOrders : [];
+    const curActiveOrders = (typeof activeOrders !== 'undefined' && Array.isArray(activeOrders)) ? activeOrders : [];
+    const curSymbol = accessdata?.masterstore?.currency_symbol || accessdata?.symbol || '$';
+    const dispName = (typeof customerDisplayName !== 'undefined' && customerDisplayName) ? customerDisplayName : (activeCustomer.name || 'Customer');
+    const defAddress = (typeof defaultPickupAddress !== 'undefined') ? defaultPickupAddress : '';
+    const defDate = (typeof defaultPickupDate !== 'undefined') ? defaultPickupDate : '';
+    const defTime = (typeof defaultPickupTime !== 'undefined') ? defaultPickupTime : '10:00';
+    const minDate = (typeof minPickupDate !== 'undefined') ? minPickupDate : '';
+    const schedInfo = (typeof readySchedule !== 'undefined' && readySchedule) ? readySchedule : {};
+  %>
+
+  <div class="content-body">
+    <div class="container-fluid pb-5">
+
+      <!-- 1. Welcome & Primary CTA Banner -->
+      <div class="settings-banner mb-4">
+        <div class="d-flex align-items-center gap-3">
+          <div class="settings-icon-badge badge-primary-glass">
+            <i class="fas fa-truck-pickup fs-4"></i>
+          </div>
+          <div>
+            <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+              <h2 class="settings-card-title fs-4 mb-0">
+                Welcome back, <%= dispName %>!
+              </h2>
+              <% if (custStore.name) { %>
+              <span class="badge bg-primary-subtle">
+                <i class="fas fa-store me-1"></i><%= custStore.name %>
+              </span>
+              <% } %>
+              <% if (custStore.mobile_number) { %>
+              <a href="tel:<%= custStore.mobile_number %>" class="badge bg-info-subtle text-decoration-none">
+                <i class="fas fa-phone me-1"></i><%= custStore.mobile_number %>
+              </a>
+              <% } %>
+            </div>
+            <p class="settings-card-subtitle mb-0">
+              Schedule a clothes pick-up, manage upcoming route pick-ups, and track your laundry timeline &amp; order history.
+            </p>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center flex-wrap gap-2">
+          <button type="button" class="btn btn-primary fw-semibold px-4 py-2 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newPickupRequestModal" id="btnOpenNewPickup">
+            <i class="fas fa-plus-circle"></i>
+            <span>Request Clothes Pick-up</span>
+          </button>
+          <a href="/order/list" class="btn btn-outline-secondary fw-semibold px-3 py-2 d-inline-flex align-items-center gap-2">
+            <i class="fas fa-list"></i>
+            <span>All Orders Table</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- 2. Customer KPI Summary Cards -->
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="card border-0 h-100">
+            <div class="card-body p-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted text-uppercase fw-bold fs-11">Active Requests</span>
+                <span class="badge bg-primary-subtle rounded-circle p-2"><i class="fas fa-tasks"></i></span>
+              </div>
+              <h3 class="fw-bold mb-1 server-dt-primary-text"><%= portalStats.activeCount %></h3>
+              <small class="text-muted fs-12">Orders currently in progress</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="card border-0 h-100">
+            <div class="card-body p-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted text-uppercase fw-bold fs-11">Submitted Requests</span>
+                <span class="badge bg-warning-subtle rounded-circle p-2"><i class="fas fa-clock"></i></span>
+              </div>
+              <h3 class="fw-bold mb-1 text-warning"><%= portalStats.pendingPickupsCount %></h3>
+              <small class="text-muted fs-12">Editable until accepted by store</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="card border-0 h-100">
+            <div class="card-body p-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted text-uppercase fw-bold fs-11">Completed Orders</span>
+                <span class="badge bg-success-subtle rounded-circle p-2"><i class="fas fa-check-circle"></i></span>
+              </div>
+              <h3 class="fw-bold mb-1 text-success"><%= portalStats.completedCount %></h3>
+              <small class="text-muted fs-12">Delivered or picked up</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="card border-0 h-100">
+            <div class="card-body p-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted text-uppercase fw-bold fs-11">Balance Due</span>
+                <span class="badge bg-info-subtle rounded-circle p-2"><i class="fas fa-wallet"></i></span>
+              </div>
+              <h3 class="fw-bold mb-1 <%= portalStats.outstandingBalance > 0 ? 'text-danger' : 'text-success' %>">
+                <%= curSymbol %><%= Number(portalStats.outstandingBalance || 0).toFixed(2) %>
+              </h3>
+              <small class="text-muted fs-12">Across all active orders</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Active Requests & 5-Stage Progress Timeline -->
+      <div class="card border-0 mb-4">
+        <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h4 class="card-title mb-1 fw-bold d-flex align-items-center gap-2 server-dt-primary-text">
+              <i class="fas fa-route text-primary"></i>
+              <span>Active Requests &amp; Live Timeline</span>
+              <span class="badge bg-primary-subtle rounded-pill fs-12"><%= curActiveOrders.length %></span>
+            </h4>
+            <small class="text-muted">Live status tracking for your scheduled pick-ups and laundry in process</small>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#newPickupRequestModal">
+            <i class="fas fa-plus me-1"></i> New Pick-up Request
+          </button>
+        </div>
+
+        <div class="card-body p-4">
+          <% if (curActiveOrders.length === 0) { %>
+          <div class="text-center py-4">
+            <div class="mb-3">
+              <span class="badge bg-primary-subtle p-3 rounded-circle">
+                <i class="fas fa-tshirt fs-2"></i>
+              </span>
+            </div>
+            <h5 class="fw-bold server-dt-primary-text mb-1">No Active Pick-up Requests or Orders</h5>
+            <p class="text-muted mb-3 fs-13">Need fresh, clean clothes? Schedule a convenient doorstep pick-up in seconds.</p>
+            <button type="button" class="btn btn-primary fw-semibold px-4" data-bs-toggle="modal" data-bs-target="#newPickupRequestModal">
+              <i class="fas fa-truck-pickup me-2"></i>Schedule Your First Pick-up
+            </button>
+          </div>
+          <% } else { %>
+          <div class="d-flex flex-column gap-4">
+            <% curActiveOrders.forEach(function (ord) { %>
+            <%
+              const doneSteps = ord.stages.filter(function(st) { return st.state === 'done'; }).length;
+              const progressPct = Math.round((doneSteps / ord.stages.length) * 100);
+            %>
+            <div class="border rounded-3 p-3 p-md-4" id="active_request_card_<%= ord.id %>">
+              <!-- Card Top Header -->
+              <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3 pb-3 border-bottom">
+                <div>
+                  <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                    <a href="/order/view/<%= ord.id %>" class="fw-bold fs-5 text-primary text-decoration-none">
+                      #<%= ord.order_id %>
+                    </a>
+                    <span class="badge-status-pill <%= ord.statusBadgeClass %>">
+                      <%= ord.statusDisplay %>
+                    </span>
+                    <span class="badge bg-info-subtle">
+                      <i class="fas fa-exchange-alt me-1"></i><%= ord.orderTypeDisplay %>
+                    </span>
+                    <% if (ord.isZeroItem) { %>
+                    <span class="badge bg-warning-subtle">
+                      <i class="fas fa-hourglass-half me-1"></i>Pending Store Inspection
+                    </span>
+                    <% } %>
+                  </div>
+                  <div class="text-muted fs-12 d-flex flex-wrap gap-3">
+                    <span><i class="fas fa-calendar me-1"></i>Submitted: <%= ord.formattedOrderDate %></span>
+                    <% if (ord.hasPickup) { %>
+                    <span><i class="fas fa-truck-pickup text-warning me-1"></i>Pick-up: <strong><%= ord.formattedPickupDateTime %></strong></span>
+                    <% } %>
+                    <span><i class="fas fa-clock text-info me-1"></i>Target Ready: <strong><%= ord.formattedReadyDateTime %></strong></span>
+                  </div>
+                </div>
+
+                <!-- Self-service Reschedule / Cancel or Store Contact Lock -->
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                  <% if (ord.canModifyPickup) { %>
+                  <button type="button"
+                          class="btn btn-sm btn-outline-primary fw-semibold btn-edit-pickup"
+                          data-bs-toggle="modal"
+                          data-bs-target="#editPickupRequestModal"
+                          data-order-id="<%= ord.id %>">
+                    <i class="fas fa-calendar-edit me-1"></i>Change Date / Time
+                  </button>
+                  <button type="button"
+                          class="btn btn-sm btn-outline-danger fw-semibold btn-cancel-pickup"
+                          data-bs-toggle="modal"
+                          data-bs-target="#cancelPickupRequestModal"
+                          data-order-id="<%= ord.id %>">
+                    <i class="fas fa-times-circle me-1"></i>Cancel Request
+                  </button>
+                  <% } else if (ord.hasPickup) { %>
+                  <span class="badge bg-secondary-subtle">
+                    <i class="fas fa-lock me-1"></i><%= ord.isAccepted ? 'Accepted — Pick-up Confirmed' : 'Locked (In Progress' %><%= ord.isAccepted ? '' : ')' %><% if (ord.store_phone) { %> · Call <%= ord.store_phone %><% } %>
+                  </span>
+                  <% } %>
+                  <a href="/order/view/<%= ord.id %>" class="btn btn-sm btn-outline-secondary fw-semibold">
+                    <i class="fas fa-file-invoice me-1"></i>Invoice
+                  </a>
+                </div>
+              </div>
+
+              <!-- Progress Strip -->
+              <div class="progress mb-3">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: <%= progressPct %>%" aria-valuenow="<%= progressPct %>" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+
+              <!-- 5-Stage Visual Timeline -->
+              <div class="row g-2 mb-3">
+                <% ord.stages.forEach(function (st, stIdx) { %>
+                <%
+                  let stepBorderClass = 'border';
+                  let stepBadgeClass = 'bg-secondary-subtle';
+                  let stepTextClass = 'text-muted';
+                  if (st.state === 'done') {
+                    stepBorderClass = 'border border-success';
+                    stepBadgeClass = 'bg-success text-white';
+                    stepTextClass = 'text-success';
+                  } else if (st.state === 'current') {
+                    stepBorderClass = 'border border-primary';
+                    stepBadgeClass = 'bg-primary text-white';
+                    stepTextClass = 'text-primary';
+                  }
+                %>
+                <div class="col-12 col-sm-6 col-lg">
+                  <div class="<%= stepBorderClass %> rounded-3 p-2 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                      <span class="badge <%= stepBadgeClass %> rounded-pill">
+                        <i class="fas <%= st.state === 'done' ? 'fa-check' : st.icon %>"></i>
+                      </span>
+                      <span class="fw-bold fs-12 <%= stepTextClass %>">
+                        <%= stIdx + 1 %>. <%= st.title %>
+                      </span>
+                    </div>
+                    <div class="text-muted fs-11 ps-1">
+                      <%= st.subtitle %>
+                    </div>
+                  </div>
+                </div>
+                <% }); %>
+              </div>
+
+              <!-- Pick-up Address, Notes & Itemized Breakdown -->
+              <div class="row g-2 align-items-center">
+                <div class="col-12 col-lg-7">
+                  <div class="d-flex flex-column gap-1 fs-12 text-muted">
+                    <% if (ord.hasPickup && (ord.pickup_address || defAddress)) { %>
+                    <div>
+                      <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                      <strong>Pick-up Address:</strong> <%= ord.pickup_address || defAddress %>
+                    </div>
+                    <% } %>
+                    <% if (ord.note && ord.note.trim()) { %>
+                    <div>
+                      <i class="fas fa-comment-dots text-primary me-1"></i>
+                      <strong>Notes:</strong> <%= ord.note.trim() %>
+                    </div>
+                    <% } %>
+                  </div>
+                </div>
+
+                <div class="col-12 col-lg-5 text-lg-end">
+                  <% if (ord.isZeroItem) { %>
+                  <span class="badge bg-info-subtle fs-12">
+                    <i class="fas fa-info-circle me-1"></i>Pricing will update once driver collects &amp; store inspects clothes
+                  </span>
+                  <% } else { %>
+                  <button class="btn btn-sm btn-outline-info fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#items_collapse_<%= ord.id %>" aria-expanded="false">
+                    <i class="fas fa-tshirt me-1"></i>
+                    <%= ord.totalPieces %> Pc(s) · Total: <%= curSymbol %><%= ord.grossTotal.toFixed(2) %>
+                    <% if (ord.balanceAmount > 0.001) { %>
+                    <span class="ms-1 text-danger">(Due: <%= curSymbol %><%= ord.balanceAmount.toFixed(2) %>)</span>
+                    <% } %>
+                    <i class="fas fa-chevron-down ms-1"></i>
+                  </button>
+                  <% } %>
+                </div>
+              </div>
+
+              <% if (!ord.isZeroItem) { %>
+              <div class="collapse mt-3" id="items_collapse_<%= ord.id %>">
+                <div class="table-responsive border rounded-3">
+                  <table class="table table-sm mb-0 align-middle">
+                    <thead>
+                      <tr>
+                        <th>Service / Garment</th>
+                        <th>Type</th>
+                        <th class="text-center">Qty / Pcs</th>
+                        <th class="text-end">Rate</th>
+                        <th class="text-end">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% ord.items.forEach(function (it) { %>
+                      <tr>
+                        <td class="fw-semibold">
+                          <%= it.service_name %>
+                          <% if (it.brand_label) { %>
+                          <span class="badge bg-primary-subtle ms-1"><%= it.brand_label %></span>
+                          <% } %>
+                        </td>
+                        <td class="text-muted fs-12"><%= it.service_type_name %></td>
+                        <td class="text-center">
+                          <%= it.qty %>
+                          <% if (it.pieces > 1) { %>
+                          <span class="badge bg-secondary-subtle ms-1"><%= it.pieces %> Pcs</span>
+                          <% } %>
+                        </td>
+                        <td class="text-end"><%= curSymbol %><%= it.rate.toFixed(2) %></td>
+                        <td class="text-end fw-semibold"><%= curSymbol %><%= it.lineTotal.toFixed(2) %></td>
+                      </tr>
+                      <% }); %>
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colspan="4" class="text-end fw-bold">Gross Total / Paid / Balance:</td>
+                        <td class="text-end fw-bold">
+                          <%= curSymbol %><%= ord.grossTotal.toFixed(2) %>
+                          <span class="text-success ms-2">Paid: <%= curSymbol %><%= ord.paidAmount.toFixed(2) %></span>
+                          <% if (ord.balanceAmount > 0.001) { %>
+                          <span class="text-danger ms-2">Due: <%= curSymbol %><%= ord.balanceAmount.toFixed(2) %></span>
+                          <% } %>
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+              <% } %>
+            </div>
+            <% }); %>
+          </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- 4. Submitted Request & Order History -->
+      <div class="card border-0">
+        <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h4 class="card-title mb-1 fw-bold d-flex align-items-center gap-2 server-dt-primary-text">
+              <i class="fas fa-history text-primary"></i>
+              <span>Submitted Request &amp; Order History</span>
+              <span class="badge bg-secondary-subtle rounded-pill fs-12"><%= allOrders.length %></span>
+            </h4>
+            <small class="text-muted">Complete history of scheduled pick-ups, completed deliveries, and cancelled requests</small>
+          </div>
+
+          <div class="d-flex align-items-center flex-wrap gap-2">
+            <div class="btn-group btn-group-sm" role="group" id="portalHistoryFilterGroup">
+              <button type="button" class="btn btn-primary portal-filter-btn active" data-filter="all">All (<%= portalStats.totalCount %>)</button>
+              <button type="button" class="btn btn-outline-primary portal-filter-btn" data-filter="active">Active (<%= portalStats.activeCount %>)</button>
+              <button type="button" class="btn btn-outline-success portal-filter-btn" data-filter="completed">Completed (<%= portalStats.completedCount %>)</button>
+              <button type="button" class="btn btn-outline-danger portal-filter-btn" data-filter="cancelled">Cancelled (<%= portalStats.cancelledCount %>)</button>
+            </div>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text"><i class="fas fa-search text-muted"></i></span>
+              <input type="text" class="form-control" id="portalHistorySearch" placeholder="Search # or note...">
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body p-4">
+          <% if (allOrders.length === 0) { %>
+          <div class="text-center py-4 text-muted">
+            <i class="fas fa-inbox fs-2 mb-2 d-block opacity-50"></i>
+            No pick-up requests or orders submitted yet.
+          </div>
+          <% } else { %>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="portalHistoryTable">
+              <thead>
+                <tr>
+                  <th>Request / Order #</th>
+                  <th>Submitted</th>
+                  <th>Pick-up Schedule &amp; Address</th>
+                  <th>Return Option</th>
+                  <th>Items &amp; Total</th>
+                  <th>Status</th>
+                  <th class="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% allOrders.forEach(function (ord) { %>
+                <%
+                  const filterCategory = ord.isCancelled || ord.isReturned ? 'cancelled' : (ord.isCompleted ? 'completed' : 'active');
+                  const searchIndex = [ord.order_id, ord.orderTypeDisplay, ord.statusDisplay, ord.pickup_address, ord.note, ord.void_reason].filter(Boolean).join(' ').toLowerCase();
+                %>
+                <tr class="portal-history-row" data-category="<%= filterCategory %>" data-search="<%= searchIndex %>">
+                  <td>
+                    <a href="/order/view/<%= ord.id %>" class="fw-bold text-primary text-decoration-none">
+                      #<%= ord.order_id %>
+                    </a>
+                    <div class="server-dt-secondary-text"><%= ord.storeLabel %></div>
+                  </td>
+                  <td>
+                    <div class="server-dt-primary-text fs-13"><%= ord.formattedOrderDate %></div>
+                  </td>
+                  <td>
+                    <% if (ord.hasPickup) { %>
+                    <div class="server-dt-primary-text fs-13">
+                      <i class="fas fa-calendar-day text-warning me-1"></i><%= ord.formattedPickupDateTime %>
+                    </div>
+                    <% if (ord.pickup_address) { %>
+                    <div class="server-dt-secondary-text text-truncate" style="max-width: 240px;" title="<%= ord.pickup_address %>">
+                      <i class="fas fa-map-marker-alt text-danger me-1"></i><%= ord.pickup_address %>
+                    </div>
+                    <% } %>
+                    <% } else { %>
+                    <span class="server-dt-secondary-text">Store Counter Drop-off</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <span class="badge bg-info-subtle"><%= ord.orderTypeDisplay %></span>
+                  </td>
+                  <td>
+                    <% if (ord.isZeroItem) { %>
+                    <span class="server-dt-secondary-text">Pending inspection</span>
+                    <% } else { %>
+                    <div class="server-dt-primary-text fs-13">
+                      <%= curSymbol %><%= ord.grossTotal.toFixed(2) %>
+                    </div>
+                    <div class="server-dt-secondary-text">
+                      <%= ord.totalPieces %> pc(s)
+                      <% if (!ord.isCancelled && ord.balanceAmount > 0.001) { %>
+                      · <span class="text-danger">Due: <%= curSymbol %><%= ord.balanceAmount.toFixed(2) %></span>
+                      <% } %>
+                    </div>
+                    <% } %>
+                  </td>
+                  <td>
+                    <span class="badge-status-pill <%= ord.statusBadgeClass %>">
+                      <%= ord.statusDisplay %>
+                    </span>
+                    <% if (ord.isCancelled && ord.void_reason) { %>
+                    <div class="server-dt-secondary-text mt-1" title="<%= ord.void_reason %>">
+                      Reason: <%= ord.void_reason %>
+                    </div>
+                    <% } %>
+                  </td>
+                  <td class="text-center">
+                    <div class="server-dt-actions justify-content-center">
+                      <button type="button"
+                              class="btn-dt-action btn-view btn-view-timeline"
+                              data-bs-toggle="modal"
+                              data-bs-target="#requestTimelineModal"
+                              data-order-id="<%= ord.id %>"
+                              title="View Timeline &amp; Details">
+                        <i class="fas fa-stream"></i>
+                      </button>
+                      <a href="/order/view/<%= ord.id %>" class="btn-dt-action btn-print" title="View Full Invoice">
+                        <i class="fas fa-file-invoice"></i>
+                      </a>
+                      <% if (ord.canModifyPickup) { %>
+                      <button type="button"
+                              class="btn-dt-action btn-edit btn-edit-pickup"
+                              data-bs-toggle="modal"
+                              data-bs-target="#editPickupRequestModal"
+                              data-order-id="<%= ord.id %>"
+                              title="Change Pick-up Date / Time">
+                        <i class="fas fa-pencil-alt"></i>
+                      </button>
+                      <button type="button"
+                              class="btn-dt-action btn-delete btn-cancel-pickup"
+                              data-bs-toggle="modal"
+                              data-bs-target="#cancelPickupRequestModal"
+                              data-order-id="<%= ord.id %>"
+                              title="Cancel Pick-up Request">
+                        <i class="fas fa-times"></i>
+                      </button>
+                      <% } %>
+                    </div>
+                  </td>
+                </tr>
+                <% }); %>
+                <tr id="portalHistoryEmptyRow" class="d-none">
+                  <td colspan="7" class="text-center py-4 text-muted">
+                    No matching requests found for the selected filter.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <% } %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL 1: New Pick-up Request -->
+  <div class="modal fade" id="newPickupRequestModal" tabindex="-1" aria-labelledby="newPickupRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <form id="newPickupRequestForm" class="modal-content" novalidate>
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold server-dt-primary-text" id="newPickupRequestModalLabel">
+            <i class="fas fa-truck-pickup text-primary me-2"></i>Request Clothes Pick-up
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          <div class="alert alert-info py-2 px-3 fs-12 mb-3">
+            <i class="fas fa-info-circle me-1"></i>
+            Your request is submitted to <strong><%= custStore.name || 'the store' %></strong> for review. You can change the pick-up date/time anytime before the store accepts it.
+          </div>
+
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <label for="new_pickup_date" class="form-label fw-semibold">Pick-up Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="new_pickup_date" name="pickup_date" min="<%= minDate %>" value="<%= defDate %>" required>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label for="new_pickup_time" class="form-label fw-semibold">Preferred Pick-up Time <span class="text-danger">*</span></label>
+              <input type="time" class="form-control" id="new_pickup_time" name="pickup_time" value="<%= defTime %>" required>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold d-block mb-2">Return Option <span class="text-danger">*</span></label>
+              <div class="row g-2">
+                <div class="col-12 col-sm-6">
+                  <div class="form-check border rounded-3 p-2 ps-4 h-100">
+                    <input class="form-check-input" type="radio" name="order_type" id="new_type_delivery" value="Route • Route" checked>
+                    <label class="form-check-label d-block" for="new_type_delivery">
+                      <strong class="d-block fs-13">Pick-up &amp; Deliver back to me</strong>
+                      <small class="text-muted fs-11">Driver picks up and delivers clean clothes</small>
+                    </label>
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <div class="form-check border rounded-3 p-2 ps-4 h-100">
+                    <input class="form-check-input" type="radio" name="order_type" id="new_type_counter" value="Route • Counter">
+                    <label class="form-check-label d-block" for="new_type_counter">
+                      <strong class="d-block fs-13">I will pick up at store</strong>
+                      <small class="text-muted fs-11">Driver picks up; you collect when ready</small>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <label for="new_pickup_address" class="form-label fw-semibold">Pick-up Address <span class="text-danger">*</span></label>
+              <textarea class="form-control" id="new_pickup_address" name="pickup_address" rows="2" maxlength="250" required placeholder="Street address, Apt/Suite, City, Zip"><%= defAddress %></textarea>
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="new_save_address" name="save_address" value="1">
+                <label class="form-check-label fs-12 text-muted" for="new_save_address">
+                  Update my default profile address if changed
+                </label>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <label for="new_pickup_note" class="form-label fw-semibold">Special Instructions (Optional)</label>
+              <textarea class="form-control" id="new_pickup_note" name="note" rows="2" maxlength="240" placeholder="Gate/buzzer code, doorman, stain or fabric notes..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer border-top">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary fw-semibold" id="btnSubmitNewPickup">
+            <i class="fas fa-paper-plane me-1"></i>Submit Pick-up Request
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Edit / Reschedule Pick-up Request -->
+  <div class="modal fade" id="editPickupRequestModal" tabindex="-1" aria-labelledby="editPickupRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <form id="editPickupRequestForm" class="modal-content" novalidate>
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold server-dt-primary-text" id="editPickupRequestModalLabel">
+            <i class="fas fa-calendar-alt text-primary me-2"></i>Update Pick-up Request <span class="text-primary" id="edit_order_code_label"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          <input type="hidden" id="edit_order_id" value="">
+
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <label for="edit_pickup_date" class="form-label fw-semibold">New Pick-up Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="edit_pickup_date" name="pickup_date" min="<%= minDate %>" required>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label for="edit_pickup_time" class="form-label fw-semibold">New Pick-up Time <span class="text-danger">*</span></label>
+              <input type="time" class="form-control" id="edit_pickup_time" name="pickup_time" required>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold d-block mb-2">Return Option</label>
+              <div class="row g-2">
+                <div class="col-12 col-sm-6">
+                  <div class="form-check border rounded-3 p-2 ps-4 h-100">
+                    <input class="form-check-input" type="radio" name="order_type" id="edit_type_delivery" value="Route • Route">
+                    <label class="form-check-label d-block" for="edit_type_delivery">
+                      <strong class="d-block fs-13">Pick-up &amp; Deliver back to me</strong>
+                      <small class="text-muted fs-11">Route delivery after cleaning</small>
+                    </label>
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <div class="form-check border rounded-3 p-2 ps-4 h-100">
+                    <input class="form-check-input" type="radio" name="order_type" id="edit_type_counter" value="Route • Counter">
+                    <label class="form-check-label d-block" for="edit_type_counter">
+                      <strong class="d-block fs-13">I will pick up at store</strong>
+                      <small class="text-muted fs-11">Collect from store counter</small>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <label for="edit_pickup_address" class="form-label fw-semibold">Pick-up Address <span class="text-danger">*</span></label>
+              <textarea class="form-control" id="edit_pickup_address" name="pickup_address" rows="2" maxlength="250" required></textarea>
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="edit_save_address" name="save_address" value="1">
+                <label class="form-check-label fs-12 text-muted" for="edit_save_address">
+                  Update my default profile address if changed
+                </label>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <label for="edit_pickup_note" class="form-label fw-semibold">Special Instructions</label>
+              <textarea class="form-control" id="edit_pickup_note" name="note" rows="2" maxlength="240"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer border-top">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary fw-semibold" id="btnSubmitEditPickup">
+            <i class="fas fa-save me-1"></i>Save Schedule Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Cancel Pick-up Request -->
+  <div class="modal fade" id="cancelPickupRequestModal" tabindex="-1" aria-labelledby="cancelPickupRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form id="cancelPickupRequestForm" class="modal-content" novalidate>
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold text-danger" id="cancelPickupRequestModalLabel">
+            <i class="fas fa-exclamation-triangle me-2"></i>Cancel Pick-up Request
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          <input type="hidden" id="cancel_order_id" value="">
+          <p class="server-dt-primary-text mb-2">
+            Are you sure you want to cancel pick-up request <strong class="text-primary" id="cancel_order_code_label"></strong>?
+          </p>
+          <p class="text-muted fs-12 mb-3" id="cancel_schedule_summary"></p>
+
+          <div>
+            <label for="cancel_reason" class="form-label fw-semibold">Reason (Optional)</label>
+            <input type="text" class="form-control" id="cancel_reason" name="reason" maxlength="180" placeholder="e.g., Schedule changed, will drop off in person...">
+          </div>
+        </div>
+
+        <div class="modal-footer border-top">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep Request</button>
+          <button type="submit" class="btn btn-danger fw-semibold" id="btnConfirmCancelPickup">
+            <i class="fas fa-times-circle me-1"></i>Yes, Cancel Pick-up
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Timeline & Order Details Modal (for any History Row) -->
+  <div class="modal fade" id="requestTimelineModal" tabindex="-1" aria-labelledby="requestTimelineModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold server-dt-primary-text" id="requestTimelineModalLabel">
+            <i class="fas fa-stream text-primary me-2"></i>Request Timeline <span class="text-primary" id="tl_modal_code"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4" id="tl_modal_body">
+        </div>
+        <div class="modal-footer border-top">
+          <a href="#" id="tl_modal_invoice_link" class="btn btn-outline-primary fw-semibold">
+            <i class="fas fa-file-invoice me-1"></i>Full Invoice View
+          </a>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Embedded Enriched Order Data (XSS-safe JSON payload) -->
+  <script type="application/json" id="customer_orders_json"><%- JSON.stringify(allOrders).replace(/</g, '\\u003c') %></script>
+
+  <%- include('templet/footer') -%>
+  <%- include('templet/script') -%>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var rawJsonEl = document.getElementById('customer_orders_json');
+      var allOrdersList = [];
+      try {
+        allOrdersList = rawJsonEl ? JSON.parse(rawJsonEl.textContent || '[]') : [];
+      } catch (err) {
+        allOrdersList = [];
+      }
+
+      var ordersById = {};
+      allOrdersList.forEach(function (ord) {
+        ordersById[String(ord.id)] = ord;
+      });
+
+      var curSymbol = <%- JSON.stringify(curSymbol) %>;
+
+      function escHtml(str) {
+        return String(str === undefined || str === null ? '' : str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function notifySuccess(msg) {
+        if (typeof toastr !== 'undefined') toastr.success(msg);
+        else alert(msg);
+      }
+
+      function notifyError(msg) {
+        if (typeof toastr !== 'undefined') toastr.error(msg);
+        else alert(msg);
+      }
+
+      function toggleSubmitLoading($btn, isLoading, defaultHtml) {
+        if (isLoading) {
+          $btn.data('orig-html', $btn.html());
+          $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Please wait...');
+        } else {
+          $btn.prop('disabled', false).html(defaultHtml || $btn.data('orig-html') || 'Submit');
+        }
+      }
+
+      // 1. Submit New Pick-up Request
+      $('#newPickupRequestForm').on('submit', function (e) {
+        e.preventDefault();
+        var pickupDate = $('#new_pickup_date').val();
+        var pickupTime = $('#new_pickup_time').val();
+        var orderType = $('input[name="order_type"]:checked', '#newPickupRequestForm').val() || 'Route • Route';
+        var pickupAddress = ($('#new_pickup_address').val() || '').trim();
+        var saveAddress = $('#new_save_address').is(':checked');
+        var note = ($('#new_pickup_note').val() || '').trim();
+
+        if (!pickupDate || !pickupTime) {
+          notifyError('Please choose both pick-up date and time.');
+          return;
+        }
+        if (!pickupAddress) {
+          notifyError('Please provide a pick-up address.');
+          $('#new_pickup_address').focus();
+          return;
+        }
+
+        var $btn = $('#btnSubmitNewPickup');
+        toggleSubmitLoading($btn, true);
+
+        $.ajax({
+          url: '/order/customer/pickup-request',
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            pickup_date: pickupDate,
+            pickup_time: pickupTime,
+            order_type: orderType,
+            pickup_address: pickupAddress,
+            save_address: saveAddress,
+            note: note
+          }),
+          success: function (res) {
+            toggleSubmitLoading($btn, false);
+            if (res && res.success) {
+              $('#newPickupRequestModal').modal('hide');
+              notifySuccess(res.message || 'Pick-up request submitted!');
+              setTimeout(function () { window.location.reload(); }, 600);
+            } else {
+              notifyError((res && res.message) || 'Could not submit pick-up request.');
+            }
+          },
+          error: function (xhr) {
+            toggleSubmitLoading($btn, false);
+            var msg = (xhr.responseJSON && xhr.responseJSON.message) || 'Failed to submit pick-up request.';
+            notifyError(msg);
+          }
+        });
+      });
+
+      // 2. Populate Edit Modal (Dual-binding: button click + show.bs.modal with closest trigger resolution)
+      function populateEditPickupModal(orderId) {
+        var ord = ordersById[String(orderId)];
+        if (!ord) return;
+
+        $('#edit_order_id').val(ord.id);
+        $('#edit_order_code_label').text('#' + (ord.order_id || ord.id));
+        $('#editPickupRequestForm').attr('data-target-url', '/order/customer/pickup-request/' + encodeURIComponent(ord.id) + '/update');
+        $('#edit_pickup_date').val(ord.pickupDateIso || '');
+        $('#edit_pickup_time').val(ord.pickupTimeIso || '10:00');
+        $('#edit_pickup_address').val(ord.pickup_address || '');
+        $('#edit_save_address').prop('checked', false);
+        $('#edit_pickup_note').val(ord.note || '');
+
+        var isCounterReturn = String(ord.canonicalOrderType || '').indexOf('Counter') !== -1 &&
+          String(ord.canonicalOrderType || '').indexOf('Route • Counter') !== -1;
+        $('#edit_type_delivery').prop('checked', !isCounterReturn);
+        $('#edit_type_counter').prop('checked', isCounterReturn);
+      }
+
+      $(document).on('click', '.btn-edit-pickup', function () {
+        var orderId = $(this).closest('.btn-edit-pickup').attr('data-order-id');
+        if (orderId) populateEditPickupModal(orderId);
+      });
+
+      $('#editPickupRequestModal').on('show.bs.modal', function (e) {
+        var $btn = $(e.relatedTarget).closest('.btn-edit-pickup, [data-bs-target="#editPickupRequestModal"]');
+        var orderId = $btn.attr('data-order-id');
+        if (orderId) populateEditPickupModal(orderId);
+      });
+
+      $('#editPickupRequestForm').on('submit', function (e) {
+        e.preventDefault();
+        var orderId = $('#edit_order_id').val();
+        var targetUrl = $(this).attr('data-target-url') || '';
+        if (!orderId || !targetUrl || targetUrl.indexOf('undefined') !== -1) {
+          notifyError('Invalid request selection. Please close and reopen the dialog.');
+          return false;
+        }
+
+        var pickupDate = $('#edit_pickup_date').val();
+        var pickupTime = $('#edit_pickup_time').val();
+        var orderType = $('input[name="order_type"]:checked', '#editPickupRequestForm').val() || 'Route • Route';
+        var pickupAddress = ($('#edit_pickup_address').val() || '').trim();
+        var saveAddress = $('#edit_save_address').is(':checked');
+        var note = ($('#edit_pickup_note').val() || '').trim();
+
+        if (!pickupDate || !pickupTime || !pickupAddress) {
+          notifyError('Please fill in date, time, and pick-up address.');
+          return;
+        }
+
+        var $btn = $('#btnSubmitEditPickup');
+        toggleSubmitLoading($btn, true);
+
+        $.ajax({
+          url: targetUrl,
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            pickup_date: pickupDate,
+            pickup_time: pickupTime,
+            order_type: orderType,
+            pickup_address: pickupAddress,
+            save_address: saveAddress,
+            note: note
+          }),
+          success: function (res) {
+            toggleSubmitLoading($btn, false);
+            if (res && res.success) {
+              $('#editPickupRequestModal').modal('hide');
+              notifySuccess(res.message || 'Pick-up schedule updated.');
+              setTimeout(function () { window.location.reload(); }, 600);
+            } else {
+              notifyError((res && res.message) || 'Could not update pick-up request.');
+            }
+          },
+          error: function (xhr) {
+            toggleSubmitLoading($btn, false);
+            var msg = (xhr.responseJSON && xhr.responseJSON.message) || 'Failed to update pick-up request.';
+            notifyError(msg);
+          }
+        });
+      });
+
+      // 3. Populate & Submit Cancel Modal (Dual-binding + Submission Guard)
+      function populateCancelPickupModal(orderId) {
+        var ord = ordersById[String(orderId)];
+        if (!ord) return;
+
+        $('#cancel_order_id').val(ord.id);
+        $('#cancel_order_code_label').text('#' + (ord.order_id || ord.id));
+        $('#cancel_schedule_summary').text(
+          ord.hasPickup && ord.formattedPickupDateTime
+            ? ('Currently scheduled for: ' + ord.formattedPickupDateTime)
+            : ''
+        );
+        $('#cancel_reason').val('');
+        $('#cancelPickupRequestForm').attr('data-target-url', '/order/customer/pickup-request/' + encodeURIComponent(ord.id) + '/cancel');
+      }
+
+      $(document).on('click', '.btn-cancel-pickup', function () {
+        var orderId = $(this).closest('.btn-cancel-pickup').attr('data-order-id');
+        if (orderId) populateCancelPickupModal(orderId);
+      });
+
+      $('#cancelPickupRequestModal').on('show.bs.modal', function (e) {
+        var $btn = $(e.relatedTarget).closest('.btn-cancel-pickup, [data-bs-target="#cancelPickupRequestModal"]');
+        var orderId = $btn.attr('data-order-id');
+        if (orderId) populateCancelPickupModal(orderId);
+      });
+
+      $('#cancelPickupRequestForm').on('submit', function (e) {
+        e.preventDefault();
+        var orderId = $('#cancel_order_id').val();
+        var targetUrl = $(this).attr('data-target-url') || '';
+        if (!orderId || !targetUrl || targetUrl.indexOf('undefined') !== -1) {
+          notifyError('Invalid request selection. Please close and reopen the dialog.');
+          return false;
+        }
+
+        var $btn = $('#btnConfirmCancelPickup');
+        toggleSubmitLoading($btn, true);
+
+        $.ajax({
+          url: targetUrl,
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            reason: ($('#cancel_reason').val() || '').trim()
+          }),
+          success: function (res) {
+            toggleSubmitLoading($btn, false);
+            if (res && res.success) {
+              $('#cancelPickupRequestModal').modal('hide');
+              notifySuccess(res.message || 'Pick-up request cancelled.');
+              setTimeout(function () { window.location.reload(); }, 600);
+            } else {
+              notifyError((res && res.message) || 'Could not cancel pick-up request.');
+            }
+          },
+          error: function (xhr) {
+            toggleSubmitLoading($btn, false);
+            var msg = (xhr.responseJSON && xhr.responseJSON.message) || 'Failed to cancel pick-up request.';
+            notifyError(msg);
+          }
+        });
+      });
+
+      // 4. Populate History Timeline Modal
+      function populateTimelineModal(orderId) {
+        var ord = ordersById[String(orderId)];
+        if (!ord) return;
+
+        $('#tl_modal_code').text('#' + (ord.order_id || ord.id));
+        $('#tl_modal_invoice_link').attr('href', '/order/view/' + encodeURIComponent(ord.id));
+
+        var html = '<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 pb-2 border-bottom">';
+        html += '<div><span class="badge-status-pill ' + escHtml(ord.statusBadgeClass) + ' me-2">' + escHtml(ord.statusDisplay) + '</span>';
+        html += '<span class="badge bg-info-subtle">' + escHtml(ord.orderTypeDisplay) + '</span></div>';
+        html += '<small class="text-muted">Store: <strong>' + escHtml(ord.storeLabel) + '</strong></small>';
+        html += '</div>';
+
+        if (ord.isCancelled) {
+          html += '<div class="alert alert-danger py-2 px-3 fs-12 mb-3">';
+          html += '<i class="fas fa-ban me-1"></i><strong>Cancelled</strong>';
+          if (ord.void_reason) html += ' — Reason: ' + escHtml(ord.void_reason);
+          html += '</div>';
+        }
+
+        html += '<div class="d-flex flex-column gap-2 mb-3">';
+        (ord.stages || []).forEach(function (st, idx) {
+          var badgeCls = st.state === 'done'
+            ? 'bg-success text-white'
+            : (st.state === 'current' ? 'bg-primary text-white' : (st.state === 'cancelled' ? 'bg-danger-subtle' : 'bg-secondary-subtle'));
+          html += '<div class="border rounded-3 p-2 d-flex align-items-center gap-3">';
+          html += '<span class="badge ' + badgeCls + ' rounded-pill"><i class="fas ' + escHtml(st.state === 'done' ? 'fa-check' : st.icon) + '"></i></span>';
+          html += '<div><div class="fw-bold fs-13 server-dt-primary-text">' + (idx + 1) + '. ' + escHtml(st.title) + '</div>';
+          html += '<div class="text-muted fs-12">' + escHtml(st.subtitle) + '</div></div>';
+          html += '</div>';
+        });
+        html += '</div>';
+
+        if (ord.pickup_address) {
+          html += '<div class="fs-12 text-muted mb-2"><i class="fas fa-map-marker-alt text-danger me-1"></i><strong>Pick-up Address:</strong> ' + escHtml(ord.pickup_address) + '</div>';
+        }
+        if (ord.note) {
+          html += '<div class="fs-12 text-muted mb-3"><i class="fas fa-comment-dots text-primary me-1"></i><strong>Notes:</strong> ' + escHtml(ord.note) + '</div>';
+        }
+
+        if (ord.items && ord.items.length > 0) {
+          html += '<div class="table-responsive border rounded-3"><table class="table table-sm mb-0"><thead><tr><th>Service</th><th>Type</th><th class="text-center">Qty</th><th class="text-end">Total</th></tr></thead><tbody>';
+          ord.items.forEach(function (it) {
+            html += '<tr><td>' + escHtml(it.service_name) + '</td><td class="text-muted fs-12">' + escHtml(it.service_type_name) + '</td><td class="text-center">' + escHtml(it.qty) + '</td><td class="text-end">' + escHtml(curSymbol) + Number(it.lineTotal || 0).toFixed(2) + '</td></tr>';
+          });
+          html += '</tbody><tfoot><tr><td colspan="3" class="text-end fw-bold">Gross Total:</td><td class="text-end fw-bold">' + escHtml(curSymbol) + Number(ord.grossTotal || 0).toFixed(2) + '</td></tr></tfoot></table></div>';
+        } else {
+          html += '<div class="alert alert-info py-2 px-3 fs-12 mb-0"><i class="fas fa-info-circle me-1"></i>0 items itemized on this request.</div>';
+        }
+
+        $('#tl_modal_body').html(html);
+      }
+
+      $(document).on('click', '.btn-view-timeline', function () {
+        var orderId = $(this).closest('.btn-view-timeline').attr('data-order-id');
+        if (orderId) populateTimelineModal(orderId);
+      });
+
+      $('#requestTimelineModal').on('show.bs.modal', function (e) {
+        var $btn = $(e.relatedTarget).closest('.btn-view-timeline, [data-bs-target="#requestTimelineModal"]');
+        var orderId = $btn.attr('data-order-id');
+        if (orderId) populateTimelineModal(orderId);
+      });
+
+      // 5. Request History Filter & Search
+      var currentCategory = 'all';
+
+      function applyHistoryFilters() {
+        var query = ($('#portalHistorySearch').val() || '').trim().toLowerCase();
+        var visibleCount = 0;
+
+        $('.portal-history-row').each(function () {
+          var $row = $(this);
+          var cat = $row.attr('data-category');
+          var searchBlob = $row.attr('data-search') || '';
+          var matchesCategory = currentCategory === 'all' || cat === currentCategory;
+          var matchesSearch = !query || searchBlob.indexOf(query) !== -1;
+
+          if (matchesCategory && matchesSearch) {
+            $row.removeClass('d-none');
+            visibleCount++;
+          } else {
+            $row.addClass('d-none');
+          }
+        });
+
+        if (visibleCount === 0 && $('.portal-history-row').length > 0) {
+          $('#portalHistoryEmptyRow').removeClass('d-none');
+        } else {
+          $('#portalHistoryEmptyRow').addClass('d-none');
+        }
+      }
+
+      $('.portal-filter-btn').on('click', function () {
+        var $clicked = $(this);
+        currentCategory = $clicked.attr('data-filter') || 'all';
+        $('.portal-filter-btn').each(function () {
+          var $btn = $(this);
+          var f = $btn.attr('data-filter');
+          $btn.removeClass('active btn-primary btn-success btn-danger');
+          if (f === 'all' || f === 'active') $btn.addClass('btn-outline-primary');
+          if (f === 'completed') $btn.addClass('btn-outline-success');
+          if (f === 'cancelled') $btn.addClass('btn-outline-danger');
+        });
+        $clicked.removeClass('btn-outline-primary btn-outline-success btn-outline-danger').addClass('active');
+        if (currentCategory === 'completed') $clicked.addClass('btn-success');
+        else if (currentCategory === 'cancelled') $clicked.addClass('btn-danger');
+        else $clicked.addClass('btn-primary');
+        applyHistoryFilters();
+      });
+
+      $('#portalHistorySearch').on('input keyup', applyHistoryFilters);
+    })();
+  </script>
+</body>
+
+</html>

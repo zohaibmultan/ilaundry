@@ -11,6 +11,12 @@
   <%
     const isGuestView = (typeof isGuest !== 'undefined' && isGuest);
     const activeSelectedStoreId = (typeof selectedStoreId !== 'undefined' && selectedStoreId) ? String(selectedStoreId) : '';
+    const canToggleCal = !isGuestView && (
+      typeof canEditCalendar !== 'undefined'
+        ? canEditCalendar
+        : Boolean(accessdata?.logas === 'master' || accessdata?.roll?.route_calendar?.includes('edit') || accessdata?.roll?.orders?.includes('edit'))
+    );
+    const canAccessPosBtn = !isGuestView && Boolean(accessdata?.logas === 'master' || accessdata?.roll?.pos?.includes('read'));
   %>
   <% if (!isGuestView) { %>
     <%- include('templet/preloder_topbar_sidebar', { titel: titel || 'Route Calendar' }) -%>
@@ -49,7 +55,7 @@
             <a href="/" class="btn btn-sm btn-outline-primary">
               <i class="fa fa-sign-in-alt me-1"></i> <%= language.Login || 'Login' %>
             </a>
-            <% } else { %>
+            <% } else if (canAccessPosBtn) { %>
             <a href="/admin/pos" class="btn btn-sm btn-primary">
               <i class="fa fa-plus me-1"></i> <%= language.Add_New_Orders || 'New Order' %>
             </a>
@@ -177,6 +183,10 @@
               <i class="fa fa-map-marker-alt text-danger mt-1"></i>
               <span id="modal_customer_address">-</span>
             </div>
+            <div class="mt-2 pt-2 border-top text-muted small d-none d-flex align-items-start gap-1" id="modal_order_note_wrap">
+              <i class="fa fa-comment-dots text-primary mt-1"></i>
+              <span id="modal_order_note"></span>
+            </div>
           </div>
 
           <!-- 3-Schedule Breakdown Grid -->
@@ -243,7 +253,7 @@
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
                   <div class="form-check form-switch fs-5 mb-0">
-                    <input class="form-check-input" type="checkbox" role="switch" id="pickup_status_toggle" <%= isGuestView ? 'disabled' : '' %> style="cursor: pointer;">
+                    <input class="form-check-input" type="checkbox" role="switch" id="pickup_status_toggle" <%= !canToggleCal ? 'disabled' : '' %> style="cursor: pointer;">
                   </div>
                   <div>
                     <label class="form-check-label fw-bold text-dark mb-0" for="pickup_status_toggle" style="cursor: pointer;">
@@ -261,7 +271,7 @@
               <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
                   <div class="form-check form-switch fs-5 mb-0">
-                    <input class="form-check-input" type="checkbox" role="switch" id="delivery_status_toggle" <%= isGuestView ? 'disabled' : '' %> style="cursor: pointer;">
+                    <input class="form-check-input" type="checkbox" role="switch" id="delivery_status_toggle" <%= !canToggleCal ? 'disabled' : '' %> style="cursor: pointer;">
                   </div>
                   <div>
                     <label class="form-check-label fw-bold text-dark mb-0" for="delivery_status_toggle" style="cursor: pointer;">
@@ -497,6 +507,13 @@
         $('#modal_customer_phone').text(order.customerPhone || 'No Phone');
         $('#modal_customer_phone_link').attr('href', order.customerPhone ? ('tel:' + order.customerPhone) : '#');
         $('#modal_customer_address').text(order.customerAddress || 'No Address Provided');
+        if (order.orderNote && String(order.orderNote).trim()) {
+          $('#modal_order_note').text(order.orderNote.trim());
+          $('#modal_order_note_wrap').removeClass('d-none');
+        } else {
+          $('#modal_order_note').text('');
+          $('#modal_order_note_wrap').addClass('d-none');
+        }
         $('#modal_store_badge').text(order.storeName || 'Store');
 
         // Schedules

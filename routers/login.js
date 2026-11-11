@@ -14,6 +14,14 @@ var {
   DataInsert,
   DataFind,
 } = require("../middelwer/databaseQurey");
+const { getEffectiveReadySchedule } = require("../middelwer/readyScheduleHelper");
+const {
+  resolveCustomerStoreContext,
+  loadCustomerOrdersEnriched,
+  formatCustomerProfileAddress,
+  formatCustomerName,
+  extractLocalDateIso,
+} = require("../middelwer/customerPortalHelper");
 
 router.get("/", async (req, res) => {
   try {
@@ -39,12 +47,13 @@ router.get("/", async (req, res) => {
           );
 
           if (rollFind && rollFind.length > 0) {
+            const rf = rollFind[0];
             const RollAdd = await DataInsert(
               `tbl_staff_roll`,
-              `customers, orders, expense, service, reports, tools, mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id, is_staff`,
-              `'${rollFind[0].customer}', '${rollFind[0].orders}', '${rollFind[0].expense}', '${rollFind[0].service}', '${rollFind[0].reports}', '${rollFind[0].tools}', '${rollFind[0].mail}', 
-              '${rollFind[0].master}', '${rollFind[0].sms}', '${rollFind[0].staff}', '${rollFind[0].pos}', '${rollFind[0].rollaccess}', '${rollFind[0].account}', '${rollFind[0].coupon}', 
-              '${rollFind[0].branch_n_store}', '${rollFind[0].master_setting}', '${rollFind[0].Pay_Out}', '${rollFind[0].id}', '${newroll.insertId}', '0'`,
+              `customers, orders, expense, service, reports, tools, mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, customer_credentials, pickup_requests, racks, route_calendar, pos_price_discount_override, order_payment_collect, financial_reports, main_roll_id, staff_id, is_staff`,
+              `'${rf.customers || rf.customer || ""}', '${rf.orders}', '${rf.expense}', '${rf.service}', '${rf.reports}', '${rf.tools}', '${rf.mail}', 
+              '${rf.master}', '${rf.sms}', '${rf.staff}', '${rf.pos}', '${rf.rollaccess}', '${rf.account}', '${rf.coupon}', 
+              '${rf.branch_n_store}', '${rf.master_setting}', '${rf.Pay_Out}', '${rf.customer_credentials || "edit"}', '${rf.pickup_requests || "read,edit"}', '${rf.racks || "read,write,edit,delete"}', '${rf.route_calendar || "read,edit"}', '${rf.pos_price_discount_override || "edit"}', '${rf.order_payment_collect || "write"}', '${rf.financial_reports || "read"}', '${rf.id}', '${newroll.insertId}', '0'`,
               req.hostname,
               req.protocol,
             );
@@ -498,21 +507,7 @@ router.post("/login", async (req, res) => {
     }
 
     req.flash("success", `${data[0].name}, Welcome back!!`);
-    if (loginas == 0) {
-      console.log(rollFind);
-
-      if (rollFind[0].pos.includes("read")) {
-        res.redirect("/admin/pos");
-      } else if (rollFind[0].orders.includes("read")) {
-        res.redirect("/order/list");
-      } else if (rollFind[0].customer.includes("read")) {
-        res.redirect("/coustomer/list");
-      } else {
-        res.redirect("/profile");
-      }
-    } else {
-      res.redirect("/index");
-    }
+    return res.redirect("/index");
   } catch (error) {
     console.log(error);
   }
@@ -893,11 +888,18 @@ router.post("/shopregister", upload.single("logo"), async (req, res) => {
     const posPerm = targetRoll?.pos || "read,write,edit";
     const accountPerm = targetRoll?.account || "read,write,edit,delete";
     const couponPerm = "read,write,edit,delete";
+    const customerCredentialsPerm = targetRoll?.customer_credentials || "edit";
+    const pickupReqPerm = targetRoll?.pickup_requests || "read,edit";
+    const racksPerm = targetRoll?.racks || "read,write,edit,delete";
+    const routeCalPerm = targetRoll?.route_calendar || "read,edit";
+    const posOverridePerm = targetRoll?.pos_price_discount_override || "edit";
+    const orderPayPerm = targetRoll?.order_payment_collect || "write";
+    const finReportsPerm = targetRoll?.financial_reports || "read";
 
     const staffRollInsert = await DataInsert(
       `tbl_staff_roll`,
-      `customers, orders, expense, service, reports, tools, mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id, is_staff`,
-      `'${customersPerm}', '${ordersPerm}', '${expensePerm}', '${servicePerm}', '${reportsPerm}', '${toolsPerm}', '${mailPerm}', '${masterPerm}', '${smsPerm}', '${staffPerm}', '${posPerm}', '', '${accountPerm}', '${couponPerm}', '', '', '', '${targetRollId}', '${newid}', '0'`,
+      `customers, orders, expense, service, reports, tools, mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, customer_credentials, pickup_requests, racks, route_calendar, pos_price_discount_override, order_payment_collect, financial_reports, main_roll_id, staff_id, is_staff`,
+      `'${customersPerm}', '${ordersPerm}', '${expensePerm}', '${servicePerm}', '${reportsPerm}', '${toolsPerm}', '${mailPerm}', '${masterPerm}', '${smsPerm}', '${staffPerm}', '${posPerm}', '', '${accountPerm}', '${couponPerm}', '', '', '', '${customerCredentialsPerm}', '${pickupReqPerm}', '${racksPerm}', '${routeCalPerm}', '${posOverridePerm}', '${orderPayPerm}', '${finReportsPerm}', '${targetRollId}', '${newid}', '0'`,
       req.hostname,
       req.protocol,
     );
@@ -959,9 +961,15 @@ function enrichRecentOrders(orders, accessdata, isMaster = false) {
     accessdata.roll.orders &&
     accessdata.roll.orders.includes("edit")
   );
+  const canCollectPayment = isMaster || Boolean(
+    accessdata &&
+    accessdata.roll &&
+    accessdata.roll.order_payment_collect &&
+    accessdata.roll.order_payment_collect.includes("write")
+  );
 
   return (orders || [])
-    .filter((order) => String(order.order_status) !== "6" && Number(order.order_status) !== 6)
+    .filter((order) => ![6, 9].includes(Number(order.order_status)))
     .map((order) => {
     const oDate = order.order_date ? new Date(order.order_date) : null;
     let formattedOrderDate = "";
@@ -1008,6 +1016,9 @@ function enrichRecentOrders(orders, accessdata, isMaster = false) {
     else if (order.order_status == 4) statusClass = "status-delivered";
     else if (order.order_status == 5) statusClass = "status-returned";
     else if (order.order_status == 6) statusClass = "status-cancelled";
+    else if (order.order_status == 8) statusClass = "status-draft";
+    else if (order.order_status == 9) statusClass = "status-submitted";
+    else if (order.order_status == 10) statusClass = "status-accepted";
 
     const gross = parseFloat(order.gross_total || 0);
     const paid = parseFloat(order.paid_amount || 0);
@@ -1031,6 +1042,7 @@ function enrichRecentOrders(orders, accessdata, isMaster = false) {
       balance_amount: balance,
       canDelete,
       canEdit,
+      canCollectPayment,
       isMaster,
     };
 
@@ -1043,6 +1055,49 @@ router.get("/index", auth, async (req, res) => {
     const { id, roll, store, loginas } = req.user;
 
     const accessdata = await access(req.user);
+
+    if (Number(loginas) === 0) {
+      const { customer, store: customerStore } = await resolveCustomerStoreContext(id, store);
+      if (!customer) {
+        req.flash("error", "Customer profile not found.");
+        return res.redirect("/");
+      }
+
+      const effectiveStoreId = customerStore ? customerStore.id : (store || 1);
+      const readySchedule = await getEffectiveReadySchedule(effectiveStoreId);
+      const { orders: customerOrders, stats } = await loadCustomerOrdersEnriched(
+        customer.id,
+        customerStore ? customerStore.name : "Main Store"
+      );
+
+      const now = new Date();
+      let defaultDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10, 0, 0);
+      let defaultPickupTime = "10:00";
+      if (now.getHours() >= 16) {
+        defaultDateObj.setDate(defaultDateObj.getDate() + 1);
+      } else if (now.getHours() >= 9) {
+        const nextHour = now.getHours() + 1;
+        defaultDateObj.setHours(nextHour, 0, 0, 0);
+        defaultPickupTime = `${String(nextHour).padStart(2, "0")}:00`;
+      }
+
+      return res.render("customer_portal", {
+        accessdata,
+        customer,
+        customerDisplayName: formatCustomerName(customer),
+        defaultPickupAddress: formatCustomerProfileAddress(customer),
+        customerStore: customerStore || {},
+        readySchedule,
+        customerOrders,
+        activeOrders: customerOrders.filter((o) => o.isActive),
+        stats,
+        defaultPickupDate: extractLocalDateIso(defaultDateObj),
+        defaultPickupTime,
+        minPickupDate: extractLocalDateIso(now),
+        language: req.language_data,
+        language_name: req.language_name,
+      });
+    }
 
     const rolldetail = await DataFind(`
       SELECT 
@@ -1094,6 +1149,7 @@ router.get("/index", auth, async (req, res) => {
       );
       const canReadOrders = Boolean(rolldetail[0]?.orders && rolldetail[0].orders.includes("read"));
       const canReadReports = Boolean(rolldetail[0]?.reports && rolldetail[0].reports.includes("read"));
+      const canReadFinancialReports = Boolean(rolldetail[0]?.financial_reports && rolldetail[0].financial_reports.includes("read"));
       const canViewAllStaffRecords = Boolean(
         accessdata.logas === 'master' ||
         (rolldetail[0]?.all_staff_records && rolldetail[0].all_staff_records.includes("read"))
@@ -1105,15 +1161,15 @@ router.get("/index", auth, async (req, res) => {
 
       const staffStats = await DataFind(`
         SELECT 
-          COALESCE(SUM(CASE WHEN order_status != '6' THEN gross_total ELSE 0 END), 0) AS staff_sales,
-          COUNT(CASE WHEN order_status != '6' THEN id ELSE NULL END) AS staff_orders
+          COALESCE(SUM(CASE WHEN order_status NOT IN ('6', '9') THEN gross_total ELSE 0 END), 0) AS staff_sales,
+          COUNT(CASE WHEN order_status NOT IN ('6', '9') THEN id ELSE NULL END) AS staff_orders
         FROM tbl_order
         WHERE ${staffOrderFilter}
       `);
 
       const recentOrderFilter = canViewAllStaffRecords
         ? `tbl_order.store_id = '${userStoreId}'`
-        : `tbl_order.store_id = '${userStoreId}' AND (tbl_order.created_by = '1,${id}' OR tbl_order.created_by = '${id}')`;
+        : `tbl_order.store_id = '${userStoreId}' AND (tbl_order.created_by = '1,${id}' OR tbl_order.created_by = '${id}' OR tbl_order.created_by LIKE '0,%')`;
 
       const rawRecentOrder = await DataFind(`
         SELECT 
@@ -1137,7 +1193,7 @@ router.get("/index", auth, async (req, res) => {
         LEFT JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
         LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
         WHERE ${recentOrderFilter}
-          AND tbl_order.order_status != '6'
+          AND tbl_order.order_status NOT IN ('6', '9')
         ORDER BY tbl_order.id DESC, tbl_order.order_id DESC 
         LIMIT 10
       `);
@@ -1159,6 +1215,7 @@ router.get("/index", auth, async (req, res) => {
         canAccessPos,
         canReadOrders,
         canReadReports,
+        canReadFinancialReports,
         canViewAllStaffRecords
       });
     }
@@ -1167,8 +1224,8 @@ router.get("/index", auth, async (req, res) => {
       // Store view: strictly scoped to assigned store (both store user and staff)
       const storeStats = await DataFind(`
         SELECT 
-          (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE store_id = '${activeStoreId}' AND order_status != '6') AS tottalsales,
-          (SELECT COUNT(*) FROM tbl_order WHERE store_id = '${activeStoreId}' AND order_status != '6') AS totalorder,
+          (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE store_id = '${activeStoreId}' AND order_status NOT IN ('6', '9')) AS tottalsales,
+          (SELECT COUNT(*) FROM tbl_order WHERE store_id = '${activeStoreId}' AND order_status NOT IN ('6', '9')) AS totalorder,
           (SELECT COUNT(*) FROM tbl_services WHERE store_ID = '${activeStoreId}') AS totalservices,
           (SELECT COUNT(*) FROM tbl_customer WHERE store_ID = '${activeStoreId}' AND approved = '1' AND delet_flage != '1' AND name != 'Walk in Customer') AS totalcustomer
       `);
@@ -1195,7 +1252,7 @@ router.get("/index", auth, async (req, res) => {
         LEFT JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
         LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
         WHERE tbl_order.store_id = '${activeStoreId}'
-          AND tbl_order.order_status != '6'
+          AND tbl_order.order_status NOT IN ('6', '9')
         ORDER BY tbl_order.id DESC, tbl_order.order_id DESC 
         LIMIT 10
       `);
@@ -1209,7 +1266,7 @@ router.get("/index", auth, async (req, res) => {
           COUNT(id) AS total_orders,
           COALESCE(SUM(gross_total), 0) AS total_sales
         FROM tbl_order 
-        WHERE store_id = '${activeStoreId}' AND YEAR(order_date) = YEAR(CURDATE()) AND order_status != '6'
+        WHERE store_id = '${activeStoreId}' AND YEAR(order_date) = YEAR(CURDATE()) AND order_status NOT IN ('6', '9')
         GROUP BY YEAR(order_date), MONTH(order_date)
         ORDER BY month ASC
       `);
@@ -1244,8 +1301,8 @@ router.get("/index", auth, async (req, res) => {
       // Super Admin view: overall totals across all stores + per-store stats + top 10 orders across all stores with store name
       const overallStats = await DataFind(`
         SELECT 
-          (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE order_status != '6') AS tottalsales,
-          (SELECT COUNT(*) FROM tbl_order WHERE order_status != '6') AS totalorder,
+          (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE order_status NOT IN ('6', '9')) AS tottalsales,
+          (SELECT COUNT(*) FROM tbl_order WHERE order_status NOT IN ('6', '9')) AS totalorder,
           (SELECT COUNT(*) FROM tbl_services) AS totalservices,
           (SELECT COUNT(*) FROM tbl_customer WHERE delet_flage != '1' AND approved = '1' AND name != 'Walk in Customer') AS totalcustomer
       `);
@@ -1258,8 +1315,8 @@ router.get("/index", auth, async (req, res) => {
         SELECT 
           s.id AS store_id,
           s.name AS store_name,
-          COALESCE(SUM(CASE WHEN o.order_status != '6' THEN o.gross_total ELSE 0 END), 0) AS tottalsales,
-          COUNT(DISTINCT CASE WHEN o.order_status != '6' THEN o.id ELSE NULL END) AS totalorder,
+          COALESCE(SUM(CASE WHEN o.order_status NOT IN ('6', '9') THEN o.gross_total ELSE 0 END), 0) AS tottalsales,
+          COUNT(DISTINCT CASE WHEN o.order_status NOT IN ('6', '9') THEN o.id ELSE NULL END) AS totalorder,
           (SELECT COUNT(*) FROM tbl_services WHERE store_ID = s.id) AS totalservices,
           (SELECT COUNT(*) FROM tbl_customer WHERE store_ID = s.id AND delet_flage != '1' AND approved = '1' AND name != 'Walk in Customer') AS totalcustomer
         FROM tbl_store s
@@ -1290,7 +1347,7 @@ router.get("/index", auth, async (req, res) => {
         LEFT JOIN tbl_customer ON tbl_order.customer_id = tbl_customer.id 
         LEFT JOIN tbl_orderstatus ON tbl_order.order_status = tbl_orderstatus.id 
         LEFT JOIN tbl_store ON tbl_order.store_id = tbl_store.id 
-        WHERE tbl_order.order_status != '6'
+        WHERE tbl_order.order_status NOT IN ('6', '9')
         ORDER BY tbl_order.id DESC, tbl_order.order_id DESC 
         LIMIT 10
       `);
@@ -1304,7 +1361,7 @@ router.get("/index", auth, async (req, res) => {
           COUNT(id) AS total_orders,
           COALESCE(SUM(gross_total), 0) AS total_sales
         FROM tbl_order 
-        WHERE YEAR(order_date) = YEAR(CURDATE()) AND order_status != '6'
+        WHERE YEAR(order_date) = YEAR(CURDATE()) AND order_status NOT IN ('6', '9')
         GROUP BY YEAR(order_date), MONTH(order_date)
         ORDER BY month ASC
       `);
@@ -1372,8 +1429,8 @@ router.get("/api/dashboard-stats", auth, async (req, res) => {
 
       const staffStats = await DataFind(`
         SELECT 
-          COALESCE(SUM(CASE WHEN order_status != '6' THEN gross_total ELSE 0 END), 0) AS tottalsales,
-          COUNT(CASE WHEN order_status != '6' THEN id ELSE NULL END) AS totalorder
+          COALESCE(SUM(CASE WHEN order_status NOT IN ('6', '9') THEN gross_total ELSE 0 END), 0) AS tottalsales,
+          COUNT(CASE WHEN order_status NOT IN ('6', '9') THEN id ELSE NULL END) AS totalorder
         FROM tbl_order
         WHERE ${staffOrderFilter}
       `);
@@ -1411,16 +1468,16 @@ router.get("/api/dashboard-stats", auth, async (req, res) => {
     if (targetStore && targetStore !== "0" && targetStore !== "all") {
       statsQuery = `
         SELECT 
-          (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE store_id = '${targetStore}' AND order_status != '6') AS tottalsales,
-          (SELECT COUNT(*) FROM tbl_order WHERE store_id = '${targetStore}' AND order_status != '6') AS totalorder,
+          (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE store_id = '${targetStore}' AND order_status NOT IN ('6', '9')) AS tottalsales,
+          (SELECT COUNT(*) FROM tbl_order WHERE store_id = '${targetStore}' AND order_status NOT IN ('6', '9')) AS totalorder,
           (SELECT COUNT(*) FROM tbl_services WHERE store_ID = '${targetStore}') AS totalservices,
           (SELECT COUNT(*) FROM tbl_customer WHERE (store_ID = '${targetStore}' OR reffstore = '${targetStore}') AND delet_flage != '1') AS totalcustomer
       `;
     } else {
       statsQuery = `
         SELECT 
-          (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE order_status != '6') AS tottalsales,
-          (SELECT COUNT(*) FROM tbl_order WHERE order_status != '6') AS totalorder,
+          (SELECT COALESCE(SUM(gross_total), 0) FROM tbl_order WHERE order_status NOT IN ('6', '9')) AS tottalsales,
+          (SELECT COUNT(*) FROM tbl_order WHERE order_status NOT IN ('6', '9')) AS totalorder,
           (SELECT COUNT(*) FROM tbl_services) AS totalservices,
           (SELECT COUNT(*) FROM tbl_customer WHERE delet_flage != '1') AS totalcustomer
       `;
@@ -1438,8 +1495,8 @@ router.get("/api/dashboard-stats", auth, async (req, res) => {
         SELECT 
           s.id AS store_id,
           s.name AS store_name,
-          COALESCE(SUM(CASE WHEN o.order_status != '6' THEN o.gross_total ELSE 0 END), 0) AS tottalsales,
-          COUNT(DISTINCT CASE WHEN o.order_status != '6' THEN o.id ELSE NULL END) AS totalorder,
+          COALESCE(SUM(CASE WHEN o.order_status NOT IN ('6', '9') THEN o.gross_total ELSE 0 END), 0) AS tottalsales,
+          COUNT(DISTINCT CASE WHEN o.order_status NOT IN ('6', '9') THEN o.id ELSE NULL END) AS totalorder,
           (SELECT COUNT(*) FROM tbl_services WHERE store_ID = s.id) AS totalservices,
           (SELECT COUNT(*) FROM tbl_customer WHERE (store_ID = s.id OR reffstore = s.id) AND delet_flage != '1') AS totalcustomer
         FROM tbl_store s

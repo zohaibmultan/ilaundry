@@ -29,6 +29,46 @@ const {
   resolveTwilioConfig,
 } = require("../services/notificationService");
 
+function normalizePermValue(val) {
+  if (!val) return "";
+  return Array.isArray(val) ? val.filter(Boolean).join(",") : String(val);
+}
+
+function buildRoleCopyFields(roleRow, fallbacks = {}) {
+  const r = roleRow || {};
+  return {
+    customers: r.customers || r.customer || fallbacks.customers || "",
+    orders: r.orders || fallbacks.orders || "",
+    expense: r.expense || fallbacks.expense || "",
+    service: r.service || fallbacks.service || "",
+    reports: r.reports || fallbacks.reports || "",
+    tools: r.tools || fallbacks.tools || "",
+    mail: r.mail || fallbacks.mail || "",
+    master: r.master || fallbacks.master || "",
+    sms: r.sms || fallbacks.sms || "",
+    staff: r.staff || fallbacks.staff || "",
+    pos: r.pos || fallbacks.pos || "",
+    rollaccess: r.rollaccess || fallbacks.rollaccess || "",
+    account: r.account || fallbacks.account || "",
+    coupon: r.coupon || fallbacks.coupon || "",
+    branch_n_store: r.branch_n_store || fallbacks.branch_n_store || "",
+    master_setting: r.master_setting || fallbacks.master_setting || "",
+    Pay_Out: r.Pay_Out || fallbacks.Pay_Out || "",
+    notification_setting: r.notification_setting || fallbacks.notification_setting || "",
+    notification_templates: r.notification_templates || fallbacks.notification_templates || "",
+    store_setting: r.store_setting || fallbacks.store_setting || "",
+    printer_setting: r.printer_setting || fallbacks.printer_setting || "",
+    all_staff_records: r.all_staff_records || fallbacks.all_staff_records || "",
+    customer_credentials: r.customer_credentials || fallbacks.customer_credentials || "",
+    pickup_requests: r.pickup_requests || fallbacks.pickup_requests || "",
+    racks: r.racks || fallbacks.racks || "",
+    route_calendar: r.route_calendar || fallbacks.route_calendar || "",
+    pos_price_discount_override: r.pos_price_discount_override || fallbacks.pos_price_discount_override || "",
+    order_payment_collect: r.order_payment_collect || fallbacks.order_payment_collect || "",
+    financial_reports: r.financial_reports || fallbacks.financial_reports || "",
+  };
+}
+
 // <<<<<<<<<<roll >>>>>>>>>>>>>>>>>
 
 router.get("/roll", auth, async (req, res) => {
@@ -131,6 +171,13 @@ router.get("/roll/data", auth, async (req, res) => {
           accessdata.roll.rollaccess &&
           accessdata.roll.rollaccess.includes("edit"))),
     );
+    const canDelete = Boolean(
+      accessdata &&
+      (accessdata.logas === "master" ||
+        (accessdata.roll &&
+          accessdata.roll.rollaccess &&
+          accessdata.roll.rollaccess.includes("delete"))),
+    );
 
     const result = await paginateDataTable(req, {
       select: `tbl_roll.id, tbl_roll.roll, tbl_roll.rollType, tbl_roll.roll_status, tbl_roll.delet_flage`,
@@ -188,9 +235,10 @@ router.post("/addroll", auth, async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-    if (rolldetail[0].rollaccess.includes("write")) {
+    if (rolldetail[0].rollaccess.includes("write") || accessdata.logas === "master") {
       var {
         name,
+        rollType,
         orders,
         expense,
         service,
@@ -213,155 +261,57 @@ router.post("/addroll", auth, async (req, res) => {
         store_setting,
         printer_setting,
         all_staff_records,
+        customer_credentials,
+        pickup_requests,
+        racks,
+        route_calendar,
+        pos_price_discount_override,
+        order_payment_collect,
+        financial_reports,
       } = req.body;
       var storeid = req.body.storeid;
       storeid ? storeid : (storeid = store);
 
-      orders
-        ? Array.isArray(orders)
-          ? (orders = orders.join(","))
-          : orders
-        : (orders = "");
-      branch_n_store
-        ? Array.isArray(branch_n_store)
-          ? (branch_n_store = branch_n_store.join(","))
-          : branch_n_store
-        : (branch_n_store = "");
-      Pay_Out
-        ? Array.isArray(Pay_Out)
-          ? (Pay_Out = Pay_Out.join(","))
-          : Pay_Out
-        : (Pay_Out = "");
-      master_setting
-        ? Array.isArray(master_setting)
-          ? (master_setting = master_setting.join(","))
-          : master_setting
-        : (master_setting = "");
-      expense
-        ? Array.isArray(expense)
-          ? (expense = expense.join(","))
-          : expense
-        : (expense = "");
-      service
-        ? Array.isArray(service)
-          ? (service = service.join(","))
-          : service
-        : (service = "");
-      customers
-        ? Array.isArray(customers)
-          ? (customers = customers.join(","))
-          : customers
-        : (customers = "");
-      reports
-        ? Array.isArray(reports)
-          ? (reports = reports.join(","))
-          : reports
-        : (reports = "");
-      tools
-        ? Array.isArray(tools)
-          ? (tools = tools.join(","))
-          : tools
-        : (tools = "");
-      mail
-        ? Array.isArray(mail)
-          ? (mail = mail.join(","))
-          : mail
-        : (mail = "");
-      master
-        ? Array.isArray(master)
-          ? (master = master.join(","))
-          : master
-        : (master = "");
-      sms ? (Array.isArray(sms) ? (sms = sms.join(",")) : sms) : (sms = "");
-      staff
-        ? Array.isArray(staff)
-          ? (staff = staff.join(","))
-          : staff
-        : (staff = "");
-      pos ? (Array.isArray(pos) ? (pos = pos.join(",")) : pos) : (pos = "");
-      rollname
-        ? Array.isArray(rollname)
-          ? (rollname = rollname.join(","))
-          : rollname
-        : (rollname = "");
-      couponname
-        ? Array.isArray(couponname)
-          ? (couponname = couponname.join(","))
-          : couponname
-        : (couponname = "");
-      accountname
-        ? Array.isArray(accountname)
-          ? (accountname = accountname.join(","))
-          : accountname
-        : (accountname = "");
-      notification_setting = notification_setting ? (Array.isArray(notification_setting) ? notification_setting.join(",") : notification_setting) : "";
-      notification_templates = notification_templates ? (Array.isArray(notification_templates) ? notification_templates.join(",") : notification_templates) : "";
-      store_setting = store_setting ? (Array.isArray(store_setting) ? store_setting.join(",") : store_setting) : "";
-      printer_setting = printer_setting ? (Array.isArray(printer_setting) ? printer_setting.join(",") : printer_setting) : "";
-      all_staff_records = all_staff_records ? (Array.isArray(all_staff_records) ? all_staff_records.join(",") : all_staff_records) : "";
+      const safeRollType = rollType === "master" ? "master" : "store";
+      orders = normalizePermValue(orders);
+      branch_n_store = normalizePermValue(branch_n_store);
+      Pay_Out = normalizePermValue(Pay_Out);
+      master_setting = normalizePermValue(master_setting);
+      expense = normalizePermValue(expense);
+      service = normalizePermValue(service);
+      customers = normalizePermValue(customers);
+      reports = normalizePermValue(reports);
+      tools = normalizePermValue(tools);
+      mail = normalizePermValue(mail);
+      master = normalizePermValue(master);
+      sms = normalizePermValue(sms);
+      staff = normalizePermValue(staff);
+      pos = normalizePermValue(pos);
+      rollname = normalizePermValue(rollname);
+      couponname = normalizePermValue(couponname);
+      accountname = normalizePermValue(accountname);
+      notification_setting = normalizePermValue(notification_setting);
+      notification_templates = normalizePermValue(notification_templates);
+      store_setting = normalizePermValue(store_setting);
+      printer_setting = normalizePermValue(printer_setting);
+      all_staff_records = normalizePermValue(all_staff_records);
+      customer_credentials = normalizePermValue(customer_credentials);
+      pickup_requests = normalizePermValue(pickup_requests);
+      racks = normalizePermValue(racks);
+      route_calendar = normalizePermValue(route_calendar);
+      pos_price_discount_override = normalizePermValue(pos_price_discount_override);
+      order_payment_collect = normalizePermValue(order_payment_collect);
+      financial_reports = normalizePermValue(financial_reports);
       if (store_setting && !master) {
         master = store_setting;
+      } else if (master && !store_setting) {
+        store_setting = master;
       }
-      all_staff_records = all_staff_records ? (Array.isArray(all_staff_records) ? all_staff_records.join(",") : all_staff_records) : "";
-    if (store_setting && !master) {
-      master = store_setting;
-    } else if (master && !store_setting) {
-      store_setting = master;
-    }
-
-      //       var qury = `
-      // INSERT INTO tbl_roll (
-      //     roll,
-      //     rollType,
-      //     customers,
-      //     orders,
-      //     expense,
-      //     service,
-      //     reports,
-      //     tools,
-      //     mail,
-      //     master,
-      //     sms,
-      //     staff,
-      //     pos,
-      //     rollaccess,
-      //     account,
-      //     coupon,
-      //     branch_n_store,
-      //     master_setting,
-      //     Pay_Out,
-      //     roll_status,
-      //     delet_flage
-      // ) VALUES (
-      //     '${name}',
-      //     '${name}',
-      //     '${customers}',
-      //     '${orders}',
-      //     '${expense}',
-      //     '${service}',
-      //     '${reports}',
-      //     '${tools}',
-      //     '${mail}',
-      //     '${master}',
-      //     '${sms}',
-      //     '${staff}',
-      //     '${pos}',
-      //     '${rollname}',
-      //     '${accountname}',
-      //     '${couponname}',
-      //     '${branch_n_store}',
-      //     '${master_setting}',
-      //     '${Pay_Out}',
-      //     '${"active"}',
-      //     0
-      // )`;
-
-      // const newroll = await DataFind(qury);
 
       const newroll = await DataInsert(
         `tbl_roll`,
-        `roll, rollType, customers,orders,  expense, service, reports, tools,  mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, all_staff_records, roll_status, delet_flage`,
-        `'${name}','${name}','${customers}','${orders}','${expense}','${service}','${reports}','${tools}','${mail}','${master}','${sms}','${staff}','${pos}','${rollname}','${accountname}','${couponname}','${branch_n_store}','${master_setting}','${Pay_Out}', '${notification_setting}', '${notification_templates}', '${store_setting}', '${printer_setting}', '${all_staff_records}', 'active', 0`,
+        `roll, rollType, customers,orders,  expense, service, reports, tools,  mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, all_staff_records, customer_credentials, pickup_requests, racks, route_calendar, pos_price_discount_override, order_payment_collect, financial_reports, roll_status, delet_flage`,
+        `'${String(name || "").replace(/'/g, "\\'")}','${safeRollType}','${customers}','${orders}','${expense}','${service}','${reports}','${tools}','${mail}','${master}','${sms}','${staff}','${pos}','${rollname}','${accountname}','${couponname}','${branch_n_store}','${master_setting}','${Pay_Out}', '${notification_setting}', '${notification_templates}', '${store_setting}', '${printer_setting}', '${all_staff_records}', '${customer_credentials}', '${pickup_requests}', '${racks}', '${route_calendar}', '${pos_price_discount_override}', '${order_payment_collect}', '${financial_reports}', 'active', 0`,
         req.hostname,
         req.protocol,
       );
@@ -468,7 +418,7 @@ router.post("/updateroll/:id", auth, async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-    if (rolldetail[0].rollaccess.includes("edit")) {
+    if (rolldetail[0].rollaccess.includes("edit") || accessdata.logas === "master") {
       const rollid = req.params.id;
       var {
         name_update,
@@ -496,99 +446,54 @@ router.post("/updateroll/:id", auth, async (req, res) => {
         store_setting,
         printer_setting,
         all_staff_records,
+        customer_credentials,
+        pickup_requests,
+        racks,
+        route_calendar,
+        pos_price_discount_override,
+        order_payment_collect,
+        financial_reports,
       } = req.body;
 
-      orders
-        ? Array.isArray(orders)
-          ? (orders = orders.join(","))
-          : orders
-        : (orders = "");
-      Pay_Out
-        ? Array.isArray(Pay_Out)
-          ? (Pay_Out = Pay_Out.join(","))
-          : Pay_Out
-        : (Pay_Out = "");
-      branch_n_store
-        ? Array.isArray(branch_n_store)
-          ? (branch_n_store = branch_n_store.join(","))
-          : branch_n_store
-        : (branch_n_store = "");
-      master_setting
-        ? Array.isArray(master_setting)
-          ? (master_setting = master_setting.join(","))
-          : master_setting
-        : (master_setting = "");
-      customers
-        ? Array.isArray(customers)
-          ? (customers = customers.join(","))
-          : customers
-        : (customers = "");
-      expense
-        ? Array.isArray(expense)
-          ? (expense = expense.join(","))
-          : expense
-        : (expense = "");
-      service
-        ? Array.isArray(service)
-          ? (service = service.join(","))
-          : service
-        : (service = "");
-      reports
-        ? Array.isArray(reports)
-          ? (reports = reports.join(","))
-          : reports
-        : (reports = "");
-      tools
-        ? Array.isArray(tools)
-          ? (tools = tools.join(","))
-          : tools
-        : (tools = "");
-      mail
-        ? Array.isArray(mail)
-          ? (mail = mail.join(","))
-          : mail
-        : (mail = "");
-      master
-        ? Array.isArray(master)
-          ? (master = master.join(","))
-          : master
-        : (master = "");
-      sms ? (Array.isArray(sms) ? (sms = sms.join(",")) : sms) : (sms = "");
-      staff
-        ? Array.isArray(staff)
-          ? (staff = staff.join(","))
-          : staff
-        : (staff = "");
-      pos ? (Array.isArray(pos) ? (pos = pos.join(",")) : pos) : (pos = "");
-      rollname
-        ? Array.isArray(rollname)
-          ? (rollname = rollname.join(","))
-          : rollname
-        : (rollname = "");
-      couponname
-        ? Array.isArray(couponname)
-          ? (couponname = couponname.join(","))
-          : couponname
-        : (couponname = "");
-      accountname
-        ? Array.isArray(accountname)
-          ? (accountname = accountname.join(","))
-          : accountname
-        : (accountname = "");
-      notification_setting = notification_setting ? (Array.isArray(notification_setting) ? notification_setting.join(",") : notification_setting) : "";
-      notification_templates = notification_templates ? (Array.isArray(notification_templates) ? notification_templates.join(",") : notification_templates) : "";
-      store_setting = store_setting ? (Array.isArray(store_setting) ? store_setting.join(",") : store_setting) : "";
-      printer_setting = printer_setting ? (Array.isArray(printer_setting) ? printer_setting.join(",") : printer_setting) : "";
-      all_staff_records = all_staff_records ? (Array.isArray(all_staff_records) ? all_staff_records.join(",") : all_staff_records) : "";
+      orders = normalizePermValue(orders);
+      Pay_Out = normalizePermValue(Pay_Out);
+      branch_n_store = normalizePermValue(branch_n_store);
+      master_setting = normalizePermValue(master_setting);
+      customers = normalizePermValue(customers);
+      expense = normalizePermValue(expense);
+      service = normalizePermValue(service);
+      reports = normalizePermValue(reports);
+      tools = normalizePermValue(tools);
+      mail = normalizePermValue(mail);
+      master = normalizePermValue(master);
+      sms = normalizePermValue(sms);
+      staff = normalizePermValue(staff);
+      pos = normalizePermValue(pos);
+      rollname = normalizePermValue(rollname);
+      couponname = normalizePermValue(couponname);
+      accountname = normalizePermValue(accountname);
+      notification_setting = normalizePermValue(notification_setting);
+      notification_templates = normalizePermValue(notification_templates);
+      store_setting = normalizePermValue(store_setting);
+      printer_setting = normalizePermValue(printer_setting);
+      all_staff_records = normalizePermValue(all_staff_records);
+      customer_credentials = normalizePermValue(customer_credentials);
+      pickup_requests = normalizePermValue(pickup_requests);
+      racks = normalizePermValue(racks);
+      route_calendar = normalizePermValue(route_calendar);
+      pos_price_discount_override = normalizePermValue(pos_price_discount_override);
+      order_payment_collect = normalizePermValue(order_payment_collect);
+      financial_reports = normalizePermValue(financial_reports);
+      if (store_setting && !master) {
+        master = store_setting;
+      } else if (master && !store_setting) {
+        store_setting = master;
+      }
 
-      // var qury = `UPDATE tbl_roll SET roll='${name_update}',orders='${orders}',expense='${expense}',customers='${customers}',service='${service}',master_setting='${master_setting}',reports='${reports}',
-      //           tools='${tools}',mail='${mail}',master='${master}',sms='${sms}',staff='${staff}',pos='${pos}',Pay_Out='${Pay_Out}',rollType='${rollType}',rollaccess='${rollname}',
-      //           account='${accountname}',coupon='${couponname}',branch_n_store='${branch_n_store}' WHERE id=${rollid}`;
-      // const newroll = await DataFind(qury);
-
+      const rollTypeClause = rollType ? `rollType='${String(rollType).replace(/'/g, "\\'")}',` : "";
       const newroll = await DataUpdate(
         "tbl_roll",
-        `roll='${name_update}',
+        `roll='${String(name_update || "").replace(/'/g, "\\'")}',
    orders='${orders}',
    expense='${expense}',
    customers='${customers}',
@@ -602,7 +507,7 @@ router.post("/updateroll/:id", auth, async (req, res) => {
    staff='${staff}',
    pos='${pos}',
    Pay_Out='${Pay_Out}',
-   rollType='${rollType}',
+   ${rollTypeClause}
    rollaccess='${rollname}',
    account='${accountname}',
    coupon='${couponname}',
@@ -611,7 +516,14 @@ router.post("/updateroll/:id", auth, async (req, res) => {
     notification_templates='${notification_templates}',
     store_setting='${store_setting}',
     printer_setting='${printer_setting}',
-     all_staff_records='${all_staff_records}'`,
+     all_staff_records='${all_staff_records}',
+     customer_credentials='${customer_credentials}',
+     pickup_requests='${pickup_requests}',
+     racks='${racks}',
+     route_calendar='${route_calendar}',
+     pos_price_discount_override='${pos_price_discount_override}',
+     order_payment_collect='${order_payment_collect}',
+     financial_reports='${financial_reports}'`,
         `id=${rollid}`,
         req.hostname,
         req.protocol,
@@ -1538,10 +1450,32 @@ router.post(
               `SELECT * FROM tbl_roll WHERE id='${roll}'`,
             );
             if (RollFind.length > 0) {
+              const rc = buildRoleCopyFields(RollFind[0], {
+                customers: "read,write,edit,delete",
+                orders: "read,write,edit,delete",
+                expense: "read,write,edit,delete",
+                service: "read,write,edit,delete",
+                reports: "read",
+                tools: "read",
+                mail: "read,edit",
+                master: "read,edit",
+                sms: "read,write,edit,delete",
+                staff: "read,write,edit,delete",
+                pos: "read,write,edit",
+                account: "read,write,edit,delete",
+                coupon: "read,write,edit,delete",
+                customer_credentials: "edit",
+                pickup_requests: "read,edit",
+                racks: "read,write,edit,delete",
+                route_calendar: "read,edit",
+                pos_price_discount_override: "edit",
+                order_payment_collect: "write",
+                financial_reports: "read",
+              });
               const RollAdd = await DataInsert(
                 `tbl_staff_roll`,
-                `customers, orders, expense, service, reports, tools, mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, all_staff_records, main_roll_id, staff_id, is_staff`,
-                `'${RollFind[0].customers || "read,write,edit,delete"}', '${RollFind[0].orders || "read,write,edit,delete"}', '${RollFind[0].expense || "read,write,edit,delete"}', '${RollFind[0].service || "read,write,edit,delete"}', '${RollFind[0].reports || "read"}', '${RollFind[0].tools || "read"}', '${RollFind[0].mail || "read,edit"}', '${RollFind[0].master || "read,edit"}', '${RollFind[0].sms || "read,write,edit,delete"}', '${RollFind[0].staff || "read,write,edit,delete"}', '${RollFind[0].pos || "read,write,edit"}', '', '${RollFind[0].account || "read,write,edit,delete"}', '${RollFind[0].coupon || "read,write,edit,delete"}', '', '', '', '${RollFind[0].notification_setting || ""}', '${RollFind[0].notification_templates || ""}', '${RollFind[0].store_setting || ""}', '${RollFind[0].printer_setting || ""}', '${RollFind[0].all_staff_records || ""}', '${RollFind[0].id}', '${adminid[0].admin_id}', '0'`,
+                `customers, orders, expense, service, reports, tools, mail, master, sms, staff, pos, rollaccess, account, coupon, branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, all_staff_records, customer_credentials, pickup_requests, racks, route_calendar, pos_price_discount_override, order_payment_collect, financial_reports, main_roll_id, staff_id, is_staff`,
+                `'${rc.customers}', '${rc.orders}', '${rc.expense}', '${rc.service}', '${rc.reports}', '${rc.tools}', '${rc.mail}', '${rc.master}', '${rc.sms}', '${rc.staff}', '${rc.pos}', '', '${rc.account}', '${rc.coupon}', '', '', '', '${rc.notification_setting}', '${rc.notification_templates}', '${rc.store_setting}', '${rc.printer_setting}', '${rc.all_staff_records}', '${rc.customer_credentials}', '${rc.pickup_requests}', '${rc.racks}', '${rc.route_calendar}', '${rc.pos_price_discount_override}', '${rc.order_payment_collect}', '${rc.financial_reports}', '${RollFind[0].id}', '${adminid[0].admin_id}', '0'`,
                 req.hostname,
                 req.protocol,
               );
@@ -1800,18 +1734,23 @@ router.post("/shopregister", auth, upload.single("logo"), async (req, res) => {
         `SELECT * FROM tbl_roll WHERE id='${rollid}'`,
       );
 
-      //   const RollAdd =
-      //     await DataFind(`INSERT INTO tbl_staff_roll (customers, orders, expense, service, reports, tools, mail,
-      // master, sms, staff, pos, rollaccess, account, coupon,
-      // branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id,is_staff) VALUES ('${RollFind[0].customer}', '${RollFind[0].orders}', '${RollFind[0].expense}', '${RollFind[0].service}', '${RollFind[0].reports}', '${RollFind[0].tools}', '${RollFind[0].mail}',
-      // '${RollFind[0].master}', '${RollFind[0].sms}', '${RollFind[0].staff}', '${RollFind[0].pos}', '${RollFind[0].rollaccess}', '${RollFind[0].account}', '${RollFind[0].coupon}',
-      // '${RollFind[0].branch_n_store}', '${RollFind[0].master_setting}', '${RollFind[0].Pay_Out}','${RollFind[0].id}','${newid}','0')`);
+      const rcShop = buildRoleCopyFields(RollFind[0], {
+        customers: "read,write,edit,delete",
+        coupon: "read,write,edit,delete",
+        customer_credentials: "edit",
+        pickup_requests: "read,edit",
+        racks: "read,write,edit,delete",
+        route_calendar: "read,edit",
+        pos_price_discount_override: "edit",
+        order_payment_collect: "write",
+        financial_reports: "read",
+      });
 
       const RollAdd = await DataInsert(
         `tbl_staff_roll`,
         `customers, orders, expense, service, reports, tools, mail,master, sms, staff, pos, rollaccess, account, coupon,
-                                         branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, all_staff_records, main_roll_id, staff_id,is_staff`,
-        `'${RollFind[0].customers || RollFind[0].customer || "read,write,edit,delete"}', '${RollFind[0].orders}', '${RollFind[0].expense}', '${RollFind[0].service}', '${RollFind[0].reports}', '${RollFind[0].tools}', '${RollFind[0].mail}','${RollFind[0].master}', '${RollFind[0].sms}', '${RollFind[0].staff}', '${RollFind[0].pos}', '${RollFind[0].rollaccess}', '${RollFind[0].account}', '${RollFind[0].coupon || "read,write,edit,delete"}','${RollFind[0].branch_n_store}', '${RollFind[0].master_setting}', '${RollFind[0].Pay_Out}','${RollFind[0].notification_setting || ''}','${RollFind[0].notification_templates || ''}','${RollFind[0].store_setting || ''}','${RollFind[0].printer_setting || ''}','${RollFind[0].all_staff_records || ''}','${RollFind[0].id}','${newid}','0'`,
+                                         branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, all_staff_records, customer_credentials, pickup_requests, racks, route_calendar, pos_price_discount_override, order_payment_collect, financial_reports, main_roll_id, staff_id,is_staff`,
+        `'${rcShop.customers}', '${rcShop.orders}', '${rcShop.expense}', '${rcShop.service}', '${rcShop.reports}', '${rcShop.tools}', '${rcShop.mail}','${rcShop.master}', '${rcShop.sms}', '${rcShop.staff}', '${rcShop.pos}', '${rcShop.rollaccess}', '${rcShop.account}', '${rcShop.coupon}','${rcShop.branch_n_store}', '${rcShop.master_setting}', '${rcShop.Pay_Out}','${rcShop.notification_setting}','${rcShop.notification_templates}','${rcShop.store_setting}','${rcShop.printer_setting}','${rcShop.all_staff_records}','${rcShop.customer_credentials}','${rcShop.pickup_requests}','${rcShop.racks}','${rcShop.route_calendar}','${rcShop.pos_price_discount_override}','${rcShop.order_payment_collect}','${rcShop.financial_reports}','${RollFind[0].id}','${newid}','0'`,
         req.hostname,
         req.protocol,
       );
@@ -2259,13 +2198,16 @@ router.post("/addstaff", auth, async (req, res) => {
       // '${RollFind[0].master}', '${RollFind[0].sms}', '${RollFind[0].staff}', '${RollFind[0].pos}', '${RollFind[0].rollaccess}', '${RollFind[0].account}', '${RollFind[0].coupon}',
       // '${RollFind[0].branch_n_store}', '${RollFind[0].master_setting}', '${RollFind[0].Pay_Out}','${RollFind[0].id}','${newroll.insertId}','1')`);
 
+      const rcStaff = buildRoleCopyFields(RollFind[0]);
       const RollAdd = await DataInsert(
         `tbl_staff_roll`,
         `customers, orders, expense, service, reports, tools, mail,
            master, sms, staff, pos, rollaccess, account, coupon,
-           branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, main_roll_id, staff_id,is_staff`,
-        `'${RollFind[0].customer}', '${RollFind[0].orders}', '${RollFind[0].expense}', '${RollFind[0].service}', '${RollFind[0].reports}', '${RollFind[0].tools}', '${RollFind[0].mail}',
-           '${RollFind[0].master}', '${RollFind[0].sms}', '${RollFind[0].staff}', '${RollFind[0].pos}', '${RollFind[0].rollaccess}', '${RollFind[0].account}', '${RollFind[0].coupon}','${RollFind[0].branch_n_store}', '${RollFind[0].master_setting}', '${RollFind[0].Pay_Out}','${RollFind[0].notification_setting || ''}','${RollFind[0].notification_templates || ''}','${RollFind[0].store_setting || ''}','${RollFind[0].printer_setting || ''}','${RollFind[0].id}','${newroll.insertId}','1'`,
+           branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, all_staff_records, customer_credentials,
+           pickup_requests, racks, route_calendar, pos_price_discount_override, order_payment_collect, financial_reports, main_roll_id, staff_id,is_staff`,
+        `'${rcStaff.customers}', '${rcStaff.orders}', '${rcStaff.expense}', '${rcStaff.service}', '${rcStaff.reports}', '${rcStaff.tools}', '${rcStaff.mail}',
+           '${rcStaff.master}', '${rcStaff.sms}', '${rcStaff.staff}', '${rcStaff.pos}', '${rcStaff.rollaccess}', '${rcStaff.account}', '${rcStaff.coupon}','${rcStaff.branch_n_store}', '${rcStaff.master_setting}', '${rcStaff.Pay_Out}','${rcStaff.notification_setting}','${rcStaff.notification_templates}','${rcStaff.store_setting}','${rcStaff.printer_setting}','${rcStaff.all_staff_records}','${rcStaff.customer_credentials}',
+           '${rcStaff.pickup_requests}','${rcStaff.racks}','${rcStaff.route_calendar}','${rcStaff.pos_price_discount_override}','${rcStaff.order_payment_collect}','${rcStaff.financial_reports}','${RollFind[0].id}','${newroll.insertId}','1'`,
         req.hostname,
         req.protocol,
       );
@@ -2380,6 +2322,37 @@ router.post("/updatestaff/:id", auth, async (req, res) => {
       if (newroll === -1) {
         req.flash("error", "Action failed, please check input and try again");
         return res.redirect("back");
+      }
+
+      // If admin reassigned the staff member's Role Preset in Edit Staff modal, sync tbl_staff_roll
+      const newPresetId = req.body.main_roll_id_update ? parseInt(req.body.main_roll_id_update, 10) : 0;
+      if (newPresetId > 0) {
+        const currentStaffRoll = await DataFind(
+          `SELECT id, main_roll_id FROM tbl_staff_roll WHERE id='${rollIdVal}' OR staff_id='${dataid}' ORDER BY id DESC LIMIT 1`,
+        );
+        const existingMainRollId = currentStaffRoll && currentStaffRoll[0] ? Number(currentStaffRoll[0].main_roll_id) : 0;
+        const applyPresetChecked = req.body.apply_role_preset === "1" || existingMainRollId !== newPresetId;
+        if (applyPresetChecked) {
+          const presetRows = await DataFind(`SELECT * FROM tbl_roll WHERE id='${newPresetId}' AND delet_flage=0 LIMIT 1`);
+          if (presetRows && presetRows.length > 0) {
+            const rc = buildRoleCopyFields(presetRows[0]);
+            const updateSql = Object.keys(rc).map((k) => `${k}='${rc[k]}'`).join(", ") + `, main_roll_id='${presetRows[0].id}'`;
+            if (currentStaffRoll && currentStaffRoll.length > 0) {
+              await DataUpdate("tbl_staff_roll", updateSql, `id='${currentStaffRoll[0].id}'`, req.hostname, req.protocol);
+            } else {
+              const insertedSr = await DataInsert(
+                "tbl_staff_roll",
+                `${Object.keys(rc).join(", ")}, main_roll_id, staff_id, is_staff`,
+                `${Object.keys(rc).map((k) => `'${rc[k]}'`).join(", ")}, '${presetRows[0].id}', '${dataid}', '1'`,
+                req.hostname,
+                req.protocol,
+              );
+              if (insertedSr && insertedSr.insertId) {
+                await DataUpdate("tbl_admin", `roll_id='${insertedSr.insertId}'`, `id='${dataid}'`, req.hostname, req.protocol);
+              }
+            }
+          }
+        }
       }
 
       req.flash("success", "Staff Updated !!!");
@@ -3613,6 +3586,7 @@ router.post("/rollUp/:id", async (req, res) => {
     }
     var {
       rollType,
+      main_roll_id,
       orders,
       expense,
       service,
@@ -3635,88 +3609,44 @@ router.post("/rollUp/:id", async (req, res) => {
       store_setting,
       printer_setting,
       all_staff_records,
+      customer_credentials,
+      pickup_requests,
+      racks,
+      route_calendar,
+      pos_price_discount_override,
+      order_payment_collect,
+      financial_reports,
     } = req.body;
-    // var storeid = req.body.storeid;
-    // storeid ? storeid : (storeid = store);
 
-    orders
-      ? Array.isArray(orders)
-        ? (orders = orders.join(","))
-        : orders
-      : (orders = "");
-    branch_n_store
-      ? Array.isArray(branch_n_store)
-        ? (branch_n_store = branch_n_store.join(","))
-        : branch_n_store
-      : (branch_n_store = "");
-    Pay_Out
-      ? Array.isArray(Pay_Out)
-        ? (Pay_Out = Pay_Out.join(","))
-        : Pay_Out
-      : (Pay_Out = "");
-    master_setting
-      ? Array.isArray(master_setting)
-        ? (master_setting = master_setting.join(","))
-        : master_setting
-      : (master_setting = "");
-    expense
-      ? Array.isArray(expense)
-        ? (expense = expense.join(","))
-        : expense
-      : (expense = "");
-    service
-      ? Array.isArray(service)
-        ? (service = service.join(","))
-        : service
-      : (service = "");
-    customers
-      ? Array.isArray(customers)
-        ? (customers = customers.join(","))
-        : customers
-      : (customers = "");
-    reports
-      ? Array.isArray(reports)
-        ? (reports = reports.join(","))
-        : reports
-      : (reports = "");
-    tools
-      ? Array.isArray(tools)
-        ? (tools = tools.join(","))
-        : tools
-      : (tools = "");
-    mail ? (Array.isArray(mail) ? (mail = mail.join(",")) : mail) : (mail = "");
-    master
-      ? Array.isArray(master)
-        ? (master = master.join(","))
-        : master
-      : (master = "");
-    sms ? (Array.isArray(sms) ? (sms = sms.join(",")) : sms) : (sms = "");
-    staff
-      ? Array.isArray(staff)
-        ? (staff = staff.join(","))
-        : staff
-      : (staff = "");
-    pos ? (Array.isArray(pos) ? (pos = pos.join(",")) : pos) : (pos = "");
-    rollaccess
-      ? Array.isArray(rollaccess)
-        ? (rollaccess = rollaccess.join(","))
-        : rollaccess
-      : (rollaccess = "");
-    coupon
-      ? Array.isArray(coupon)
-        ? (coupon = coupon.join(","))
-        : coupon
-      : (coupon = "");
-    account
-      ? Array.isArray(account)
-        ? (account = account.join(","))
-        : account
-      : (account = "");
-    notification_setting = notification_setting ? (Array.isArray(notification_setting) ? notification_setting.join(",") : notification_setting) : "";
-    notification_templates = notification_templates ? (Array.isArray(notification_templates) ? notification_templates.join(",") : notification_templates) : "";
-    store_setting = store_setting ? (Array.isArray(store_setting) ? store_setting.join(",") : store_setting) : "";
-    printer_setting = printer_setting ? (Array.isArray(printer_setting) ? printer_setting.join(",") : printer_setting) : "";
-    all_staff_records = all_staff_records ? (Array.isArray(all_staff_records) ? all_staff_records.join(",") : all_staff_records) : "";
+    orders = normalizePermValue(orders);
+    branch_n_store = normalizePermValue(branch_n_store);
+    Pay_Out = normalizePermValue(Pay_Out);
+    master_setting = normalizePermValue(master_setting);
+    expense = normalizePermValue(expense);
+    service = normalizePermValue(service);
+    customers = normalizePermValue(customers);
+    reports = normalizePermValue(reports);
+    tools = normalizePermValue(tools);
+    mail = normalizePermValue(mail);
+    master = normalizePermValue(master);
+    sms = normalizePermValue(sms);
+    staff = normalizePermValue(staff);
+    pos = normalizePermValue(pos);
+    rollaccess = normalizePermValue(rollaccess);
+    coupon = normalizePermValue(coupon);
+    account = normalizePermValue(account);
+    notification_setting = normalizePermValue(notification_setting);
+    notification_templates = normalizePermValue(notification_templates);
+    store_setting = normalizePermValue(store_setting);
+    printer_setting = normalizePermValue(printer_setting);
+    all_staff_records = normalizePermValue(all_staff_records);
+    customer_credentials = normalizePermValue(customer_credentials);
+    pickup_requests = normalizePermValue(pickup_requests);
+    racks = normalizePermValue(racks);
+    route_calendar = normalizePermValue(route_calendar);
+    pos_price_discount_override = normalizePermValue(pos_price_discount_override);
+    order_payment_collect = normalizePermValue(order_payment_collect);
+    financial_reports = normalizePermValue(financial_reports);
     if (store_setting && !master) {
       master = store_setting;
     } else if (master && !store_setting) {
@@ -3726,34 +3656,11 @@ router.post("/rollUp/:id", async (req, res) => {
     const findroll = await DataFind(
       `SELECT * FROM tbl_staff_roll WHERE id='${req.params.id}' OR staff_id='${req.params.id}' ORDER BY id DESC LIMIT 1`,
     );
-    console.log("findroll", findroll);
-    console.log("req.body", req.body);
+
+    const parsedMainRollId = main_roll_id ? parseInt(main_roll_id, 10) : 0;
 
     if (findroll.length > 0) {
-      //       var qury = `
-      //     UPDATE tbl_staff_roll SET
-      //     customers = '${customers}',
-      //     orders = '${orders}',
-      //     expense = '${expense}',
-      //     service = '${service}',
-      //     reports = '${reports}',
-      //     tools = '${tools}',
-      //     mail = '${mail}',
-      //     master = '${master}',
-      //     sms = '${sms}',
-      //     staff = '${staff}',
-      //     pos = '${pos}',
-      //     rollaccess = '${rollaccess}',
-      //     account = '${account}',
-      //     coupon = '${coupon}',
-      //     branch_n_store = '${branch_n_store}',
-      //     master_setting = '${master_setting}',
-      //     Pay_Out = '${Pay_Out}'
-      //     WHERE id = '${req.params.id}'
-      // `;
-
-      //       const newroll = await DataFind(qury);
-
+      const mainRollClause = parsedMainRollId > 0 ? `,\n  main_roll_id = '${parsedMainRollId}'` : "";
       const rollUpdateFields = `
   customers = '${customers}',
   orders = '${orders}',
@@ -3776,7 +3683,14 @@ router.post("/rollUp/:id", async (req, res) => {
   notification_templates = '${notification_templates}',
   store_setting = '${store_setting}',
   printer_setting = '${printer_setting}',
-  all_staff_records = '${all_staff_records}'
+  all_staff_records = '${all_staff_records}',
+  customer_credentials = '${customer_credentials}',
+  pickup_requests = '${pickup_requests}',
+  racks = '${racks}',
+  route_calendar = '${route_calendar}',
+  pos_price_discount_override = '${pos_price_discount_override}',
+  order_payment_collect = '${order_payment_collect}',
+  financial_reports = '${financial_reports}'${mainRollClause}
 `;
 
       const newroll = await DataUpdate(
@@ -3808,25 +3722,22 @@ router.post("/rollUp/:id", async (req, res) => {
       res.redirect("back");
     } else {
       const findtype = await DataFind(
-        `SELECT * FROM tbl_roll WHERE rollType='${rollType}'`,
+        parsedMainRollId > 0
+          ? `SELECT * FROM tbl_roll WHERE id='${parsedMainRollId}'`
+          : `SELECT * FROM tbl_roll WHERE rollType='${rollType || "store"}' ORDER BY id ASC LIMIT 1`,
       );
-
-      //   var qury = `INSERT INTO tbl_staff_roll (customers, orders, expense, service, reports, tools, mail,
-      // master, sms, staff, pos, rollaccess, account, coupon,
-      // branch_n_store, master_setting, Pay_Out, main_roll_id, staff_id,is_staff) VALUES ('${customers}', '${orders}', '${expense}', '${service}', '${reports}', '${tools}', '${mail}',
-      // '${master}', '${sms}', '${staff}', '${pos}', '${rollaccess}', '${account}', '${coupon}',
-      // '${branch_n_store}', '${master_setting}', '${Pay_Out}','${findtype[0].id}','${req.params.id}')`;
-
-      // const newroll = await DataFind(qury);
+      const fallbackMainId = (findtype && findtype[0] && findtype[0].id) ? findtype[0].id : 2;
 
       const newroll = await DataInsert(
         `tbl_staff_roll`,
         `customers, orders, expense, service, reports, tools, mail,
          master, sms, staff, pos, rollaccess, account, coupon,
-         branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, all_staff_records, main_roll_id, staff_id,is_staff`,
+         branch_n_store, master_setting, Pay_Out, notification_setting, notification_templates, store_setting, printer_setting, all_staff_records, customer_credentials,
+         pickup_requests, racks, route_calendar, pos_price_discount_override, order_payment_collect, financial_reports, main_roll_id, staff_id,is_staff`,
         `'${customers}', '${orders}', '${expense}', '${service}', '${reports}', '${tools}', '${mail}',
          '${master}', '${sms}', '${staff}', '${pos}', '${rollaccess}', '${account}', '${coupon}',
-         '${branch_n_store}', '${master_setting}', '${Pay_Out}', '${notification_setting}', '${notification_templates}', '${store_setting}', '${printer_setting}','${all_staff_records}','${findtype[0].id}','${req.params.id}','1'`,
+         '${branch_n_store}', '${master_setting}', '${Pay_Out}', '${notification_setting}', '${notification_templates}', '${store_setting}', '${printer_setting}','${all_staff_records}','${customer_credentials}',
+         '${pickup_requests}','${racks}','${route_calendar}','${pos_price_discount_override}','${order_payment_collect}','${financial_reports}','${fallbackMainId}','${req.params.id}','1'`,
         req.hostname,
         req.protocol,
       );
@@ -3835,10 +3746,6 @@ router.post("/rollUp/:id", async (req, res) => {
         req.flash("error", "Action failed, please check input and try again");
         return res.redirect("back");
       }
-
-      // const insertdata = await DataFind(
-      //   `UPDATE tbl_admin SET roll_id = '${newroll.insertId}' WHERE id='${req.params.id}' `
-      // );
 
       const updateRollId = await DataUpdate(
         "tbl_admin",
@@ -3867,7 +3774,23 @@ router.get("/rolldetailstaff/:id", async (req, res) => {
     console.log("req.params.id", req.params.id);
 
     const newroll = await DataFind(
-      "SELECT * FROM tbl_staff_roll WHERE id = '" + id + "' OR staff_id = '" + id + "' ORDER BY id DESC LIMIT 1",
+      `SELECT sr.*, COALESCE(r.roll, '') AS roll, COALESCE(r.rollType, 'store') AS rollType,
+              r.orders AS ceiling_orders, r.expense AS ceiling_expense, r.service AS ceiling_service,
+              r.reports AS ceiling_reports, r.tools AS ceiling_tools, r.mail AS ceiling_mail,
+              r.master AS ceiling_master, r.sms AS ceiling_sms, r.staff AS ceiling_staff,
+              r.pos AS ceiling_pos, r.customers AS ceiling_customers, r.master_setting AS ceiling_master_setting,
+              r.branch_n_store AS ceiling_branch_n_store, r.Pay_Out AS ceiling_Pay_Out, r.account AS ceiling_account,
+              r.coupon AS ceiling_coupon, r.rollaccess AS ceiling_rollaccess,
+              r.notification_setting AS ceiling_notification_setting, r.notification_templates AS ceiling_notification_templates,
+              r.store_setting AS ceiling_store_setting, r.printer_setting AS ceiling_printer_setting,
+              r.all_staff_records AS ceiling_all_staff_records, r.customer_credentials AS ceiling_customer_credentials,
+              r.pickup_requests AS ceiling_pickup_requests, r.racks AS ceiling_racks,
+              r.route_calendar AS ceiling_route_calendar, r.pos_price_discount_override AS ceiling_pos_price_discount_override,
+              r.order_payment_collect AS ceiling_order_payment_collect, r.financial_reports AS ceiling_financial_reports
+       FROM tbl_staff_roll sr
+       LEFT JOIN tbl_roll r ON sr.main_roll_id = r.id
+       WHERE sr.id = '${id}' OR sr.staff_id = '${id}'
+       ORDER BY sr.id DESC LIMIT 1`,
     );
     console.log(newroll);
 

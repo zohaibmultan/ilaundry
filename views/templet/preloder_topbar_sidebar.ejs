@@ -58,8 +58,15 @@
           </div>
 
           <ul class="navbar-nav header-right align-items-center">
-            <!-- Quick Action: POS / New Order Button -->
-            <% if ((accessdata?.logas=='custmor' && accessdata?.roll?.pos?.includes('read')) || (accessdata?.roll?.pos && accessdata.roll.pos.includes('read'))) { %>
+            <!-- Quick Action: Request Pick-up (Customer) or POS / New Order (Admin/Staff) -->
+            <% if (accessdata?.logas === 'custmor') { %>
+            <li class="nav-item me-2 d-flex align-items-center">
+              <a href="/index" class="header-pos-btn" title="Schedule Clothes Pick-up">
+                <i class="fa fa-truck-pickup"></i>
+                <span class="d-none d-sm-inline">+ Request Pick-up</span>
+              </a>
+            </li>
+            <% } else if (accessdata?.roll?.pos && accessdata.roll.pos.includes('read')) { %>
             <li class="nav-item me-2 d-flex align-items-center">
               <a href="/admin/pos" class="header-pos-btn" title="Point of Sale / New Order">
                 <i class="fa fa-shopping-bag"></i>
@@ -162,7 +169,7 @@
             <% } %>
 
             <!-- Notifications Dropdown -->
-            <% const canViewNotifications = Boolean(accessdata?.logas === 'master' || (accessdata?.roll?.orders && accessdata.roll.orders.includes('read'))); %>
+            <% const canViewNotifications = Boolean(accessdata?.logas === 'master' || accessdata?.roll?.orders?.includes('read') || accessdata?.roll?.pickup_requests?.includes('read')); %>
             <% if (canViewNotifications) { %>
             <li class="nav-item dropdown notification_dropdown me-2">
               <a class="header-icon-btn" href="#" role="button" data-bs-toggle="dropdown" title="<%= language.Notifications || 'Notifications' %>">
@@ -332,7 +339,15 @@
   <div class="deznav">
     <div class="deznav-scroll">
       <ul class="metismenu" id="menu">
-        <% if(accessdata?.logas !='custmor' ){ %>
+        <% if (accessdata?.logas === 'custmor') { %>
+        <li><a href="/index" class="has-arrow ai-icon" aria-expanded="false">
+            <i class="fa fa-truck-pickup"></i>
+            <span class="nav-text">
+              My Portal / Pick-up
+            </span>
+          </a>
+        </li>
+        <% } else { %>
         <li><a href="/index" class="has-arrow ai-icon" aria-expanded="false">
             <i class="fa fa-th-large"></i>
             <span class="nav-text">
@@ -342,8 +357,7 @@
         </li>
         <% } %>
 
-        <% if((accessdata.logas=='custmor' && accessdata.roll.pos.includes('read')) ||
-              accessdata.roll.pos.includes('read') ){ %>
+        <% if (accessdata?.logas !== 'custmor' && accessdata?.roll?.pos && accessdata.roll.pos.includes('read')) { %>
         <li><a href="/admin/pos" class="has-arrow ai-icon" aria-expanded="false">
             <i class="fa fa-cash-register"></i>
             <span class="nav-text">
@@ -353,29 +367,7 @@
         </li>
         <% } %>
 
-        <% if((accessdata?.logas=='custmor' && accessdata?.roll?.orders?.includes('read')) ||
-                  accessdata?.roll?.orders?.includes('read')){ %>
-        <li><a href="/order/list" class="has-arrow ai-icon" aria-expanded="false">
-            <i class="fa fa-receipt"></i>
-            <span class="nav-text">
-              <%= language.Orders %>
-            </span>
-          </a>
-        </li>
-        <% } %>
-
-        <% if((accessdata?.logas=='custmor' && accessdata?.roll?.orders?.includes('read')) ||
-                  accessdata?.roll?.orders?.includes('read')){ %>
-        <li><a href="/order/calendar" class="has-arrow ai-icon" aria-expanded="false">
-            <i class="fa fa-calendar-alt"></i>
-            <span class="nav-text">
-              <%= language.Route_Calendar || 'Calendar' %>
-            </span>
-          </a>
-        </li>
-        <% } %>
-
-        <% if(accessdata?.logas !='custmor' && (accessdata?.roll?.orders?.includes('read') || accessdata?.roll?.service?.includes('read'))){ %>
+        <% if(accessdata?.logas !='custmor' && (accessdata?.logas === 'master' || accessdata?.roll?.racks?.includes('read'))){ %>
         <li><a href="/order/racks" class="has-arrow ai-icon" aria-expanded="false">
             <i class="fa fa-layer-group"></i>
             <span class="nav-text">
@@ -385,8 +377,39 @@
         </li>
         <% } %>
 
-        <% if((accessdata?.logas=='custmor' && accessdata?.roll?.customers?.includes('read')) ||
-                      accessdata?.roll?.customers?.includes('read')){ %>
+        <% if (accessdata?.logas !== 'custmor' && (accessdata?.logas === 'master' || accessdata?.roll?.route_calendar?.includes('read'))) { %>
+        <li><a href="/order/calendar" class="has-arrow ai-icon" aria-expanded="false">
+            <i class="fa fa-calendar-alt"></i>
+            <span class="nav-text">
+              <%= language.Route_Calendar || 'Calendar' %>
+            </span>
+          </a>
+        </li>
+        <% } %>
+
+        <% if (accessdata?.logas !== 'custmor' && (accessdata?.logas === 'master' || accessdata?.roll?.pickup_requests?.includes('read'))) { %>
+        <li><a href="/order/pickup-requests" class="has-arrow ai-icon" aria-expanded="false">
+            <i class="fa fa-truck-loading"></i>
+            <span class="nav-text">
+              <%= language.Pickup_Requests || 'Pickup Requests' %>
+              <% const pendingPickupCnt = Number(accessdata?.submitted_pickup_count || 0); %>
+              <span id="sidebar_pickup_requests_badge" class="badge bg-warning text-dark rounded-pill ms-1 <%= pendingPickupCnt > 0 ? '' : 'd-none' %>"><%= pendingPickupCnt %></span>
+            </span>
+          </a>
+        </li>
+        <% } %>
+
+        <% if ((accessdata?.logas === 'custmor' && accessdata?.roll?.orders?.includes('read')) || accessdata?.roll?.orders?.includes('read')) { %>
+        <li><a href="/order/list" class="has-arrow ai-icon" aria-expanded="false">
+            <i class="fa fa-receipt"></i>
+            <span class="nav-text">
+              <%= accessdata?.logas === 'custmor' ? 'My Orders' : language.Orders %>
+            </span>
+          </a>
+        </li>
+        <% } %>
+
+        <% if((accessdata?.logas=='custmor' && accessdata?.roll?.customers?.includes('read')) ||  accessdata?.roll?.customers?.includes('read')){ %>
         <li><a href="/coustomer/list" class="has-arrow ai-icon" aria-expanded="false">
             <i class="fa fa-users"></i>
             <span class="nav-text">
@@ -429,7 +452,6 @@
         </li>
         <% } %>
 
-
         <% if(accessdata?.logas !='custmor' && accessdata?.roll?.coupon?.includes('read') ){ %>
         <li><a href="/coupon/list" class="has-arrow ai-icon" aria-expanded="false">
             <i class="fa fa-ticket-alt"></i>
@@ -463,10 +485,7 @@
         <% } %>
 
 
-        <% if((accessdata?.logas !='custmor' && accessdata?.roll?.account?.includes('read')
-                                      && accessdata?.roll?.rollType !='master' )||(accessdata.logas=='master' &&
-                                      accessdata.mutibranch===false)){ %>
-
+        <% if((accessdata?.logas !='custmor' && accessdata?.roll?.account?.includes('read') && accessdata?.roll?.rollType !='master' )||(accessdata.logas=='master' &&  accessdata.mutibranch===false)){ %>
         <li class="has-menu">
           <a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
             <i class="fa fa-coins"></i>
@@ -486,9 +505,7 @@
         </li>
         <% } %>
 
-        <% if(accessdata.logas !='custmor' &&
-                                          accessdata.roll.branch_n_store.includes('read') &&
-                                          accessdata.mutibranch==true){ %>
+        <% if(accessdata.logas !='custmor' && accessdata.roll.branch_n_store.includes('read') && accessdata.mutibranch==true){ %>
         <li>
           <a href="/tool/storelist" class="has-arrow ai-icon" aria-expanded="false">
             <i class="fa fa-store"></i>
@@ -499,8 +516,11 @@
         </li>
         <% } %>
 
-        <% if(accessdata.logas !='custmor' &&
-                                              accessdata.roll.reports.includes('read')){ %>
+        <%
+          const showOperationalReports = Boolean(accessdata?.logas === 'master' || accessdata?.roll?.reports?.includes('read'));
+          const showFinancialReports = Boolean(accessdata?.logas === 'master' || accessdata?.roll?.financial_reports?.includes('read'));
+        %>
+        <% if(accessdata.logas !='custmor' && (showOperationalReports || showFinancialReports)){ %>
         <li class="has-menu"><a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
             <i class="fa fa-chart-line"></i>
             <span class="nav-text">
@@ -508,12 +528,15 @@
             </span>
           </a>
           <ul aria-expanded="false">
+            <% if (showOperationalReports) { %>
             <li><a href="/report/daily">
                 <%= language.Daily_Reports %>
               </a></li>
             <li><a href="/report/order">
                 <%= language.Order_Reports %>
               </a></li>
+            <% } %>
+            <% if (showFinancialReports) { %>
             <li><a href="/report/sales">
                 <%= language.Sales_Reports %>
               </a></li>
@@ -526,9 +549,11 @@
             <li><a href="/report/profit-loss">
                 <%= language.Profit_Loss_Report || 'Profit & Loss' %>
               </a></li>
+            <% } %>
           </ul>
         </li>
         <% } %>
+
         <%
           const isMaster = accessdata.logas === 'master';
           const showMail = ( (isMaster && accessdata.mutibranch === false) || (!isMaster && accessdata.roll?.mail?.includes('read')) );
@@ -542,6 +567,7 @@
           const showStaff = Boolean(accessdata.roll?.staff?.includes('read'));
           const showTools = accessdata?.logas !== 'custmor' && (showMail || showRoll || showMasterSetting || showStoreSetting || showPrinterSetting || showNotificationSetting || showNotificationTemplates || showPayOut || showStaff);
         %>
+
         <% if(showTools){ %>
         <li class="has-menu"><a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
             <i class="fa fa-tools"></i>
@@ -550,50 +576,51 @@
             </span>
           </a>
           <ul aria-expanded="false">
-            <% if((accessdata.logas=='master' &&
-                                                          accessdata.mutibranch==false) || (accessdata.logas !='master'
-                                                          && accessdata.roll.mail.includes('read'))){ %>
+            <% if((accessdata.logas=='master' && accessdata.mutibranch==false) || (accessdata.logas !='master' && accessdata.roll.mail.includes('read'))){ %>
             <li><a href="/tool/mail">
                 <%= language.Mail_Settings %>
               </a></li>
             <% } %>
-            <% if(accessdata.logas=='master' &&
-                                                              accessdata.roll.rollaccess.includes('read')){ %>
+
+            <% if(accessdata.logas=='master' && accessdata.roll.rollaccess.includes('read')){ %>
             <li><a href="/tool/roll">
                 <%= language.Module %>
               </a></li>
             <% } %>
-            <% if(accessdata.logas=='master' &&
-                                                                  accessdata.roll.master_setting.includes('read') ){ %>
+
+            <% if(accessdata.logas=='master' && accessdata.roll.master_setting.includes('read') ){ %>
             <li><a href="/tool/setting">
                 <%= language.Master_Settings %>
               </a></li>
             <% } %>
+
             <% if (showNotificationSetting) { %>
             <li><a href="/tool/notificationsetting"><%= language.Notification_Settings || 'Notification Settings' %></a></li>
             <% } %>
+
             <% if (showNotificationTemplates) { %>
             <li><a href="/tool/notification-templates"><%= language.Notification_Templates || 'Notification Templates' %></a></li>
             <% } %>
+
             <% if (showStoreSetting) { %>
             <li><a href="/tool/storesetting">
                 <%= language.Store_Settings %>
               </a></li>
             <% } %>
+
             <% if (showPrinterSetting) { %>
             <li><a href="/tool/printersetting">
                 <%= language.Printer_Settings || 'Printer Settings' %>
               </a></li>
             <% } %>
-            <% if(accessdata.logas=='master' &&
-                                                                          accessdata.mutibranch==true &&
-                                                                          accessdata.roll.Pay_Out.includes('read')){ %>
+
+            <% if(accessdata.logas=='master' && accessdata.mutibranch==true && accessdata.roll.Pay_Out.includes('read')){ %>
             <li><a href="/account/payout">
                 <%= language.Pay_Out %>
               </a></li>
             <% } %>
-            <% if(accessdata.roll.staff.includes('read')){
-                                                                              %>
+
+            <% if(accessdata.roll.staff.includes('read')){ %>
             <li><a href="/tool/staff">
                 <%= language.Role_staff_management %>
               </a></li>
@@ -711,15 +738,45 @@
         sse.onmessage = function (e) {
           try {
             var data = JSON.parse(e.data);
-            if (!data || data.action !== 'order_created' || !data.is_route_order_alert) return;
+            if (!data) return;
 
-            if (!isMasterAdmin && currentAdminStoreId && String(data.store_id) !== String(currentAdminStoreId)) {
+            if (!isMasterAdmin && currentAdminStoreId && data.store_id && String(data.store_id) !== String(currentAdminStoreId)) {
               return;
             }
 
+            if (data.is_pickup_request_accepted || data.is_pickup_request_rejected) {
+              var prBadge = document.getElementById('sidebar_pickup_requests_badge');
+              if (prBadge) {
+                var nextVal = Math.max(0, (parseInt(prBadge.textContent, 10) || 0) - 1);
+                prBadge.textContent = String(nextVal);
+                if (nextVal <= 0) prBadge.classList.add('d-none');
+              }
+              if (window.jQuery && jQuery.fn.DataTable && jQuery('#pickupRequestsTable').length) {
+                try { jQuery('#pickupRequestsTable').DataTable().ajax.reload(null, false); } catch (dtErr) {}
+              }
+              if (window.jQuery && jQuery.fn.DataTable && jQuery('#server_order_table').length) {
+                try { jQuery('#server_order_table').DataTable().ajax.reload(null, false); } catch (dtErr) {}
+              }
+              return;
+            }
+
+            if (data.action !== 'order_created' || !data.is_route_order_alert) return;
+
             playRouteOrderAlertSound();
 
-            var targetUrl = data.order_id ? ('/order/view/' + data.order_id) : '/admin/notification';
+            if (data.is_pickup_request_submitted) {
+              var subBadge = document.getElementById('sidebar_pickup_requests_badge');
+              if (subBadge) {
+                var incVal = (parseInt(subBadge.textContent, 10) || 0) + 1;
+                subBadge.textContent = String(incVal);
+                subBadge.classList.remove('d-none');
+              }
+              if (window.jQuery && jQuery.fn.DataTable && jQuery('#pickupRequestsTable').length) {
+                try { jQuery('#pickupRequestsTable').DataTable().ajax.reload(null, false); } catch (dtErr) {}
+              }
+            }
+
+            var targetUrl = data.target_url || (data.order_id ? ('/order/view/' + data.order_id) : '/admin/notification');
             var notifText = data.notification_text || ('New Route Order #' + (data.order_code || '') + ' placed');
             var dateText = data.date || new Date().toISOString().slice(0, 10);
 

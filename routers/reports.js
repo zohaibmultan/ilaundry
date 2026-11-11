@@ -9,6 +9,15 @@ var {
   DataInsert,
   DataFind
 } = require("../middelwer/databaseQurey");
+
+async function hasReportPermission(user, permKey) {
+  if (!user || Number(user.loginas) === 0) return false;
+  const accessdata = await access(user);
+  if (!accessdata || accessdata.logas === "custmor") return false;
+  if (accessdata.logas === "master" || accessdata.roll?.rollType === "master") return true;
+  const permVal = accessdata.roll?.[permKey] || "";
+  return String(permVal).includes("read");
+}
 //>>>>>>>>>>Daily Reports<<<<<<<<<<<<<
 router.get("/daily", auth, async (req, res) => {
   try {
@@ -113,6 +122,9 @@ console.log(rolldetail[0]);
 // store and date change
 router.post("/report", auth, async (req, res) => {
   try {
+    if (!(await hasReportPermission(req.user, "reports"))) {
+      return res.status(403).json({ success: false, error: "Not authorized for operational reports" });
+    }
     const { date, store } = req.body;
 
     // var orders = await DataFind(`SELECT COUNT(*) as status_count FROM tbl_order WHERE store_id=${store} AND DATE(order_date) = DATE(${date})`)
@@ -216,6 +228,10 @@ router.get("/order", auth, async (req, res) => {
 
 router.get("/export-order/:id", auth, async (req, res) => {
   try {
+    if (!(await hasReportPermission(req.user, "reports"))) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const startdate = req.params.id.split("+")[0];
     const store = req.params.id.split("+")[1];
     const enddate = req.params.id.split("+")[2];
@@ -275,6 +291,9 @@ router.get("/export-order/:id", auth, async (req, res) => {
 
 router.post("/orderreports", auth, async (req, res) => {
   try {
+    if (!(await hasReportPermission(req.user, "reports"))) {
+      return res.status(403).json({ success: false, error: "Not authorized for operational reports" });
+    }
     const { startdate, store, enddate, status } = req.body;
 
     const status_qury = `SELECT * FROM tbl_orderstatus where tbl_orderstatus.status='${status}'`;
@@ -354,7 +373,7 @@ router.get("/sales", auth, async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-    if (rolldetail[0].rollType == 'master' && rolldetail[0].reports.includes("read")) {
+    if (rolldetail[0].rollType == 'master' && (accessdata?.logas === 'master' || (rolldetail[0].financial_reports && rolldetail[0].financial_reports.includes("read")))) {
       const multiy = await DataFind("SELECT type FROM tbl_master_shop");
       if (multiy[0].type == 1) {
         var qury = `SELECT tbl_order.id,tbl_order.order_date,tbl_order.order_id,tbl_customer.name as custoname,sub_total,addon_price,extra_discount,coupon_discount,tax_amount,tbl_order.gross_total
@@ -365,7 +384,7 @@ router.get("/sales", auth, async (req, res) => {
         var qury = `SELECT tbl_order.id,tbl_order.order_date,tbl_order.order_id,tbl_customer.name as custoname,sub_total,addon_price,extra_discount,coupon_discount,tax_amount,tbl_order.gross_total
                 FROM tbl_order join tbl_customer on tbl_order.customer_id=tbl_customer.id where tbl_order.store_id=${storeID[0].store_ID}`;
       }
-    } else if (rolldetail[0].rollType == 'store' && rolldetail[0].reports.includes("read")) {
+    } else if (rolldetail[0].rollType == 'store' && rolldetail[0].financial_reports && rolldetail[0].financial_reports.includes("read")) {
       var qury = `SELECT tbl_order.id,tbl_order.order_date,tbl_order.order_id,tbl_customer.name as custoname,sub_total,addon_price,extra_discount,coupon_discount,tax_amount,tbl_order.gross_total
             FROM tbl_order join tbl_customer on tbl_order.customer_id=tbl_customer.id where tbl_order.store_id=${store}`;
     } else {
@@ -394,6 +413,9 @@ router.get("/sales", auth, async (req, res) => {
 
 router.post("/salesreports", auth, async (req, res) => {
   try {
+    if (!(await hasReportPermission(req.user, "financial_reports"))) {
+      return res.status(403).json({ success: false, error: "Not authorized for financial reports" });
+    }
     const { startdate, store, enddate } = req.body;
     if (startdate && enddate) {
       var qury = `SELECT tbl_order.id,tbl_order.order_date,tbl_order.order_id,tbl_customer.name as custoname,sub_total,addon_price,extra_discount,coupon_discount,tax_amount,tbl_order.gross_total
@@ -419,6 +441,10 @@ router.post("/salesreports", auth, async (req, res) => {
 
 router.get("/export-sales/:id", auth, async (req, res) => {
   try {
+    if (!(await hasReportPermission(req.user, "financial_reports"))) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const startdate = req.params.id.split("+")[0];
     const store = req.params.id.split("+")[1];
     const enddate = req.params.id.split("+")[2];
@@ -489,7 +515,7 @@ router.get("/expence", auth, async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-    if ( rolldetail[0].rollType == 'master' &&  rolldetail[0].reports.includes("read")) {
+    if ( rolldetail[0].rollType == 'master' && (accessdata?.logas === 'master' || (rolldetail[0].financial_reports && rolldetail[0].financial_reports.includes("read")))) {
       const multiy = await DataFind("SELECT type FROM tbl_master_shop");
       if (multiy[0].type == 1) {
         var qury = `SELECT tbl_expense.id,tbl_expense.date,tbl_exp_cat.cat_name,tbl_expense.amount,tbl_expense.taxpercent,((tbl_expense.amount * tbl_expense.taxpercent)/100) as taxamount ,tbl_account.ac_name FROM tbl_expense
@@ -499,7 +525,7 @@ router.get("/expence", auth, async (req, res) => {
         var qury = `SELECT tbl_expense.id,tbl_expense.date,tbl_exp_cat.cat_name,tbl_expense.amount,tbl_expense.taxpercent,((tbl_expense.amount * tbl_expense.taxpercent)/100) as taxamount ,tbl_account.ac_name FROM tbl_expense
                 join tbl_exp_cat on tbl_expense.category=tbl_exp_cat.id join tbl_account on tbl_expense.payment_mode=tbl_account.id where tbl_expense.store_ID=${store}`;
       }
-    } else if ( rolldetail[0].rollType == 'store' && rolldetail[0].reports.includes("read")) {
+    } else if ( rolldetail[0].rollType == 'store' && rolldetail[0].financial_reports && rolldetail[0].financial_reports.includes("read")) {
       var qury = `SELECT tbl_expense.id,tbl_expense.date,tbl_exp_cat.cat_name,tbl_expense.amount,tbl_expense.taxpercent,((tbl_expense.amount * tbl_expense.taxpercent)/100) as taxamount ,tbl_account.ac_name FROM tbl_expense
             join tbl_exp_cat on tbl_expense.category=tbl_exp_cat.id join tbl_account on tbl_expense.payment_mode=tbl_account.id where tbl_expense.store_ID=${store}`;
     } else {
@@ -527,6 +553,9 @@ router.get("/expence", auth, async (req, res) => {
 
 router.post("/expencereport", auth, async (req, res) => {
   try {
+    if (!(await hasReportPermission(req.user, "financial_reports"))) {
+      return res.status(403).json({ success: false, error: "Not authorized for financial reports" });
+    }
     const { startdate, store, enddate } = req.body;
     if (startdate && enddate) {
       var qury = `SELECT tbl_expense.id,tbl_expense.date,tbl_exp_cat.cat_name,tbl_expense.amount,tbl_expense.taxpercent,((tbl_expense.amount * tbl_expense.taxpercent)/100) as taxamount ,tbl_account.ac_name FROM tbl_expense
@@ -552,6 +581,10 @@ router.post("/expencereport", auth, async (req, res) => {
 
 router.get("/export-expence/:id", auth, async (req, res) => {
   try {
+    if (!(await hasReportPermission(req.user, "financial_reports"))) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const startdate = req.params.id.split("+")[0];
     const store = req.params.id.split("+")[1];
     const enddate = req.params.id.split("+")[2];
@@ -624,7 +657,7 @@ router.get("/tax", auth, async (req, res) => {
   JOIN tbl_roll r ON sr.main_roll_id = r.id
   WHERE sr.id = ${roll}
 `);
-    if (rolldetail[0].rollType == 'master' && rolldetail[0].reports.includes("read")) {
+    if (rolldetail[0].rollType == 'master' && (accessdata?.logas === 'master' || (rolldetail[0].financial_reports && rolldetail[0].financial_reports.includes("read")))) {
       const multiy = await DataFind("SELECT type FROM tbl_master_shop");
       if (multiy[0].type == 1) {
         var qury = `SELECT tbl_expense.date,tbl_exp_cat.cat_name as particulars,tbl_expense.amount,((tbl_expense.amount * tbl_expense.taxpercent)/100) as taxamount , ((tbl_expense.amount-(tbl_expense.amount * tbl_expense.taxpercent)/100)) as befortax FROM tbl_expense
@@ -635,7 +668,7 @@ router.get("/tax", auth, async (req, res) => {
         var qury = `SELECT tbl_expense.date,tbl_exp_cat.cat_name as particulars,tbl_expense.amount,((tbl_expense.amount * tbl_expense.taxpercent)/100) as taxamount , ((tbl_expense.amount-(tbl_expense.amount * tbl_expense.taxpercent)/100)) as befortax FROM tbl_expense
                 join tbl_exp_cat on tbl_expense.category=tbl_exp_cat.id where tbl_expense.store_ID=${storeID[0].store_ID}`;
       }
-    } else if (rolldetail[0].rollType == 'store' && rolldetail[0].reports.includes("read")) {
+    } else if (rolldetail[0].rollType == 'store' && rolldetail[0].financial_reports && rolldetail[0].financial_reports.includes("read")) {
       var qury = `SELECT tbl_expense.date,tbl_exp_cat.cat_name as particulars,tbl_expense.amount,((tbl_expense.amount * tbl_expense.taxpercent)/100) as taxamount , ((tbl_expense.amount-(tbl_expense.amount * tbl_expense.taxpercent)/100)) as befortax FROM tbl_expense
             join tbl_exp_cat on tbl_expense.category=tbl_exp_cat.id where tbl_expense.store_ID=${store}`;
     } else {
@@ -660,6 +693,10 @@ router.get("/tax", auth, async (req, res) => {
 
 router.get("/export-tax/:id", auth, async (req, res) => {
   try {
+    if (!(await hasReportPermission(req.user, "financial_reports"))) {
+      req.flash("error", "Your Are Not Authorized For this");
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const startdate = req.params.id.split("+")[0];
     const store = req.params.id.split("+")[1];
     const enddate = req.params.id.split("+")[2];
@@ -734,6 +771,9 @@ router.get("/export-tax/:id", auth, async (req, res) => {
 
 router.post("/taxreport", auth, async (req, res) => {
   try {
+    if (!(await hasReportPermission(req.user, "financial_reports"))) {
+      return res.status(403).json({ success: false, error: "Not authorized for financial reports" });
+    }
     const { store, startdate, enddate, filter } = req.body;
     if (filter == 0) {
       if (startdate && enddate) {
@@ -956,10 +996,11 @@ router.get("/profit-loss", auth, async (req, res) => {
     if (
       !rolldetail ||
       rolldetail.length === 0 ||
-      !rolldetail[0].reports ||
-      !rolldetail[0].reports.includes("read")
+      (!accessdata || accessdata.logas !== "master") &&
+        (!rolldetail[0].financial_reports ||
+          !rolldetail[0].financial_reports.includes("read"))
     ) {
-      req.flash("error", "You are not authorized to view reports");
+      req.flash("error", "You are not authorized to view financial reports");
       return res.redirect(req.get("Referrer") || "/");
     }
 
@@ -1005,6 +1046,9 @@ router.get("/profit-loss", auth, async (req, res) => {
 // POST /report/profit-loss-data (AJAX)
 router.post("/profit-loss-data", auth, async (req, res) => {
   try {
+    if (!(await hasReportPermission(req.user, "financial_reports"))) {
+      return res.status(403).json({ success: false, message: "You are not authorized to view financial reports" });
+    }
     const { store, startdate, enddate } = req.body;
     const data = await getProfitLossData({ store, startdate, enddate });
     res.status(200).json({
@@ -1026,6 +1070,10 @@ router.post("/profit-loss-data", auth, async (req, res) => {
 // GET /report/export-profit-loss/:id
 router.get("/export-profit-loss/:id", auth, async (req, res) => {
   try {
+    if (!(await hasReportPermission(req.user, "financial_reports"))) {
+      req.flash("error", "You are not authorized to export financial reports");
+      return res.redirect(req.get("Referrer") || "/");
+    }
     const parts = req.params.id.split("+");
     const startdate = parts[0] || "";
     const store = parts[1] || "0";

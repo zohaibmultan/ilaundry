@@ -19,6 +19,8 @@
                     const isMaster = (accessdata?.logas === 'master' || (accessdata?.roll && accessdata.roll.rollType === 'master'));
                     const canEditOrder = accessdata?.logas != 'custmor' && (isMaster || (accessdata?.roll?.orders && accessdata.roll.orders.includes('edit')));
                     const canDeleteOrder = accessdata?.logas != 'custmor' && (isMaster || (accessdata?.roll?.orders && accessdata.roll.orders.includes('delete')));
+                    const canManageRacks = accessdata?.logas != 'custmor' && (isMaster || canEditOrder || Boolean(accessdata?.roll?.racks && accessdata.roll.racks.includes('edit')));
+                    const canCollectPayment = accessdata?.logas != 'custmor' && (isMaster || Boolean(accessdata?.roll?.order_payment_collect && accessdata.roll.order_payment_collect.includes('write')));
 
                     const getColorHex = (name) => {
                       if (!name) return '#000000';
@@ -163,13 +165,13 @@
                       <i class="fa fa-layer-group"></i>
                       <span>Rack<%= orderAssignedRacks.length > 1 ? 's' : '' %>: <strong><%= orderAssignedRacks.map(r => r.rack_name).join(', ') %></strong></span>
                     </span>
-                    <% if (canEditOrder) { %>
+                    <% if (canManageRacks) { %>
                     <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2" onclick="openOrderRacksModal(null)" title="Change Assigned Racks">
                       <i class="fas fa-pencil-alt me-1"></i>Change Racks
                     </button>
                     <% } %>
                   </div>
-                  <% } else if (canEditOrder) { %>
+                  <% } else if (canManageRacks) { %>
                   <button type="button" class="btn btn-xs btn-outline-info py-1 px-2 ms-1" onclick="openOrderRacksModal(null)" title="Assign Storage Rack">
                     <i class="fa fa-layer-group me-1"></i>Assign Racks
                   </button>
@@ -245,6 +247,12 @@
                       <div class="fw-bold text-dark fs-6 mb-1">
                         <%= hasPickup ? formatNiceDateTime(order.pickup_date) : 'Store Drop-off' %>
                       </div>
+                      <% if (hasPickup && order.pickup_address && String(order.pickup_address).trim() !== '') { %>
+                      <div class="text-dark small mb-1 text-break">
+                        <i class="fa fa-map-marker-alt text-danger me-1"></i>
+                        <%= order.pickup_address.trim() %>
+                      </div>
+                      <% } %>
                       <div class="text-muted small mb-2" id="details_pickup_time">
                         <% if (hasPickup) { %>
                         <%= (String(order.is_picked_up) === '1') ? ((order.picked_up_at ? ('Picked up on ' + formatNiceDateTime(order.picked_up_at)) : 'Picked Up')) : 'Pending Route Pick-up' %>
@@ -749,7 +757,7 @@
 
 
                     <div class="row">
-                      <% if (canEditOrder) { %>
+                      <% if (canManageRacks) { %>
                       <div class="col-12">
                         <button type="button" class="btn btn-outline-primary mb-3 w-100" id="btn_edit_order_racks">
                           <i class="fa fa-layer-group me-2"></i>
@@ -765,7 +773,7 @@
                         </a>
                       </div>
                       <% } %>
-                      <% if (canEditOrder) { %>
+                      <% if (canCollectPayment) { %>
                       <div class="col-12">
                         <button data-bs-toggle="modal" data-bs-target="#addpaymentmodel" type="button" class="btn btn-primary mb-3 w-100" <%= order.balance_amount > 0 ? '' : 'disabled' %>>
                           <i class="fa fa-plus me-2"></i>
