@@ -27,6 +27,9 @@ const {
   sendTestNotification,
   resolveSmtpConfig,
   resolveTwilioConfig,
+  resolveOpenWaConfig,
+  getOpenWaSessionStatusAndQr,
+  controlOpenWaSession,
 } = require("../services/notificationService");
 
 function normalizePermValue(val) {
@@ -3974,6 +3977,7 @@ router.get("/notificationsetting", auth, async (req, res) => {
     const notifSettings = await getEffectiveNotificationSettings(targetStoreId);
     const smtpCfg = await resolveSmtpConfig(targetStoreId);
     const twilioCfg = await resolveTwilioConfig(targetStoreId);
+    const openwaCfg = await resolveOpenWaConfig(targetStoreId);
 
     const smtpConfigured = Boolean(smtpCfg && smtpCfg.host && smtpCfg.username && smtpCfg.password);
     const twilioConfigured = Boolean(
@@ -3983,6 +3987,7 @@ router.get("/notificationsetting", auth, async (req, res) => {
       twilioCfg.phone &&
       String(twilioCfg.status) === "1"
     );
+    const openwaConfigured = Boolean(openwaCfg && openwaCfg.isConfigured);
     const pushConfigured = Boolean(
       accessdata &&
       accessdata.masterstore &&
@@ -4000,8 +4005,10 @@ router.get("/notificationsetting", auth, async (req, res) => {
       notificationEvents: NOTIFICATION_EVENTS,
       smtpConfig: smtpCfg || {},
       twilioConfig: twilioCfg || {},
+      openwaConfig: openwaCfg || {},
       smtpConfigured,
       twilioConfigured,
+      openwaConfigured,
       pushConfigured,
       accessdata,
       language: req.language_data,
@@ -4072,12 +4079,125 @@ router.post("/notificationsetting", auth, async (req, res) => {
       return res.redirect(`/tool/notificationsetting?store_id=${targetStoreId}`);
     }
 
-    req.flash("success", "Notification, Email & Twilio Settings Saved Successfully!");
+    req.flash("success", "Notification, Email, Twilio & Open-WA WhatsApp Settings Saved Successfully!");
     return res.redirect(`/tool/notificationsetting?store_id=${targetStoreId}`);
   } catch (error) {
     console.error("Error saving notification settings:", error);
     req.flash("error", "Error saving notification settings");
     return res.redirect("back");
+  }
+});
+
+router.get("/notificationsetting/openwa-session", auth, async (req, res) => {
+  try {
+    const { id, roll, store, loginas } = req.user;
+    if (loginas == 0) {
+      return res.status(403).json({ success: false, message: "Not authorized" });
+    }
+    const accessdata = await access(req.user);
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.rollType
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+    const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === "master";
+    const hasReadAccess =
+      isMaster ||
+      accessdata.mutibranch === false ||
+      (accessdata.roll?.notification_setting?.includes("read")) ||
+      (rolldetail.length > 0 && rolldetail[0].notification_setting && rolldetail[0].notification_setting.includes("read")) ||
+      (rolldetail.length > 0 &&
+        ((rolldetail[0].mail && rolldetail[0].mail.includes("read")) ||
+          (rolldetail[0].sms && rolldetail[0].sms.includes("read")) ||
+          (rolldetail[0].master && rolldetail[0].master.includes("read")) ||
+          (rolldetail[0].master_setting && rolldetail[0].master_setting.includes("read"))));
+
+    if (!hasReadAccess) {
+      return res.status(403).json({ success: false, message: "You are not authorized to inspect Open-WA sessions." });
+    }
+
+    let targetStoreId = parseInt(req.query.store_id, 10) || 0;
+    if (!isMaster) {
+      let assignedStore = store;
+      if (!assignedStore || assignedStore === " " || assignedStore === "" || assignedStore == 0) {
+        const adminData = await DataFind(`SELECT store_ID FROM tbl_admin WHERE id = ${id}`);
+        if (adminData.length > 0 && adminData[0].store_ID) assignedStore = adminData[0].store_ID;
+      }
+      targetStoreId = parseInt(assignedStore, 10) || 0;
+    }
+
+    const result = await getOpenWaSessionStatusAndQr({
+      storeId: targetStoreId,
+      baseUrl: req.query.base_url,
+      apiKey: req.query.api_key,
+      sessionId: req.query.session_id,
+      autoStart: req.query.auto_start === "1" || req.query.auto_start === "true",
+      createIfMissing: req.query.create === "1" || req.query.create === "true",
+    });
+
+    return res.status(result.success ? 200 : 400).json(result);
+  } catch (error) {
+    console.error("Error inspecting Open-WA session:", error);
+    return res.status(500).json({ success: false, message: error.message || "Failed to connect to Open-WA server." });
+  }
+});
+
+router.post("/notificationsetting/openwa-session/action", auth, async (req, res) => {
+  try {
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      return res.status(403).json({ success: false, message: "For demo purpose we disabled crud operations!!" });
+    }
+
+    const { id, roll, store, loginas } = req.user;
+    if (loginas == 0) {
+      return res.status(403).json({ success: false, message: "Not authorized" });
+    }
+    const accessdata = await access(req.user);
+    const rolldetail = await DataFind(`
+      SELECT sr.*, r.rollType
+      FROM tbl_staff_roll sr
+      JOIN tbl_roll r ON sr.main_roll_id = r.id
+      WHERE sr.id = ${roll}
+    `);
+    const isMaster = rolldetail.length > 0 && rolldetail[0].rollType === "master";
+    const hasEditPermission =
+      isMaster ||
+      (accessdata.roll?.notification_setting?.includes("edit")) ||
+      (rolldetail.length > 0 && rolldetail[0].notification_setting && rolldetail[0].notification_setting.includes("edit")) ||
+      (accessdata.mutibranch === false &&
+        (rolldetail.length > 0 &&
+          ((rolldetail[0].mail && rolldetail[0].mail.includes("edit")) ||
+            (rolldetail[0].sms && rolldetail[0].sms.includes("edit")) ||
+            (rolldetail[0].master && rolldetail[0].master.includes("edit")) ||
+            (rolldetail[0].master_setting && rolldetail[0].master_setting.includes("edit")))));
+
+    if (!hasEditPermission) {
+      return res.status(403).json({ success: false, message: "Administrative edit privileges are required to control Open-WA sessions." });
+    }
+
+    let targetStoreId = parseInt(req.body.store_id, 10) || 0;
+    if (!isMaster) {
+      let assignedStore = store;
+      if (!assignedStore || assignedStore === " " || assignedStore === "" || assignedStore == 0) {
+        const adminData = await DataFind(`SELECT store_ID FROM tbl_admin WHERE id = ${id}`);
+        if (adminData.length > 0 && adminData[0].store_ID) assignedStore = adminData[0].store_ID;
+      }
+      targetStoreId = parseInt(assignedStore, 10) || 0;
+    }
+
+    const result = await controlOpenWaSession({
+      storeId: targetStoreId,
+      action: req.body.action || "start",
+      baseUrl: req.body.base_url,
+      apiKey: req.body.api_key,
+      sessionId: req.body.session_id,
+    });
+
+    return res.status(result.success ? 200 : 400).json(result);
+  } catch (error) {
+    console.error("Error controlling Open-WA session:", error);
+    return res.status(500).json({ success: false, message: error.message || "Failed to execute Open-WA session action." });
   }
 });
 
@@ -4309,7 +4429,7 @@ router.post("/notification-templates", auth, async (req, res) => {
       return res.redirect(`/tool/notification-templates?store_id=${targetStoreId}`);
     }
 
-    req.flash("success", "SMS & Email Notification Templates Saved Successfully!");
+    req.flash("success", "WhatsApp, SMS & Email Notification Templates Saved Successfully!");
     return res.redirect(`/tool/notification-templates?store_id=${targetStoreId}`);
   } catch (error) {
     console.error("Error saving notification templates:", error);

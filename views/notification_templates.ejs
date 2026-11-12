@@ -69,10 +69,10 @@
                         </div>
                         <div>
                             <h4 class="settings-card-title mb-1">
-                                <%= language.Notification_Templates || 'SMS & Email Notification Templates' %>
+                                <%= language.Notification_Templates || 'WhatsApp, SMS & Email Notification Templates' %>
                             </h4>
                             <p class="settings-card-subtitle mb-0">
-                                Customize automated SMS text messages and Email subjects, headlines &amp; bodies for
+                                Customize automated Open-WA WhatsApp messages, SMS text alerts, and Email templates for
                                 <strong class="text-primary">
                                     <%= selectedStore === 0 ? 'Global Defaults (All Stores)' : (activeStoreObj ? activeStoreObj.name : 'Store') %>
                                 </strong>
@@ -189,7 +189,8 @@
                                         emailSubject: ev.defaultEmailSubject || '',
                                         emailHeadline: ev.defaultEmailHeadline || '',
                                         emailBody: ev.defaultEmailBody || '',
-                                        smsBody: ev.defaultSmsBody || ''
+                                        smsBody: ev.defaultSmsBody || '',
+                                        whatsappBody: ev.defaultWhatsappBody || ev.defaultSmsBody || ''
                                     };
                                     const isCustomized = Boolean(customFlagsMap[ev.key]);
                                 %>
@@ -236,23 +237,23 @@
                                             </div>
                                         </div>
 
-                                        <!-- Two-Column Editor: SMS on Left, Email on Right -->
+                                        <!-- Three-Column Editor: SMS, WhatsApp (Open-WA), and Email -->
                                         <div class="row g-4">
                                             <!-- SMS Template Editor -->
-                                            <div class="col-12 col-lg-5">
+                                            <div class="col-12 col-xl-4">
                                                 <div class="p-3 rounded-3 border bg-light-subtle h-100 d-flex flex-column justify-content-between">
                                                     <div>
                                                         <div class="d-flex align-items-center justify-content-between mb-2">
                                                             <label class="form-label fw-bold mb-0" for="tpl_<%= ev.key %>_smsBody">
-                                                                <i class="fas fa-comment-sms text-success me-1"></i> SMS Text Message Template
+                                                                <i class="fas fa-comment-sms text-info me-1"></i> SMS Template
                                                             </label>
-                                                            <span class="badge bg-success-subtle text-success">Twilio SMS &amp; Push</span>
+                                                            <span class="badge bg-info-subtle text-info">Twilio SMS</span>
                                                         </div>
                                                         <textarea
                                                             class="form-control template-merge-input"
                                                             id="tpl_<%= ev.key %>_smsBody"
                                                             name="tpl_<%= ev.key %>_smsBody"
-                                                            rows="5"
+                                                            rows="6"
                                                             data-event="<%= ev.key %>"
                                                             data-field-label="<%= ev.title %> — SMS Message"
                                                             oninput="updateSmsCounter('<%= ev.key %>')"
@@ -260,15 +261,44 @@
                                                     </div>
                                                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-2 pt-2 border-top small text-muted">
                                                         <span>
-                                                            <i class="fas fa-info-circle text-success me-1"></i>Plain text with <code>{merge_tags}</code>
+                                                            <i class="fas fa-info-circle text-info me-1"></i>Plain text + <code>{tags}</code>
                                                         </span>
                                                         <span id="sms_counter_<%= ev.key %>" class="fw-semibold">0 chars (1 SMS segment)</span>
                                                     </div>
                                                 </div>
                                             </div>
 
+                                            <!-- WhatsApp Template Editor (Open-WA) -->
+                                            <div class="col-12 col-xl-4">
+                                                <div class="p-3 rounded-3 border bg-light-subtle h-100 d-flex flex-column justify-content-between">
+                                                    <div>
+                                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                                            <label class="form-label fw-bold mb-0" for="tpl_<%= ev.key %>_whatsappBody">
+                                                                <i class="fab fa-whatsapp text-success me-1"></i> WhatsApp Template
+                                                            </label>
+                                                            <span class="badge bg-success-subtle text-success">Open-WA API</span>
+                                                        </div>
+                                                        <textarea
+                                                            class="form-control template-merge-input"
+                                                            id="tpl_<%= ev.key %>_whatsappBody"
+                                                            name="tpl_<%= ev.key %>_whatsappBody"
+                                                            rows="6"
+                                                            data-event="<%= ev.key %>"
+                                                            data-field-label="<%= ev.title %> — WhatsApp Message"
+                                                            oninput="updateWhatsappCounter('<%= ev.key %>')"
+                                                            <%= !canEditSettings ? 'readonly' : '' %>><%= activeTpl.whatsappBody || ev.defaultWhatsappBody || activeTpl.smsBody %></textarea>
+                                                    </div>
+                                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-2 pt-2 border-top small text-muted">
+                                                        <span>
+                                                            <i class="fas fa-info-circle text-success me-1"></i>Supports <code>*bold*</code> + auto order totals
+                                                        </span>
+                                                        <span id="wa_counter_<%= ev.key %>" class="fw-semibold">0 chars</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <!-- Email Template Editor -->
-                                            <div class="col-12 col-lg-7">
+                                            <div class="col-12 col-xl-4">
                                                 <div class="p-3 rounded-3 border bg-light-subtle h-100">
                                                     <div class="d-flex align-items-center justify-content-between mb-2">
                                                         <span class="fw-bold">
@@ -277,8 +307,8 @@
                                                         <span class="badge bg-primary-subtle text-primary">SMTP Email</span>
                                                     </div>
 
-                                                    <div class="row g-3">
-                                                        <div class="col-12 col-md-6">
+                                                    <div class="row g-2">
+                                                        <div class="col-12">
                                                             <label class="form-label small fw-semibold mb-1" for="tpl_<%= ev.key %>_emailSubject">
                                                                 Email Subject Line
                                                             </label>
@@ -292,7 +322,7 @@
                                                                 <%= !canEditSettings ? 'readonly' : '' %>>
                                                         </div>
 
-                                                        <div class="col-12 col-md-6">
+                                                        <div class="col-12">
                                                             <label class="form-label small fw-semibold mb-1" for="tpl_<%= ev.key %>_emailHeadline">
                                                                 Email Header Banner Headline
                                                             </label>
@@ -320,7 +350,7 @@
                                                                 <%= !canEditSettings ? 'readonly' : '' %>><%= activeTpl.emailBody %></textarea>
                                                             <div class="small text-muted mt-1">
                                                                 <i class="fas fa-table text-primary me-1"></i>
-                                                                Note: For order events, the <strong>Itemized Garment Table, Totals, Assigned Rack(s), and Store Contact Footer</strong> are automatically included below your message body.
+                                                                Order events auto-include itemized table, racks &amp; footer.
                                                             </div>
                                                         </div>
                                                     </div>
@@ -342,7 +372,7 @@
                             Scope: <%= selectedStore === 0 ? 'Global Default Templates' : (activeStoreObj ? activeStoreObj.name : 'Store Templates') %>
                         </span>
                         <small class="text-muted d-none d-sm-inline">
-                            Saves all 12 SMS &amp; Email Notification Templates for the selected scope.
+                            Saves all 12 WhatsApp (Open-WA), SMS &amp; Email Notification Templates for the selected scope.
                         </small>
                     </div>
                     <div class="d-flex align-items-center gap-2">
@@ -379,12 +409,23 @@
                     <!-- SMS Bubble Preview -->
                     <div class="mb-4">
                         <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="fw-bold small text-uppercase text-success">
+                            <span class="fw-bold small text-uppercase text-info">
                                 <i class="fas fa-comment-sms me-1"></i> SMS Message Preview (Twilio)
                             </span>
-                            <span class="badge bg-success-subtle text-success" id="preview_sms_length">0 chars</span>
+                            <span class="badge bg-info-subtle text-info" id="preview_sms_length">0 chars</span>
                         </div>
                         <div class="p-3 rounded-3 border bg-light-subtle font-monospace small" id="preview_sms_box"></div>
+                    </div>
+
+                    <!-- WhatsApp Bubble Preview -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-bold small text-uppercase text-success">
+                                <i class="fab fa-whatsapp me-1"></i> WhatsApp Message Preview (Open-WA)
+                            </span>
+                            <span class="badge bg-success-subtle text-success" id="preview_wa_length">0 chars</span>
+                        </div>
+                        <pre class="p-3 rounded-3 border bg-light-subtle font-monospace small text-wrap mb-0" id="preview_wa_box"></pre>
                     </div>
 
                     <!-- Email Card Preview -->
@@ -463,11 +504,16 @@
                 });
             });
 
-            // Initialize all SMS character counters
+            // Initialize all SMS and WhatsApp character counters
             const smsFields = document.querySelectorAll('textarea[id^="tpl_"][id$="_smsBody"]');
             smsFields.forEach(function (ta) {
                 const evKey = ta.getAttribute('data-event');
                 if (evKey) updateSmsCounter(evKey);
+            });
+            const waFields = document.querySelectorAll('textarea[id^="tpl_"][id$="_whatsappBody"]');
+            waFields.forEach(function (ta) {
+                const evKey = ta.getAttribute('data-event');
+                if (evKey) updateWhatsappCounter(evKey);
             });
         });
 
@@ -482,6 +528,14 @@
             const len = (ta.value || '').length;
             const segments = Math.max(1, Math.ceil(len / 160));
             counter.textContent = len + ' chars (' + segments + ' SMS segment' + (segments > 1 ? 's' : '') + ')';
+        }
+
+        function updateWhatsappCounter(eventKey) {
+            const ta = document.getElementById('tpl_' + eventKey + '_whatsappBody');
+            const counter = document.getElementById('wa_counter_' + eventKey);
+            if (!ta || !counter) return;
+            const len = (ta.value || '').length;
+            counter.textContent = len + ' / 4096 chars';
         }
 
         function insertMergeTag(tag) {
@@ -502,7 +556,10 @@
                 lastFocusedInput.setSelectionRange(nextPos, nextPos);
 
                 const evKey = lastFocusedInput.getAttribute('data-event');
-                if (evKey) updateSmsCounter(evKey);
+                if (evKey) {
+                    updateSmsCounter(evKey);
+                    updateWhatsappCounter(evKey);
+                }
 
                 if (typeof toastr !== 'undefined') {
                     toastr.info('Inserted ' + tag);
@@ -535,16 +592,23 @@
             const headEl = document.getElementById('tpl_' + eventKey + '_emailHeadline');
             const bodyEl = document.getElementById('tpl_' + eventKey + '_emailBody');
             const smsEl = document.getElementById('tpl_' + eventKey + '_smsBody');
+            const waEl = document.getElementById('tpl_' + eventKey + '_whatsappBody');
 
             const sampleMap = buildSampleMap();
             const renderedSubj = interpolateSample(subjEl ? subjEl.value : '', sampleMap);
             const renderedHead = interpolateSample(headEl ? headEl.value : '', sampleMap);
             const renderedBody = interpolateSample(bodyEl ? bodyEl.value : '', sampleMap);
             const renderedSms = interpolateSample(smsEl ? smsEl.value : '', sampleMap);
+            let renderedWa = interpolateSample(waEl ? waEl.value : '', sampleMap);
+            if (eventKey !== 'welcome_customer' && eventKey !== 'order_cancelled') {
+                renderedWa += '\n\n*ITEMIZED GARMENTS:*\n• 2-Piece Suit [Dry Clean] (2 Pcs) x 1 = $24.50\n• Dress Shirt [Launder & Press] x 2 = $21.00\n📍 *Storage Rack(s):* Rack A-1, Rack B-2\n--------------------------------\n💰 *Gross Total:* $45.50\n💳 *Paid Amount:* $20.00\n❗ *Balance Due:* *$25.50*\n📞 Questions? Call ' + sampleMap.store_name + ' at ' + sampleMap.store_phone;
+            }
 
             document.getElementById('preview_event_subtitle').textContent = eventTitle + ' — Rendered with sample customer & order values';
             document.getElementById('preview_sms_box').textContent = renderedSms;
             document.getElementById('preview_sms_length').textContent = renderedSms.length + ' chars';
+            document.getElementById('preview_wa_box').textContent = renderedWa;
+            document.getElementById('preview_wa_length').textContent = renderedWa.length + ' chars';
             document.getElementById('preview_email_subject').textContent = renderedSubj;
             document.getElementById('preview_email_headline').textContent = renderedHead;
             document.getElementById('preview_email_body').innerHTML = renderedBody.replace(/\r?\n/g, '<br>');
@@ -572,13 +636,16 @@
             const headEl = document.getElementById('tpl_' + eventKey + '_emailHeadline');
             const bodyEl = document.getElementById('tpl_' + eventKey + '_emailBody');
             const smsEl = document.getElementById('tpl_' + eventKey + '_smsBody');
+            const waEl = document.getElementById('tpl_' + eventKey + '_whatsappBody');
 
             if (subjEl) subjEl.value = def.emailSubject || '';
             if (headEl) headEl.value = def.emailHeadline || '';
             if (bodyEl) bodyEl.value = def.emailBody || '';
             if (smsEl) smsEl.value = def.smsBody || '';
+            if (waEl) waEl.value = def.whatsappBody || def.smsBody || '';
 
             updateSmsCounter(eventKey);
+            updateWhatsappCounter(eventKey);
             if (typeof toastr !== 'undefined') {
                 toastr.info('Default template text restored in editor. Click "Save All Templates" to persist.');
             }

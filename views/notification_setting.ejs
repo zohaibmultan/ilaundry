@@ -9,7 +9,7 @@
     <%- include('templet/preloder_topbar_sidebar',{titel: accessdata?.topbardata?.name})-%>
 
     <%
-        const activeNotifSettings = (typeof notifSettings !== 'undefined' && notifSettings) ? notifSettings : { email_enabled: 1, sms_enabled: 1, push_enabled: 1, events: {} };
+        const activeNotifSettings = (typeof notifSettings !== 'undefined' && notifSettings) ? notifSettings : { email_enabled: 1, sms_enabled: 1, whatsapp_enabled: 1, push_enabled: 1, events: {} };
         const eventsList = (typeof notificationEvents !== 'undefined' && Array.isArray(notificationEvents)) ? notificationEvents : [];
         const activeEventsMap = activeNotifSettings.events || {};
         const selectedStore = (typeof targetStoreId !== 'undefined') ? Number(targetStoreId) : 0;
@@ -18,9 +18,11 @@
         const canEditSettings = (typeof canEdit !== 'undefined') ? Boolean(canEdit) : true;
         const isSmtpReady = (typeof smtpConfigured !== 'undefined') ? Boolean(smtpConfigured) : false;
         const isTwilioReady = (typeof twilioConfigured !== 'undefined') ? Boolean(twilioConfigured) : false;
+        const isOpenWaReady = (typeof openwaConfigured !== 'undefined') ? Boolean(openwaConfigured) : false;
         const isPushReady = (typeof pushConfigured !== 'undefined') ? Boolean(pushConfigured) : false;
         const mailCfg = (typeof smtpConfig !== 'undefined' && smtpConfig) ? smtpConfig : {};
         const smsCfg = (typeof twilioConfig !== 'undefined' && twilioConfig) ? twilioConfig : {};
+        const waCfg = (typeof openwaConfig !== 'undefined' && openwaConfig) ? openwaConfig : {};
 
         const categories = [
             {
@@ -71,10 +73,10 @@
                         </div>
                         <div>
                             <h4 class="settings-card-title mb-1">
-                                <%= language.Notification_Settings || 'Notification, Email (SMTP) & Twilio SMS Settings' %>
+                                <%= language.Notification_Settings || 'Notification, Email (SMTP), Twilio SMS & Open-WA WhatsApp Settings' %>
                             </h4>
                             <p class="settings-card-subtitle mb-0">
-                                Configure Email &amp; Twilio SMS gateways and automated customer alerts for
+                                Configure Email, Twilio SMS &amp; Open-WA WhatsApp gateways and automated customer alerts for
                                 <strong class="text-primary">
                                     <%= selectedStore === 0 ? 'Global Defaults (All Stores)' : (activeStoreObj ? activeStoreObj.name : 'Store') %>
                                 </strong>
@@ -90,7 +92,7 @@
                     </div>
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <a href="/tool/notification-templates?store_id=<%= selectedStore %>" class="btn btn-primary btn-sm px-3 py-2 fw-semibold">
-                            <i class="fas fa-file-signature me-1"></i> Customize SMS &amp; Email Templates
+                            <i class="fas fa-file-signature me-1"></i> Customize WhatsApp, SMS &amp; Email Templates
                         </a>
                         <a href="/index" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold">
                             <i class="fa fa-arrow-left me-1"></i> <%= language.Back_to_Dashboard || 'Back to Dashboard' %>
@@ -156,7 +158,7 @@
                                     </div>
                                     <div>
                                         <h5 class="settings-card-title">Master Channel Switches</h5>
-                                        <p class="settings-card-subtitle">Global kill-switches for Email, SMS, and Push delivery channels</p>
+                                        <p class="settings-card-subtitle">Global kill-switches for Email, SMS, WhatsApp (Open-WA), and Push delivery</p>
                                     </div>
                                 </div>
                                 <% if (canEditSettings) { %>
@@ -173,14 +175,14 @@
 
                             <div class="row g-3">
                                 <!-- Email Channel Switch -->
-                                <div class="col-12 col-md-4">
+                                <div class="col-12 col-sm-6 col-md-3">
                                     <div class="p-3 rounded-3 border bg-light-subtle d-flex flex-column justify-content-between h-100">
                                         <div class="d-flex align-items-start justify-content-between mb-2">
                                             <div>
                                                 <span class="fw-bold d-block">
-                                                    <i class="fas fa-envelope text-primary me-1"></i> Email Notifications
+                                                    <i class="fas fa-envelope text-primary me-1"></i> Email
                                                 </span>
-                                                <small class="text-muted">HTML receipts &amp; status emails via SMTP</small>
+                                                <small class="text-muted">HTML receipts via SMTP</small>
                                             </div>
                                             <div class="form-check form-switch ms-2 m-0">
                                                 <input class="form-check-input" type="checkbox" role="switch" id="master_email_enabled" name="email_enabled" value="1"
@@ -189,25 +191,25 @@
                                             </div>
                                         </div>
                                         <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between">
-                                            <small class="text-muted">SMTP Gateway:</small>
+                                            <small class="text-muted">SMTP:</small>
                                             <% if (isSmtpReady) { %>
-                                                <span class="badge bg-success-subtle text-success"><i class="fas fa-check-circle me-1"></i>Configured</span>
+                                                <span class="badge bg-success-subtle text-success"><i class="fas fa-check-circle me-1"></i>Ready</span>
                                             <% } else { %>
-                                                <span class="badge bg-warning-subtle text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Setup Below</span>
+                                                <span class="badge bg-warning-subtle text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Setup</span>
                                             <% } %>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- SMS Channel Switch -->
-                                <div class="col-12 col-md-4">
+                                <div class="col-12 col-sm-6 col-md-3">
                                     <div class="p-3 rounded-3 border bg-light-subtle d-flex flex-column justify-content-between h-100">
                                         <div class="d-flex align-items-start justify-content-between mb-2">
                                             <div>
                                                 <span class="fw-bold d-block">
-                                                    <i class="fas fa-comment-sms text-success me-1"></i> SMS Notifications
+                                                    <i class="fas fa-comment-sms text-info me-1"></i> SMS
                                                 </span>
-                                                <small class="text-muted">Instant text alerts via Twilio SMS</small>
+                                                <small class="text-muted">Text alerts via Twilio</small>
                                             </div>
                                             <div class="form-check form-switch ms-2 m-0">
                                                 <input class="form-check-input" type="checkbox" role="switch" id="master_sms_enabled" name="sms_enabled" value="1"
@@ -216,25 +218,52 @@
                                             </div>
                                         </div>
                                         <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between">
-                                            <small class="text-muted">Twilio Gateway:</small>
+                                            <small class="text-muted">Twilio:</small>
                                             <% if (isTwilioReady) { %>
-                                                <span class="badge bg-success-subtle text-success"><i class="fas fa-check-circle me-1"></i>Configured</span>
+                                                <span class="badge bg-success-subtle text-success"><i class="fas fa-check-circle me-1"></i>Ready</span>
                                             <% } else { %>
-                                                <span class="badge bg-warning-subtle text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Setup Below</span>
+                                                <span class="badge bg-warning-subtle text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Setup</span>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- WhatsApp (Open-WA) Channel Switch -->
+                                <div class="col-12 col-sm-6 col-md-3">
+                                    <div class="p-3 rounded-3 border bg-light-subtle d-flex flex-column justify-content-between h-100">
+                                        <div class="d-flex align-items-start justify-content-between mb-2">
+                                            <div>
+                                                <span class="fw-bold d-block">
+                                                    <i class="fab fa-whatsapp text-success me-1"></i> WhatsApp
+                                                </span>
+                                                <small class="text-muted">Direct API via Open-WA</small>
+                                            </div>
+                                            <div class="form-check form-switch ms-2 m-0">
+                                                <input class="form-check-input" type="checkbox" role="switch" id="master_whatsapp_enabled" name="whatsapp_enabled" value="1"
+                                                    <%= Number(activeNotifSettings.whatsapp_enabled) === 1 ? 'checked' : '' %>
+                                                    <%= !canEditSettings ? 'disabled' : '' %>>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between">
+                                            <small class="text-muted">Open-WA:</small>
+                                            <% if (isOpenWaReady) { %>
+                                                <span class="badge bg-success-subtle text-success" id="master_openwa_cfg_badge"><i class="fas fa-check-circle me-1"></i>Ready</span>
+                                            <% } else { %>
+                                                <span class="badge bg-warning-subtle text-warning" id="master_openwa_cfg_badge"><i class="fas fa-exclamation-triangle me-1"></i>Setup</span>
                                             <% } %>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Push Channel Switch -->
-                                <div class="col-12 col-md-4">
+                                <div class="col-12 col-sm-6 col-md-3">
                                     <div class="p-3 rounded-3 border bg-light-subtle d-flex flex-column justify-content-between h-100">
                                         <div class="d-flex align-items-start justify-content-between mb-2">
                                             <div>
                                                 <span class="fw-bold d-block">
-                                                    <i class="fas fa-bell text-warning me-1"></i> Push Notifications
+                                                    <i class="fas fa-bell text-warning me-1"></i> Push
                                                 </span>
-                                                <small class="text-muted">Browser &amp; mobile push via OneSignal</small>
+                                                <small class="text-muted">App &amp; web push alerts</small>
                                             </div>
                                             <div class="form-check form-switch ms-2 m-0">
                                                 <input class="form-check-input" type="checkbox" role="switch" id="master_push_enabled" name="push_enabled" value="1"
@@ -245,7 +274,7 @@
                                         <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between">
                                             <small class="text-muted">OneSignal:</small>
                                             <% if (isPushReady) { %>
-                                                <span class="badge bg-success-subtle text-success"><i class="fas fa-check-circle me-1"></i>Connected</span>
+                                                <span class="badge bg-success-subtle text-success"><i class="fas fa-check-circle me-1"></i>Ready</span>
                                             <% } else { %>
                                                 <span class="badge bg-secondary-subtle text-secondary"><i class="fas fa-info-circle me-1"></i>Optional</span>
                                             <% } %>
@@ -266,7 +295,7 @@
                                     </div>
                                     <div>
                                         <h5 class="settings-card-title">Send Test Notification</h5>
-                                        <p class="settings-card-subtitle">Verify Email or SMS delivery live</p>
+                                        <p class="settings-card-subtitle">Verify Email, SMS or WhatsApp live</p>
                                     </div>
                                 </div>
                                 <span class="badge bg-info-subtle text-info">LIVE TEST</span>
@@ -276,13 +305,14 @@
                                 <div class="col-12 col-sm-5">
                                     <label class="form-label small fw-bold mb-1">Channel</label>
                                     <select class="form-select form-select-sm" id="test_notif_channel" onchange="updateTestRecipientPlaceholder()">
+                                        <option value="whatsapp">WhatsApp (Open-WA)</option>
                                         <option value="email">Email (SMTP)</option>
                                         <option value="sms">SMS (Twilio)</option>
                                     </select>
                                 </div>
                                 <div class="col-12 col-sm-7">
                                     <label class="form-label small fw-bold mb-1">Recipient Address / Phone</label>
-                                    <input type="text" class="form-control form-control-sm" id="test_notif_recipient" placeholder="customer@example.com">
+                                    <input type="text" class="form-control form-control-sm" id="test_notif_recipient" placeholder="e.g. +17185550199 or 03225126622">
                                 </div>
                                 <div class="col-12">
                                     <button type="button" class="btn btn-outline-primary btn-sm w-100 py-2 fw-semibold" id="btn_send_test_notif" onclick="triggerTestNotification()">
@@ -491,6 +521,120 @@
                         </div>
                     </div>
 
+                    <!-- Open-WA (WhatsApp) Gateway & Live Session Settings Card -->
+                    <div class="col-12">
+                        <div class="settings-section-card">
+                            <div class="settings-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div class="d-flex align-items-center">
+                                    <div class="settings-icon-badge badge-primary-glass">
+                                        <i class="fab fa-whatsapp text-success"></i>
+                                    </div>
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            <h5 class="settings-card-title mb-0">Open-WA (WhatsApp API) Gateway Settings</h5>
+                                            <% if (selectedStore > 0) { %>
+                                                <% if (waCfg.hasStoreOverride) { %>
+                                                    <span class="badge bg-primary-subtle text-primary">Store Override</span>
+                                                <% } else { %>
+                                                    <span class="badge bg-secondary-subtle text-secondary">Inherited Global Default</span>
+                                                <% } %>
+                                            <% } %>
+                                        </div>
+                                        <p class="settings-card-subtitle mb-0">Self-hosted Open-WA gateway URL, API key, active session name/UUID, and QR linking</p>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="badge bg-secondary-subtle text-secondary" id="openwa_live_badge">
+                                        <i class="fas fa-circle-notch fa-spin me-1"></i>Checking Session...
+                                    </span>
+                                    <button type="button" class="btn btn-outline-success btn-sm fw-semibold" id="btn_open_openwa_qr_modal" onclick="openOpenWaQrModal()">
+                                        <i class="fas fa-qrcode me-1"></i> Session Status &amp; Scan QR
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label fw-semibold small mb-1" for="openwa_base_url">
+                                        Open-WA Server Base URL
+                                    </label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light-subtle"><i class="fas fa-server text-success"></i></span>
+                                        <input type="url" class="form-control font-monospace" id="openwa_base_url" name="openwa_base_url"
+                                            value="<%= waCfg.baseUrl || '' %>" placeholder="http://your-openwa-host:2785" <%= !canEditSettings ? 'readonly' : '' %>>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label fw-semibold small mb-1" for="openwa_api_key">
+                                        Open-WA API Key (<code>X-API-Key</code>)
+                                    </label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light-subtle"><i class="fas fa-key text-success"></i></span>
+                                        <input type="password" class="form-control font-monospace" id="openwa_api_key" name="openwa_api_key"
+                                            value="<%= waCfg.apiKey || '' %>" placeholder="owa_k1_..." autocomplete="new-password" <%= !canEditSettings ? 'readonly' : '' %>>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="toggleSecretInput('openwa_api_key', this)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label fw-semibold small mb-1" for="openwa_session_id">
+                                        WhatsApp Session Name or UUID
+                                    </label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light-subtle"><i class="fab fa-whatsapp text-success"></i></span>
+                                        <input type="text" class="form-control font-monospace" id="openwa_session_id" name="openwa_session_id"
+                                            value="<%= waCfg.sessionId || '' %>" placeholder="i-cleaners" <%= !canEditSettings ? 'readonly' : '' %>>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="refreshOpenWaLiveStatus(true)" title="Load available sessions from Open-WA server">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </div>
+                                    <select class="form-select form-select-sm mt-2 d-none" id="openwa_session_picker" onchange="applySelectedOpenWaSession(this.value)" <%= !canEditSettings ? 'disabled' : '' %>>
+                                        <option value="">-- Select Server Session --</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label fw-semibold small mb-1" for="openwa_country_code">
+                                        Default Country Code (10-digit numbers)
+                                    </label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light-subtle">+</span>
+                                        <input type="text" class="form-control font-monospace" id="openwa_country_code" name="openwa_country_code"
+                                            value="<%= waCfg.defaultCountryCode || '1' %>" placeholder="1" maxlength="5" <%= !canEditSettings ? 'readonly' : '' %>>
+                                    </div>
+                                    <% if (canEditSettings) { %>
+                                        <div class="mt-2 d-flex flex-wrap gap-1 align-items-center">
+                                            <small class="text-muted me-1 fw-semibold">Presets:</small>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2" onclick="setOpenWaCountryCode('1')">+1 USA/CA</button>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2" onclick="setOpenWaCountryCode('92')">+92 PK</button>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2" onclick="setOpenWaCountryCode('44')">+44 UK</button>
+                                        </div>
+                                    <% } %>
+                                </div>
+
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label fw-semibold small mb-1" for="openwa_status">
+                                        Open-WA Gateway Status
+                                    </label>
+                                    <select class="form-select form-select-sm" id="openwa_status" name="openwa_status" <%= !canEditSettings ? 'disabled' : '' %>>
+                                        <option value="1" <%= (String(waCfg.status) !== '0') ? 'selected' : '' %>>Active — Deliver WhatsApp Messages</option>
+                                        <option value="0" <%= (String(waCfg.status) === '0') ? 'selected' : '' %>>Disabled — Pause Open-WA Gateway</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12 col-md-4 d-flex align-items-end">
+                                    <div class="p-2 rounded-3 border bg-light-subtle w-100 small text-muted">
+                                        <i class="fas fa-info-circle text-success me-1"></i>
+                                        Numbers starting with <code>+</code> or <code>03...</code> keep their country code; 10-digit local numbers prepend <code>+<%= waCfg.defaultCountryCode || '1' %></code>.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 4 Categorized Event Cards (12 Events Total) -->
                     <% categories.forEach(function(cat) { %>
                         <% const catEvents = eventsList.filter(function(ev) { return ev.category === cat.id; }); %>
@@ -512,9 +656,10 @@
                                 <div class="d-flex flex-column gap-3">
                                     <% catEvents.forEach(function(ev) { %>
                                         <%
-                                            const evState = activeEventsMap[ev.key] || { email: ev.defaultEmail, sms: ev.defaultSms };
+                                            const evState = activeEventsMap[ev.key] || { email: ev.defaultEmail, sms: ev.defaultSms, whatsapp: ev.defaultWhatsapp };
                                             const isEmailChecked = Boolean(evState.email === true || Number(evState.email) === 1);
                                             const isSmsChecked = Boolean(evState.sms === true || Number(evState.sms) === 1);
+                                            const isWhatsappChecked = Boolean(evState.whatsapp === true || Number(evState.whatsapp) === 1);
                                         %>
                                         <div class="p-3 rounded-3 border bg-light-subtle">
                                             <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
@@ -530,7 +675,7 @@
                                                 <div class="d-flex align-items-center gap-3 ms-auto pt-1 flex-wrap">
                                                     <a href="/tool/notification-templates?store_id=<%= selectedStore %>#event_card_<%= ev.key %>"
                                                         class="btn btn-xs btn-outline-primary rounded-pill py-1 px-2 text-nowrap"
-                                                        title="Customize SMS & Email template for <%= ev.title %>">
+                                                        title="Customize WhatsApp, SMS & Email template for <%= ev.title %>">
                                                         <i class="fas fa-pen-fancy me-1"></i>Edit Template
                                                     </a>
 
@@ -556,7 +701,20 @@
                                                             <%= isSmsChecked ? 'checked' : '' %>
                                                             <%= !canEditSettings ? 'disabled' : '' %>>
                                                         <label class="form-check-label small fw-semibold" for="event_<%= ev.key %>_sms">
-                                                            <i class="fas fa-comment-sms text-success me-1"></i>SMS
+                                                            <i class="fas fa-comment-sms text-info me-1"></i>SMS
+                                                        </label>
+                                                    </div>
+
+                                                    <!-- WhatsApp Switch for Event -->
+                                                    <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
+                                                        <input class="form-check-input event-whatsapp-toggle" type="checkbox" role="switch"
+                                                            id="event_<%= ev.key %>_whatsapp"
+                                                            name="event_<%= ev.key %>_whatsapp"
+                                                            value="1"
+                                                            <%= isWhatsappChecked ? 'checked' : '' %>
+                                                            <%= !canEditSettings ? 'disabled' : '' %>>
+                                                        <label class="form-check-label small fw-semibold" for="event_<%= ev.key %>_whatsapp">
+                                                            <i class="fab fa-whatsapp text-success me-1"></i>WhatsApp
                                                         </label>
                                                     </div>
                                                 </div>
@@ -577,7 +735,7 @@
                             Scope: <%= selectedStore === 0 ? 'Global Defaults' : (activeStoreObj ? activeStoreObj.name : 'Store Override') %>
                         </span>
                         <small class="text-muted d-none d-sm-inline">
-                            Saves Email (SMTP), Twilio (SMS), and all 12 Event Notification Switches together.
+                            Saves Email (SMTP), Twilio (SMS), Open-WA (WhatsApp), and all 12 Event Notification Switches together.
                         </small>
                     </div>
                     <div class="d-flex align-items-center gap-2">
@@ -597,10 +755,70 @@
     </div>
     <!--********** Content body end **********-->
 
+    <!-- Open-WA Session Status & QR Linking Modal -->
+    <div class="modal fade" id="openWaSessionModal" tabindex="-1" aria-labelledby="openWaSessionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-bottom">
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0" id="openWaSessionModalLabel">
+                            <i class="fab fa-whatsapp text-success me-2"></i>Open-WA Session &amp; QR Link
+                        </h5>
+                        <small class="text-muted" id="openwa_modal_server_label"></small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="openwa_modal_status_card" class="p-3 rounded-3 border bg-light-subtle mb-3">
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                            <span class="fw-bold" id="openwa_modal_session_name">Checking...</span>
+                            <span class="badge bg-secondary-subtle text-secondary" id="openwa_modal_state_badge">LOADING</span>
+                        </div>
+                        <div class="small text-muted" id="openwa_modal_session_meta">Connecting to Open-WA API...</div>
+                    </div>
+
+                    <div id="openwa_modal_qr_wrap" class="text-center p-3 rounded-3 border bg-light-subtle mb-3 d-none">
+                        <div class="fw-semibold small mb-2">
+                            <i class="fas fa-qrcode text-success me-1"></i>Open WhatsApp on your phone &rarr; Linked Devices &rarr; Scan QR:
+                        </div>
+                        <img id="openwa_modal_qr_img" src="" alt="Open-WA WhatsApp QR Code" class="img-fluid rounded border p-2 bg-white" style="max-width: 240px;">
+                        <div class="small text-muted mt-2">
+                            Status refreshes automatically every 5 seconds while this window is open.
+                        </div>
+                    </div>
+
+                    <div id="openwa_modal_alert" class="alert alert-danger py-2 px-3 small d-none mb-3"></div>
+
+                    <% if (canEditSettings) { %>
+                        <div class="d-flex flex-wrap gap-2 justify-content-center">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="refreshOpenWaModal()">
+                                <i class="fas fa-sync-alt me-1"></i>Refresh Status / QR
+                            </button>
+                            <button type="button" class="btn btn-success btn-sm" onclick="runOpenWaSessionAction('start')">
+                                <i class="fas fa-play me-1"></i>Start / Create Session
+                            </button>
+                            <button type="button" class="btn btn-outline-warning btn-sm" onclick="runOpenWaSessionAction('restart')">
+                                <i class="fas fa-redo me-1"></i>Restart
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="runOpenWaSessionAction('logout')">
+                                <i class="fas fa-sign-out-alt me-1"></i>Unlink Device
+                            </button>
+                        </div>
+                    <% } %>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <%- include('templet/footer')-%>
     <%- include('templet/script')-%>
 
     <script>
+        var openWaQrPollTimer = null;
+
         function switchNotificationStore(storeId) {
             window.location.href = '/tool/notificationsetting?store_id=' + encodeURIComponent(storeId);
         }
@@ -610,6 +828,20 @@
             var portEl = document.getElementById('smtp_port');
             if (hostEl && !hostEl.readOnly) hostEl.value = host;
             if (portEl && !portEl.readOnly) portEl.value = port;
+        }
+
+        function setOpenWaCountryCode(code) {
+            var ccEl = document.getElementById('openwa_country_code');
+            if (ccEl && !ccEl.readOnly) ccEl.value = code;
+        }
+
+        function applySelectedOpenWaSession(val) {
+            if (!val) return;
+            var sessInput = document.getElementById('openwa_session_id');
+            if (sessInput && !sessInput.readOnly) {
+                sessInput.value = val;
+                refreshOpenWaLiveStatus(false);
+            }
         }
 
         function toggleSecretInput(inputId, btnEl) {
@@ -626,7 +858,7 @@
         }
 
         function toggleAllEventChannels(enable) {
-            var checkboxes = document.querySelectorAll('.event-email-toggle, .event-sms-toggle');
+            var checkboxes = document.querySelectorAll('.event-email-toggle, .event-sms-toggle, .event-whatsapp-toggle');
             checkboxes.forEach(function (cb) {
                 if (!cb.disabled) {
                     cb.checked = Boolean(enable);
@@ -634,9 +866,11 @@
             });
             var masterEmail = document.getElementById('master_email_enabled');
             var masterSms = document.getElementById('master_sms_enabled');
+            var masterWa = document.getElementById('master_whatsapp_enabled');
             if (enable) {
                 if (masterEmail && !masterEmail.disabled) masterEmail.checked = true;
                 if (masterSms && !masterSms.disabled) masterSms.checked = true;
+                if (masterWa && !masterWa.disabled) masterWa.checked = true;
             }
         }
 
@@ -644,12 +878,226 @@
             var channelSelect = document.getElementById('test_notif_channel');
             var recipientInput = document.getElementById('test_notif_recipient');
             if (!channelSelect || !recipientInput) return;
-            if (channelSelect.value === 'sms') {
+            if (channelSelect.value === 'whatsapp') {
+                recipientInput.placeholder = 'e.g. +17185550199 or 03225126622';
+            } else if (channelSelect.value === 'sms') {
                 recipientInput.placeholder = '+15550192834';
             } else {
                 recipientInput.placeholder = 'customer@example.com';
             }
         }
+
+        function updateOpenWaLiveBadge(session, errMsg) {
+            var badge = document.getElementById('openwa_live_badge');
+            if (!badge) return;
+            if (errMsg) {
+                badge.className = 'badge bg-danger-subtle text-danger';
+                badge.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Unreachable';
+                badge.title = errMsg;
+                return;
+            }
+            if (!session) {
+                badge.className = 'badge bg-warning-subtle text-warning';
+                badge.innerHTML = '<i class="fas fa-unlink me-1"></i>Session Not Found';
+                return;
+            }
+            var st = String(session.status || '').toLowerCase();
+            if (st === 'ready') {
+                badge.className = 'badge bg-success-subtle text-success';
+                badge.innerHTML = '<i class="fas fa-check-circle me-1"></i>Connected' + (session.phone ? ' (' + session.phone + ')' : '');
+            } else if (st === 'qr_ready') {
+                badge.className = 'badge bg-warning-subtle text-warning';
+                badge.innerHTML = '<i class="fas fa-qrcode me-1"></i>Scan QR to Connect';
+            } else if (st === 'initializing' || st === 'authenticating') {
+                badge.className = 'badge bg-info-subtle text-info';
+                badge.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>' + st.toUpperCase();
+            } else {
+                badge.className = 'badge bg-secondary-subtle text-secondary';
+                badge.innerHTML = '<i class="fas fa-pause-circle me-1"></i>' + (st ? st.toUpperCase() : 'OFFLINE');
+            }
+        }
+
+        function getOpenWaFormParams() {
+            var baseEl = document.getElementById('openwa_base_url');
+            var keyEl = document.getElementById('openwa_api_key');
+            var sessEl = document.getElementById('openwa_session_id');
+            return {
+                store_id: '<%= selectedStore %>',
+                base_url: baseEl ? baseEl.value.trim() : '',
+                api_key: keyEl ? keyEl.value.trim() : '',
+                session_id: sessEl ? sessEl.value.trim() : ''
+            };
+        }
+
+        async function refreshOpenWaLiveStatus(showPicker) {
+            try {
+                var p = getOpenWaFormParams();
+                if (!p.base_url || !p.api_key) {
+                    updateOpenWaLiveBadge(null, 'Not configured');
+                    return null;
+                }
+                var qs = new URLSearchParams(p);
+                var resp = await fetch('/tool/notificationsetting/openwa-session?' + qs.toString());
+                var data = await resp.json();
+                if (!data || !data.success) {
+                    updateOpenWaLiveBadge(null, (data && data.message) || 'Open-WA error');
+                    return data;
+                }
+
+                updateOpenWaLiveBadge(data.session, null);
+
+                var picker = document.getElementById('openwa_session_picker');
+                if (picker && Array.isArray(data.sessions) && data.sessions.length > 0) {
+                    var currentVal = (document.getElementById('openwa_session_id')?.value || '').trim().toLowerCase();
+                    var opts = '<option value="">-- Switch Session (' + data.sessions.length + ' found on server) --</option>';
+                    data.sessions.forEach(function (s) {
+                        var isMatch = (String(s.name || '').toLowerCase() === currentVal || String(s.id || '').toLowerCase() === currentVal);
+                        var phoneSuffix = s.phone ? (' · +' + s.phone) : '';
+                        opts += '<option value="' + String(s.name || s.id).replace(/"/g, '&quot;') + '"' + (isMatch ? ' selected' : '') + '>' +
+                            (s.name || s.id) + ' [' + String(s.status || '').toUpperCase() + phoneSuffix + ']</option>';
+                    });
+                    picker.innerHTML = opts;
+                    if (showPicker) {
+                        picker.classList.remove('d-none');
+                    }
+                }
+                return data;
+            } catch (err) {
+                updateOpenWaLiveBadge(null, err.message);
+                return null;
+            }
+        }
+
+        function renderOpenWaModalData(data) {
+            var sessNameEl = document.getElementById('openwa_modal_session_name');
+            var badgeEl = document.getElementById('openwa_modal_state_badge');
+            var metaEl = document.getElementById('openwa_modal_session_meta');
+            var qrWrap = document.getElementById('openwa_modal_qr_wrap');
+            var qrImg = document.getElementById('openwa_modal_qr_img');
+            var alertEl = document.getElementById('openwa_modal_alert');
+
+            if (alertEl) alertEl.classList.add('d-none');
+
+            if (!data || !data.success) {
+                if (sessNameEl) sessNameEl.textContent = getOpenWaFormParams().session_id || 'Open-WA';
+                if (badgeEl) {
+                    badgeEl.className = 'badge bg-danger-subtle text-danger';
+                    badgeEl.textContent = 'ERROR';
+                }
+                if (metaEl) metaEl.textContent = 'Unable to inspect Open-WA session.';
+                if (qrWrap) qrWrap.classList.add('d-none');
+                if (alertEl) {
+                    alertEl.textContent = (data && data.message) || 'Open-WA connection error.';
+                    alertEl.classList.remove('d-none');
+                }
+                return;
+            }
+
+            updateOpenWaLiveBadge(data.session, null);
+            var s = data.session;
+            if (!s) {
+                if (sessNameEl) sessNameEl.textContent = getOpenWaFormParams().session_id || 'Not Found';
+                if (badgeEl) {
+                    badgeEl.className = 'badge bg-warning-subtle text-warning';
+                    badgeEl.textContent = 'NOT CREATED';
+                }
+                if (metaEl) metaEl.textContent = 'Click "Start / Create Session" below to initialize this WhatsApp session on your Open-WA server.';
+                if (qrWrap) qrWrap.classList.add('d-none');
+                return;
+            }
+
+            if (sessNameEl) sessNameEl.textContent = s.name + ' (' + s.id + ')';
+            var st = String(s.status || '').toLowerCase();
+            if (badgeEl) {
+                if (st === 'ready') {
+                    badgeEl.className = 'badge bg-success-subtle text-success';
+                    badgeEl.textContent = 'CONNECTED (READY)';
+                } else if (st === 'qr_ready') {
+                    badgeEl.className = 'badge bg-warning-subtle text-warning';
+                    badgeEl.textContent = 'QR READY — SCAN';
+                } else {
+                    badgeEl.className = 'badge bg-info-subtle text-info';
+                    badgeEl.textContent = st.toUpperCase();
+                }
+            }
+
+            var metaParts = [];
+            if (s.phone) metaParts.push('Linked Number: +' + s.phone);
+            if (s.pushName) metaParts.push('Account: ' + s.pushName);
+            metaParts.push('Engine: ' + (s.engineLoaded ? 'Running' : 'Stopped'));
+            if (s.lastError) metaParts.push('Last Error: ' + s.lastError);
+            if (metaEl) metaEl.textContent = metaParts.join(' · ');
+
+            if (data.qrCode && st !== 'ready') {
+                if (qrImg) qrImg.src = data.qrCode;
+                if (qrWrap) qrWrap.classList.remove('d-none');
+            } else {
+                if (qrWrap) qrWrap.classList.add('d-none');
+            }
+        }
+
+        async function refreshOpenWaModal() {
+            var p = getOpenWaFormParams();
+            var serverLabel = document.getElementById('openwa_modal_server_label');
+            if (serverLabel) serverLabel.textContent = p.base_url || '';
+            var data = await refreshOpenWaLiveStatus(false);
+            renderOpenWaModalData(data);
+        }
+
+        async function openOpenWaQrModal() {
+            var modalEl = document.getElementById('openWaSessionModal');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            }
+            await refreshOpenWaModal();
+            clearInterval(openWaQrPollTimer);
+            openWaQrPollTimer = setInterval(refreshOpenWaModal, 5000);
+        }
+
+        async function runOpenWaSessionAction(action) {
+            var alertEl = document.getElementById('openwa_modal_alert');
+            var metaEl = document.getElementById('openwa_modal_session_meta');
+            if (action === 'logout' && !confirm('Unlink the connected WhatsApp device from this Open-WA session?')) {
+                return;
+            }
+            if (alertEl) alertEl.classList.add('d-none');
+            if (metaEl) metaEl.textContent = 'Executing "' + action + '" on Open-WA server...';
+            try {
+                var p = getOpenWaFormParams();
+                var resp = await fetch('/tool/notificationsetting/openwa-session/action', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        store_id: p.store_id,
+                        action: action,
+                        base_url: p.base_url,
+                        api_key: p.api_key,
+                        session_id: p.session_id
+                    })
+                });
+                var data = await resp.json();
+                renderOpenWaModalData(data);
+                if (data && data.success && typeof toastr !== 'undefined') {
+                    toastr.success('Open-WA session action "' + action + '" completed.');
+                }
+            } catch (err) {
+                if (alertEl) {
+                    alertEl.textContent = err.message || 'Action failed.';
+                    alertEl.classList.remove('d-none');
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            refreshOpenWaLiveStatus(false);
+            var modalEl = document.getElementById('openWaSessionModal');
+            if (modalEl) {
+                modalEl.addEventListener('hidden.bs.modal', function () {
+                    clearInterval(openWaQrPollTimer);
+                    openWaQrPollTimer = null;
+                });
+            }
+        });
 
         async function resetStoreOverride(storeId) {
             if (!confirm('Reset this store\'s custom notification settings and inherit Global Defaults instead?')) {
@@ -688,7 +1136,7 @@
             if (!recipient) {
                 if (feedbackEl) {
                     feedbackEl.className = 'small text-danger fw-semibold';
-                    feedbackEl.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i> Please enter a recipient ' + (channel === 'sms' ? 'phone number' : 'email address') + '.';
+                    feedbackEl.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i> Please enter a recipient ' + ((channel === 'sms' || channel === 'whatsapp') ? 'phone number' : 'email address') + '.';
                 }
                 return;
             }

@@ -1,5 +1,5 @@
 /**
- * Centralized Customer Notification Service (Email, SMS & Push)
+ * Centralized Customer Notification Service (Email, SMS, WhatsApp/Open-WA & Push)
  * Supports two-tier configuration (Global defaults + Per-store overrides)
  * and dispatches notifications across all customer lifecycle events.
  */
@@ -9,6 +9,7 @@ const { DataFind, DataInsert, DataUpdate } = require("../middelwer/databaseQurey
 const { conn } = require("../middelwer/db");
 
 let tableVerified = false;
+const openWaSessionUuidCache = new Map();
 
 async function ensureSettingsTable() {
   if (tableVerified) return;
@@ -20,6 +21,7 @@ async function ensureSettingsTable() {
         store_id INT NOT NULL DEFAULT 0,
         email_enabled TINYINT(1) NOT NULL DEFAULT 1,
         sms_enabled TINYINT(1) NOT NULL DEFAULT 1,
+        whatsapp_enabled TINYINT(1) NOT NULL DEFAULT 1,
         push_enabled TINYINT(1) NOT NULL DEFAULT 1,
         events_config LONGTEXT NULL,
         templates_config LONGTEXT NULL,
@@ -28,7 +30,13 @@ async function ensureSettingsTable() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
     const [cols] = await promiseConn.query("SHOW COLUMNS FROM tbl_notification_settings");
-    if (!cols.some((c) => c.Field === "templates_config")) {
+    const colNames = cols.map((c) => c.Field);
+    if (!colNames.includes("whatsapp_enabled")) {
+      await promiseConn.query(
+        "ALTER TABLE tbl_notification_settings ADD COLUMN whatsapp_enabled TINYINT(1) NOT NULL DEFAULT 1 AFTER sms_enabled"
+      );
+    }
+    if (!colNames.includes("templates_config")) {
       await promiseConn.query(
         "ALTER TABLE tbl_notification_settings ADD COLUMN templates_config LONGTEXT NULL AFTER events_config"
       );
@@ -77,10 +85,12 @@ const NOTIFICATION_EVENTS = [
     description: "Sent immediately when a new order is placed at the counter with itemized summary, gross total, paid amount, balance due, and estimated ready date.",
     defaultEmail: true,
     defaultSms: true,
+    defaultWhatsapp: true,
     defaultEmailSubject: "Order Confirmation #{order_id} - {store_name}",
     defaultEmailHeadline: "Thank You for Your Order!",
     defaultEmailBody: "Hi {customer_name}, we have received your garments at {store_name}. Below is your order summary and target completion schedule.",
     defaultSmsBody: "Hi {customer_name}, thank you for your order #{order_id} at {store_name} ({total_pieces} pcs)! Total: {gross_total} (Balance: {balance_due}). Ready by: {ready_date}.",
+    defaultWhatsappBody: "🧾 *ORDER CONFIRMATION #{order_id}*\nHello *{customer_name}*, thank you for choosing *{store_name}*! We have received your garments ({total_pieces} pcs).\n⏰ *Target Ready:* {ready_date}",
     sampleSms: "Hi {customer_name}, thank you for your order #{order_id} at {store_name} ({total_pieces} pcs)! Total: {gross_total} (Balance: {balance_due}). Ready by: {ready_date}."
   },
   {
@@ -93,10 +103,12 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when a Route Pick-up order (including 0-item pending intake) is scheduled, confirming the pickup date and 1-hour driver time slot.",
     defaultEmail: true,
     defaultSms: true,
+    defaultWhatsapp: true,
     defaultEmailSubject: "Route Pick-up Scheduled (#{order_id}) - {store_name}",
     defaultEmailHeadline: "Your Garment Pick-up is Scheduled",
     defaultEmailBody: "Hi {customer_name}, your route garment pick-up with {store_name} has been scheduled for {pickup_date}. Once our driver brings your garments to the store, we will inspect, itemize, and send you your updated order total.",
     defaultSmsBody: "Hi {customer_name}, your garment pick-up (#{order_id}) with {store_name} is scheduled for {pickup_date}. Call {store_phone} for any special instructions.",
+    defaultWhatsappBody: "🚚 *ROUTE PICK-UP SCHEDULED (#{order_id})*\nHello *{customer_name}*, your garment pick-up with *{store_name}* is scheduled for *{pickup_date}*.\nOnce our driver collects your garments, we will inspect, itemize, and send your updated receipt.",
     sampleSms: "Hi {customer_name}, your garment pick-up (#{order_id}) with {store_name} is scheduled for {pickup_date}. Call {store_phone} for any special instructions."
   },
   {
@@ -109,10 +121,12 @@ const NOTIFICATION_EVENTS = [
     description: "Sent immediately when Admin or Staff accepts a customer's submitted pick-up request and converts it into an active order.",
     defaultEmail: true,
     defaultSms: true,
+    defaultWhatsapp: true,
     defaultEmailSubject: "Pick-up Request Accepted (#{order_id}) - {store_name}",
     defaultEmailHeadline: "Your Pick-up Request Has Been Accepted!",
     defaultEmailBody: "Hi {customer_name}, great news! Your clothes pick-up request #{order_id} with {store_name} has been accepted and scheduled for {pickup_date}. Our driver will collect your garments at the scheduled time.",
     defaultSmsBody: "Hi {customer_name}, your pick-up request #{order_id} at {store_name} has been ACCEPTED! Confirmed pick-up: {pickup_date}. Call {store_phone} for any questions.",
+    defaultWhatsappBody: "✅ *PICK-UP REQUEST ACCEPTED (#{order_id})*\nHello *{customer_name}*, great news! Your pick-up request with *{store_name}* has been accepted.\n📅 *Confirmed Pick-up:* {pickup_date}\n⏰ *Est. Ready Target:* {ready_date}\nOur driver will collect your garments at the scheduled window.",
     sampleSms: "Hi {customer_name}, your pick-up request #{order_id} at {store_name} has been ACCEPTED! Confirmed pick-up: {pickup_date}. Call {store_phone} for any questions."
   },
   {
@@ -125,10 +139,12 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when a 0-item route pick-up order is inspected, counted, and priced at the store, providing the customer with the itemized list and total.",
     defaultEmail: true,
     defaultSms: true,
+    defaultWhatsapp: true,
     defaultEmailSubject: "Your Garments Have Been Itemized (#{order_id}) - {store_name}",
     defaultEmailHeadline: "Route Pick-up Inspected & Priced",
     defaultEmailBody: "Hi {customer_name}, we have received and inspected the garments collected during your route pick-up ({total_pieces} piece(s)). Here is your itemized order breakdown and completion schedule.",
     defaultSmsBody: "Hi {customer_name}, we have inspected & itemized your garments for Order #{order_id} ({total_pieces} pcs) at {store_name}. Total: {gross_total} (Balance: {balance_due}). Ready/Delivery: {ready_date}.",
+    defaultWhatsappBody: "📋 *GARMENTS ITEMIZED & PRICED (#{order_id})*\nHello *{customer_name}*, we have inspected the garments from your route pick-up at *{store_name}* ({total_pieces} pcs).\n⏰ *Ready / Delivery:* {ready_date}",
     sampleSms: "Hi {customer_name}, we have inspected & itemized your garments for Order #{order_id} ({total_pieces} pcs) at {store_name}. Total: {gross_total} (Balance: {balance_due}). Ready/Delivery: {ready_date}."
   },
   {
@@ -141,10 +157,12 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when items, quantities, or totals are updated on an existing order.",
     defaultEmail: true,
     defaultSms: false,
+    defaultWhatsapp: false,
     defaultEmailSubject: "Order Updated (#{order_id}) - {store_name}",
     defaultEmailHeadline: "Your Order Details Have Been Updated",
     defaultEmailBody: "Hi {customer_name}, your order #{order_id} at {store_name} has been updated. Please review the revised summary below.",
     defaultSmsBody: "Hi {customer_name}, your Order #{order_id} at {store_name} has been updated. Revised Total: {gross_total} (Balance Due: {balance_due}).",
+    defaultWhatsappBody: "✏️ *ORDER UPDATED (#{order_id})*\nHello *{customer_name}*, your order at *{store_name}* has been updated. Please review your revised receipt summary below.",
     sampleSms: "Hi {customer_name}, your Order #{order_id} at {store_name} has been updated. Revised Total: {gross_total} (Balance Due: {balance_due})."
   },
 
@@ -159,10 +177,12 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when order status moves to Processing, reassuring the customer that their garments are being cleaned.",
     defaultEmail: true,
     defaultSms: false,
+    defaultWhatsapp: false,
     defaultEmailSubject: "Your Order #{order_id} is In Process - {store_name}",
     defaultEmailHeadline: "Garments In Cleaning Process",
     defaultEmailBody: "Hi {customer_name}, your garments for Order #{order_id} are currently being cleaned and cared for by our specialists at {store_name}.",
     defaultSmsBody: "Hi {customer_name}, your Order #{order_id} is now in cleaning process at {store_name}. Estimated ready date: {ready_date}.",
+    defaultWhatsappBody: "🧺 *GARMENTS IN PROCESS (#{order_id})*\nHello *{customer_name}*, your garments are now being cleaned and cared for by our team at *{store_name}*.\n⏰ *Estimated Ready:* {ready_date}",
     sampleSms: "Hi {customer_name}, your Order #{order_id} is now in cleaning process at {store_name}. Estimated ready date: {ready_date}."
   },
   {
@@ -175,10 +195,12 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when the Ready Schedule or Route Delivery Date/Time is changed on an active order.",
     defaultEmail: true,
     defaultSms: true,
+    defaultWhatsapp: true,
     defaultEmailSubject: "Updated Schedule for Order #{order_id} - {store_name}",
     defaultEmailHeadline: "Order Schedule Updated",
     defaultEmailBody: "Hi {customer_name}, the completion/delivery schedule for your Order #{order_id} at {store_name} has been updated to {ready_date}.",
     defaultSmsBody: "Hi {customer_name}, the schedule for your Order #{order_id} at {store_name} has been updated. New Ready/Delivery schedule: {ready_date}.",
+    defaultWhatsappBody: "📅 *SCHEDULE UPDATED (#{order_id})*\nHello *{customer_name}*, the schedule for your order at *{store_name}* has been updated.\n⏰ *New Target Schedule:* {ready_date}",
     sampleSms: "Hi {customer_name}, the schedule for your Order #{order_id} at {store_name} has been updated. New Ready/Delivery schedule: {ready_date}."
   },
 
@@ -193,10 +215,12 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when a Counter Pickup order is marked Ready, including total garment pieces, store address/phone, and remaining balance due.",
     defaultEmail: true,
     defaultSms: true,
+    defaultWhatsapp: true,
     defaultEmailSubject: "Your Order #{order_id} is Ready for Pickup! - {store_name}",
     defaultEmailHeadline: "Your Garments Are Clean & Ready!",
     defaultEmailBody: "Good news, {customer_name}! Your Order #{order_id} ({total_pieces} piece(s)) is clean, pressed, and ready for pickup at {store_name}.",
     defaultSmsBody: "Good news {customer_name}! Your Order #{order_id} ({total_pieces} pcs) at {store_name} is clean and READY for pickup. Balance Due: {balance_due}.",
+    defaultWhatsappBody: "✨ *READY FOR PICKUP (#{order_id})*\nGood news *{customer_name}*! Your order ({total_pieces} pcs) at *{store_name}* is clean, pressed, and ready for counter pickup.\n📍 *Store:* {store_address}",
     sampleSms: "Good news {customer_name}! Your Order #{order_id} ({total_pieces} pcs) at {store_name} is clean and READY for pickup. Balance Due: {balance_due}."
   },
   {
@@ -209,10 +233,12 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when a Route Delivery order is marked Ready or Out for Delivery, notifying the customer of the scheduled delivery window and balance due.",
     defaultEmail: true,
     defaultSms: true,
+    defaultWhatsapp: true,
     defaultEmailSubject: "Your Order #{order_id} is Ready for Route Delivery - {store_name}",
     defaultEmailHeadline: "Scheduled for Route Delivery",
     defaultEmailBody: "Hi {customer_name}, your clean garments for Order #{order_id} ({total_pieces} piece(s)) are ready and scheduled for route delivery on {delivery_date}.",
     defaultSmsBody: "Hi {customer_name}, your clean garments for Order #{order_id} ({total_pieces} pcs) from {store_name} are ready for delivery on {delivery_date}. Balance Due: {balance_due}.",
+    defaultWhatsappBody: "🚐 *READY FOR ROUTE DELIVERY (#{order_id})*\nHello *{customer_name}*, your clean garments ({total_pieces} pcs) from *{store_name}* are ready and scheduled for delivery on *{delivery_date}*.",
     sampleSms: "Hi {customer_name}, your clean garments for Order #{order_id} ({total_pieces} pcs) from {store_name} are ready for delivery on {delivery_date}. Balance Due: {balance_due}."
   },
   {
@@ -225,10 +251,12 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when the customer picks up their garments or the driver completes delivery, providing a final digital receipt.",
     defaultEmail: true,
     defaultSms: true,
+    defaultWhatsapp: true,
     defaultEmailSubject: "Order #{order_id} Completed & Delivered - {store_name}",
     defaultEmailHeadline: "Order Completed — Thank You!",
     defaultEmailBody: "Thank you, {customer_name}! Your Order #{order_id} has been marked as completed and delivered. We truly appreciate your trust in {store_name}.",
     defaultSmsBody: "Thank you {customer_name}! Your Order #{order_id} from {store_name} has been completed and delivered. We appreciate your business!",
+    defaultWhatsappBody: "🎉 *ORDER COMPLETED & DELIVERED (#{order_id})*\nThank you *{customer_name}*! Your order from *{store_name}* has been completed and delivered. We appreciate your business!",
     sampleSms: "Thank you {customer_name}! Your Order #{order_id} from {store_name} has been completed and delivered. We appreciate your business!"
   },
 
@@ -243,10 +271,12 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when a payment is recorded against an order via the Add Payment modal, showing amount paid, payment method, and remaining balance.",
     defaultEmail: true,
     defaultSms: true,
+    defaultWhatsapp: true,
     defaultEmailSubject: "Payment Receipt for Order #{order_id} - {store_name}",
     defaultEmailHeadline: "Payment Received — Thank You!",
     defaultEmailBody: "Hi {customer_name}, we have received your payment of {paid_now} for Order #{order_id} at {store_name}.",
     defaultSmsBody: "Payment confirmed! We received {paid_now} for Order #{order_id} at {store_name}. Remaining Balance: {balance_due}. Thank you!",
+    defaultWhatsappBody: "💳 *PAYMENT RECEIVED (#{order_id})*\nHello *{customer_name}*, we received your payment of *{paid_now}* ({payment_method}) at *{store_name}*.\n💰 *Remaining Balance:* {balance_due}",
     sampleSms: "Payment confirmed! We received {paid_now} for Order #{order_id} at {store_name}. Remaining Balance: {balance_due}. Thank you!"
   },
   {
@@ -259,10 +289,12 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when an order is voided from POS or marked as Cancelled, including the cancellation reason.",
     defaultEmail: true,
     defaultSms: true,
+    defaultWhatsapp: true,
     defaultEmailSubject: "Order #{order_id} Cancelled - {store_name}",
     defaultEmailHeadline: "Order Cancellation Notice",
     defaultEmailBody: "Hi {customer_name}, your Order #{order_id} at {store_name} has been cancelled/voided. Reason: {cancel_reason}",
     defaultSmsBody: "Hi {customer_name}, your Order #{order_id} at {store_name} has been cancelled ({cancel_reason}). Please call {store_phone} if you have any questions.",
+    defaultWhatsappBody: "❌ *ORDER CANCELLED (#{order_id})*\nHello *{customer_name}*, your order at *{store_name}* has been cancelled/voided.\n📝 *Reason:* {cancel_reason}\n📞 Questions? Call us at {store_phone}.",
     sampleSms: "Hi {customer_name}, your Order #{order_id} at {store_name} has been cancelled ({cancel_reason}). Please call {store_phone} if you have any questions."
   },
   {
@@ -275,10 +307,12 @@ const NOTIFICATION_EVENTS = [
     description: "Sent when a new customer profile is registered at the store or via POS, welcoming them with store contact information.",
     defaultEmail: true,
     defaultSms: true,
+    defaultWhatsapp: true,
     defaultEmailSubject: "Welcome to {store_name}, {customer_name}!",
     defaultEmailHeadline: "Welcome to {store_name}!",
     defaultEmailBody: "Hi {customer_name}, welcome to {store_name}! Your customer profile has been registered. Whether you prefer counter drop-off or route pick-up & delivery, we look forward to caring for your garments.",
     defaultSmsBody: "Welcome to {store_name}, {customer_name}! Your customer profile is active. Call us at {store_phone} anytime for dry cleaning & laundry service.",
+    defaultWhatsappBody: "👋 *WELCOME TO {store_name}!*\nHello *{customer_name}*, your customer profile is now active! Whether you prefer counter drop-off or route pick-up & delivery, we look forward to caring for your garments.\n📞 Store Phone: {store_phone}",
     sampleSms: "Welcome to {store_name}, {customer_name}! Your customer profile is active. Call us at {store_phone} anytime for dry cleaning & laundry service."
   }
 ];
@@ -288,7 +322,8 @@ function getDefaultEventsMap() {
   NOTIFICATION_EVENTS.forEach((ev) => {
     map[ev.key] = {
       email: Boolean(ev.defaultEmail),
-      sms: Boolean(ev.defaultSms)
+      sms: Boolean(ev.defaultSms),
+      whatsapp: ev.defaultWhatsapp !== undefined ? Boolean(ev.defaultWhatsapp) : Boolean(ev.defaultSms)
     };
   });
   return map;
@@ -301,7 +336,8 @@ function getDefaultTemplatesMap() {
       emailSubject: ev.defaultEmailSubject,
       emailHeadline: ev.defaultEmailHeadline,
       emailBody: ev.defaultEmailBody,
-      smsBody: ev.defaultSmsBody
+      smsBody: ev.defaultSmsBody,
+      whatsappBody: ev.defaultWhatsappBody || ev.defaultSmsBody
     };
   });
   return map;
@@ -328,6 +364,9 @@ function mergeTemplatesConfig(rawJson, fallbackMap) {
           if (typeof custom.smsBody === "string" && custom.smsBody.trim() !== "") {
             base[ev.key].smsBody = custom.smsBody.trim();
           }
+          if (typeof custom.whatsappBody === "string" && custom.whatsappBody.trim() !== "") {
+            base[ev.key].whatsappBody = custom.whatsappBody.trim();
+          }
         }
       });
     }
@@ -347,7 +386,8 @@ function mergeEventsConfig(rawJson, fallbackMap) {
         if (parsed[ev.key] && typeof parsed[ev.key] === "object") {
           base[ev.key] = {
             email: parsed[ev.key].email !== undefined ? Boolean(parsed[ev.key].email) : base[ev.key].email,
-            sms: parsed[ev.key].sms !== undefined ? Boolean(parsed[ev.key].sms) : base[ev.key].sms
+            sms: parsed[ev.key].sms !== undefined ? Boolean(parsed[ev.key].sms) : base[ev.key].sms,
+            whatsapp: parsed[ev.key].whatsapp !== undefined ? Boolean(parsed[ev.key].whatsapp) : base[ev.key].whatsapp
           };
         }
       });
@@ -380,7 +420,8 @@ async function getEffectiveNotificationSettings(storeId = 0) {
         a.emailSubject !== b.emailSubject ||
         a.emailHeadline !== b.emailHeadline ||
         a.emailBody !== b.emailBody ||
-        a.smsBody !== b.smsBody
+        a.smsBody !== b.smsBody ||
+        a.whatsappBody !== b.whatsappBody
       );
     });
     return flags;
@@ -391,6 +432,7 @@ async function getEffectiveNotificationSettings(storeId = 0) {
     is_custom_store_override: false,
     email_enabled: globalRow ? Number(globalRow.email_enabled) === 1 : true,
     sms_enabled: globalRow ? Number(globalRow.sms_enabled) === 1 : true,
+    whatsapp_enabled: globalRow && globalRow.whatsapp_enabled !== undefined ? Number(globalRow.whatsapp_enabled) === 1 : true,
     push_enabled: globalRow ? Number(globalRow.push_enabled) === 1 : true,
     events: globalEvents,
     templates: globalTemplates,
@@ -419,6 +461,7 @@ async function getEffectiveNotificationSettings(storeId = 0) {
     is_custom_store_override: true,
     email_enabled: Number(sRow.email_enabled) === 1,
     sms_enabled: Number(sRow.sms_enabled) === 1,
+    whatsapp_enabled: sRow.whatsapp_enabled !== undefined ? Number(sRow.whatsapp_enabled) === 1 : globalSettings.whatsapp_enabled,
     push_enabled: Number(sRow.push_enabled) === 1,
     events: mergeEventsConfig(sRow.events_config, globalEvents),
     templates: storeTemplates,
@@ -436,15 +479,18 @@ async function saveNotificationSettings(storeId, bodyData, req) {
 
   const emailEnabled = (bodyData.email_enabled == "1" || bodyData.email_enabled === "on" || bodyData.email_enabled === true) ? 1 : 0;
   const smsEnabled = (bodyData.sms_enabled == "1" || bodyData.sms_enabled === "on" || bodyData.sms_enabled === true) ? 1 : 0;
+  const whatsappEnabled = (bodyData.whatsapp_enabled == "1" || bodyData.whatsapp_enabled === "on" || bodyData.whatsapp_enabled === true) ? 1 : 0;
   const pushEnabled = (bodyData.push_enabled == "1" || bodyData.push_enabled === "on" || bodyData.push_enabled === true) ? 1 : 0;
 
   const eventsMap = {};
   NOTIFICATION_EVENTS.forEach((ev) => {
     const emailField = `event_${ev.key}_email`;
     const smsField = `event_${ev.key}_sms`;
+    const waField = `event_${ev.key}_whatsapp`;
     eventsMap[ev.key] = {
       email: (bodyData[emailField] == "1" || bodyData[emailField] === "on" || bodyData[emailField] === true),
-      sms: (bodyData[smsField] == "1" || bodyData[smsField] === "on" || bodyData[smsField] === true)
+      sms: (bodyData[smsField] == "1" || bodyData[smsField] === "on" || bodyData[smsField] === true),
+      whatsapp: (bodyData[waField] == "1" || bodyData[waField] === "on" || bodyData[waField] === true)
     };
   });
 
@@ -454,7 +500,7 @@ async function saveNotificationSettings(storeId, bodyData, req) {
   if (existing && existing.length > 0) {
     await DataUpdate(
       "tbl_notification_settings",
-      `email_enabled = ${emailEnabled}, sms_enabled = ${smsEnabled}, push_enabled = ${pushEnabled}, events_config = '${jsonStr}'`,
+      `email_enabled = ${emailEnabled}, sms_enabled = ${smsEnabled}, whatsapp_enabled = ${whatsappEnabled}, push_enabled = ${pushEnabled}, events_config = '${jsonStr}'`,
       `store_id = ${cleanStoreId}`,
       req ? req.hostname : "localhost",
       req ? req.protocol : "http"
@@ -462,8 +508,8 @@ async function saveNotificationSettings(storeId, bodyData, req) {
   } else {
     await DataInsert(
       "tbl_notification_settings",
-      `store_id, email_enabled, sms_enabled, push_enabled, events_config`,
-      `${cleanStoreId}, ${emailEnabled}, ${smsEnabled}, ${pushEnabled}, '${jsonStr}'`,
+      `store_id, email_enabled, sms_enabled, whatsapp_enabled, push_enabled, events_config`,
+      `${cleanStoreId}, ${emailEnabled}, ${smsEnabled}, ${whatsappEnabled}, ${pushEnabled}, '${jsonStr}'`,
       req ? req.hostname : "localhost",
       req ? req.protocol : "http"
     );
@@ -472,7 +518,7 @@ async function saveNotificationSettings(storeId, bodyData, req) {
 }
 
 /**
- * Save Email (SMTP) and Twilio (SMS) Gateway Settings for storeId (0 = Global Master, >0 = Store)
+ * Save Email (SMTP), Twilio (SMS), and Open-WA (WhatsApp) Gateway Settings for storeId (0 = Global Master, >0 = Store)
  */
 async function saveEmailAndTwilioGateways(storeId, bodyData, req) {
   const cleanStoreId = parseInt(storeId, 10) || 0;
@@ -548,6 +594,40 @@ async function saveEmailAndTwilioGateways(storeId, bodyData, req) {
     }
   }
 
+  // 3. Save Open-WA (WhatsApp) Gateway settings into tbl_store (if storeId > 0) or tbl_master_shop (if storeId === 0)
+  if (
+    bodyData.openwa_base_url !== undefined ||
+    bodyData.openwa_api_key !== undefined ||
+    bodyData.openwa_session_id !== undefined ||
+    bodyData.openwa_country_code !== undefined ||
+    bodyData.openwa_status !== undefined
+  ) {
+    const safeBaseUrl = String(bodyData.openwa_base_url || "").trim().replace(/\/+$/, "").replace(/'/g, "\\'");
+    const safeApiKey = String(bodyData.openwa_api_key || "").trim().replace(/'/g, "\\'");
+    const safeSession = String(bodyData.openwa_session_id || "").trim().replace(/'/g, "\\'");
+    const safeCountryCode = String(bodyData.openwa_country_code || "1").replace(/\D/g, "").slice(0, 5) || "1";
+    const safeOpenWaStatus = (bodyData.openwa_status === "0" || bodyData.openwa_status === 0 || bodyData.openwa_status === false) ? 0 : 1;
+
+    if (cleanStoreId > 0) {
+      await DataUpdate(
+        "tbl_store",
+        `openwa_base_url='${safeBaseUrl}', openwa_api_key='${safeApiKey}', openwa_session_id='${safeSession}', openwa_country_code='${safeCountryCode}', openwa_status=${safeOpenWaStatus}`,
+        `id=${cleanStoreId}`,
+        req ? req.hostname : "localhost",
+        req ? req.protocol : "http"
+      );
+    } else {
+      await DataUpdate(
+        "tbl_master_shop",
+        `openwa_base_url='${safeBaseUrl}', openwa_api_key='${safeApiKey}', openwa_session_id='${safeSession}', openwa_country_code='${safeCountryCode}', openwa_status=${safeOpenWaStatus}`,
+        `id=1`,
+        req ? req.hostname : "localhost",
+        req ? req.protocol : "http"
+      );
+    }
+    openWaSessionUuidCache.clear();
+  }
+
   return true;
 }
 
@@ -578,19 +658,22 @@ async function saveNotificationTemplates(storeId, bodyData, req) {
     const headKey = `tpl_${ev.key}_emailHeadline`;
     const bodyKey = `tpl_${ev.key}_emailBody`;
     const smsKey = `tpl_${ev.key}_smsBody`;
+    const waKey = `tpl_${ev.key}_whatsappBody`;
 
     if (
       bodyData[subjKey] !== undefined ||
       bodyData[headKey] !== undefined ||
       bodyData[bodyKey] !== undefined ||
-      bodyData[smsKey] !== undefined
+      bodyData[smsKey] !== undefined ||
+      bodyData[waKey] !== undefined
     ) {
       const prev = currentTemplates[ev.key] || {};
       currentTemplates[ev.key] = {
         emailSubject: bodyData[subjKey] !== undefined ? String(bodyData[subjKey]).trim() : (prev.emailSubject || ev.defaultEmailSubject || ""),
         emailHeadline: bodyData[headKey] !== undefined ? String(bodyData[headKey]).trim() : (prev.emailHeadline || ev.defaultEmailHeadline || ""),
         emailBody: bodyData[bodyKey] !== undefined ? String(bodyData[bodyKey]).trim() : (prev.emailBody || ev.defaultEmailBody || ""),
-        smsBody: bodyData[smsKey] !== undefined ? String(bodyData[smsKey]).trim() : (prev.smsBody || ev.defaultSmsBody || "")
+        smsBody: bodyData[smsKey] !== undefined ? String(bodyData[smsKey]).trim() : (prev.smsBody || ev.defaultSmsBody || ""),
+        whatsappBody: bodyData[waKey] !== undefined ? String(bodyData[waKey]).trim() : (prev.whatsappBody || ev.defaultWhatsappBody || ev.defaultSmsBody || "")
       };
     }
   });
@@ -609,8 +692,8 @@ async function saveNotificationTemplates(storeId, bodyData, req) {
     const defaultEventsJson = JSON.stringify(getDefaultEventsMap()).replace(/'/g, "\\'");
     await DataInsert(
       "tbl_notification_settings",
-      `store_id, email_enabled, sms_enabled, push_enabled, events_config, templates_config`,
-      `${cleanStoreId}, 1, 1, 1, '${defaultEventsJson}', '${jsonStr}'`,
+      `store_id, email_enabled, sms_enabled, whatsapp_enabled, push_enabled, events_config, templates_config`,
+      `${cleanStoreId}, 1, 1, 1, 1, '${defaultEventsJson}', '${jsonStr}'`,
       req ? req.hostname : "localhost",
       req ? req.protocol : "http"
     );
@@ -805,6 +888,365 @@ function formatE164Phone(rawPhone) {
 }
 
 /**
+ * Normalize phone numbers into WhatsApp JID (<digits>@c.us) for Open-WA
+ */
+function formatOpenWaChatId(rawPhone, defaultCountryCode = "1") {
+  if (!rawPhone) return "";
+  const trimmed = String(rawPhone).trim();
+  if (!trimmed) return "";
+
+  // Allow explicit WhatsApp JIDs (individual @c.us, group @g.us, or @lid)
+  if (/@(c\.us|g\.us|lid|s\.whatsapp\.net)$/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  const cleanCC = String(defaultCountryCode || "1").replace(/\D/g, "") || "1";
+  const hasPlus = trimmed.startsWith("+");
+  const hasDoubleZero = trimmed.startsWith("00");
+  const digits = trimmed.replace(/\D/g, "");
+  if (!digits || digits.length < 7) return "";
+
+  let resolvedDigits = digits;
+  if (hasPlus) {
+    resolvedDigits = digits;
+  } else if (hasDoubleZero && digits.length > 9) {
+    resolvedDigits = digits.slice(2);
+  } else if (digits.length === 11 && digits.startsWith("03")) {
+    // Common Pakistan mobile format 03XXXXXXXXX -> 923XXXXXXXXX
+    resolvedDigits = `92${digits.slice(1)}`;
+  } else if (digits.length === 10) {
+    resolvedDigits = `${cleanCC}${digits}`;
+  } else if (digits.startsWith("0") && digits.length >= 10) {
+    resolvedDigits = `${cleanCC}${digits.slice(1)}`;
+  }
+
+  return `${resolvedDigits}@c.us`;
+}
+
+/**
+ * Resolve Open-WA credentials for a store (two-tier fallback: tbl_store -> tbl_master_shop -> config.env)
+ * Accepts either (storeId) OR (storeObj, masterObj)
+ */
+async function resolveOpenWaConfig(storeOrId, masterObj) {
+  let storeObj = null;
+  let effectiveMaster = masterObj || null;
+
+  if (typeof storeOrId === "object" && storeOrId !== null) {
+    storeObj = storeOrId;
+  } else if (storeOrId && Number(storeOrId) > 0) {
+    const sRows = await DataFind(`SELECT * FROM tbl_store WHERE id = '${parseInt(storeOrId, 10)}' LIMIT 1`);
+    if (sRows && sRows.length > 0) storeObj = sRows[0];
+  }
+
+  if (!effectiveMaster) {
+    const mRows = await DataFind(`SELECT * FROM tbl_master_shop WHERE id = 1 LIMIT 1`);
+    if (mRows && mRows.length > 0) effectiveMaster = mRows[0];
+  }
+
+  const pickVal = (storeKey, envKey) => {
+    if (storeObj && storeObj[storeKey] && String(storeObj[storeKey]).trim() !== "") {
+      return { value: String(storeObj[storeKey]).trim(), fromStore: true };
+    }
+    if (effectiveMaster && effectiveMaster[storeKey] && String(effectiveMaster[storeKey]).trim() !== "") {
+      return { value: String(effectiveMaster[storeKey]).trim(), fromStore: false };
+    }
+    if (envKey && process.env[envKey] && String(process.env[envKey]).trim() !== "") {
+      return { value: String(process.env[envKey]).trim(), fromStore: false };
+    }
+    return { value: "", fromStore: false };
+  };
+
+  const baseRes = pickVal("openwa_base_url", "OPENWA_BASE_URL");
+  const keyRes = pickVal("openwa_api_key", "OPENWA_API_KEY");
+  const sessRes = pickVal("openwa_session_id", "OPENWA_SESSION_ID");
+  const ccRes = pickVal("openwa_country_code", "OPENWA_DEFAULT_COUNTRY_CODE");
+
+  const baseUrl = (baseRes.value || "").replace(/\/+$/, "");
+  const apiKey = keyRes.value || "";
+  const sessionId = sessRes.value || "";
+  const defaultCountryCode = String(ccRes.value || "1").replace(/\D/g, "") || "1";
+
+  const status = (storeObj && storeObj.openwa_status !== undefined && storeObj.openwa_status !== null)
+    ? String(storeObj.openwa_status)
+    : (effectiveMaster && effectiveMaster.openwa_status !== undefined && effectiveMaster.openwa_status !== null
+      ? String(effectiveMaster.openwa_status)
+      : "1");
+
+  return {
+    baseUrl,
+    apiKey,
+    sessionId,
+    defaultCountryCode,
+    status,
+    hasStoreOverride: Boolean(baseRes.fromStore || keyRes.fromStore || sessRes.fromStore),
+    isConfigured: Boolean(baseUrl && apiKey && sessionId && status !== "0")
+  };
+}
+
+/**
+ * Low-level HTTP fetch helper for Open-WA API with AbortController timeout
+ */
+async function openWaRequest(cfg, apiPath, options = {}) {
+  const cleanBase = String(cfg?.baseUrl || "").trim().replace(/\/+$/, "");
+  const cleanKey = String(cfg?.apiKey || "").trim();
+  if (!cleanBase || !cleanKey) {
+    throw new Error("Open-WA Base URL and API Key are required.");
+  }
+
+  const timeoutMs = options.timeoutMs || 10000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(`${cleanBase}${apiPath}`, {
+      method: options.method || "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": cleanKey,
+        ...(options.headers || {})
+      },
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal
+    });
+
+    const rawText = await res.text();
+    let parsed = null;
+    try {
+      parsed = rawText ? JSON.parse(rawText) : null;
+    } catch (_) {
+      parsed = { raw: rawText };
+    }
+
+    if (!res.ok) {
+      const msg = (parsed && (parsed.message || parsed.error)) || `Open-WA HTTP ${res.status}`;
+      const err = new Error(Array.isArray(msg) ? msg.join(", ") : String(msg));
+      err.status = res.status;
+      err.payload = parsed;
+      throw err;
+    }
+
+    return parsed;
+  } catch (err) {
+    if (err.name === "AbortError") {
+      throw new Error(`Open-WA request timed out after ${timeoutMs}ms (${cleanBase})`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * List all sessions registered on the configured Open-WA server
+ */
+async function listOpenWaSessions(cfg) {
+  const sessions = await openWaRequest(cfg, "/api/sessions", { timeoutMs: 8000 });
+  return Array.isArray(sessions) ? sessions : [];
+}
+
+/**
+ * Resolve configured session name or UUID to live Open-WA session record
+ */
+async function resolveOpenWaSession(cfg, forceRefresh = false) {
+  const target = String(cfg?.sessionId || "").trim();
+  if (!target) {
+    throw new Error("Open-WA Session Name or UUID is not configured.");
+  }
+
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(target);
+  const cacheKey = `${cfg.baseUrl}|${target}`;
+
+  if (!forceRefresh) {
+    const cached = openWaSessionUuidCache.get(cacheKey);
+    if (cached && (Date.now() - cached.cachedAt) < 60000) {
+      return cached.session;
+    }
+  }
+
+  if (isUuid && forceRefresh) {
+    const direct = await openWaRequest(cfg, `/api/sessions/${encodeURIComponent(target)}`, { timeoutMs: 8000 });
+    openWaSessionUuidCache.set(cacheKey, { session: direct, cachedAt: Date.now() });
+    return direct;
+  }
+
+  const sessions = await listOpenWaSessions(cfg);
+  const lowerTarget = target.toLowerCase();
+  const matched = sessions.find(
+    (s) => String(s.id || "").toLowerCase() === lowerTarget || String(s.name || "").toLowerCase() === lowerTarget
+  );
+
+  if (!matched) {
+    return null;
+  }
+
+  openWaSessionUuidCache.set(cacheKey, { session: matched, cachedAt: Date.now() });
+  return matched;
+}
+
+/**
+ * Fetch live Open-WA session status and QR code (starts or creates session if requested)
+ */
+async function getOpenWaSessionStatusAndQr({ storeId = 0, baseUrl, apiKey, sessionId, autoStart = false, createIfMissing = false } = {}) {
+  const resolved = await resolveOpenWaConfig(storeId);
+  const cfg = {
+    baseUrl: (baseUrl !== undefined && String(baseUrl).trim() !== "") ? String(baseUrl).trim().replace(/\/+$/, "") : resolved.baseUrl,
+    apiKey: (apiKey !== undefined && String(apiKey).trim() !== "") ? String(apiKey).trim() : resolved.apiKey,
+    sessionId: (sessionId !== undefined && String(sessionId).trim() !== "") ? String(sessionId).trim() : resolved.sessionId,
+    defaultCountryCode: resolved.defaultCountryCode,
+    status: "1"
+  };
+
+  if (!cfg.baseUrl || !cfg.apiKey) {
+    return { success: false, message: "Open-WA Base URL and API Key must be configured first." };
+  }
+
+  const allSessions = await listOpenWaSessions(cfg);
+  let session = null;
+  if (cfg.sessionId) {
+    const lowerTarget = cfg.sessionId.toLowerCase();
+    session = allSessions.find(
+      (s) => String(s.id || "").toLowerCase() === lowerTarget || String(s.name || "").toLowerCase() === lowerTarget
+    ) || null;
+  }
+
+  if (!session && createIfMissing && cfg.sessionId) {
+    const safeName = cfg.sessionId.replace(/[^a-zA-Z0-9-]/g, "-").slice(0, 50);
+    session = await openWaRequest(cfg, "/api/sessions", {
+      method: "POST",
+      body: { name: safeName, config: { autoReconnect: true } },
+      timeoutMs: 12000
+    });
+    if (session && session.id) {
+      await openWaRequest(cfg, `/api/sessions/${encodeURIComponent(session.id)}/start`, {
+        method: "POST",
+        timeoutMs: 15000
+      });
+      session = await resolveOpenWaSession({ ...cfg, sessionId: session.id }, true);
+    }
+  } else if (session && autoStart && ["created", "disconnected", "failed"].includes(String(session.status || "").toLowerCase()) && !session.engineLoaded) {
+    await openWaRequest(cfg, `/api/sessions/${encodeURIComponent(session.id)}/start`, {
+      method: "POST",
+      timeoutMs: 15000
+    });
+    session = await resolveOpenWaSession({ ...cfg, sessionId: session.id }, true);
+  }
+
+  let qrCode = null;
+  if (session && session.id && ["qr_ready", "initializing", "authenticating"].includes(String(session.status || "").toLowerCase())) {
+    try {
+      const qrRes = await openWaRequest(cfg, `/api/sessions/${encodeURIComponent(session.id)}/qr`, { timeoutMs: 8000 });
+      if (qrRes && qrRes.qrCode) {
+        qrCode = qrRes.qrCode;
+      }
+    } catch (_) {
+      // QR may not be ready yet if still initializing
+    }
+  }
+
+  return {
+    success: true,
+    session,
+    qrCode,
+    sessions: allSessions.map((s) => ({
+      id: s.id,
+      name: s.name,
+      status: s.status,
+      phone: s.phone || null,
+      pushName: s.pushName || null,
+      engineLoaded: Boolean(s.engineLoaded)
+    }))
+  };
+}
+
+/**
+ * Send a WhatsApp text message via Open-WA API
+ */
+async function sendOpenWaTextMessage({ storeId = 0, storeObj = null, masterObj = null, recipientPhone = "", text = "", overrideConfig = null }) {
+  const baseCfg = storeObj ? await resolveOpenWaConfig(storeObj, masterObj) : await resolveOpenWaConfig(storeId, masterObj);
+  const cfg = overrideConfig ? { ...baseCfg, ...overrideConfig } : baseCfg;
+
+  if (!cfg.baseUrl || !cfg.apiKey || !cfg.sessionId) {
+    return {
+      success: false,
+      notConfigured: true,
+      message: "Open-WA WhatsApp gateway is not configured yet (Base URL, API Key, or Session missing)."
+    };
+  }
+  if (String(cfg.status) === "0") {
+    return {
+      success: false,
+      paused: true,
+      message: "Open-WA WhatsApp gateway is currently paused in Notification Settings."
+    };
+  }
+
+  const chatId = formatOpenWaChatId(recipientPhone, cfg.defaultCountryCode);
+  if (!chatId) {
+    return {
+      success: false,
+      invalidPhone: true,
+      message: "Please provide a valid recipient phone number with country/area code."
+    };
+  }
+
+  const cleanText = String(text || "").trim().slice(0, 4096);
+  if (!cleanText) {
+    return { success: false, message: "WhatsApp message body cannot be empty." };
+  }
+
+  let session = await resolveOpenWaSession(cfg, false);
+  if (!session || !session.id) {
+    openWaSessionUuidCache.clear();
+    session = await resolveOpenWaSession(cfg, true);
+  }
+  if (!session || !session.id) {
+    return {
+      success: false,
+      message: `Open-WA session '${cfg.sessionId}' was not found on ${cfg.baseUrl}.`
+    };
+  }
+
+  // Verify live session status when cached or previously non-ready
+  if (String(session.status || "").toLowerCase() !== "ready") {
+    session = await resolveOpenWaSession(cfg, true);
+  }
+  const st = String(session?.status || "").toLowerCase();
+  if (st !== "ready") {
+    return {
+      success: false,
+      sessionNotReady: true,
+      sessionStatus: st,
+      message: st === "qr_ready"
+        ? `Open-WA session '${session.name}' is waiting for QR code scan. Open Notification Settings -> Scan WhatsApp QR to link your phone.`
+        : `Open-WA session '${session.name}' is currently '${st}' (not connected).`
+    };
+  }
+
+  try {
+    const resp = await openWaRequest(cfg, `/api/sessions/${encodeURIComponent(session.id)}/messages/send-text`, {
+      method: "POST",
+      body: { chatId, text: cleanText },
+      timeoutMs: 10000
+    });
+    return {
+      success: true,
+      messageId: resp?.messageId || null,
+      timestamp: resp?.timestamp || null,
+      chatId,
+      sessionName: session.name,
+      sessionId: session.id
+    };
+  } catch (sendErr) {
+    // If session changed status/UUID, invalidate cache once
+    openWaSessionUuidCache.delete(`${cfg.baseUrl}|${cfg.sessionId}`);
+    return {
+      success: false,
+      message: sendErr.message || "Failed to send WhatsApp message via Open-WA."
+    };
+  }
+}
+
+/**
  * Resolve Twilio credentials for a store (falling back to tbl_master_shop)
  * Accepts either (storeId) OR (storeObj, masterObj)
  */
@@ -849,7 +1291,56 @@ async function resolveTwilioConfig(storeOrId, masterObj) {
 }
 
 /**
- * Build Subject, HTML Email, and SMS text for any of the 12 events
+ * Build itemized WhatsApp order summary block appended to order lifecycle WhatsApp notifications
+ */
+function buildWhatsAppOrderSummaryBlock({ eventKey, order, items, sym, grossTotal, paidAmount, balanceDue, resolvedRacks, storeName, storePhone }) {
+  if (!order) return "";
+  const lines = [];
+  const showItemListEvents = new Set([
+    "order_placed",
+    "route_intake_priced",
+    "order_modified",
+    "order_ready_pickup",
+    "order_out_for_delivery",
+    "order_delivered"
+  ]);
+
+  if (showItemListEvents.has(eventKey) && Array.isArray(items) && items.length > 0) {
+    lines.push("");
+    lines.push("*ITEMIZED GARMENTS:*");
+    items.forEach((it) => {
+      const sName = it.service_name || "Service";
+      const sType = it.service_type_name ? ` [${it.service_type_name}]` : "";
+      const qty = parseFloat(it.service_quntity || 1) || 1;
+      const pcs = parseInt(it.no_of_items || 1, 10) || 1;
+      const pcsBadge = pcs > 1 ? ` (${pcs} Pcs)` : "";
+      const unitPrice = parseFloat(it.service_type_price || it.service_price || 0) || 0;
+      const lineTotal = unitPrice * qty;
+      lines.push(`• ${sName}${sType}${pcsBadge} x ${qty} = ${sym}${lineTotal.toFixed(2)}`);
+    });
+  }
+
+  if (resolvedRacks && String(resolvedRacks).trim() !== "") {
+    lines.push(`📍 *Storage Rack(s):* ${resolvedRacks}`);
+  }
+
+  const hasFinancialSummary = (Array.isArray(items) && items.length > 0) || parseFloat(order.gross_total || 0) > 0 || eventKey === "payment_received";
+  if (hasFinancialSummary && eventKey !== "order_cancelled") {
+    lines.push("--------------------------------");
+    lines.push(`💰 *Gross Total:* ${grossTotal}`);
+    lines.push(`💳 *Paid Amount:* ${paidAmount}`);
+    lines.push(`❗ *Balance Due:* *${balanceDue}*`);
+  }
+
+  if (storePhone && eventKey !== "order_cancelled" && eventKey !== "welcome_customer") {
+    lines.push(`📞 Questions? Call ${storeName} at ${storePhone}`);
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Build Subject, HTML Email, SMS text, and WhatsApp text for any of the 12 events
  * Respects custom templates (store or global) when provided, with {tag} interpolation
  */
 function buildNotificationContent({ eventKey, customer, store, master, order, items, extraData, templates = null, rackNames = "" }) {
@@ -973,7 +1464,8 @@ function buildNotificationContent({ eventKey, customer, store, master, order, it
         emailSubject: "{store_name} Notification",
         emailHeadline: "Update from {store_name}",
         emailBody: "Hi {customer_name}, here is an update from {store_name} regarding Order #{order_id}.",
-        smsBody: "Hi {customer_name}, update from {store_name} regarding Order #{order_id}."
+        smsBody: "Hi {customer_name}, update from {store_name} regarding Order #{order_id}.",
+        whatsappBody: "Hi *{customer_name}*, update from *{store_name}* regarding Order *#{order_id}*."
       });
 
   const subject = interpolateTemplate(activeTpl.emailSubject, varsMap);
@@ -981,6 +1473,20 @@ function buildNotificationContent({ eventKey, customer, store, master, order, it
   const rawEmailBody = interpolateTemplate(activeTpl.emailBody, varsMap);
   const introHtml = `<p style="line-height:1.6;margin-top:0;">${rawEmailBody.replace(/\r?\n/g, "<br>")}</p>`;
   const smsBody = interpolateTemplate(activeTpl.smsBody, varsMap);
+  const rawWaBody = interpolateTemplate(activeTpl.whatsappBody || activeTpl.smsBody, varsMap);
+  const waSummaryBlock = buildWhatsAppOrderSummaryBlock({
+    eventKey,
+    order,
+    items,
+    sym,
+    grossTotal,
+    paidAmount,
+    balanceDue,
+    resolvedRacks,
+    storeName,
+    storePhone
+  });
+  const whatsappBody = waSummaryBlock ? `${rawWaBody}\n${waSummaryBlock}` : rawWaBody;
 
   // Build itemized table HTML if order is present
   let orderDetailsHtml = "";
@@ -1068,11 +1574,11 @@ function buildNotificationContent({ eventKey, customer, store, master, order, it
     </div>
   `;
 
-  return { subject, htmlBody, smsBody };
+  return { subject, htmlBody, smsBody, whatsappBody };
 }
 
 /**
- * Main Dispatcher: Checks Notification Settings and sends Email, SMS, and Push
+ * Main Dispatcher: Checks Notification Settings and sends Email, SMS, WhatsApp (Open-WA), and Push
  */
 async function dispatchCustomerNotification({
   eventKey,
@@ -1083,7 +1589,9 @@ async function dispatchCustomerNotification({
   accessdata = null,
   forceEmail = false,
   forceSms = false,
-  overrideRecipient = null
+  forceWhatsapp = false,
+  overrideRecipient = null,
+  customMessage = null
 }) {
   try {
     let orderObj = null;
@@ -1113,10 +1621,10 @@ async function dispatchCustomerNotification({
             .filter((n) => !isNaN(n) && n > 0);
           if (cleanRacks.length > 0) {
             const rackRows = await DataFind(
-              `SELECT name FROM tbl_racks WHERE id IN (${cleanRacks.join(",")}) AND delet_flage = 0`
+              `SELECT rack_name FROM tbl_racks WHERE id IN (${cleanRacks.join(",")}) AND delet_flage = 0`
             );
             if (rackRows && rackRows.length > 0) {
-              resolvedRackNames = rackRows.map((r) => r.name).join(", ");
+              resolvedRackNames = rackRows.map((r) => r.rack_name || r.name).filter(Boolean).join(", ");
             }
           }
         }
@@ -1125,14 +1633,15 @@ async function dispatchCustomerNotification({
 
     const effectiveStoreId = parseInt(storeId, 10) || 0;
     const settings = await getEffectiveNotificationSettings(effectiveStoreId);
-    const eventCfg = settings.events[eventKey] || { email: false, sms: false };
+    const eventCfg = settings.events[eventKey] || { email: false, sms: false, whatsapp: false };
 
     const shouldSendEmail = Boolean(forceEmail || (settings.email_enabled && eventCfg.email));
     const shouldSendSms = Boolean(forceSms || (settings.sms_enabled && eventCfg.sms));
-    const shouldSendPush = Boolean(!forceEmail && !forceSms && settings.push_enabled);
+    const shouldSendWhatsapp = Boolean(forceWhatsapp || (settings.whatsapp_enabled && eventCfg.whatsapp));
+    const shouldSendPush = Boolean(!forceEmail && !forceSms && !forceWhatsapp && settings.push_enabled);
 
-    if (!shouldSendEmail && !shouldSendSms && !shouldSendPush) {
-      return { sentEmail: false, sentSms: false, sentPush: false, skipped: true };
+    if (!shouldSendEmail && !shouldSendSms && !shouldSendWhatsapp && !shouldSendPush) {
+      return { sentEmail: false, sentSms: false, sentWhatsapp: false, sentPush: false, skipped: true };
     }
 
     let customerObj = null;
@@ -1156,7 +1665,7 @@ async function dispatchCustomerNotification({
       (customerObj.name && customerObj.name.toLowerCase().includes("walk in")) ||
       (customerObj.name && customerObj.name.toLowerCase().includes("walkin"));
 
-    const { subject, htmlBody, smsBody } = buildNotificationContent({
+    const { subject, htmlBody, smsBody, whatsappBody } = buildNotificationContent({
       eventKey,
       customer: customerObj,
       store: storeObj,
@@ -1170,7 +1679,10 @@ async function dispatchCustomerNotification({
 
     let sentEmail = false;
     let sentSms = false;
+    let sentWhatsapp = false;
     let sentPush = false;
+    let whatsappError = null;
+    let whatsappMessageId = null;
 
     // 1. Send Email if enabled/forced and recipient email is available
     const targetEmail = (overrideRecipient && forceEmail)
@@ -1217,7 +1729,7 @@ async function dispatchCustomerNotification({
     }
 
     // 2. Send SMS if enabled/forced and recipient phone is available
-    const targetPhone = (overrideRecipient && forceSms)
+    const targetPhone = (overrideRecipient && (forceSms || forceWhatsapp))
       ? String(overrideRecipient).trim()
       : ((!isWalkIn && customerObj && customerObj.number) ? String(customerObj.number).trim() : "");
 
@@ -1247,7 +1759,41 @@ async function dispatchCustomerNotification({
       throw new Error("Recipient phone number is required.");
     }
 
-    // 3. Send Push Notification via OneSignal if enabled
+    // 3. Send WhatsApp via Open-WA if enabled/forced and recipient phone is available
+    const targetWaPhone = (overrideRecipient && forceWhatsapp)
+      ? String(overrideRecipient).trim()
+      : ((!isWalkIn && customerObj && customerObj.number) ? String(customerObj.number).trim() : "");
+
+    if (shouldSendWhatsapp && targetWaPhone !== "") {
+      const waText = (customMessage && String(customMessage).trim() !== "")
+        ? String(customMessage).trim()
+        : (extraData && extraData.whatsappText ? String(extraData.whatsappText).trim() : whatsappBody);
+
+      const waRes = await sendOpenWaTextMessage({
+        storeId: effectiveStoreId,
+        storeObj,
+        masterObj,
+        recipientPhone: targetWaPhone,
+        text: waText
+      });
+
+      if (waRes && waRes.success) {
+        sentWhatsapp = true;
+        whatsappMessageId = waRes.messageId || null;
+      } else {
+        whatsappError = (waRes && waRes.message) || "Open-WA dispatch failed.";
+        if (waRes && !waRes.notConfigured && !waRes.paused) {
+          console.warn(`[NotificationService] Open-WA notice (${eventKey}):`, whatsappError);
+        }
+        if (forceWhatsapp) {
+          throw new Error(whatsappError);
+        }
+      }
+    } else if (forceWhatsapp && targetWaPhone === "") {
+      throw new Error("Recipient phone number is required.");
+    }
+
+    // 4. Send Push Notification via OneSignal if enabled
     if (shouldSendPush) {
       const onesignalAppId = (storeObj && storeObj.onesignal_app_id)
         ? storeObj.onesignal_app_id
@@ -1273,10 +1819,10 @@ async function dispatchCustomerNotification({
       }
     }
 
-    return { sentEmail, sentSms, sentPush };
+    return { sentEmail, sentSms, sentWhatsapp, sentPush, whatsappMessageId, whatsappError };
   } catch (err) {
     console.error(`[NotificationService] Error dispatching ${eventKey}:`, err);
-    return { sentEmail: false, sentSms: false, sentPush: false, error: err.message };
+    return { sentEmail: false, sentSms: false, sentWhatsapp: false, sentPush: false, error: err.message };
   }
 }
 
@@ -1378,6 +1924,37 @@ async function sendTestNotification({ storeId = 0, channel = "email", recipient 
     } catch (err) {
       return { success: false, message: `Twilio SMS Error: ${err.message}` };
     }
+  } else if (channel === "whatsapp") {
+    const waCfg = await resolveOpenWaConfig(storeObj, masterObj);
+    if (!waCfg.baseUrl || !waCfg.apiKey || !waCfg.sessionId) {
+      return {
+        success: false,
+        message: "Open-WA Gateway (Base URL, API Key, Session Name/ID) is not configured yet."
+      };
+    }
+
+    const res = await sendOpenWaTextMessage({
+      storeId: effectiveStoreId,
+      storeObj,
+      masterObj,
+      recipientPhone: cleanRecipient,
+      text: `✅ *${storeName}* — Test WhatsApp Message Successful!\nYour automated Open-WA customer notifications are connected and active.\n⏰ Sent: ${new Date().toLocaleString()}`
+    });
+
+    if (res && res.success) {
+      return {
+        success: true,
+        messageId: res.messageId,
+        chatId: res.chatId,
+        message: `Test WhatsApp sent via Open-WA session '${res.sessionName}' to ${res.chatId}!`
+      };
+    }
+    return {
+      success: false,
+      sessionNotReady: Boolean(res?.sessionNotReady),
+      sessionStatus: res?.sessionStatus || null,
+      message: (res && res.message) || "Failed to send test WhatsApp message via Open-WA."
+    };
   }
 
   return { success: false, message: "Unsupported test channel." };
@@ -1451,13 +2028,107 @@ function formatWhatsAppInvoiceMessage({ order, items, customer, store, master, r
   return lines.join("\n");
 }
 
-function formatWhatsAppNumber(phone) {
+function formatWhatsAppNumber(phone, defaultCountryCode = "1") {
+  const jid = formatOpenWaChatId(phone, defaultCountryCode);
+  if (jid && jid.includes("@")) {
+    return jid.split("@")[0];
+  }
   if (!phone) return "";
   const digits = String(phone).replace(/\D/g, "");
   if (!digits) return "";
-  // 10-digit number without country code (US/Canada assumption) -> 1XXXXXXXXXX
-  if (digits.length === 10) return `1${digits}`;
+  const cleanCC = String(defaultCountryCode || "1").replace(/\D/g, "") || "1";
+  if (digits.length === 10) return `${cleanCC}${digits}`;
   return digits;
+}
+
+/**
+ * Control Open-WA session lifecycle (start | stop | logout | create) from Settings UI
+ */
+async function controlOpenWaSession({ storeId = 0, action = "start", baseUrl, apiKey, sessionId } = {}) {
+  const resolved = await resolveOpenWaConfig(storeId);
+  const cfg = {
+    baseUrl: (baseUrl !== undefined && String(baseUrl).trim() !== "") ? String(baseUrl).trim().replace(/\/+$/, "") : resolved.baseUrl,
+    apiKey: (apiKey !== undefined && String(apiKey).trim() !== "") ? String(apiKey).trim() : resolved.apiKey,
+    sessionId: (sessionId !== undefined && String(sessionId).trim() !== "") ? String(sessionId).trim() : resolved.sessionId,
+    defaultCountryCode: resolved.defaultCountryCode,
+    status: "1"
+  };
+
+  if (!cfg.baseUrl || !cfg.apiKey || !cfg.sessionId) {
+    return { success: false, message: "Open-WA Base URL, API Key, and Session Name/ID are required." };
+  }
+
+  openWaSessionUuidCache.clear();
+  const cleanAction = String(action || "start").toLowerCase().trim();
+
+  if (cleanAction === "create") {
+    return await getOpenWaSessionStatusAndQr({
+      storeId,
+      baseUrl: cfg.baseUrl,
+      apiKey: cfg.apiKey,
+      sessionId: cfg.sessionId,
+      autoStart: true,
+      createIfMissing: true
+    });
+  }
+
+  let session = await resolveOpenWaSession(cfg, true);
+  if (!session || !session.id) {
+    if (cleanAction === "start") {
+      return await getOpenWaSessionStatusAndQr({
+        storeId,
+        baseUrl: cfg.baseUrl,
+        apiKey: cfg.apiKey,
+        sessionId: cfg.sessionId,
+        autoStart: true,
+        createIfMissing: true
+      });
+    }
+    return { success: false, message: `Session '${cfg.sessionId}' not found on Open-WA server.` };
+  }
+
+  if (cleanAction === "start") {
+    if (!session.engineLoaded) {
+      await openWaRequest(cfg, `/api/sessions/${encodeURIComponent(session.id)}/start`, {
+        method: "POST",
+        timeoutMs: 15000
+      });
+    }
+  } else if (cleanAction === "stop") {
+    await openWaRequest(cfg, `/api/sessions/${encodeURIComponent(session.id)}/stop`, {
+      method: "POST",
+      timeoutMs: 12000
+    });
+  } else if (cleanAction === "logout") {
+    await openWaRequest(cfg, `/api/sessions/${encodeURIComponent(session.id)}/logout`, {
+      method: "POST",
+      timeoutMs: 12000
+    });
+  } else if (cleanAction === "restart") {
+    try {
+      await openWaRequest(cfg, `/api/sessions/${encodeURIComponent(session.id)}/stop`, {
+        method: "POST",
+        timeoutMs: 10000
+      });
+    } catch (_) {
+      // ignore if already stopped
+    }
+    await openWaRequest(cfg, `/api/sessions/${encodeURIComponent(session.id)}/start`, {
+      method: "POST",
+      timeoutMs: 15000
+    });
+  } else {
+    return { success: false, message: `Unsupported Open-WA session action '${cleanAction}'.` };
+  }
+
+  return await getOpenWaSessionStatusAndQr({
+    storeId,
+    baseUrl: cfg.baseUrl,
+    apiKey: cfg.apiKey,
+    sessionId: session.id,
+    autoStart: false,
+    createIfMissing: false
+  });
 }
 
 /**
@@ -1522,6 +2193,13 @@ module.exports = {
   sendTestNotification,
   resolveSmtpConfig,
   resolveTwilioConfig,
+  resolveOpenWaConfig,
+  formatOpenWaChatId,
+  listOpenWaSessions,
+  resolveOpenWaSession,
+  getOpenWaSessionStatusAndQr,
+  controlOpenWaSession,
+  sendOpenWaTextMessage,
   formatWhatsAppInvoiceMessage,
   formatWhatsAppPickupAcceptedMessage,
   formatWhatsAppNumber,

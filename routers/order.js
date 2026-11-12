@@ -42,6 +42,8 @@ const { generateOrderId } = require("../middelwer/orderIdHelper");
 const {
   dispatchCustomerNotification,
   isRouteDeliveryOrderType,
+  resolveOpenWaConfig,
+  sendOpenWaTextMessage,
   formatWhatsAppInvoiceMessage,
   formatWhatsAppPickupAcceptedMessage,
   formatWhatsAppNumber,
@@ -3062,10 +3064,10 @@ router.get("/racks/orders-by-rack/:rackId", auth, async (req, res) => {
   }
 });
 
-// <<<<<<<<<<<< Manual Invoice Dispatch: Email, SMS & WhatsApp >>>>>>>>>>>>
+// <<<<<<<<<<<< Manual Invoice Dispatch: Email, SMS & WhatsApp (Open-WA + wa.me fallback) >>>>>>>>>>>>
 router.post("/send-manual-invoice", auth, async (req, res) => {
   try {
-    const { order_id, channel, recipient, update_customer } = req.body;
+    const { order_id, channel, recipient, update_customer, message, mode } = req.body;
     if (!order_id) {
       return res.status(400).json({ success: false, message: "Order ID is required." });
     }
@@ -3115,6 +3117,8 @@ router.post("/send-manual-invoice", auth, async (req, res) => {
       }
     }
 
+    let extraResult = {};
+
     if (channel === "email" || channel === "sms") {
       const dispatchResult = await dispatchCustomerNotification({
         eventKey: "order_placed",
@@ -3130,6 +3134,64 @@ router.post("/send-manual-invoice", auth, async (req, res) => {
       if (dispatchResult && dispatchResult.error) {
         return res.status(400).json({ success: false, message: dispatchResult.error });
       }
+    } else if (channel === "whatsapp") {
+      let waText = (message !== undefined && message !== null && String(message).trim() !== "")
+        ? String(message).trim()
+        : "";
+
+      if (!waText) {
+        const [custRows, items, storeRows, masterRows] = await Promise.all([
+          (order.customer_id && String(order.customer_id) !== "0")
+            ? DataFind(`SELECT * FROM tbl_customer WHERE id = '${order.customer_id}' LIMIT 1`)
+            : Promise.resolve([]),
+          (order.service_list && String(order.service_list).trim() !== "0" && String(order.service_list).trim() !== "")
+            ? DataFind(`SELECT * FROM tbl_cart_servicelist WHERE FIND_IN_SET(id, '${order.service_list}')`)
+            : Promise.resolve([]),
+          order.store_id
+            ? DataFind(`SELECT * FROM tbl_store WHERE id = '${order.store_id}' LIMIT 1`)
+            : Promise.resolve([]),
+          DataFind(`SELECT * FROM tbl_master_shop LIMIT 1`)
+        ]);
+        waText = formatWhatsAppInvoiceMessage({
+          order,
+          items,
+          customer: (custRows && custRows[0]) || null,
+          store: (storeRows && storeRows[0]) || null,
+          master: (masterRows && masterRows[0]) || null,
+          rackNames: ""
+        });
+      }
+
+      const openwaCfg = await resolveOpenWaConfig(order.store_id);
+      const waNumber = formatWhatsAppNumber(cleanRecipient, openwaCfg.defaultCountryCode);
+      const fallbackWaUrl = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(waText)}` : "";
+
+      if (mode !== "wa_me_log") {
+        const waRes = await sendOpenWaTextMessage({
+          storeId: order.store_id,
+          recipientPhone: cleanRecipient,
+          text: waText
+        });
+
+        if (!waRes || !waRes.success) {
+          return res.status(400).json({
+            success: false,
+            fallbackWaUrl,
+            sessionNotReady: Boolean(waRes?.sessionNotReady),
+            notConfigured: Boolean(waRes?.notConfigured),
+            message: (waRes && waRes.message) || "Failed to send WhatsApp invoice via Open-WA."
+          });
+        }
+
+        extraResult = {
+          viaOpenWa: true,
+          chatId: waRes.chatId,
+          messageId: waRes.messageId || null,
+          sessionName: waRes.sessionName || null
+        };
+      } else {
+        extraResult = { viaOpenWa: false, fallbackWaUrl };
+      }
     }
 
     // Log in notification table
@@ -3137,19 +3199,23 @@ router.post("/send-manual-invoice", auth, async (req, res) => {
     const day = String(now.getDate()).padStart(2, "0");
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const fullDate = `${now.getFullYear()}-${month}-${day}`;
+    const viaSuffix = channel === "whatsapp" ? (extraResult.viaOpenWa ? " (via Open-WA API)" : " (via wa.me link)") : "";
 
     await DataInsert(
       "tbl_notification",
       "invoice, date, sender, received, notification",
-      `'${order.order_id}', '${fullDate}', '${accessdata?.topbardata?.id || req.user.id}', '${order.customer_id}', 'Invoice ${channel.toUpperCase()} manually dispatched to ${cleanRecipient.replace(/'/g, "\\'")}.'`,
+      `'${order.order_id}', '${fullDate}', '${accessdata?.topbardata?.id || req.user.id}', '${order.customer_id}', 'Invoice ${channel.toUpperCase()}${viaSuffix} manually dispatched to ${cleanRecipient.replace(/'/g, "\\'")}.'`,
       req.hostname,
       req.protocol
     );
 
     return res.status(200).json({
       success: true,
+      ...extraResult,
       message: channel === "whatsapp"
-        ? `Invoice WhatsApp ready for ${cleanRecipient}!`
+        ? (extraResult.viaOpenWa
+            ? `WhatsApp invoice sent via Open-WA to ${cleanRecipient}!`
+            : `Invoice WhatsApp ready for ${cleanRecipient}!`)
         : `Invoice ${channel.toUpperCase()} sent successfully to ${cleanRecipient}!`
     });
   } catch (error) {
@@ -3209,9 +3275,10 @@ router.get("/whatsapp-invoice-payload/:orderId", auth, async (req, res) => {
       }
     }
 
+    const openwaCfg = await resolveOpenWaConfig(order.store_id, master);
     const waMessage = formatWhatsAppInvoiceMessage({ order, items, customer, store, master, rackNames });
     const rawPhone = customer?.number || "";
-    const waNumber = formatWhatsAppNumber(rawPhone);
+    const waNumber = formatWhatsAppNumber(rawPhone, openwaCfg.defaultCountryCode);
     const waUrl = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}` : "";
 
     return res.status(200).json({
@@ -3222,6 +3289,7 @@ router.get("/whatsapp-invoice-payload/:orderId", auth, async (req, res) => {
       customerEmail: customer?.email || "",
       phone: rawPhone,
       waNumber,
+      openWaConfigured: Boolean(openwaCfg && openwaCfg.isConfigured),
       message: waMessage,
       waUrl
     });
@@ -4010,7 +4078,7 @@ router.post("/pickup-requests/:id/accept", auth, async (req, res) => {
       is_pickup_request_accepted: true,
     });
 
-    let notifResult = { sentEmail: false, sentSms: false, sentPush: false };
+    let notifResult = { sentEmail: false, sentSms: false, sentWhatsapp: false, sentPush: false };
     try {
       notifResult = await dispatchCustomerNotification({
         eventKey: "pickup_request_accepted",
@@ -4021,9 +4089,10 @@ router.post("/pickup-requests/:id/accept", auth, async (req, res) => {
       });
     } catch (notifErr) {
       console.error("Pickup acceptance notification dispatch error:", notifErr.message);
-      notifResult = { sentEmail: false, sentSms: false, sentPush: false, error: notifErr.message };
+      notifResult = { sentEmail: false, sentSms: false, sentWhatsapp: false, sentPush: false, error: notifErr.message };
     }
 
+    const openwaCfg = await resolveOpenWaConfig(storeObj || acceptedOrder.store_id, masterObj);
     const waMessage = formatWhatsAppPickupAcceptedMessage({
       order: acceptedOrder,
       customer,
@@ -4031,7 +4100,7 @@ router.post("/pickup-requests/:id/accept", auth, async (req, res) => {
       master: masterObj,
     });
     const rawPhone = customer?.number || "";
-    const waNumber = formatWhatsAppNumber(rawPhone);
+    const waNumber = formatWhatsAppNumber(rawPhone, openwaCfg.defaultCountryCode);
     const waUrl = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}` : "";
 
     return res.status(200).json({
@@ -4043,6 +4112,8 @@ router.post("/pickup-requests/:id/accept", auth, async (req, res) => {
       notifications: {
         emailSent: Boolean(notifResult?.sentEmail),
         smsSent: Boolean(notifResult?.sentSms),
+        whatsappSent: Boolean(notifResult?.sentWhatsapp),
+        whatsappError: notifResult?.whatsappError || null,
         pushSent: Boolean(notifResult?.sentPush),
         skipped: Boolean(notifResult?.skipped),
         error: notifResult?.error || null,

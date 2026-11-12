@@ -1374,7 +1374,7 @@
 
           <div class="mb-3 d-none" id="send_invoice_wa_preview_group">
             <label class="form-label fw-bold text-dark fs-13 mb-1" for="send_invoice_message_preview">
-              Message Preview (will open in WhatsApp chat):
+              Message Preview (editable before sending):
             </label>
             <textarea class="form-control fs-12 font-monospace" id="send_invoice_message_preview" rows="7"></textarea>
           </div>
@@ -1392,6 +1392,9 @@
         <div class="modal-footer border-top py-2 px-4">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
             <i class="fa fa-times me-2"></i><%= language.Cancel || 'Cancel' %>
+          </button>
+          <button type="button" class="btn btn-outline-success d-none" id="btn_send_wa_fallback" onclick="openWhatsAppFallbackLink()">
+            <i class="fab fa-whatsapp me-1"></i>Open wa.me App
           </button>
           <button type="button" class="btn btn-primary" id="btn_confirm_send_invoice" onclick="executeSendInvoice()">
             <i class="fa fa-paper-plane me-2" id="send_invoice_confirm_icon"></i>
@@ -2261,6 +2264,7 @@
       var waGroup = document.getElementById('send_invoice_wa_preview_group');
       var waPreview = document.getElementById('send_invoice_message_preview');
       var confirmBtn = document.getElementById('btn_confirm_send_invoice');
+      var waFallbackBtn = document.getElementById('btn_send_wa_fallback');
       var confirmIcon = document.getElementById('send_invoice_confirm_icon');
       var confirmText = document.getElementById('send_invoice_confirm_text');
       var statusAlert = document.getElementById('send_invoice_status_alert');
@@ -2268,6 +2272,9 @@
       if (statusAlert) {
         statusAlert.classList.add('d-none');
         statusAlert.textContent = '';
+      }
+      if (waFallbackBtn) {
+        waFallbackBtn.classList.toggle('d-none', channel !== 'whatsapp');
       }
 
       if (channel === 'email') {
@@ -2296,16 +2303,16 @@
         confirmText.textContent = 'Send SMS';
       } else if (channel === 'whatsapp') {
         iconEl.className = 'fab fa-whatsapp text-success me-2';
-        titleEl.textContent = 'WhatsApp Invoice';
-        noticeText.textContent = 'Review recipient phone number and itemized message, then click to open WhatsApp chat with pre-filled invoice message.';
+        titleEl.textContent = 'WhatsApp Invoice (Open-WA)';
+        noticeText.textContent = 'Review phone number and itemized message, then send directly via Open-WA API (or click Open wa.me App as fallback).';
         labelEl.textContent = 'Customer WhatsApp Phone Number:';
         inputEl.type = 'tel';
         inputEl.value = orderCustomerPhone;
-        inputEl.placeholder = 'e.g. 15551234567';
+        inputEl.placeholder = 'e.g. +17185550199 or 03225126622';
         waGroup.classList.remove('d-none');
         confirmBtn.className = 'btn btn-success text-white';
         confirmIcon.className = 'fab fa-whatsapp me-2';
-        confirmText.textContent = 'Open in WhatsApp';
+        confirmText.textContent = 'Send via WhatsApp';
 
         // Load preview payload from backend
         confirmBtn.disabled = true;
@@ -2330,7 +2337,7 @@
           },
           complete: function() {
             confirmBtn.disabled = false;
-            confirmText.textContent = 'Open in WhatsApp';
+            confirmText.textContent = 'Send via WhatsApp';
           }
         });
       }
@@ -2341,6 +2348,50 @@
         modal.show();
       }
       setTimeout(function() { inputEl.focus(); }, 300);
+    }
+
+    function openWhatsAppFallbackLink() {
+      var inputEl = document.getElementById('send_invoice_recipient_input');
+      var statusAlert = document.getElementById('send_invoice_status_alert');
+      var updateCheck = document.getElementById('send_invoice_update_profile_check');
+      var waPreview = document.getElementById('send_invoice_message_preview');
+
+      var recipient = (inputEl ? inputEl.value : '').trim();
+      var cleanDigits = recipient.replace(/\D/g, '');
+      if (cleanDigits.length === 10) cleanDigits = '1' + cleanDigits;
+      else if (cleanDigits.length === 11 && cleanDigits.startsWith('03')) cleanDigits = '92' + cleanDigits.slice(1);
+      if (!cleanDigits) {
+        if (statusAlert) {
+          statusAlert.textContent = 'Please enter a valid phone number with digits.';
+          statusAlert.classList.remove('d-none');
+        }
+        return;
+      }
+
+      var msg = (waPreview ? waPreview.value : (currentWaPayload ? currentWaPayload.message : 'Invoice details'));
+      var waUrl = 'https://wa.me/' + cleanDigits + '?text=' + encodeURIComponent(msg);
+
+      $.ajax({
+        type: 'POST',
+        url: '/order/send-manual-invoice',
+        contentType: 'application/json',
+        data: JSON.stringify({
+          order_id: '<%= order.id %>',
+          channel: 'whatsapp',
+          mode: 'wa_me_log',
+          recipient: recipient,
+          update_customer: updateCheck ? updateCheck.checked : false
+        })
+      });
+
+      var modalEl = document.getElementById('sendInvoiceModal');
+      if (modalEl) {
+        bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+      }
+      window.open(waUrl, '_blank');
+      if (typeof toastr !== 'undefined') {
+        toastr.success('WhatsApp chat opened for ' + recipient, 'WhatsApp Ready');
+      }
     }
 
     function executeSendInvoice() {
@@ -2362,47 +2413,7 @@
         return;
       }
 
-      if (currentSendChannel === 'whatsapp') {
-        var cleanDigits = recipient.replace(/\D/g, '');
-        if (cleanDigits.length === 10) {
-          cleanDigits = '1' + cleanDigits;
-        }
-        if (!cleanDigits) {
-          if (statusAlert) {
-            statusAlert.textContent = 'Please enter a valid phone number with digits.';
-            statusAlert.classList.remove('d-none');
-          }
-          return;
-        }
-
-        var msg = (waPreview ? waPreview.value : (currentWaPayload ? currentWaPayload.message : 'Invoice details'));
-        var waUrl = 'https://wa.me/' + cleanDigits + '?text=' + encodeURIComponent(msg);
-
-        // Record WhatsApp dispatch in background
-        $.ajax({
-          type: 'POST',
-          url: '/order/send-manual-invoice',
-          contentType: 'application/json',
-          data: JSON.stringify({
-            order_id: '<%= order.id %>',
-            channel: 'whatsapp',
-            recipient: recipient,
-            update_customer: updateCheck ? updateCheck.checked : false
-          })
-        });
-
-        var modalEl = document.getElementById('sendInvoiceModal');
-        if (modalEl) {
-          bootstrap.Modal.getOrCreateInstance(modalEl).hide();
-        }
-        window.open(waUrl, '_blank');
-        if (typeof toastr !== 'undefined') {
-          toastr.success('WhatsApp chat opened for ' + recipient, 'WhatsApp Ready');
-        }
-        return;
-      }
-
-      // Email / SMS send
+      // Email / SMS / Open-WA WhatsApp send
       var origIcon = confirmIcon.className;
       var origText = confirmText.textContent;
       confirmBtn.disabled = true;
@@ -2410,16 +2421,21 @@
       confirmText.textContent = 'Sending...';
       if (statusAlert) statusAlert.classList.add('d-none');
 
+      var payload = {
+        order_id: '<%= order.id %>',
+        channel: currentSendChannel,
+        recipient: recipient,
+        update_customer: updateCheck ? updateCheck.checked : false
+      };
+      if (currentSendChannel === 'whatsapp' && waPreview) {
+        payload.message = waPreview.value;
+      }
+
       $.ajax({
         type: 'POST',
         url: '/order/send-manual-invoice',
         contentType: 'application/json',
-        data: JSON.stringify({
-          order_id: '<%= order.id %>',
-          channel: currentSendChannel,
-          recipient: recipient,
-          update_customer: updateCheck ? updateCheck.checked : false
-        }),
+        data: JSON.stringify(payload),
         dataType: 'json',
         success: function(res) {
           if (res && res.success) {
@@ -2433,7 +2449,11 @@
           } else {
             var errMessage = (res && res.message) || ('Failed to send invoice via ' + currentSendChannel);
             if (statusAlert) {
-              statusAlert.textContent = errMessage;
+              if (currentSendChannel === 'whatsapp' && res && res.fallbackWaUrl) {
+                statusAlert.innerHTML = errMessage + ' <a href="' + res.fallbackWaUrl + '" target="_blank" class="alert-link ms-1">Open wa.me instead</a>';
+              } else {
+                statusAlert.textContent = errMessage;
+              }
               statusAlert.classList.remove('d-none');
             }
             if (typeof toastr !== 'undefined') {
@@ -2442,9 +2462,14 @@
           }
         },
         error: function(xhr) {
-          var errMessage = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : ('Error dispatching invoice via ' + currentSendChannel);
+          var resJson = xhr.responseJSON || {};
+          var errMessage = resJson.message || ('Error dispatching invoice via ' + currentSendChannel);
           if (statusAlert) {
-            statusAlert.textContent = errMessage;
+            if (currentSendChannel === 'whatsapp' && resJson.fallbackWaUrl) {
+              statusAlert.innerHTML = errMessage + ' <a href="' + resJson.fallbackWaUrl + '" target="_blank" class="alert-link ms-1">Open wa.me instead</a>';
+            } else {
+              statusAlert.textContent = errMessage;
+            }
             statusAlert.classList.remove('d-none');
           }
           if (typeof toastr !== 'undefined') {

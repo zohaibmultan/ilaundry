@@ -1021,7 +1021,7 @@
         </div>
 
         <div id="sendInvoiceMessageGroup" class="modal-form-group" style="display: none;">
-          <label class="modal-form-label" for="sendInvoiceMessagePreview">Message Preview (will open in WhatsApp chat):</label>
+          <label class="modal-form-label" for="sendInvoiceMessagePreview">Message Preview (editable before sending):</label>
           <textarea id="sendInvoiceMessagePreview" class="modal-form-textarea" rows="7"></textarea>
         </div>
 
@@ -1037,6 +1037,7 @@
 
       <div class="invoice-modal-footer">
         <button type="button" class="toolbar-btn btn-cancel" onclick="closeSendInvoiceModal()">Cancel</button>
+        <button type="button" class="toolbar-btn btn-cancel" id="sendInvoiceWaFallbackBtn" style="display: none;" onclick="openWhatsAppFallbackLink()">Open wa.me App</button>
         <button type="button" class="toolbar-btn btn-primary-print" id="sendInvoiceConfirmBtn" onclick="executeSendInvoice()">
           <span id="sendInvoiceConfirmBtnText">Send</span>
         </button>
@@ -1919,11 +1920,15 @@
       const msgPreview = document.getElementById("sendInvoiceMessagePreview");
       const confirmBtnText = document.getElementById("sendInvoiceConfirmBtnText");
       const confirmBtn = document.getElementById("sendInvoiceConfirmBtn");
+      const waFallbackBtn = document.getElementById("sendInvoiceWaFallbackBtn");
       const statusEl = document.getElementById("sendInvoiceModalStatus");
 
       if (statusEl) {
         statusEl.style.display = "none";
         statusEl.textContent = "";
+      }
+      if (waFallbackBtn) {
+        waFallbackBtn.style.display = (channel === 'whatsapp') ? "inline-flex" : "none";
       }
 
       if (channel === 'email') {
@@ -1947,14 +1952,14 @@
         confirmBtnText.textContent = "Send SMS";
         confirmBtn.className = "toolbar-btn btn-invoice";
       } else if (channel === 'whatsapp') {
-        titleEl.textContent = "WhatsApp Invoice";
-        noticeEl.innerHTML = "Review recipient number and message details, then click to open WhatsApp chat with pre-filled invoice message.";
+        titleEl.textContent = "WhatsApp Invoice (Open-WA)";
+        noticeEl.innerHTML = "Review phone number and message details, then send directly via Open-WA API (or use Open wa.me App as fallback).";
         labelEl.textContent = "Customer WhatsApp Phone Number:";
         inputEl.type = "tel";
         inputEl.value = (customerData && (customerData.number || customerData.mobile_no || customerData.phone)) ? (customerData.number || customerData.mobile_no || customerData.phone) : "";
-        inputEl.placeholder = "e.g. 15551234567";
+        inputEl.placeholder = "e.g. +17185550199 or 03225126622";
         msgGroup.style.display = "flex";
-        confirmBtnText.textContent = "Open in WhatsApp";
+        confirmBtnText.textContent = "Send via WhatsApp";
         confirmBtn.className = "toolbar-btn btn-whatsapp-invoice";
 
         try {
@@ -1975,7 +1980,7 @@
           console.warn("Could not load WhatsApp invoice preview:", err);
         } finally {
           confirmBtn.disabled = false;
-          confirmBtnText.textContent = "Open in WhatsApp";
+          confirmBtnText.textContent = "Send via WhatsApp";
         }
       }
 
@@ -1986,6 +1991,45 @@
     function closeSendInvoiceModal() {
       const overlay = document.getElementById("sendInvoiceModalOverlay");
       if (overlay) overlay.style.display = "none";
+    }
+
+    function openWhatsAppFallbackLink() {
+      const inputEl = document.getElementById("sendInvoiceRecipientInput");
+      const statusEl = document.getElementById("sendInvoiceModalStatus");
+      const updateCheck = document.getElementById("sendInvoiceUpdateCustomerCheck");
+      const msgPreview = document.getElementById("sendInvoiceMessagePreview");
+
+      const recipient = (inputEl ? inputEl.value : "").trim();
+      let cleanDigits = recipient.replace(/\D/g, "");
+      if (cleanDigits.length === 10) cleanDigits = "1" + cleanDigits;
+      else if (cleanDigits.length === 11 && cleanDigits.startsWith("03")) cleanDigits = "92" + cleanDigits.slice(1);
+      if (!cleanDigits) {
+        if (statusEl) {
+          statusEl.className = "modal-status-text error";
+          statusEl.textContent = "Please enter a valid phone number with digits.";
+          statusEl.style.display = "block";
+        }
+        return;
+      }
+
+      const msg = (msgPreview ? msgPreview.value : (currentWaPayload ? currentWaPayload.message : "Invoice details"));
+      const waUrl = "https://wa.me/" + cleanDigits + "?text=" + encodeURIComponent(msg);
+
+      fetch('/order/send-manual-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_id: orderData.id || '<%= order.id %>',
+          channel: 'whatsapp',
+          mode: 'wa_me_log',
+          recipient: recipient,
+          update_customer: updateCheck ? updateCheck.checked : false
+        })
+      }).catch(function(e) { console.warn("WhatsApp fallback log error:", e); });
+
+      closeSendInvoiceModal();
+      window.open(waUrl, '_blank');
+      showNotification("<b>WhatsApp Ready:</b> Chat window opened for " + recipient + ".", "success");
     }
 
     async function executeSendInvoice() {
@@ -2007,57 +2051,26 @@
         return;
       }
 
-      if (currentSendChannel === 'whatsapp') {
-        let cleanDigits = recipient.replace(/\D/g, "");
-        if (cleanDigits.length === 10) {
-          cleanDigits = "1" + cleanDigits;
-        }
-        if (!cleanDigits) {
-          if (statusEl) {
-            statusEl.className = "modal-status-text error";
-            statusEl.textContent = "Please enter a valid phone number with digits.";
-            statusEl.style.display = "block";
-          }
-          return;
-        }
-
-        const msg = (msgPreview ? msgPreview.value : (currentWaPayload ? currentWaPayload.message : "Invoice details"));
-        const waUrl = "https://wa.me/" + cleanDigits + "?text=" + encodeURIComponent(msg);
-
-        // Save contact update & notification log asynchronously
-        fetch('/order/send-manual-invoice', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            order_id: orderData.id || '<%= order.id %>',
-            channel: 'whatsapp',
-            recipient: recipient,
-            update_customer: updateCheck ? updateCheck.checked : false
-          })
-        }).catch(function(e) { console.warn("WhatsApp manual log error:", e); });
-
-        closeSendInvoiceModal();
-        window.open(waUrl, '_blank');
-        showNotification("<b>WhatsApp Ready:</b> Chat window opened for " + recipient + ".", "success");
-        return;
-      }
-
-      // Email or SMS dispatch via server
       const origText = confirmBtnText.textContent;
       confirmBtn.disabled = true;
       confirmBtnText.textContent = "Sending...";
       if (statusEl) statusEl.style.display = "none";
 
       try {
+        const payload = {
+          order_id: orderData.id || '<%= order.id %>',
+          channel: currentSendChannel,
+          recipient: recipient,
+          update_customer: updateCheck ? updateCheck.checked : false
+        };
+        if (currentSendChannel === 'whatsapp' && msgPreview) {
+          payload.message = msgPreview.value;
+        }
+
         const resp = await fetch('/order/send-manual-invoice', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            order_id: orderData.id || '<%= order.id %>',
-            channel: currentSendChannel,
-            recipient: recipient,
-            update_customer: updateCheck ? updateCheck.checked : false
-          })
+          body: JSON.stringify(payload)
         });
         const resData = await resp.json();
 
@@ -2065,7 +2078,16 @@
           closeSendInvoiceModal();
           showNotification("<b>Success:</b> " + (resData.message || 'Invoice dispatched successfully.'), "success");
         } else {
-          throw new Error((resData && resData.message) || ("Failed to dispatch invoice via " + currentSendChannel + "."));
+          const msg = (resData && resData.message) || ("Failed to dispatch invoice via " + currentSendChannel + ".");
+          if (statusEl) {
+            statusEl.className = "modal-status-text error";
+            if (currentSendChannel === 'whatsapp' && resData && resData.fallbackWaUrl) {
+              statusEl.innerHTML = msg + ' <a href="' + resData.fallbackWaUrl + '" target="_blank" style="color:#0369a1;text-decoration:underline;margin-left:6px;">Open wa.me instead</a>';
+            } else {
+              statusEl.textContent = msg;
+            }
+            statusEl.style.display = "block";
+          }
         }
       } catch (err) {
         console.error("Error sending manual invoice:", err);
