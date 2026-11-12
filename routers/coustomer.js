@@ -9,6 +9,134 @@ const { mySqlQury } = require("../middelwer/db");
 const { paginateDataTable } = require("../middelwer/dataTableHelper");
 const { dispatchCustomerNotification } = require("../services/notificationService");
 
+let customerCreatedAtReady = false;
+async function ensureCustomerCreatedAtSchema() {
+  if (customerCreatedAtReady) return;
+  try {
+    const cols = await DataFind("SHOW COLUMNS FROM tbl_customer LIKE 'created_at'");
+    if (!cols || cols.length === 0) {
+      await mySqlQury(
+        "ALTER TABLE tbl_customer ADD COLUMN created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP AFTER approved"
+      );
+    }
+    customerCreatedAtReady = true;
+  } catch (err) {
+    console.error("ensureCustomerCreatedAtSchema warning:", err.message);
+  }
+}
+
+function formatCustomerDisplayName(cust) {
+  const fName = cust.first_name || "";
+  const lName = cust.last_name || "";
+  if (lName && fName) return `${lName}, ${fName}`;
+  return cust.name || fName || lName || "";
+}
+
+function normalizeCustomerTypeMeta(rawType, rawCode, rawDesc) {
+  let typeName = String(rawType || "Counter • Counter").replace(/\s*&\s*/g, " • ").trim();
+  let typeCode = String(rawCode || "").replace(/\s*&\s*/g, " • ").trim();
+  let typeDesc = rawDesc || "";
+
+  if (!typeCode) {
+    if (typeName === "Counter • Counter" || typeName === "Counter & Counter") {
+      typeName = "Counter • Counter";
+      typeCode = "C • C";
+      typeDesc = typeDesc || "Customer will drop-off and customer will pickup";
+    } else if (
+      typeName === "Counter • Route" ||
+      typeName === "Counter & Route" ||
+      typeName === "Counter & Delivery" ||
+      typeName === "Customer drop-off & Store delivery"
+    ) {
+      typeCode = "C • R";
+      typeName = "Counter • Route";
+      typeDesc = typeDesc || "Customer will drop-off and store will deliver";
+    } else if (
+      typeName === "Route • Route" ||
+      typeName === "Route & Route" ||
+      typeName === "Pick-up & Delivery" ||
+      typeName === "Store collection & Store delivery"
+    ) {
+      typeCode = "R • R";
+      typeName = "Route • Route";
+      typeDesc = typeDesc || "Store will pickup and store will deliver";
+    } else if (
+      typeName === "Route • Counter" ||
+      typeName === "Route & Counter" ||
+      typeName === "Pick-up & Counter"
+    ) {
+      typeCode = "R • C";
+      typeName = "Route • Counter";
+      typeDesc = typeDesc || "Store will pickup and customer will pickup";
+    } else {
+      typeCode = "C • C";
+    }
+  }
+  return { typeName, typeCode, typeDesc };
+}
+
+async function resolveCustomerScope(req) {
+  const { id, roll, store, loginas } = req.user;
+  const accessdata = await access(req.user);
+
+  if (loginas == 0) {
+    const canSelfRead = Boolean(
+      (accessdata?.roll?.customer && accessdata.roll.customer.includes("read")) ||
+      (accessdata?.roll?.customers && accessdata.roll.customers.includes("read"))
+    );
+    return {
+      authorized: canSelfRead,
+      login: "customer",
+      accessdata,
+      storeId: store,
+      selfCustomerId: id,
+    };
+  }
+
+  const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
+  const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
+  const staffStoreId = isStaff ? adminData[0].store_ID : null;
+
+  const rolldetail = await DataFind(`
+    SELECT sr.*, r.roll_status, r.rollType
+    FROM tbl_staff_roll sr
+    JOIN tbl_roll r ON sr.main_roll_id = r.id
+    WHERE sr.id = ${roll}
+  `);
+
+  const hasRead = Boolean(accessdata?.roll?.customers && accessdata.roll.customers.includes("read"));
+
+  if (isStaff && staffStoreId) {
+    return {
+      authorized: hasRead,
+      login: rolldetail.length > 0 && rolldetail[0].rollType === "master" ? "master" : "store",
+      accessdata,
+      storeId: staffStoreId,
+      forceStoreScope: true,
+    };
+  }
+  if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "master" && hasRead) {
+    return {
+      authorized: true,
+      login: "master",
+      accessdata,
+      storeId: null,
+      forceStoreScope: false,
+    };
+  }
+  if (rolldetail && rolldetail.length > 0 && rolldetail[0].rollType === "store" && hasRead) {
+    return {
+      authorized: true,
+      login: "store",
+      accessdata,
+      storeId: store,
+      forceStoreScope: true,
+    };
+  }
+
+  return { authorized: false, login: "store", accessdata };
+}
+
 router.get("/list", auth, async (req, res) => {
   const { id, roll, store, loginas } = req.user;
   const accessdata = await access(req.user);
@@ -86,58 +214,27 @@ router.get("/list", auth, async (req, res) => {
 
 router.get("/list/data", auth, async (req, res) => {
   try {
-    const { id, roll, store, loginas } = req.user;
-    const accessdata = await access(req.user);
+    await ensureCustomerCreatedAtSchema();
+    const { loginas } = req.user;
+    const scope = await resolveCustomerScope(req);
+    const accessdata = scope.accessdata;
 
-    const multiy = await DataFind("SELECT type, customer_selection FROM tbl_master_shop");
-    const ismulty = multiy && multiy.length > 0 && multiy[0].type == 1 && multiy[0].customer_selection == 0;
+    if (!scope.authorized) {
+      return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
+    }
 
-    const adminData = await DataFind(`SELECT store_ID, is_staff FROM tbl_admin WHERE id = ${id}`);
-    const isStaff = adminData.length > 0 && adminData[0].is_staff != 0;
-    const staffStoreId = isStaff ? adminData[0].store_ID : null;
-
-    let login = "store";
-    let scopeConditions = [
+    const login = scope.login;
+    const scopeConditions = [
       "tbl_customer.delet_flage = 0",
       "tbl_customer.name != 'Walk in customer'",
       "(tbl_customer.username != '' OR tbl_customer.number != '' OR tbl_customer.email != '')"
     ];
 
-    if (loginas == 0) {
-      login = "customer";
-      scopeConditions.push(`tbl_customer.store_ID = '${store}'`);
-      scopeConditions.push(`tbl_customer.id = ${id}`);
-    } else {
-      const rolldetail = await DataFind(`
-        SELECT sr.*, r.roll_status, r.rollType
-        FROM tbl_staff_roll sr
-        JOIN tbl_roll r ON sr.main_roll_id = r.id
-        WHERE sr.id = ${roll}
-      `);
-
-      if (isStaff && staffStoreId) {
-        login = (rolldetail.length > 0 && rolldetail[0].rollType === "master") ? "master" : "store";
-        scopeConditions.push(`tbl_customer.store_ID = '${staffStoreId}'`);
-      } else if (
-        rolldetail &&
-        rolldetail.length > 0 &&
-        rolldetail[0].rollType === "master" &&
-        rolldetail[0].customers &&
-        rolldetail[0].customers.includes("read")
-      ) {
-        login = "master";
-      } else if (
-        rolldetail &&
-        rolldetail.length > 0 &&
-        rolldetail[0].rollType === "store" &&
-        rolldetail[0].customers &&
-        rolldetail[0].customers.includes("read")
-      ) {
-        login = "store";
-        scopeConditions.push(`tbl_customer.store_ID = '${store}'`);
-      } else {
-        return res.status(403).json({ draw: parseInt(req.query.draw) || 1, recordsTotal: 0, recordsFiltered: 0, data: [] });
-      }
+    if (login === "customer") {
+      scopeConditions.push(`tbl_customer.store_ID = '${scope.storeId}'`);
+      scopeConditions.push(`tbl_customer.id = ${scope.selfCustomerId}`);
+    } else if (scope.forceStoreScope && scope.storeId) {
+      scopeConditions.push(`tbl_customer.store_ID = '${scope.storeId}'`);
     }
 
     const filterConditions = [];
@@ -176,6 +273,8 @@ router.get("/list/data", auth, async (req, res) => {
 
     const result = await paginateDataTable(req, {
       select: `tbl_customer.*,
+               DATE_FORMAT(tbl_customer.dob, '%Y-%m-%d') AS dob_formatted,
+               DATE_FORMAT(tbl_customer.created_at, '%Y-%m-%d %H:%i:%s') AS created_at_formatted,
                COALESCE(tbl_store.name, '') AS store,
                COALESCE(tbl_customer_type.code, '') AS customer_type_code,
                COALESCE(tbl_customer_type.description, '') AS customer_type_description,
@@ -217,52 +316,28 @@ router.get("/list/data", auth, async (req, res) => {
       },
       postProcess: async (rows) => {
         return rows.map((cust) => {
-          const fName = cust.first_name || '';
-          const lName = cust.last_name || '';
-          const displayName = (lName && fName)
-            ? `${lName}, ${fName}`
-            : (cust.name || fName || lName || '');
-
-          let rawType = cust.customer_type || 'Counter • Counter';
-          let typeName = String(rawType).replace(/\s*&\s*/g, ' • ').trim();
-          let typeCode = (cust.customer_type_code || '').replace(/\s*&\s*/g, ' • ').trim();
-          let typeDesc = cust.customer_type_description || '';
-
-          if (!typeCode) {
-            if (typeName === 'Counter • Counter' || typeName === 'Counter & Counter') {
-              typeName = 'Counter • Counter';
-              typeCode = 'C • C';
-              typeDesc = typeDesc || 'Customer will drop-off and customer will pickup';
-            } else if (typeName === 'Counter • Route' || typeName === 'Counter & Route' || typeName === 'Counter & Delivery' || typeName === 'Customer drop-off & Store delivery') {
-              typeCode = 'C • R';
-              typeName = 'Counter • Route';
-              typeDesc = typeDesc || 'Customer will drop-off and store will deliver';
-            } else if (typeName === 'Route • Route' || typeName === 'Route & Route' || typeName === 'Pick-up & Delivery' || typeName === 'Store collection & Store delivery') {
-              typeCode = 'R • R';
-              typeName = 'Route • Route';
-              typeDesc = typeDesc || 'Store will pickup and store will deliver';
-            } else if (typeName === 'Route • Counter' || typeName === 'Route & Counter' || typeName === 'Pick-up & Counter') {
-              typeCode = 'R • C';
-              typeName = 'Route • Counter';
-              typeDesc = typeDesc || 'Store will pickup and customer will pickup';
-            } else {
-              typeCode = 'C • C';
-            }
-          }
+          const displayName = formatCustomerDisplayName(cust);
+          const { typeName, typeCode, typeDesc } = normalizeCustomerTypeMeta(
+            cust.customer_type,
+            cust.customer_type_code,
+            cust.customer_type_description
+          );
 
           return {
             id: cust.id,
             name: displayName,
-            first_name: fName,
-            last_name: lName,
+            first_name: cust.first_name || '',
+            last_name: cust.last_name || '',
             username: cust.username || '',
-            dob: cust.dob ? String(cust.dob).split('T')[0] : '',
+            dob: cust.dob_formatted || '',
+            created_at: cust.created_at_formatted || '',
             number: cust.number || '',
             email: cust.email || '',
             address: cust.address || '',
             city: cust.city || '',
             state: cust.state || '',
             zipcode: cust.zipcode || '',
+            memo: cust.memo || '',
             store: cust.store || '',
             taxnumber: cust.taxnumber || '',
             roll_id: cust.roll_id || '',
@@ -285,6 +360,143 @@ router.get("/list/data", auth, async (req, res) => {
   } catch (error) {
     console.error("Customer list data error:", error);
     return res.status(500).json({ error: error.message, data: [] });
+  }
+});
+
+// Get Complete Customer Details JSON (Modal Popup View)
+router.get("/detail/:id", auth, async (req, res) => {
+  try {
+    await ensureCustomerCreatedAtSchema();
+    const customerId = parseInt(req.params.id, 10);
+    if (!customerId || Number.isNaN(customerId) || customerId <= 0) {
+      return res.status(400).json({ success: false, message: "Invalid customer ID." });
+    }
+
+    const { loginas } = req.user;
+    const scope = await resolveCustomerScope(req);
+    if (!scope.authorized) {
+      return res.status(403).json({ success: false, message: "You do not have permission to view customer details." });
+    }
+
+    let whereClause = "tbl_customer.id = ? AND tbl_customer.delet_flage = 0";
+    const params = [customerId];
+
+    if (scope.login === "customer") {
+      whereClause += " AND tbl_customer.id = ? AND tbl_customer.store_ID = ?";
+      params.push(scope.selfCustomerId, scope.storeId);
+    } else if (scope.forceStoreScope && scope.storeId) {
+      whereClause += " AND tbl_customer.store_ID = ?";
+      params.push(scope.storeId);
+    }
+
+    const rows = await mySqlQury(
+      `SELECT tbl_customer.*,
+              DATE_FORMAT(tbl_customer.dob, '%Y-%m-%d') AS dob_formatted,
+              DATE_FORMAT(tbl_customer.created_at, '%Y-%m-%d %H:%i:%s') AS created_at_formatted,
+              COALESCE(tbl_store.name, '') AS store_name,
+              COALESCE(tbl_customer_type.code, '') AS customer_type_code,
+              COALESCE(tbl_customer_type.description, '') AS customer_type_description,
+              COALESCE(tbl_roll.roll, 'Customer') AS role_name,
+              (
+                SELECT COUNT(*)
+                FROM tbl_transections
+                WHERE tbl_transections.customer_id = tbl_customer.id
+              ) AS transiction
+       FROM tbl_customer
+       LEFT JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id
+       LEFT JOIN tbl_customer_type ON (tbl_customer.customer_type = tbl_customer_type.name OR tbl_customer.customer_type = tbl_customer_type.code)
+       LEFT JOIN tbl_roll ON tbl_customer.main_roll_id = tbl_roll.id
+       WHERE ${whereClause}
+       LIMIT 1`,
+      params
+    );
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Customer not found or outside your store scope." });
+    }
+
+    const cust = rows[0];
+    const orderStatsRows = await mySqlQury(
+      `SELECT
+         COUNT(CASE WHEN order_status NOT IN (6, 8, 9) THEN 1 END) AS total_orders,
+         COUNT(CASE WHEN order_status = 9 THEN 1 END) AS submitted_requests,
+         COALESCE(SUM(CASE WHEN order_status NOT IN (6, 8, 9) THEN gross_total ELSE 0 END), 0) AS total_spent,
+         COALESCE(SUM(CASE WHEN order_status NOT IN (6, 8, 9) THEN paid_amount ELSE 0 END), 0) AS total_paid,
+         COALESCE(SUM(CASE WHEN order_status NOT IN (6, 8, 9) THEN balance_amount ELSE 0 END), 0) AS balance_due,
+         DATE_FORMAT(MAX(CASE WHEN order_status NOT IN (6, 8) THEN order_date END), '%Y-%m-%d %H:%i:%s') AS last_order_date
+       FROM tbl_order
+       WHERE CAST(customer_id AS UNSIGNED) = ?`,
+      [customerId]
+    );
+    const stats = (orderStatsRows && orderStatsRows[0]) ? orderStatsRows[0] : {};
+
+    const accessdata = scope.accessdata;
+    const canEdit = Boolean(
+      (accessdata?.logas === "custmor" && accessdata?.roll?.customer?.includes("edit")) ||
+      (accessdata?.roll?.customers && accessdata.roll.customers.includes("edit"))
+    );
+    const canResetCredentials = Boolean(
+      loginas != 0 &&
+      accessdata?.roll?.customer_credentials &&
+      accessdata.roll.customer_credentials.includes("edit")
+    );
+
+    const { typeName, typeCode, typeDesc } = normalizeCustomerTypeMeta(
+      cust.customer_type,
+      cust.customer_type_code,
+      cust.customer_type_description
+    );
+
+    const addrParts = [cust.address, cust.city, cust.state, cust.zipcode]
+      .map((s) => (s ? String(s).trim() : ""))
+      .filter(Boolean);
+
+    return res.status(200).json({
+      success: true,
+      currency_symbol: accessdata?.symbol || "$",
+      currency_placement: Number(accessdata?.plac || 0),
+      customer: {
+        id: cust.id,
+        name: formatCustomerDisplayName(cust),
+        first_name: cust.first_name || "",
+        last_name: cust.last_name || "",
+        username: cust.username || "",
+        number: cust.number || "",
+        email: cust.email || "",
+        dob: cust.dob_formatted || "",
+        created_at: cust.created_at_formatted || "",
+        address: cust.address || "",
+        city: cust.city || "",
+        state: cust.state || "",
+        zipcode: cust.zipcode || "",
+        full_address: addrParts.join(", "),
+        customer_type: typeName,
+        customer_type_code: typeCode,
+        customer_type_description: typeDesc,
+        memo: cust.memo || "",
+        taxnumber: cust.taxnumber || "",
+        store_id: cust.store_ID || "",
+        store_name: cust.store_name || "",
+        role_name: cust.role_name || "Customer",
+        roll_id: cust.main_roll_id || cust.roll_id || "",
+        approved: Number(cust.approved) === 1 ? 1 : 0,
+        active: String(cust.delet_flage) === "0",
+        transiction: parseInt(cust.transiction, 10) || 0,
+        canEdit,
+        canResetCredentials,
+        stats: {
+          total_orders: parseInt(stats.total_orders, 10) || 0,
+          submitted_requests: parseInt(stats.submitted_requests, 10) || 0,
+          total_spent: Number(stats.total_spent || 0).toFixed(2),
+          total_paid: Number(stats.total_paid || 0).toFixed(2),
+          balance_due: Number(stats.balance_due || 0).toFixed(2),
+          last_order_date: stats.last_order_date || "",
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Customer detail error:", error);
+    return res.status(500).json({ success: false, message: "Failed to load customer details." });
   }
 });
 
