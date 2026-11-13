@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <%- include('templet/meta')-%>
+    <style>
+        .filter-section {
+            position: relative !important;
+            z-index: 1050 !important;
+            overflow: visible !important;
+        }
+        .filter-section .bootstrap-select {
+            width: 100% !important;
+            position: relative !important;
+            z-index: 1055 !important;
+        }
+        .filter-section .bootstrap-select .dropdown-menu {
+            z-index: 1060 !important;
+        }
+        .kpi-row {
+            position: relative;
+            z-index: 1;
+        }
+        @media print {
+            .nav-header, .header, .deznav, .footer, .filter-section, .btn-print, .btn, .no-print {
+                display: none !important;
+            }
+            .content-body {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .container-fluid {
+                padding: 0 !important;
+            }
+            .card {
+                border: 0 !important;
+                box-shadow: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('templet/preloder_topbar_sidebar', { titel: accessdata?.topbardata?.name })-%>
+
+    <div class="content-body">
+        <div class="container-fluid" style="min-height: 100vh;">
+            <!-- Page Header & Filter Card -->
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
+                            <i class="fa fa-paper-plane text-primary me-2"></i><%= language.Communication_Logs_Report || 'Communication Logs Report' %>
+                        </h3>
+                        <small class="text-muted"><%= language.Communication_Logs_Subtitle || 'Audit trail of multichannel messages (WhatsApp, Email, SMS) with delivery status' %></small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" onclick="window.print()" class="btn btn-sm btn-outline-secondary">
+                            <i class="fa fa-print me-1"></i><%= language.Print || 'Print' %>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filter Controls Bar -->
+                <div class="card-body p-3 p-md-4 border-bottom bg-light-subtle filter-section">
+                    <div class="row g-2 g-lg-3 align-items-end">
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <label class="form-label fs-12 fw-semibold text-muted mb-1"><%= language.Start_Date || 'Start Date' %></label>
+                            <input type="date" class="form-control form-control-sm" id="reportStartDate" value="<%= startdate %>">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <label class="form-label fs-12 fw-semibold text-muted mb-1"><%= language.End_Date || 'End Date' %></label>
+                            <input type="date" class="form-control form-control-sm" id="reportEndDate" value="<%= enddate %>">
+                        </div>
+                        <% if (isMaster) { %>
+                        <div class="col-12 col-sm-6 col-md-2">
+                            <label class="form-label fs-12 fw-semibold text-muted mb-1"><%= language.Store || 'Store' %></label>
+                            <select class="form-select form-select-sm" id="reportStoreSelect">
+                                <option value="0" <%= store == 0 ? 'selected' : '' %>>All Stores</option>
+                                <% (storeList || []).forEach(function(s) { %>
+                                <option value="<%= s.id %>" <%= store == s.id ? 'selected' : '' %>><%= s.name %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        <% } else { %>
+                        <input type="hidden" id="reportStoreSelect" value="<%= store %>">
+                        <% } %>
+                        <div class="col-6 col-sm-3 col-md-2">
+                            <label class="form-label fs-12 fw-semibold text-muted mb-1">Channel</label>
+                            <select class="form-select form-select-sm" id="reportChannelSelect">
+                                <option value="all">All Channels</option>
+                                <option value="whatsapp">WhatsApp</option>
+                                <option value="email">Email</option>
+                                <option value="sms">SMS</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-sm-3 col-md-2">
+                            <label class="form-label fs-12 fw-semibold text-muted mb-1">Status</label>
+                            <select class="form-select form-select-sm" id="reportStatusSelect">
+                                <option value="all">All Statuses</option>
+                                <option value="sent">Sent</option>
+                                <option value="failed">Failed</option>
+                                <option value="skipped">Skipped</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI Metric Summary Row -->
+                <div class="card-body p-3 p-md-4">
+                    <div class="row g-3 kpi-row mb-4">
+                        <div class="col-6 col-md-3">
+                            <div class="p-3 rounded-3 border bg-light-subtle h-100 d-flex align-items-center gap-3">
+                                <div class="p-2 rounded-circle bg-primary-subtle text-primary border border-primary-subtle d-inline-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                                    <i class="fa fa-paper-plane fs-5"></i>
+                                </div>
+                                <div>
+                                    <h4 class="fw-bold mb-0 text-dark-emphasis" id="comm_report_total">0</h4>
+                                    <div class="text-muted fs-12">Total Dispatches</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-6 col-md-3">
+                            <div class="p-3 rounded-3 border bg-light-subtle h-100 d-flex align-items-center gap-3">
+                                <div class="p-2 rounded-circle bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                                    <i class="fa fa-check-circle fs-5"></i>
+                                </div>
+                                <div>
+                                    <h4 class="fw-bold mb-0 text-success" id="comm_report_sent">0</h4>
+                                    <div class="text-muted fs-12">Sent Successfully</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-6 col-md-3">
+                            <div class="p-3 rounded-3 border bg-light-subtle h-100 d-flex align-items-center gap-3">
+                                <div class="p-2 rounded-circle bg-danger-subtle text-danger border border-danger-subtle d-inline-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                                    <i class="fa fa-times-circle fs-5"></i>
+                                </div>
+                                <div>
+                                    <h4 class="fw-bold mb-0 text-danger" id="comm_report_failed">0</h4>
+                                    <div class="text-muted fs-12">Failed Deliveries</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-6 col-md-3">
+                            <div class="p-3 rounded-3 border bg-light-subtle h-100 d-flex align-items-center gap-3">
+                                <div class="p-2 rounded-circle bg-secondary-subtle text-secondary border border-secondary-subtle d-inline-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                                    <i class="fa fa-ban fs-5"></i>
+                                </div>
+                                <div>
+                                    <h4 class="fw-bold mb-0 text-secondary" id="comm_report_skipped">0</h4>
+                                    <div class="text-muted fs-12">Skipped (Print Only)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DataTable Toolbar -->
+                    <div class="row g-2 mb-3 align-items-center justify-content-between">
+                        <div class="col-12 col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
+                                <input class="form-control" type="search" id="dtReportCommSearch" placeholder="Search recipient, order, customer, error message...">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3 text-md-end">
+                            <select class="form-select d-inline-block w-auto" id="dtReportCommLength">
+                                <option value="10">10 entries</option>
+                                <option value="25">25 entries</option>
+                                <option value="50">50 entries</option>
+                                <option value="100">100 entries</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Server-Side DataTable -->
+                    <div class="table-responsive">
+                        <table id="report_comm_logs_table" class="table display server-side-dt align-middle" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 130px;">Date & Time</th>
+                                    <th>Store</th>
+                                    <th style="width: 110px;">Order</th>
+                                    <th>Customer</th>
+                                    <th style="width: 110px;">Channel</th>
+                                    <th style="width: 90px;">Pref</th>
+                                    <th style="width: 80px;">Mode</th>
+                                    <th>Recipient</th>
+                                    <th style="width: 100px;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('templet/footer')-%>
+    <%- include('templet/script')-%>
+
+    <script>
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#039;');
+        }
+
+        $(document).ready(function() {
+            const columns = [
+                {
+                    data: 'created_at',
+                    render: function(data) {
+                        if (!data) return '<span class="text-muted">-</span>';
+                        const d = new Date(data);
+                        return `<span class="text-muted text-nowrap">${d.toLocaleDateString()} <small>${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small></span>`;
+                    }
+                },
+                {
+                    data: 'store_name',
+                    render: function(data) {
+                        return `<span class="text-dark small">${escapeHtml(data || 'Main Store')}</span>`;
+                    }
+                },
+                {
+                    data: 'order_code',
+                    render: function(data, type, row) {
+                        if (!data) return '<span class="text-muted">-</span>';
+                        if (row.order_id) {
+                            return `<a href="/order/view/${row.order_id}" class="fw-bold text-primary font-monospace">#${escapeHtml(data)}</a>`;
+                        }
+                        return `<span class="fw-bold font-monospace">#${escapeHtml(data)}</span>`;
+                    }
+                },
+                {
+                    data: 'customer_name',
+                    render: function(data) {
+                        return `<span class="fw-semibold text-dark">${escapeHtml(data || 'Walk-in Customer')}</span>`;
+                    }
+                },
+                {
+                    data: 'channel',
+                    render: function(data) {
+                        const ch = String(data || '').toLowerCase();
+                        if (ch === 'whatsapp') {
+                            return '<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fab fa-whatsapp me-1"></i>WhatsApp</span>';
+                        } else if (ch === 'email') {
+                            return '<span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="fa fa-envelope me-1"></i>Email</span>';
+                        } else if (ch === 'sms') {
+                            return '<span class="badge bg-info-subtle text-info border border-info-subtle"><i class="fa fa-comment me-1"></i>SMS</span>';
+                        }
+                        return `<span class="badge bg-light text-muted border">${escapeHtml(data || '-')}</span>`;
+                    }
+                },
+                {
+                    data: 'preference_code',
+                    render: function(data) {
+                        const code = String(data || 'not_set').toLowerCase();
+                        return `<span class="badge bg-light text-dark border text-uppercase" style="font-size:10px;">${escapeHtml(code)}</span>`;
+                    }
+                },
+                {
+                    data: 'dispatch_mode',
+                    render: function(data) {
+                        return `<span class="small text-muted text-uppercase">${escapeHtml(data || 'auto')}</span>`;
+                    }
+                },
+                {
+                    data: 'recipient',
+                    render: function(data, type, row) {
+                        if (!data) return '<span class="text-muted">-</span>';
+                        const tip = escapeHtml(row.error_message || row.subject || row.message_preview || '');
+                        return `<span class="font-monospace text-truncate d-inline-block" style="max-width:180px;" title="${tip}">${escapeHtml(data)}</span>`;
+                    }
+                },
+                {
+                    data: 'status',
+                    render: function(data, type, row) {
+                        const st = String(data || '').toLowerCase();
+                        if (st === 'sent') {
+                            return '<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fa fa-check me-1"></i>Sent</span>';
+                        } else if (st === 'failed') {
+                            const err = escapeHtml(row.error_message || 'Delivery failed');
+                            return `<span class="badge bg-danger-subtle text-danger border border-danger-subtle" title="${err}"><i class="fa fa-times me-1"></i>Failed</span>`;
+                        } else {
+                            return '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Skipped</span>';
+                        }
+                    }
+                }
+            ];
+
+            const dtTable = window.initServerDataTable('#report_comm_logs_table', {
+                ajaxUrl: '/report/communication-logs/data',
+                columns: columns,
+                searchInput: '#dtReportCommSearch',
+                pageLengthSelect: '#dtReportCommLength',
+                filterSelectors: {
+                    start_date: '#reportStartDate',
+                    end_date: '#reportEndDate',
+                    store_id: '#reportStoreSelect',
+                    channel: '#reportChannelSelect',
+                    status: '#reportStatusSelect'
+                },
+                order: [[0, 'desc']],
+                language: {
+                    emptyTable: 'No communication logs recorded for selected criteria'
+                }
+            });
+
+            // Sync KPI cards with ajax return
+            $('#report_comm_logs_table').on('xhr.dt', function(e, settings, json) {
+                if (json && json.kpi) {
+                    $('#comm_report_total').text(json.kpi.total_dispatches || 0);
+                    $('#comm_report_sent').text(json.kpi.total_sent || 0);
+                    $('#comm_report_failed').text(json.kpi.total_failed || 0);
+                    $('#comm_report_skipped').text(json.kpi.total_skipped || 0);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

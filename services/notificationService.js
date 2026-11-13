@@ -47,6 +47,231 @@ async function ensureSettingsTable() {
   }
 }
 
+let commLogsTableVerified = false;
+
+async function ensureCommunicationLogsTable() {
+  if (commLogsTableVerified) return;
+  try {
+    const promiseConn = conn.promise();
+    await promiseConn.query(`
+      CREATE TABLE IF NOT EXISTS tbl_communication_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        store_id INT NOT NULL DEFAULT 0,
+        order_id INT NULL DEFAULT NULL,
+        order_code VARCHAR(60) NULL DEFAULT NULL,
+        customer_id INT NULL DEFAULT NULL,
+        customer_name VARCHAR(150) NULL DEFAULT NULL,
+        preference_id INT NULL DEFAULT NULL,
+        preference_code VARCHAR(30) NULL DEFAULT NULL,
+        event_key VARCHAR(60) NOT NULL DEFAULT 'order_placed',
+        channel VARCHAR(20) NOT NULL,
+        dispatch_mode VARCHAR(20) NOT NULL DEFAULT 'auto',
+        recipient VARCHAR(150) NULL DEFAULT NULL,
+        subject VARCHAR(255) NULL DEFAULT NULL,
+        message_preview TEXT NULL,
+        status VARCHAR(20) NOT NULL,
+        provider VARCHAR(40) NULL DEFAULT NULL,
+        provider_message_id VARCHAR(150) NULL DEFAULT NULL,
+        error_message VARCHAR(500) NULL DEFAULT NULL,
+        triggered_by VARCHAR(80) NULL DEFAULT NULL,
+        source_page VARCHAR(40) NULL DEFAULT 'pos',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_comm_log_order (order_id),
+        INDEX idx_comm_log_customer (customer_id),
+        INDEX idx_comm_log_store_date (store_id, created_at),
+        INDEX idx_comm_log_channel_status (channel, status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+    commLogsTableVerified = true;
+  } catch (e) {
+    console.error("Warning: ensureCommunicationLogsTable failed:", e.message);
+  }
+}
+
+async function recordCommunicationLog({
+  storeId = 0,
+  orderId = null,
+  orderCode = null,
+  customerId = null,
+  customerName = null,
+  preferenceId = null,
+  preferenceCode = null,
+  eventKey = 'order_placed',
+  channel = 'none',
+  dispatchMode = 'auto',
+  recipient = null,
+  subject = null,
+  messagePreview = null,
+  status = 'sent',
+  provider = null,
+  providerMessageId = null,
+  errorMessage = null,
+  triggeredBy = null,
+  sourcePage = 'pos'
+} = {}) {
+  try {
+    await ensureCommunicationLogsTable();
+    const promiseConn = conn.promise();
+    const cleanStoreId = parseInt(storeId, 10) || 0;
+    const cleanOrderId = orderId ? (parseInt(orderId, 10) || null) : null;
+    const cleanOrderCode = orderCode ? String(orderCode).trim().slice(0, 60) : null;
+    const cleanCustId = customerId ? (parseInt(customerId, 10) || null) : null;
+    const cleanCustName = customerName ? String(customerName).trim().slice(0, 150) : null;
+    const cleanPrefId = preferenceId ? (parseInt(preferenceId, 10) || null) : null;
+    const cleanPrefCode = preferenceCode ? String(preferenceCode).toLowerCase().trim().slice(0, 30) : null;
+    const cleanEventKey = eventKey ? String(eventKey).trim().slice(0, 60) : 'order_placed';
+    const cleanChannel = channel ? String(channel).toLowerCase().trim().slice(0, 20) : 'none';
+    const cleanMode = dispatchMode ? String(dispatchMode).toLowerCase().trim().slice(0, 20) : 'auto';
+    const cleanRecipient = recipient ? String(recipient).trim().slice(0, 150) : null;
+    const cleanSubject = subject ? String(subject).trim().slice(0, 255) : null;
+    const cleanPreview = messagePreview ? String(messagePreview).slice(0, 1000) : null;
+    const cleanStatus = status ? String(status).toLowerCase().trim().slice(0, 20) : 'sent';
+    const cleanProvider = provider ? String(provider).trim().slice(0, 40) : null;
+    const cleanMsgId = providerMessageId ? String(providerMessageId).trim().slice(0, 150) : null;
+    const cleanError = errorMessage ? String(errorMessage).trim().slice(0, 500) : null;
+    const cleanTriggered = triggeredBy ? String(triggeredBy).trim().slice(0, 80) : null;
+    const cleanSource = sourcePage ? String(sourcePage).trim().slice(0, 40) : 'pos';
+
+    const [insertResult] = await promiseConn.query(
+      `INSERT INTO tbl_communication_logs
+        (store_id, order_id, order_code, customer_id, customer_name, preference_id, preference_code,
+         event_key, channel, dispatch_mode, recipient, subject, message_preview, status,
+         provider, provider_message_id, error_message, triggered_by, source_page)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        cleanStoreId, cleanOrderId, cleanOrderCode, cleanCustId, cleanCustName, cleanPrefId, cleanPrefCode,
+        cleanEventKey, cleanChannel, cleanMode, cleanRecipient, cleanSubject, cleanPreview, cleanStatus,
+        cleanProvider, cleanMsgId, cleanError, cleanTriggered, cleanSource
+      ]
+    );
+    return insertResult ? insertResult.insertId : null;
+  } catch (err) {
+    console.error("Error in recordCommunicationLog:", err.message);
+    return null;
+  }
+}
+
+async function hasOrderChannelAlreadySent(arg1, arg2) {
+  let orderId = null;
+  let orderCode = null;
+  let channel = null;
+
+  if (typeof arg1 === "object" && arg1 !== null) {
+    orderId = arg1.orderId;
+    orderCode = arg1.orderCode;
+    channel = arg1.channel;
+  } else {
+    orderId = arg1;
+    channel = arg2;
+  }
+
+  if (!channel || (!orderId && !orderCode)) return false;
+  try {
+    await ensureCommunicationLogsTable();
+    const promiseConn = conn.promise();
+    let where = "channel = ? AND status = 'sent'";
+    const params = [String(channel).toLowerCase().trim()];
+    if (orderId && orderCode) {
+      where += " AND (order_id = ? OR order_code = ?)";
+      params.push(orderId, orderCode);
+    } else if (orderId) {
+      where += " AND order_id = ?";
+      params.push(orderId);
+    } else {
+      where += " AND order_code = ?";
+      params.push(orderCode);
+    }
+    const [rows] = await promiseConn.query(`SELECT id FROM tbl_communication_logs WHERE ${where} LIMIT 1`, params);
+    return Boolean(rows && rows.length > 0);
+  } catch (err) {
+    console.error("hasOrderChannelAlreadySent error:", err);
+    return false;
+  }
+}
+
+async function getOrderCommunicationLogs(orderIdOrCode) {
+  if (!orderIdOrCode) return [];
+  try {
+    await ensureCommunicationLogsTable();
+    const promiseConn = conn.promise();
+    const clean = String(orderIdOrCode).trim();
+    const [rows] = await promiseConn.query(
+      `SELECT * FROM tbl_communication_logs
+       WHERE order_id = ? OR order_code = ?
+       ORDER BY id DESC LIMIT 50`,
+      [clean, clean]
+    );
+    return rows || [];
+  } catch (err) {
+    console.error("getOrderCommunicationLogs error:", err);
+    return [];
+  }
+}
+
+async function getCustomerCommunicationLogs(customerId, limit = 20) {
+  if (!customerId) return [];
+  try {
+    await ensureCommunicationLogsTable();
+    const promiseConn = conn.promise();
+    const [rows] = await promiseConn.query(
+      `SELECT * FROM tbl_communication_logs
+       WHERE customer_id = ?
+       ORDER BY id DESC LIMIT ?`,
+      [parseInt(customerId, 10) || 0, parseInt(limit, 10) || 20]
+    );
+    return rows || [];
+  } catch (err) {
+    console.error("getCustomerCommunicationLogs error:", err);
+    return [];
+  }
+}
+
+async function resolveCustomerCommunicationPreference(customerObjOrId) {
+  if (!customerObjOrId || customerObjOrId === "0" || customerObjOrId === 0) {
+    return { preferenceId: null, preferenceCode: 'not_set', preferenceName: 'Not Set', isPrintOnly: true };
+  }
+  let prefId = null;
+  if (typeof customerObjOrId === "object") {
+    prefId = customerObjOrId.communication_preference_id;
+  } else {
+    try {
+      const promiseConn = conn.promise();
+      const [cRows] = await promiseConn.query(
+        `SELECT communication_preference_id FROM tbl_customer WHERE id = ? LIMIT 1`,
+        [customerObjOrId]
+      );
+      if (cRows && cRows.length > 0) {
+        prefId = cRows[0].communication_preference_id;
+      }
+    } catch (err) {
+      console.error("resolveCustomerCommunicationPreference customer lookup error:", err);
+    }
+  }
+
+  if (!prefId || String(prefId) === '0' || String(prefId).trim() === '') {
+    return { preferenceId: null, preferenceCode: 'not_set', preferenceName: 'Not Set', isPrintOnly: true };
+  }
+  try {
+    const promiseConn = conn.promise();
+    const [rows] = await promiseConn.query(
+      `SELECT id, code, name FROM tbl_communication_preferences WHERE id = ? LIMIT 1`,
+      [parseInt(prefId, 10)]
+    );
+    if (rows && rows.length > 0) {
+      const code = String(rows[0].code || '').toLowerCase().trim();
+      return {
+        preferenceId: rows[0].id,
+        preferenceCode: code,
+        preferenceName: rows[0].name || 'Not Set',
+        isPrintOnly: code === 'print' || code === 'not_set'
+      };
+    }
+  } catch (err) {
+    console.error("resolveCustomerCommunicationPreference error:", err);
+  }
+  return { preferenceId: null, preferenceCode: 'not_set', preferenceName: 'Not Set', isPrintOnly: true };
+}
+
 /**
  * Supported Dynamic Template Variables (Merge Tags)
  */
@@ -1579,6 +1804,8 @@ function buildNotificationContent({ eventKey, customer, store, master, order, it
 
 /**
  * Main Dispatcher: Checks Notification Settings and sends Email, SMS, WhatsApp (Open-WA), and Push
+ * Respects customer's saved communication preference (Print, Email, SMS, Chat, or Not Set)
+ * and records full audit entries in tbl_communication_logs.
  */
 async function dispatchCustomerNotification({
   eventKey,
@@ -1591,7 +1818,11 @@ async function dispatchCustomerNotification({
   forceSms = false,
   forceWhatsapp = false,
   overrideRecipient = null,
-  customMessage = null
+  customMessage = null,
+  dispatchMode = 'auto',
+  triggeredBy = null,
+  sourcePage = 'pos',
+  skipPreferenceCheck = false
 }) {
   try {
     let orderObj = null;
@@ -1635,15 +1866,6 @@ async function dispatchCustomerNotification({
     const settings = await getEffectiveNotificationSettings(effectiveStoreId);
     const eventCfg = settings.events[eventKey] || { email: false, sms: false, whatsapp: false };
 
-    const shouldSendEmail = Boolean(forceEmail || (settings.email_enabled && eventCfg.email));
-    const shouldSendSms = Boolean(forceSms || (settings.sms_enabled && eventCfg.sms));
-    const shouldSendWhatsapp = Boolean(forceWhatsapp || (settings.whatsapp_enabled && eventCfg.whatsapp));
-    const shouldSendPush = Boolean(!forceEmail && !forceSms && !forceWhatsapp && settings.push_enabled);
-
-    if (!shouldSendEmail && !shouldSendSms && !shouldSendWhatsapp && !shouldSendPush) {
-      return { sentEmail: false, sentSms: false, sentWhatsapp: false, sentPush: false, skipped: true };
-    }
-
     let customerObj = null;
     if (customerId && String(customerId) !== "0") {
       const cleanCustId = String(customerId).trim().replace(/'/g, "\\'");
@@ -1653,6 +1875,175 @@ async function dispatchCustomerNotification({
       }
     }
 
+    const isWalkIn = !customerObj ||
+      (customerObj.name && customerObj.name.toLowerCase().includes("walk in")) ||
+      (customerObj.name && customerObj.name.toLowerCase().includes("walkin"));
+
+    const pref = await resolveCustomerCommunicationPreference(customerObj);
+    const isManualForce = Boolean(forceEmail || forceSms || forceWhatsapp || skipPreferenceCheck);
+
+    let shouldSendEmail = Boolean(forceEmail || (settings.email_enabled && eventCfg.email));
+    let shouldSendSms = Boolean(forceSms || (settings.sms_enabled && eventCfg.sms));
+    let shouldSendWhatsapp = Boolean(forceWhatsapp || (settings.whatsapp_enabled && eventCfg.whatsapp));
+    const shouldSendPush = Boolean(!isManualForce && settings.push_enabled);
+
+    // Apply strict preference check during automated flows
+    if (!isManualForce) {
+      if (isWalkIn || pref.preferenceCode === 'not_set') {
+        const skipReason = isWalkIn
+          ? 'Walk-in customer — auto-messaging skipped'
+          : 'Customer has no communication preference set — auto-messaging skipped (Print / manual send only)';
+        await recordCommunicationLog({
+          storeId: effectiveStoreId,
+          orderId: orderObj ? orderObj.id : (orderId || null),
+          orderCode: orderObj ? orderObj.order_id : null,
+          customerId: customerObj ? customerObj.id : (customerId || null),
+          customerName: customerObj ? customerObj.name : 'Walk-in Customer',
+          preferenceId: pref.preferenceId,
+          preferenceCode: pref.preferenceCode,
+          eventKey,
+          channel: 'none',
+          dispatchMode,
+          status: 'skipped',
+          provider: 'none',
+          errorMessage: skipReason,
+          triggeredBy,
+          sourcePage
+        });
+        return {
+          sentEmail: false,
+          sentSms: false,
+          sentWhatsapp: false,
+          sentPush: false,
+          skipped: true,
+          preference: pref,
+          reason: isWalkIn ? 'walk_in' : 'not_set',
+          message: skipReason
+        };
+      }
+
+      if (pref.preferenceCode === 'print') {
+        const skipReason = 'Customer communication preference is Print (paper receipt only)';
+        await recordCommunicationLog({
+          storeId: effectiveStoreId,
+          orderId: orderObj ? orderObj.id : (orderId || null),
+          orderCode: orderObj ? orderObj.order_id : null,
+          customerId: customerObj ? customerObj.id : (customerId || null),
+          customerName: customerObj ? customerObj.name : 'Customer',
+          preferenceId: pref.preferenceId,
+          preferenceCode: pref.preferenceCode,
+          eventKey,
+          channel: 'print',
+          dispatchMode,
+          status: 'skipped',
+          provider: 'none',
+          errorMessage: skipReason,
+          triggeredBy,
+          sourcePage
+        });
+        return {
+          sentEmail: false,
+          sentSms: false,
+          sentWhatsapp: false,
+          sentPush: false,
+          skipped: true,
+          preference: pref,
+          reason: 'print_preference',
+          message: skipReason
+        };
+      }
+
+      if (pref.preferenceCode === 'email') {
+        shouldSendEmail = Boolean(settings.email_enabled && eventCfg.email);
+        shouldSendSms = false;
+        shouldSendWhatsapp = false;
+        if (!shouldSendEmail) {
+          const skipReason = !settings.email_enabled
+            ? 'Email delivery is disabled in Notification Settings'
+            : `Email is turned off for event '${eventKey}' in Notification Settings`;
+          await recordCommunicationLog({
+            storeId: effectiveStoreId,
+            orderId: orderObj ? orderObj.id : (orderId || null),
+            orderCode: orderObj ? orderObj.order_id : null,
+            customerId: customerObj ? customerObj.id : (customerId || null),
+            customerName: customerObj ? customerObj.name : 'Customer',
+            preferenceId: pref.preferenceId,
+            preferenceCode: pref.preferenceCode,
+            eventKey,
+            channel: 'email',
+            dispatchMode,
+            recipient: customerObj ? customerObj.email : null,
+            status: 'skipped',
+            provider: 'smtp',
+            errorMessage: skipReason,
+            triggeredBy,
+            sourcePage
+          });
+          return { sentEmail: false, sentSms: false, sentWhatsapp: false, sentPush: false, skipped: true, preference: pref, reason: 'channel_disabled', message: skipReason };
+        }
+      } else if (pref.preferenceCode === 'sms') {
+        shouldSendSms = Boolean(settings.sms_enabled && eventCfg.sms);
+        shouldSendEmail = false;
+        shouldSendWhatsapp = false;
+        if (!shouldSendSms) {
+          const skipReason = !settings.sms_enabled
+            ? 'SMS delivery is disabled in Notification Settings'
+            : `SMS is turned off for event '${eventKey}' in Notification Settings`;
+          await recordCommunicationLog({
+            storeId: effectiveStoreId,
+            orderId: orderObj ? orderObj.id : (orderId || null),
+            orderCode: orderObj ? orderObj.order_id : null,
+            customerId: customerObj ? customerObj.id : (customerId || null),
+            customerName: customerObj ? customerObj.name : 'Customer',
+            preferenceId: pref.preferenceId,
+            preferenceCode: pref.preferenceCode,
+            eventKey,
+            channel: 'sms',
+            dispatchMode,
+            recipient: customerObj ? customerObj.number : null,
+            status: 'skipped',
+            provider: 'twilio',
+            errorMessage: skipReason,
+            triggeredBy,
+            sourcePage
+          });
+          return { sentEmail: false, sentSms: false, sentWhatsapp: false, sentPush: false, skipped: true, preference: pref, reason: 'channel_disabled', message: skipReason };
+        }
+      } else if (pref.preferenceCode === 'chat') {
+        shouldSendWhatsapp = Boolean(settings.whatsapp_enabled && eventCfg.whatsapp);
+        shouldSendEmail = false;
+        shouldSendSms = false;
+        if (!shouldSendWhatsapp) {
+          const skipReason = !settings.whatsapp_enabled
+            ? 'WhatsApp delivery is disabled in Notification Settings'
+            : `WhatsApp is turned off for event '${eventKey}' in Notification Settings`;
+          await recordCommunicationLog({
+            storeId: effectiveStoreId,
+            orderId: orderObj ? orderObj.id : (orderId || null),
+            orderCode: orderObj ? orderObj.order_id : null,
+            customerId: customerObj ? customerObj.id : (customerId || null),
+            customerName: customerObj ? customerObj.name : 'Customer',
+            preferenceId: pref.preferenceId,
+            preferenceCode: pref.preferenceCode,
+            eventKey,
+            channel: 'whatsapp',
+            dispatchMode,
+            recipient: customerObj ? customerObj.number : null,
+            status: 'skipped',
+            provider: 'openwa',
+            errorMessage: skipReason,
+            triggeredBy,
+            sourcePage
+          });
+          return { sentEmail: false, sentSms: false, sentWhatsapp: false, sentPush: false, skipped: true, preference: pref, reason: 'channel_disabled', message: skipReason };
+        }
+      }
+    }
+
+    if (!shouldSendEmail && !shouldSendSms && !shouldSendWhatsapp && !shouldSendPush) {
+      return { sentEmail: false, sentSms: false, sentWhatsapp: false, sentPush: false, skipped: true, preference: pref };
+    }
+
     const storeRows = effectiveStoreId > 0
       ? await DataFind(`SELECT * FROM tbl_store WHERE id = '${effectiveStoreId}' LIMIT 1`)
       : [];
@@ -1660,10 +2051,6 @@ async function dispatchCustomerNotification({
 
     const masterRows = await DataFind(`SELECT * FROM tbl_master_shop LIMIT 1`);
     const masterObj = masterRows && masterRows.length > 0 ? masterRows[0] : (accessdata?.masterstore || {});
-
-    const isWalkIn = !customerObj ||
-      (customerObj.name && customerObj.name.toLowerCase().includes("walk in")) ||
-      (customerObj.name && customerObj.name.toLowerCase().includes("walkin"));
 
     const { subject, htmlBody, smsBody, whatsappBody } = buildNotificationContent({
       eventKey,
@@ -1689,43 +2076,121 @@ async function dispatchCustomerNotification({
       ? String(overrideRecipient).trim()
       : ((!isWalkIn && customerObj && customerObj.email) ? String(customerObj.email).trim() : "");
 
-    if (shouldSendEmail && targetEmail !== "") {
-      const smtp = await resolveSmtpConfig(effectiveStoreId);
-      if (smtp && smtp.host && smtp.port && smtp.username && smtp.password && smtp.frommail) {
-        try {
-          const port = Number(smtp.port) || 465;
-          const transporter = nodemailer.createTransport({
-            host: smtp.host,
-            port: port,
-            secure: port === 465,
-            auth: {
-              user: smtp.username,
-              pass: smtp.password
-            },
-            tls: {
-              rejectUnauthorized: false
-            }
+    if (shouldSendEmail) {
+      if (targetEmail !== "") {
+        const smtp = await resolveSmtpConfig(effectiveStoreId);
+        if (smtp && smtp.host && smtp.port && smtp.username && smtp.password && smtp.frommail) {
+          try {
+            const port = Number(smtp.port) || 465;
+            const transporter = nodemailer.createTransport({
+              host: smtp.host,
+              port: port,
+              secure: port === 465,
+              auth: {
+                user: smtp.username,
+                pass: smtp.password
+              },
+              tls: {
+                rejectUnauthorized: false
+              }
+            });
+            const senderName = (storeObj && storeObj.name) ? storeObj.name.replace(/"/g, "'") : ((masterObj && masterObj.name) ? masterObj.name.replace(/"/g, "'") : "iCleaners");
+            const replyToEmail = (storeObj && storeObj.email) ? storeObj.email : ((masterObj && masterObj.email) ? masterObj.email : smtp.frommail);
+            await transporter.sendMail({
+              from: `"${senderName}" <${smtp.frommail}>`,
+              replyTo: replyToEmail,
+              to: targetEmail,
+              subject: subject,
+              text: smsBody || subject,
+              html: htmlBody
+            });
+            sentEmail = true;
+            await recordCommunicationLog({
+              storeId: effectiveStoreId,
+              orderId: orderObj ? orderObj.id : (orderId || null),
+              orderCode: orderObj ? orderObj.order_id : null,
+              customerId: customerObj ? customerObj.id : (customerId || null),
+              customerName: customerObj ? customerObj.name : null,
+              preferenceId: pref.preferenceId,
+              preferenceCode: pref.preferenceCode,
+              eventKey,
+              channel: 'email',
+              dispatchMode: isManualForce ? 'manual' : dispatchMode,
+              recipient: targetEmail,
+              subject,
+              messagePreview: smsBody || subject,
+              status: 'sent',
+              provider: 'smtp',
+              triggeredBy,
+              sourcePage
+            });
+          } catch (emailErr) {
+            console.error(`[NotificationService] Email error (${eventKey}):`, emailErr.message);
+            await recordCommunicationLog({
+              storeId: effectiveStoreId,
+              orderId: orderObj ? orderObj.id : (orderId || null),
+              orderCode: orderObj ? orderObj.order_id : null,
+              customerId: customerObj ? customerObj.id : (customerId || null),
+              customerName: customerObj ? customerObj.name : null,
+              preferenceId: pref.preferenceId,
+              preferenceCode: pref.preferenceCode,
+              eventKey,
+              channel: 'email',
+              dispatchMode: isManualForce ? 'manual' : dispatchMode,
+              recipient: targetEmail,
+              subject,
+              status: 'failed',
+              provider: 'smtp',
+              errorMessage: emailErr.message,
+              triggeredBy,
+              sourcePage
+            });
+            if (forceEmail) throw emailErr;
+          }
+        } else {
+          const cfgErr = "SMTP mail server is not configured yet. Please configure Mail Settings first.";
+          await recordCommunicationLog({
+            storeId: effectiveStoreId,
+            orderId: orderObj ? orderObj.id : (orderId || null),
+            orderCode: orderObj ? orderObj.order_id : null,
+            customerId: customerObj ? customerObj.id : (customerId || null),
+            customerName: customerObj ? customerObj.name : null,
+            preferenceId: pref.preferenceId,
+            preferenceCode: pref.preferenceCode,
+            eventKey,
+            channel: 'email',
+            dispatchMode: isManualForce ? 'manual' : dispatchMode,
+            recipient: targetEmail,
+            subject,
+            status: 'failed',
+            provider: 'smtp',
+            errorMessage: cfgErr,
+            triggeredBy,
+            sourcePage
           });
-          const senderName = (storeObj && storeObj.name) ? storeObj.name.replace(/"/g, "'") : ((masterObj && masterObj.name) ? masterObj.name.replace(/"/g, "'") : "iCleaners");
-          const replyToEmail = (storeObj && storeObj.email) ? storeObj.email : ((masterObj && masterObj.email) ? masterObj.email : smtp.frommail);
-          await transporter.sendMail({
-            from: `"${senderName}" <${smtp.frommail}>`,
-            replyTo: replyToEmail,
-            to: targetEmail,
-            subject: subject,
-            text: smsBody || subject,
-            html: htmlBody
-          });
-          sentEmail = true;
-        } catch (emailErr) {
-          console.error(`[NotificationService] Email error (${eventKey}):`, emailErr.message);
-          if (forceEmail) throw emailErr;
+          if (forceEmail) throw new Error(cfgErr);
         }
-      } else if (forceEmail) {
-        throw new Error("SMTP mail server is not configured yet. Please configure Mail Settings first.");
+      } else {
+        const missErr = "Customer email address is missing or empty.";
+        await recordCommunicationLog({
+          storeId: effectiveStoreId,
+          orderId: orderObj ? orderObj.id : (orderId || null),
+          orderCode: orderObj ? orderObj.order_id : null,
+          customerId: customerObj ? customerObj.id : (customerId || null),
+          customerName: customerObj ? customerObj.name : null,
+          preferenceId: pref.preferenceId,
+          preferenceCode: pref.preferenceCode,
+          eventKey,
+          channel: 'email',
+          dispatchMode: isManualForce ? 'manual' : dispatchMode,
+          status: 'failed',
+          provider: 'smtp',
+          errorMessage: missErr,
+          triggeredBy,
+          sourcePage
+        });
+        if (forceEmail) throw new Error(missErr);
       }
-    } else if (forceEmail && targetEmail === "") {
-      throw new Error("Recipient email address is required.");
     }
 
     // 2. Send SMS if enabled/forced and recipient phone is available
@@ -1733,30 +2198,105 @@ async function dispatchCustomerNotification({
       ? String(overrideRecipient).trim()
       : ((!isWalkIn && customerObj && customerObj.number) ? String(customerObj.number).trim() : "");
 
-    if (shouldSendSms && targetPhone !== "") {
-      const twilioCfg = await resolveTwilioConfig(storeObj, masterObj);
-      const formattedTo = formatE164Phone(targetPhone);
-      if (twilioCfg.isConfigured && formattedTo) {
-        try {
-          const clientSms = require("twilio")(twilioCfg.sid, twilioCfg.token);
-          await clientSms.messages.create({
-            body: smsBody,
-            from: twilioCfg.fromPhone,
-            to: formattedTo
+    if (shouldSendSms) {
+      if (targetPhone !== "") {
+        const twilioCfg = await resolveTwilioConfig(storeObj, masterObj);
+        const formattedTo = formatE164Phone(targetPhone);
+        if (twilioCfg.isConfigured && formattedTo) {
+          try {
+            const clientSms = require("twilio")(twilioCfg.sid, twilioCfg.token);
+            const twilioRes = await clientSms.messages.create({
+              body: smsBody,
+              from: twilioCfg.fromPhone,
+              to: formattedTo
+            });
+            sentSms = true;
+            await recordCommunicationLog({
+              storeId: effectiveStoreId,
+              orderId: orderObj ? orderObj.id : (orderId || null),
+              orderCode: orderObj ? orderObj.order_id : null,
+              customerId: customerObj ? customerObj.id : (customerId || null),
+              customerName: customerObj ? customerObj.name : null,
+              preferenceId: pref.preferenceId,
+              preferenceCode: pref.preferenceCode,
+              eventKey,
+              channel: 'sms',
+              dispatchMode: isManualForce ? 'manual' : dispatchMode,
+              recipient: formattedTo,
+              messagePreview: smsBody,
+              status: 'sent',
+              provider: 'twilio',
+              providerMessageId: (twilioRes && twilioRes.sid) || null,
+              triggeredBy,
+              sourcePage
+            });
+          } catch (twilioErr) {
+            console.error(`[NotificationService] Twilio error (${eventKey}):`, twilioErr.message);
+            await recordCommunicationLog({
+              storeId: effectiveStoreId,
+              orderId: orderObj ? orderObj.id : (orderId || null),
+              orderCode: orderObj ? orderObj.order_id : null,
+              customerId: customerObj ? customerObj.id : (customerId || null),
+              customerName: customerObj ? customerObj.name : null,
+              preferenceId: pref.preferenceId,
+              preferenceCode: pref.preferenceCode,
+              eventKey,
+              channel: 'sms',
+              dispatchMode: isManualForce ? 'manual' : dispatchMode,
+              recipient: targetPhone,
+              messagePreview: smsBody,
+              status: 'failed',
+              provider: 'twilio',
+              errorMessage: twilioErr.message,
+              triggeredBy,
+              sourcePage
+            });
+            if (forceSms) throw twilioErr;
+          }
+        } else {
+          const cfgErr = !formattedTo ? "Invalid recipient phone number format." : "Twilio SMS is not configured yet. Please configure Twilio Settings first.";
+          await recordCommunicationLog({
+            storeId: effectiveStoreId,
+            orderId: orderObj ? orderObj.id : (orderId || null),
+            orderCode: orderObj ? orderObj.order_id : null,
+            customerId: customerObj ? customerObj.id : (customerId || null),
+            customerName: customerObj ? customerObj.name : null,
+            preferenceId: pref.preferenceId,
+            preferenceCode: pref.preferenceCode,
+            eventKey,
+            channel: 'sms',
+            dispatchMode: isManualForce ? 'manual' : dispatchMode,
+            recipient: targetPhone,
+            messagePreview: smsBody,
+            status: 'failed',
+            provider: 'twilio',
+            errorMessage: cfgErr,
+            triggeredBy,
+            sourcePage
           });
-          sentSms = true;
-        } catch (twilioErr) {
-          console.error(`[NotificationService] Twilio error (${eventKey}):`, twilioErr.message);
-          if (forceSms) throw twilioErr;
+          if (forceSms) throw new Error(cfgErr);
         }
-      } else if (forceSms) {
-        if (!formattedTo) {
-          throw new Error("Invalid recipient phone number format.");
-        }
-        throw new Error("Twilio SMS is not configured yet. Please configure Twilio Settings first.");
+      } else {
+        const missErr = "Customer phone number is missing or empty.";
+        await recordCommunicationLog({
+          storeId: effectiveStoreId,
+          orderId: orderObj ? orderObj.id : (orderId || null),
+          orderCode: orderObj ? orderObj.order_id : null,
+          customerId: customerObj ? customerObj.id : (customerId || null),
+          customerName: customerObj ? customerObj.name : null,
+          preferenceId: pref.preferenceId,
+          preferenceCode: pref.preferenceCode,
+          eventKey,
+          channel: 'sms',
+          dispatchMode: isManualForce ? 'manual' : dispatchMode,
+          status: 'failed',
+          provider: 'twilio',
+          errorMessage: missErr,
+          triggeredBy,
+          sourcePage
+        });
+        if (forceSms) throw new Error(missErr);
       }
-    } else if (forceSms && targetPhone === "") {
-      throw new Error("Recipient phone number is required.");
     }
 
     // 3. Send WhatsApp via Open-WA if enabled/forced and recipient phone is available
@@ -1764,33 +2304,91 @@ async function dispatchCustomerNotification({
       ? String(overrideRecipient).trim()
       : ((!isWalkIn && customerObj && customerObj.number) ? String(customerObj.number).trim() : "");
 
-    if (shouldSendWhatsapp && targetWaPhone !== "") {
-      const waText = (customMessage && String(customMessage).trim() !== "")
-        ? String(customMessage).trim()
-        : (extraData && extraData.whatsappText ? String(extraData.whatsappText).trim() : whatsappBody);
+    if (shouldSendWhatsapp) {
+      if (targetWaPhone !== "") {
+        const waText = (customMessage && String(customMessage).trim() !== "")
+          ? String(customMessage).trim()
+          : (extraData && extraData.whatsappText ? String(extraData.whatsappText).trim() : whatsappBody);
 
-      const waRes = await sendOpenWaTextMessage({
-        storeId: effectiveStoreId,
-        storeObj,
-        masterObj,
-        recipientPhone: targetWaPhone,
-        text: waText
-      });
+        const waRes = await sendOpenWaTextMessage({
+          storeId: effectiveStoreId,
+          storeObj,
+          masterObj,
+          recipientPhone: targetWaPhone,
+          text: waText
+        });
 
-      if (waRes && waRes.success) {
-        sentWhatsapp = true;
-        whatsappMessageId = waRes.messageId || null;
+        if (waRes && waRes.success) {
+          sentWhatsapp = true;
+          whatsappMessageId = waRes.messageId || null;
+          await recordCommunicationLog({
+            storeId: effectiveStoreId,
+            orderId: orderObj ? orderObj.id : (orderId || null),
+            orderCode: orderObj ? orderObj.order_id : null,
+            customerId: customerObj ? customerObj.id : (customerId || null),
+            customerName: customerObj ? customerObj.name : null,
+            preferenceId: pref.preferenceId,
+            preferenceCode: pref.preferenceCode,
+            eventKey,
+            channel: 'whatsapp',
+            dispatchMode: isManualForce ? 'manual' : dispatchMode,
+            recipient: targetWaPhone,
+            messagePreview: waText,
+            status: 'sent',
+            provider: 'openwa',
+            providerMessageId: waRes.messageId || null,
+            triggeredBy,
+            sourcePage
+          });
+        } else {
+          whatsappError = (waRes && waRes.message) || "Open-WA dispatch failed.";
+          if (waRes && !waRes.notConfigured && !waRes.paused) {
+            console.warn(`[NotificationService] Open-WA notice (${eventKey}):`, whatsappError);
+          }
+          await recordCommunicationLog({
+            storeId: effectiveStoreId,
+            orderId: orderObj ? orderObj.id : (orderId || null),
+            orderCode: orderObj ? orderObj.order_id : null,
+            customerId: customerObj ? customerObj.id : (customerId || null),
+            customerName: customerObj ? customerObj.name : null,
+            preferenceId: pref.preferenceId,
+            preferenceCode: pref.preferenceCode,
+            eventKey,
+            channel: 'whatsapp',
+            dispatchMode: isManualForce ? 'manual' : dispatchMode,
+            recipient: targetWaPhone,
+            messagePreview: waText,
+            status: 'failed',
+            provider: 'openwa',
+            errorMessage: whatsappError,
+            triggeredBy,
+            sourcePage
+          });
+          if (forceWhatsapp) {
+            throw new Error(whatsappError);
+          }
+        }
       } else {
-        whatsappError = (waRes && waRes.message) || "Open-WA dispatch failed.";
-        if (waRes && !waRes.notConfigured && !waRes.paused) {
-          console.warn(`[NotificationService] Open-WA notice (${eventKey}):`, whatsappError);
-        }
-        if (forceWhatsapp) {
-          throw new Error(whatsappError);
-        }
+        const missErr = "Customer phone number is missing or empty.";
+        await recordCommunicationLog({
+          storeId: effectiveStoreId,
+          orderId: orderObj ? orderObj.id : (orderId || null),
+          orderCode: orderObj ? orderObj.order_id : null,
+          customerId: customerObj ? customerObj.id : (customerId || null),
+          customerName: customerObj ? customerObj.name : null,
+          preferenceId: pref.preferenceId,
+          preferenceCode: pref.preferenceCode,
+          eventKey,
+          channel: 'whatsapp',
+          dispatchMode: isManualForce ? 'manual' : dispatchMode,
+          status: 'failed',
+          provider: 'openwa',
+          errorMessage: missErr,
+          triggeredBy,
+          sourcePage
+        });
+        if (forceWhatsapp) throw new Error(missErr);
       }
-    } else if (forceWhatsapp && targetWaPhone === "") {
-      throw new Error("Recipient phone number is required.");
     }
 
     // 4. Send Push Notification via OneSignal if enabled
@@ -1819,7 +2417,18 @@ async function dispatchCustomerNotification({
       }
     }
 
-    return { sentEmail, sentSms, sentWhatsapp, sentPush, whatsappMessageId, whatsappError };
+    return {
+      sentEmail,
+      sentSms,
+      sentWhatsapp,
+      sentPush,
+      whatsappMessageId,
+      whatsappError,
+      preference: pref,
+      customerName: customerObj ? customerObj.name : null,
+      orderId: orderObj ? orderObj.id : (orderId || null),
+      orderCode: orderObj ? orderObj.order_id : null
+    };
   } catch (err) {
     console.error(`[NotificationService] Error dispatching ${eventKey}:`, err);
     return { sentEmail: false, sentSms: false, sentWhatsapp: false, sentPush: false, error: err.message };
@@ -2204,6 +2813,12 @@ module.exports = {
   formatWhatsAppPickupAcceptedMessage,
   formatWhatsAppNumber,
   isRouteDeliveryOrderType,
-  isRoutePickupOrderType
+  isRoutePickupOrderType,
+  ensureCommunicationLogsTable,
+  recordCommunicationLog,
+  hasOrderChannelAlreadySent,
+  getOrderCommunicationLogs,
+  getCustomerCommunicationLogs,
+  resolveCustomerCommunicationPreference
 };
 

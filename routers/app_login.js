@@ -112,7 +112,6 @@ router.post("/register", async (req, res) => {
     }
 
     if (store) {
-     
       if (
         (await DataInsert(
           `tbl_customer`,

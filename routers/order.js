@@ -47,6 +47,10 @@ const {
   formatWhatsAppInvoiceMessage,
   formatWhatsAppPickupAcceptedMessage,
   formatWhatsAppNumber,
+  getOrderCommunicationLogs,
+  hasOrderChannelAlreadySent,
+  recordCommunicationLog,
+  resolveCustomerCommunicationPreference,
 } = require("../services/notificationService");
 
 async function idfororder(storeId) {
@@ -916,6 +920,9 @@ router.get("/view/:id", auth, async (req, res) => {
       currentOrderRackIds.includes(String(r.id))
     );
 
+    const customerPreference = await resolveCustomerCommunicationPreference(order[0].customer_id).catch(() => null);
+    const communicationLogs = await getOrderCommunicationLogs(order[0].id).catch(() => []);
+
     res.render("order_details", {
       order: order[0],
       Ordersatus,
@@ -923,6 +930,8 @@ router.get("/view/:id", auth, async (req, res) => {
       addonlist,
       payments,
       customer: customerData,
+      customerPreference,
+      communicationLogs: communicationLogs || [],
       storedata: storedata && storedata.length > 0 ? storedata[0] : {},
       account,
       accessdata,
@@ -3174,6 +3183,28 @@ router.post("/send-manual-invoice", auth, async (req, res) => {
         });
 
         if (!waRes || !waRes.success) {
+          const pref = await resolveCustomerCommunicationPreference(order.customer_id).catch(() => null);
+          await recordCommunicationLog({
+            storeId: order.store_id,
+            orderId: order.id,
+            orderCode: order.order_id,
+            customerId: order.customer_id,
+            customerName: order.customer_name || null,
+            preferenceId: pref?.preferenceId || null,
+            preferenceCode: pref?.preferenceCode || null,
+            eventKey: "invoice_sent",
+            channel: "whatsapp",
+            dispatchMode: "manual",
+            recipient: cleanRecipient,
+            subject: `Invoice #${order.order_id}`,
+            messagePreview: waText.slice(0, 500),
+            status: "failed",
+            provider: "open_wa",
+            errorMessage: (waRes && waRes.message) || "Failed to send WhatsApp invoice via Open-WA.",
+            triggeredBy: req.user ? (req.user.username || req.user.name || "pos_cashier") : "pos_cashier",
+            sourcePage: "manual_modal",
+          }).catch(() => null);
+
           return res.status(400).json({
             success: false,
             fallbackWaUrl,
@@ -3192,6 +3223,28 @@ router.post("/send-manual-invoice", auth, async (req, res) => {
       } else {
         extraResult = { viaOpenWa: false, fallbackWaUrl };
       }
+
+      const pref = await resolveCustomerCommunicationPreference(order.customer_id).catch(() => null);
+      await recordCommunicationLog({
+        storeId: order.store_id,
+        orderId: order.id,
+        orderCode: order.order_id,
+        customerId: order.customer_id,
+        customerName: order.customer_name || null,
+        preferenceId: pref?.preferenceId || null,
+        preferenceCode: pref?.preferenceCode || null,
+        eventKey: "invoice_sent",
+        channel: "whatsapp",
+        dispatchMode: "manual",
+        recipient: cleanRecipient,
+        subject: `Invoice #${order.order_id}`,
+        messagePreview: waText.slice(0, 500),
+        status: "sent",
+        provider: extraResult.viaOpenWa ? "open_wa" : "wa_me",
+        providerMessageId: extraResult.messageId || null,
+        triggeredBy: req.user ? (req.user.username || req.user.name || "pos_cashier") : "pos_cashier",
+        sourcePage: "manual_modal",
+      }).catch(() => null);
     }
 
     // Log in notification table
@@ -3220,6 +3273,43 @@ router.post("/send-manual-invoice", auth, async (req, res) => {
     });
   } catch (error) {
     console.error("Error in /order/send-manual-invoice:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Communication status & logs for a specific order
+router.get("/communication-status/:orderId", auth, async (req, res) => {
+  try {
+    const orderId = req.params.orderId;
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: "Order ID is required." });
+    }
+
+    const ordRows = await DataFind(`SELECT id, order_id, customer_id, store_id FROM tbl_order WHERE id = '${orderId}' OR order_id = '${orderId}' LIMIT 1`);
+    if (!ordRows || ordRows.length === 0) {
+      return res.status(404).json({ success: false, message: "Order not found." });
+    }
+    const order = ordRows[0];
+
+    const [preference, logs] = await Promise.all([
+      resolveCustomerCommunicationPreference(order.customer_id).catch(() => null),
+      getOrderCommunicationLogs(order.id).catch(() => []),
+    ]);
+
+    const sentChannels = {
+      email: logs.some((l) => l.channel === "email" && l.status === "sent"),
+      sms: logs.some((l) => l.channel === "sms" && l.status === "sent"),
+      whatsapp: logs.some((l) => l.channel === "whatsapp" && l.status === "sent"),
+    };
+
+    return res.status(200).json({
+      success: true,
+      preference,
+      logs,
+      sentChannels,
+    });
+  } catch (error) {
+    console.error("Error fetching order communication status:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 });

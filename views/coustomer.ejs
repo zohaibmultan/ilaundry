@@ -89,13 +89,13 @@
                       <tr>
                         <th style="width: 50px;">#</th>
                         <th>
-                          <%= language.Customer_Name %>
-                        </th>
-                        <th>
-                          <%= language.Customer_Type || 'Customer Type' %>
+                          Name
                         </th>
                         <th>
                           Contact
+                        </th>
+                        <th>
+                          <%= language.Customer_Type || 'Customer Type' %>
                         </th>
                         <th class="<%= ismulty && login == 'master' ? '' : 'd-none' %>">
                           <%= language.Store_Name %>
@@ -180,6 +180,25 @@
                       Date of Birth <span class="text-muted fw-normal fs-12">(Optional)</span>
                     </label>
                     <input type="date" class="form-control" name="dob" id="edit_dob" placeholder="YYYY-MM-DD">
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      Communication Preference
+                    </label>
+                    <select class="form-control form-select" name="communication_preference_id" id="edit_communication_preference">
+                      <option value="">Not Set (Default)</option>
+                      <% if (typeof communication_preferences !== 'undefined' && communication_preferences && communication_preferences.length > 0) { %>
+                        <% communication_preferences.forEach(function(cp){ %>
+                          <option value="<%= cp.id %>"><%= cp.name %><% if (cp.description) { %> - <%= cp.description %><% } %></option>
+                        <% }); %>
+                      <% } else { %>
+                        <option value="1">Print - Printed paper receipts</option>
+                        <option value="2">Email - Digital receipts</option>
+                        <option value="3">SMS - Mobile SMS alerts</option>
+                        <option value="4">Chat - Direct chat & WhatsApp</option>
+                      <% } %>
+                    </select>
                   </div>
 
                   <div class="col-md-6" style="display: none;">
@@ -313,6 +332,25 @@
                       Date of Birth <span class="text-muted fw-normal fs-12">(Optional)</span>
                     </label>
                     <input type="date" class="form-control" name="dob" id="add_dob" placeholder="YYYY-MM-DD">
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      Communication Preference
+                    </label>
+                    <select class="form-control form-select" name="communication_preference_id" id="add_communication_preference">
+                      <option value="" selected disabled>Choose Communication Preference</option>
+                      <% if (typeof communication_preferences !== 'undefined' && communication_preferences && communication_preferences.length > 0) { %>
+                        <% communication_preferences.forEach(function(cp){ %>
+                          <option value="<%= cp.id %>"><%= cp.name %><% if (cp.description) { %> - <%= cp.description %><% } %></option>
+                        <% }); %>
+                      <% } else { %>
+                        <option value="1">Print - Printed paper receipts</option>
+                        <option value="2">Email - Digital receipts</option>
+                        <option value="3">SMS - Mobile SMS alerts</option>
+                        <option value="4">Chat - Direct chat & WhatsApp</option>
+                      <% } %>
+                    </select>
                   </div>
 
                   <div class="col-md-6">
@@ -586,6 +624,9 @@
                         <div class="col-5 text-muted"><%= language.Customer_Type || 'Customer Type' %></div>
                         <div class="col-7 fw-semibold text-dark-emphasis" id="cd_customer_type">—</div>
 
+                        <div class="col-5 text-muted">Communication</div>
+                        <div class="col-7 fw-semibold text-dark-emphasis" id="cd_communication_preference">—</div>
+
                         <div class="col-5 text-muted"><%= language.Store_Name || 'Assigned Store' %></div>
                         <div class="col-7 fw-semibold text-dark-emphasis" id="cd_store">—</div>
                       </div>
@@ -667,6 +708,38 @@
                     </div>
                   </div>
                 </div>
+
+                <!-- Communication Logs Section -->
+                <div class="col-12">
+                  <div class="card border shadow-none rounded-3 mb-0">
+                    <div class="card-header py-2 px-3 bg-light-subtle border-bottom fw-bold text-dark-emphasis d-flex align-items-center justify-content-between">
+                      <div class="d-flex align-items-center gap-2">
+                        <i class="fa fa-paper-plane text-primary"></i>
+                        <span>Recent Communication Logs</span>
+                      </div>
+                      <span class="badge bg-secondary-subtle text-secondary" id="cd_comm_logs_count">0</span>
+                    </div>
+                    <div class="card-body p-2">
+                      <div class="table-responsive">
+                        <table class="table table-sm table-striped align-middle mb-0 fs-12">
+                          <thead>
+                            <tr>
+                              <th>Date/Time</th>
+                              <th>Order</th>
+                              <th>Channel</th>
+                              <th>Mode</th>
+                              <th>Recipient</th>
+                              <th>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody id="cd_comm_logs_tbody">
+                            <tr><td colspan="6" class="text-center text-muted py-2">No communication dispatches recorded</td></tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -731,6 +804,12 @@
         }
       },
       {
+        data: 'number',
+        render: function (data, type, row) {
+          return `<div class="fw-semibold text-dark">${escapeHtml(row.number || '')}</div>`;
+        }
+      },
+      {
         data: 'customer_type',
         render: function (data, type, row) {
           const typeName = escapeHtml(row.customer_type || data || 'Counter • Counter');
@@ -738,12 +817,6 @@
           const desc = escapeHtml(row.customer_type_description || '');
 
           return `<span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold px-2 py-1">${code}</span>`;
-        }
-      },
-      {
-        data: 'number',
-        render: function (data, type, row) {
-          return `<div class="fw-semibold text-dark">${escapeHtml(row.number || '')}</div>`;
         }
       },
       {
@@ -800,6 +873,7 @@
         data-memo="${escapeHtml(row.memo || '')}"
         data-dob="${escapeHtml(row.dob || '')}"
         data-customer-type="${escapeHtml(row.customer_type || 'Counter • Counter')}"
+        data-comm-pref="${row.communication_preference_id || ''}"
         data-tax="${escapeHtml(row.taxnumber)}"
         data-approved="${row.approved}"
         data-active="${row.delet_flage}"
@@ -925,6 +999,7 @@
     $('#memo').val(fields.memo || '');
     $('#edit_dob').val(fields.dob || '');
     $('#edit_customer_type').val(fields.customer_type || 'Counter • Counter');
+    $('#edit_communication_preference').val(fields.communication_preference_id || '');
     $('#tax').val(fields.taxnumber || '');
     $('#coustomer_form').attr('action', id ? ('/coustomer/update/' + id) : '/coustomer/update/');
     $('#Approved').prop('checked', String(fields.approved) === '1');
@@ -948,6 +1023,7 @@
       memo: $btn.attr('data-memo') || '',
       dob: $btn.attr('data-dob') || '',
       customer_type: $btn.attr('data-customer-type') || 'Counter • Counter',
+      communication_preference_id: $btn.attr('data-comm-pref') || '',
       taxnumber: $btn.attr('data-tax') || '',
       approved: $btn.attr('data-approved'),
       active: $btn.attr('data-active'),
@@ -1217,6 +1293,7 @@
         $('#cd_email').text(c.email || 'Not Provided');
         $('#cd_username').text(c.username || 'Not Provided');
         $('#cd_customer_type').text(typeLabel);
+        $('#cd_communication_preference').text(c.communication_preference_name || 'Not Set');
         $('#cd_store').text(c.store_name || 'Not Assigned');
 
         $('#cd_last_name').text(c.last_name || '—');
@@ -1234,6 +1311,36 @@
         $('#cd_full_address').text(c.full_address || 'Not Provided');
 
         $('#cd_memo').text(c.memo || 'No memo recorded.');
+
+        // Populate Communication Logs
+        const logs = c.communication_logs || [];
+        $('#cd_comm_logs_count').text(logs.length);
+        const $tbody = $('#cd_comm_logs_tbody');
+        $tbody.empty();
+        if (logs.length > 0) {
+          logs.forEach(function(l) {
+            let statusBadge = '<span class="badge bg-secondary-subtle text-secondary">Skipped</span>';
+            if (l.status === 'sent') {
+              statusBadge = '<span class="badge bg-success-subtle text-success">Sent</span>';
+            } else if (l.status === 'failed') {
+              statusBadge = '<span class="badge bg-danger-subtle text-danger" title="' + (l.error_message || '') + '">Failed</span>';
+            }
+            const orderLink = l.order_code ? `<a href="/order/view/${l.order_id}" class="fw-bold font-monospace">#${l.order_code}</a>` : '—';
+            const channelIcon = l.channel === 'whatsapp' ? '<i class="fab fa-whatsapp text-success me-1"></i>' : (l.channel === 'email' ? '<i class="fa fa-envelope text-primary me-1"></i>' : '<i class="fa fa-comment text-info me-1"></i>');
+            $tbody.append(`
+              <tr>
+                <td class="text-nowrap text-muted">${new Date(l.created_at).toLocaleDateString()} <small>${new Date(l.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small></td>
+                <td>${orderLink}</td>
+                <td><span class="badge bg-light text-dark border">${channelIcon}${l.channel.toUpperCase()}</span></td>
+                <td><small class="text-muted text-uppercase">${l.dispatch_mode || 'auto'}</small></td>
+                <td class="font-monospace text-truncate" style="max-width: 140px;" title="${l.recipient || ''}">${l.recipient || '—'}</td>
+                <td>${statusBadge}</td>
+              </tr>
+            `);
+          });
+        } else {
+          $tbody.html('<tr><td colspan="6" class="text-center text-muted py-2">No communication dispatches recorded</td></tr>');
+        }
 
         if (Number(c.transiction) > 0) {
           $('#cd_btn_ledger').attr('href', `/coustomer/ledger/${c.id}`).removeClass('d-none');
@@ -1286,6 +1393,7 @@
       memo: c.memo,
       dob: c.dob,
       customer_type: c.customer_type,
+      communication_preference_id: c.communication_preference_id || '',
       taxnumber: c.taxnumber,
       approved: c.approved,
       active: c.active ? '0' : '1',

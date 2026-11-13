@@ -7,7 +7,7 @@ var {DataDelete,DataUpdate,DataInsert,DataFind} = require("../middelwer/database
 const { mySqlQury } = require("../middelwer/db");
 
 const { paginateDataTable } = require("../middelwer/dataTableHelper");
-const { dispatchCustomerNotification } = require("../services/notificationService");
+const { dispatchCustomerNotification, getCustomerCommunicationLogs } = require("../services/notificationService");
 
 let customerCreatedAtReady = false;
 async function ensureCustomerCreatedAtSchema() {
@@ -196,6 +196,15 @@ router.get("/list", auth, async (req, res) => {
     "SELECT id, name, code, description FROM tbl_customer_type WHERE status = 1 ORDER BY id ASC"
   );
 
+  let communication_preferences = [];
+  try {
+    communication_preferences = await DataFind(
+      "SELECT id, code, name, description FROM tbl_communication_preferences WHERE status = 1 ORDER BY sort_order ASC, id ASC"
+    );
+  } catch (e) {
+    console.warn("Communication preferences fetch warning:", e.message);
+  }
+
   res.render("coustomer", {
     coustormdata: [],
     login,
@@ -203,6 +212,7 @@ router.get("/list", auth, async (req, res) => {
     storeList,
     accessdata,
     customer_types,
+    communication_preferences,
     is_staff: isStaff,
     staff_store_id: staffStoreId,
     staff_store_name: staffStoreName,
@@ -278,6 +288,7 @@ router.get("/list/data", auth, async (req, res) => {
                COALESCE(tbl_store.name, '') AS store,
                COALESCE(tbl_customer_type.code, '') AS customer_type_code,
                COALESCE(tbl_customer_type.description, '') AS customer_type_description,
+               COALESCE(tbl_communication_preferences.name, '') AS communication_preference_name,
                (
                  SELECT COUNT(*)
                  FROM tbl_transections
@@ -285,7 +296,8 @@ router.get("/list/data", auth, async (req, res) => {
                ) AS transiction`,
       from: `tbl_customer
              LEFT JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id
-             LEFT JOIN tbl_customer_type ON (tbl_customer.customer_type = tbl_customer_type.name OR tbl_customer.customer_type = tbl_customer_type.code)`,
+             LEFT JOIN tbl_customer_type ON (tbl_customer.customer_type = tbl_customer_type.name OR tbl_customer.customer_type = tbl_customer_type.code)
+             LEFT JOIN tbl_communication_preferences ON tbl_customer.communication_preference_id = tbl_communication_preferences.id`,
       searchColumns: [
         'tbl_customer.name',
         'tbl_customer.first_name',
@@ -347,6 +359,9 @@ router.get("/list/data", auth, async (req, res) => {
             customer_type: typeName,
             customer_type_code: typeCode,
             customer_type_description: typeDesc,
+            communication_preference_id: cust.communication_preference_id || null,
+            communication_preference_name: cust.communication_preference_name || '',
+            sms_opt_in: Number(cust.sms_opt_in) === 1 ? 1 : 0,
             canEdit,
             canDelete,
             canResetCredentials,
@@ -396,6 +411,7 @@ router.get("/detail/:id", auth, async (req, res) => {
               COALESCE(tbl_store.name, '') AS store_name,
               COALESCE(tbl_customer_type.code, '') AS customer_type_code,
               COALESCE(tbl_customer_type.description, '') AS customer_type_description,
+              COALESCE(tbl_communication_preferences.name, '') AS communication_preference_name,
               COALESCE(tbl_roll.roll, 'Customer') AS role_name,
               (
                 SELECT COUNT(*)
@@ -405,6 +421,7 @@ router.get("/detail/:id", auth, async (req, res) => {
        FROM tbl_customer
        LEFT JOIN tbl_store ON tbl_customer.store_ID = tbl_store.id
        LEFT JOIN tbl_customer_type ON (tbl_customer.customer_type = tbl_customer_type.name OR tbl_customer.customer_type = tbl_customer_type.code)
+       LEFT JOIN tbl_communication_preferences ON tbl_customer.communication_preference_id = tbl_communication_preferences.id
        LEFT JOIN tbl_roll ON tbl_customer.main_roll_id = tbl_roll.id
        WHERE ${whereClause}
        LIMIT 1`,
@@ -451,6 +468,8 @@ router.get("/detail/:id", auth, async (req, res) => {
       .map((s) => (s ? String(s).trim() : ""))
       .filter(Boolean);
 
+    const commLogs = await getCustomerCommunicationLogs(customerId, 10).catch(() => []);
+
     return res.status(200).json({
       success: true,
       currency_symbol: accessdata?.symbol || "$",
@@ -473,6 +492,9 @@ router.get("/detail/:id", auth, async (req, res) => {
         customer_type: typeName,
         customer_type_code: typeCode,
         customer_type_description: typeDesc,
+        communication_preference_id: cust.communication_preference_id || null,
+        communication_preference_name: cust.communication_preference_name || "Not Set",
+        sms_opt_in: Number(cust.sms_opt_in) === 1,
         memo: cust.memo || "",
         taxnumber: cust.taxnumber || "",
         store_id: cust.store_ID || "",
@@ -492,6 +514,7 @@ router.get("/detail/:id", auth, async (req, res) => {
           balance_due: Number(stats.balance_due || 0).toFixed(2),
           last_order_date: stats.last_order_date || "",
         },
+        communication_logs: commLogs || [],
       },
     });
   } catch (error) {
@@ -557,6 +580,16 @@ router.post("/update/:id", async (req, res) => {
        approved='${approved}'`;
     if (safeCustomerType) {
       updateFields += `, customer_type='${safeCustomerType}'`;
+    }
+
+    const rawCommPref = req.body.communication_preference_id || req.body.communication_preference;
+    if (rawCommPref !== undefined) {
+      const cleanCommPref = String(rawCommPref).trim();
+      if (cleanCommPref && cleanCommPref !== '0' && cleanCommPref !== 'null') {
+        updateFields += `, communication_preference_id='${cleanCommPref.replace(/'/g, "\\'")}'`;
+      } else {
+        updateFields += `, communication_preference_id=NULL`;
+      }
     }
 
     const data = await DataUpdate(
@@ -885,10 +918,19 @@ router.post("/register", auth, async (req, res) => {
       const safeCustomerType = (customer_type || 'Counter • Counter').replace(/\s*&\s*/g, ' • ').trim().replace(/'/g, "\\'");
       const safeMemo = (memo || '').trim().replace(/'/g, "\\'");
 
+      const rawCommPref = req.body.communication_preference_id || req.body.communication_preference;
+      let commPrefVal = 'NULL';
+      if (rawCommPref) {
+        const cleanPref = String(rawCommPref).trim().replace(/'/g, "\\'");
+        if (cleanPref && cleanPref !== '0' && cleanPref !== 'null') {
+          commPrefVal = `'${cleanPref}'`;
+        }
+      }
+
       const data = await DataInsert(
         `tbl_customer`,
-        `name,first_name,last_name,dob,number,email,address,city,state,zipcode,customer_type,memo,taxnumber,username,password,store_ID,reffstore,main_roll_id,approved`,
-        `'${safeName}','${safeFirstName}','${safeLastName}',${safeDobSQL},'${safeNumber}','${safeEmail}','${safeAddress}','${safeCity}','${safeState}','${safeZipcode}','${safeCustomerType}','${safeMemo}','${safeTaxNumber}','${safeUsername}','${hashpass}','${storeid}','${storeid}',${main_roll[0].id},1`,
+        `name,first_name,last_name,dob,number,email,address,city,state,zipcode,customer_type,communication_preference_id,memo,taxnumber,username,password,store_ID,reffstore,main_roll_id,approved`,
+        `'${safeName}','${safeFirstName}','${safeLastName}',${safeDobSQL},'${safeNumber}','${safeEmail}','${safeAddress}','${safeCity}','${safeState}','${safeZipcode}','${safeCustomerType}',${commPrefVal},'${safeMemo}','${safeTaxNumber}','${safeUsername}','${hashpass}','${storeid}','${storeid}',${main_roll[0].id},1`,
         req.hostname,
         req.protocol
       );

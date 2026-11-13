@@ -490,6 +490,12 @@
                       <%= customer.taxnumber || '' %>
                     </span>
                   </p>
+                  <p class="mb-0">
+                    <%= language.Communication_Preference || 'Communication' %> : 
+                    <span class="badge bg-light text-dark border">
+                      <i class="fa fa-paper-plane text-primary me-1"></i><%= (typeof customerPreference !== 'undefined' && customerPreference && customerPreference.preferenceName) ? customerPreference.preferenceName : 'Not Set' %>
+                    </span>
+                  </p>
                   <% if (customer.memo && customer.memo.trim()) { %>
                   <p class="mb-0 text-break mt-1">
                     <strong class="text-warning"><i class="fa fa-sticky-note me-1"></i><%= language.Customer_Memo || 'Customer Memo' %> :</strong>
@@ -791,19 +797,25 @@
                           <i class="fa fa-tags me-2"></i> <%= language.Print_Cloth_Tag || language.Print_Barcode || 'Print Cloth Tag' %>
                         </a>
                       </div>
+                      <%
+                        const prefCode = (typeof customerPreference !== 'undefined' && customerPreference && customerPreference.preferenceCode) ? customerPreference.preferenceCode : '';
+                      %>
                       <div class="col-12">
                         <button type="button" class="btn btn-outline-primary mb-2 w-100" id="btn_order_email_invoice" onclick="openSendInvoiceModal('email')">
                           <i class="fa fa-envelope me-2"></i> <%= language.Email_Invoice || 'Email Invoice' %>
+                          <% if (prefCode === 'email') { %><span class="badge bg-primary ms-1">Preferred</span><% } %>
                         </button>
                       </div>
                       <div class="col-12">
                         <button type="button" class="btn btn-outline-info mb-2 w-100" id="btn_order_sms_invoice" onclick="openSendInvoiceModal('sms')">
                           <i class="fa fa-sms me-2"></i> <%= language.SMS_Invoice || 'SMS Invoice' %>
+                          <% if (prefCode === 'sms') { %><span class="badge bg-info ms-1">Preferred</span><% } %>
                         </button>
                       </div>
                       <div class="col-12">
                         <button type="button" class="btn btn-outline-success mb-2 w-100" id="btn_order_whatsapp_invoice" onclick="openSendInvoiceModal('whatsapp')">
                           <i class="fab fa-whatsapp me-2"></i> <%= language.WhatsApp_Invoice || 'WhatsApp Invoice' %>
+                          <% if (prefCode === 'chat') { %><span class="badge bg-success ms-1">Preferred</span><% } %>
                         </button>
                       </div>
                       <% if (canDeleteOrder) { %>
@@ -816,6 +828,56 @@
                     </div>
                   </div>
 
+                </div>
+
+                <!-- Communication Delivery History Card -->
+                <div class="card border rounded-3 mt-3 shadow-none">
+                  <div class="card-header py-2.5 px-3 bg-light-subtle border-bottom d-flex align-items-center justify-content-between">
+                    <h6 class="fw-bold mb-0 text-dark-emphasis d-flex align-items-center gap-2">
+                      <i class="fa fa-paper-plane text-primary"></i>
+                      <span>Communication History</span>
+                    </h6>
+                    <span class="badge bg-secondary-subtle text-secondary"><%= (typeof communicationLogs !== 'undefined' && communicationLogs) ? communicationLogs.length : 0 %></span>
+                  </div>
+                  <div class="card-body p-2">
+                    <% if (typeof communicationLogs !== 'undefined' && communicationLogs && communicationLogs.length > 0) { %>
+                    <div class="table-responsive">
+                      <table class="table table-sm table-striped align-middle mb-0 fs-12">
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Channel</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% communicationLogs.slice(0, 5).forEach(function(log) { %>
+                          <tr>
+                            <td class="text-nowrap text-muted"><%= new Date(log.created_at).toLocaleDateString() %> <small><%= new Date(log.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %></small></td>
+                            <td>
+                              <span class="badge bg-light text-dark border">
+                                <% if (log.channel === 'whatsapp') { %><i class="fab fa-whatsapp text-success me-1"></i><% } else if (log.channel === 'email') { %><i class="fa fa-envelope text-primary me-1"></i><% } else { %><i class="fa fa-comment text-info me-1"></i><% } %>
+                                <%= log.channel.toUpperCase() %>
+                              </span>
+                            </td>
+                            <td>
+                              <% if (log.status === 'sent') { %>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">Sent</span>
+                              <% } else if (log.status === 'failed') { %>
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle" title="<%= log.error_message || '' %>">Failed</span>
+                              <% } else { %>
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Skipped</span>
+                              <% } %>
+                            </td>
+                          </tr>
+                          <% }); %>
+                        </tbody>
+                      </table>
+                    </div>
+                    <% } else { %>
+                    <div class="text-center text-muted py-2 fs-12">No delivery dispatches recorded</div>
+                    <% } %>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2253,6 +2315,8 @@
     var currentWaPayload = null;
     var orderCustomerEmail = "<%= (customer && customer.email) ? customer.email : '' %>";
     var orderCustomerPhone = "<%= (customer && (customer.number || customer.mobile_no || customer.phone)) ? (customer.number || customer.mobile_no || customer.phone) : '' %>";
+    var orderCustomerPref = <%- JSON.stringify(typeof customerPreference !== 'undefined' ? customerPreference : null) %>;
+    var orderCommLogs = <%- JSON.stringify(typeof communicationLogs !== 'undefined' ? communicationLogs : []) %>;
 
     function openSendInvoiceModal(channel) {
       currentSendChannel = channel;
@@ -2277,10 +2341,22 @@
         waFallbackBtn.classList.toggle('d-none', channel !== 'whatsapp');
       }
 
+      var sentLog = (orderCommLogs || []).find(function(l) { return l.channel === channel && l.status === 'sent'; });
+      var extraNotice = '';
+      if (sentLog) {
+        extraNotice += '<div class="alert alert-warning py-1.5 px-2 mb-2 fs-12">⚠️ <b>Already Sent:</b> This invoice was sent via <b>' + channel.toUpperCase() + '</b> to <code>' + (sentLog.recipient || '') + '</code> on ' + new Date(sentLog.created_at).toLocaleString() + '. Sending again will dispatch a duplicate.</div>';
+      }
+      if (orderCustomerPref && orderCustomerPref.preferenceCode && orderCustomerPref.preferenceCode !== 'not_set' && orderCustomerPref.preferenceCode !== 'print') {
+        var normPref = orderCustomerPref.preferenceCode === 'chat' ? 'whatsapp' : orderCustomerPref.preferenceCode;
+        if (normPref !== channel) {
+          extraNotice += '<div class="alert alert-info py-1 px-2 mb-2 fs-12">ℹ️ <b>Customer Preference:</b> Customer preferred channel is <b>' + (orderCustomerPref.preferenceName || '') + '</b>. You are manually dispatching via <b>' + channel.toUpperCase() + '</b>.</div>';
+        }
+      }
+
       if (channel === 'email') {
         iconEl.className = 'fa fa-envelope text-primary me-2';
         titleEl.textContent = 'Email Invoice';
-        noticeText.textContent = 'Send invoice email to customer immediately, even if automated notifications are disabled in settings.';
+        noticeText.innerHTML = extraNotice + 'Send invoice email to customer immediately, even if automated notifications are disabled in settings.';
         labelEl.textContent = 'Customer Email Address:';
         inputEl.type = 'email';
         inputEl.value = orderCustomerEmail;
@@ -2292,7 +2368,7 @@
       } else if (channel === 'sms') {
         iconEl.className = 'fa fa-sms text-info me-2';
         titleEl.textContent = 'SMS Invoice';
-        noticeText.textContent = 'Send invoice SMS notification to customer immediately, even if automated notifications are disabled in settings.';
+        noticeText.innerHTML = extraNotice + 'Send invoice SMS notification to customer immediately, even if automated notifications are disabled in settings.';
         labelEl.textContent = 'Customer Mobile Number:';
         inputEl.type = 'tel';
         inputEl.value = orderCustomerPhone;
@@ -2304,7 +2380,7 @@
       } else if (channel === 'whatsapp') {
         iconEl.className = 'fab fa-whatsapp text-success me-2';
         titleEl.textContent = 'WhatsApp Invoice (Open-WA)';
-        noticeText.textContent = 'Review phone number and itemized message, then send directly via Open-WA API (or click Open wa.me App as fallback).';
+        noticeText.innerHTML = extraNotice + 'Review phone number and itemized message, then send directly via Open-WA API (or click Open wa.me App as fallback).';
         labelEl.textContent = 'Customer WhatsApp Phone Number:';
         inputEl.type = 'tel';
         inputEl.value = orderCustomerPhone;

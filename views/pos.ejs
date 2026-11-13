@@ -569,11 +569,16 @@
                         }
                         let isSelected = (selectedCustomerObj && selectedCustomerObj.id == x.id) ? 'selected' : '';
                       %>
-                      <option value="<%= x.id %>" data-customer-type="<%= x.customer_type || 'Counter • Counter' %>" data-address="<%= x.address || '' %>" data-city="<%= x.city || '' %>" data-state="<%= x.state || '' %>" data-zipcode="<%= x.zipcode || '' %>" <%= isSelected %>>
+                      <option value="<%= x.id %>" data-customer-type="<%= x.customer_type || 'Counter • Counter' %>" data-address="<%= x.address || '' %>" data-city="<%= x.city || '' %>" data-state="<%= x.state || '' %>" data-zipcode="<%= x.zipcode || '' %>" data-comm-pref-id="<%= x.communication_preference_id || '' %>" data-comm-pref-code="<%= x.communication_preference_code || '' %>" data-comm-pref-name="<%= x.communication_preference_name || '' %>" <%= isSelected %>>
                         <%= x.name %><% if (showExtra) { %> (<%= showExtra %>)<% } %>
                       </option>
                       <% }); %>
                     </select>
+                    <div class="d-flex align-items-center justify-content-between mt-1">
+                      <span id="pos_cust_comm_pref_badge" class="badge bg-light text-muted border fs-11 fw-normal" title="Customer communication channel preference">
+                        <i class="fa fa-paper-plane me-1"></i><span class="comm-pref-text">Pref: Not Set</span>
+                      </span>
+                    </div>
                   <% } %>
                 </div>
 
@@ -1012,6 +1017,24 @@
                       <input type="text" class="form-control" placeholder="Enter Notes / Remarks" name="note">
                     </div>
                   </div>
+
+                  <div class="row g-2 align-items-center mt-2 pt-2 border-top">
+                    <div class="col-12 col-sm-7">
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="fs-12 text-muted fw-semibold">Channel:</span>
+                        <span id="pos_payment_comm_pref_badge" class="badge bg-light text-muted border fs-12 fw-normal">
+                          <i class="fa fa-paper-plane me-1"></i><span class="comm-pref-name">Not Set</span>
+                        </span>
+                        <span id="pos_payment_comm_pref_hint" class="fs-11 text-muted">(Print only)</span>
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-5 text-sm-end">
+                      <div class="form-check form-switch d-inline-flex align-items-center gap-2 m-0">
+                        <input class="form-check-input" type="checkbox" role="switch" id="pos_auto_send_notification" name="auto_send_notification" value="1" checked>
+                        <label class="form-check-label fs-12 fw-semibold text-dark mb-0" for="pos_auto_send_notification">Auto-Send</label>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="mt-2">
@@ -1178,6 +1201,24 @@
                     <div class="col-12">
                       <label class="form-label fw-semibold"><%= language.Notes %> / <%= language.Remarks %></label>
                       <input type="text" class="form-control" placeholder="Enter Notes / Remarks" name="note">
+                    </div>
+                  </div>
+
+                  <div class="row g-2 align-items-center mt-2 pt-2 border-top">
+                    <div class="col-12 col-sm-7">
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="fs-12 text-muted fw-semibold">Channel:</span>
+                        <span id="pos_payment_comm_pref_badge" class="badge bg-light text-muted border fs-12 fw-normal">
+                          <i class="fa fa-paper-plane me-1"></i><span class="comm-pref-name">Not Set</span>
+                        </span>
+                        <span id="pos_payment_comm_pref_hint" class="fs-11 text-muted">(Print only)</span>
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-5 text-sm-end">
+                      <div class="form-check form-switch d-inline-flex align-items-center gap-2 m-0">
+                        <input class="form-check-input" type="checkbox" role="switch" id="pos_auto_send_notification" name="auto_send_notification" value="1" checked>
+                        <label class="form-check-label fs-12 fw-semibold text-dark mb-0" for="pos_auto_send_notification">Auto-Send</label>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1489,6 +1530,25 @@
             </div>
 
             <div class="col-md-6">
+              <label class="form-label fw-bold">
+                <%= language.Communication_Preference || 'Communication Preference' %>
+              </label>
+              <select class="form-control form-select" name="communication_preference_id" id="pos_add_cust_comm_pref">
+                <option value="" selected>Not Set (Print only)</option>
+                <% if (typeof communication_preferences !== 'undefined' && communication_preferences && communication_preferences.length > 0) { %>
+                  <% communication_preferences.forEach(function(cp) { %>
+                    <option value="<%= cp.id %>"><%= cp.name %></option>
+                  <% }); %>
+                <% } else { %>
+                  <option value="1">Print</option>
+                  <option value="2">Email</option>
+                  <option value="3">SMS</option>
+                  <option value="4">Chat</option>
+                <% } %>
+              </select>
+            </div>
+
+            <div class="col-md-6">
               <label class="form-label fw-bold">Date of Birth <span class="text-muted fw-normal fs-12">(Optional)</span></label>
               <input type="date" class="form-control" name="dob" id="pos_add_cust_dob" placeholder="YYYY-MM-DD">
             </div>
@@ -1786,6 +1846,17 @@
       <div class="modal-content">
         <div class="modal-body">
           <div class="invoice_page" id="invoice_page">
+            <!-- Communication Auto-Send Feedback Banner -->
+            <div id="pos_invoice_comm_banner" class="alert py-2 px-3 mb-2 d-none" role="alert">
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-1">
+                <div class="d-flex align-items-center gap-2">
+                  <i id="pos_invoice_comm_icon" class="fa fa-info-circle"></i>
+                  <span id="pos_invoice_comm_text" class="fs-12 fw-semibold"></span>
+                </div>
+                <span id="pos_invoice_comm_badge" class="badge fs-11"></span>
+              </div>
+            </div>
+
             <div class="d-flex align-items-center px-2">
               <div class="col-6" id="invoice_header">
                 <h3 class="text-uppercase"><span id="shop_name">Laundry</span></h3>
@@ -1911,14 +1982,27 @@
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <div class="d-flex justify-content-end gap-2 w-100">
-            <button type="button" class="btn btn-info" id="pri_invo">
-              <i class="fa fa-print me-2"></i><%= language.Print_Invoice %>
-            </button>
-            <button type="button" class="btn btn-secondary" onclick="location.reload()">
-              <i class="fa fa-arrow-left me-2"></i><%= language.Go_Back %>
-            </button>
+        <div class="modal-footer p-2">
+          <div class="d-flex justify-content-between align-items-center w-100 flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-1" id="pos_invoice_quick_send_group">
+              <button type="button" class="btn btn-xs btn-outline-success d-inline-flex align-items-center gap-1 py-1 px-2" id="btn_pos_invoice_send_wa" title="Send invoice via WhatsApp" data-channel="whatsapp">
+                <i class="fab fa-whatsapp"></i><span class="d-none d-sm-inline">WhatsApp</span>
+              </button>
+              <button type="button" class="btn btn-xs btn-outline-primary d-inline-flex align-items-center gap-1 py-1 px-2" id="btn_pos_invoice_send_email" title="Send invoice via Email" data-channel="email">
+                <i class="fa fa-envelope"></i><span class="d-none d-sm-inline">Email</span>
+              </button>
+              <button type="button" class="btn btn-xs btn-outline-info d-inline-flex align-items-center gap-1 py-1 px-2" id="btn_pos_invoice_send_sms" title="Send invoice via SMS" data-channel="sms">
+                <i class="fa fa-comment"></i><span class="d-none d-sm-inline">SMS</span>
+              </button>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-info btn-sm" id="pri_invo">
+                <i class="fa fa-print me-1"></i><%= language.Print_Invoice %>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="location.reload()">
+                <i class="fa fa-arrow-left me-1"></i><%= language.Go_Back %>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -2355,6 +2439,7 @@
       // Customer Intelligence & Memo UI Update Helper
       window.updatePosCustomerIntelligence = function(stats) {
         if (!stats) stats = { total_orders: 0, unpaid_orders: 0, unpaid_amount: 0, memo: '' };
+        window.currentPosCustomerStats = stats;
         const sym = document.querySelector('input[name="sym"]')?.value || '$';
         const elTotal = document.getElementById('pos_cust_stat_total');
         const elUnpaid = document.getElementById('pos_cust_stat_unpaid');
@@ -2381,6 +2466,61 @@
         }
         if (elMemoInput) {
           elMemoInput.value = cleanMemo;
+        }
+
+        // Update Communication Preference Badge & Payment Modal Switch
+        const prefName = stats.communication_preference_name || 'Not Set';
+        const prefCode = (stats.communication_preference_code || 'not_set').toLowerCase();
+        const prefBadge = document.getElementById('pos_cust_comm_pref_badge');
+        if (prefBadge) {
+          const spanText = prefBadge.querySelector('.comm-pref-text');
+          if (spanText) spanText.textContent = 'Pref: ' + prefName;
+          prefBadge.className = 'badge fs-11 fw-normal border';
+          if (prefCode === 'email') {
+            prefBadge.classList.add('bg-primary-subtle', 'text-primary', 'border-primary-subtle');
+          } else if (prefCode === 'sms') {
+            prefBadge.classList.add('bg-info-subtle', 'text-info', 'border-info-subtle');
+          } else if (prefCode === 'chat') {
+            prefBadge.classList.add('bg-success-subtle', 'text-success', 'border-success-subtle');
+          } else if (prefCode === 'print') {
+            prefBadge.classList.add('bg-secondary-subtle', 'text-secondary', 'border-secondary-subtle');
+          } else {
+            prefBadge.classList.add('bg-light', 'text-muted');
+          }
+        }
+
+        const paymentPrefBadge = document.getElementById('pos_payment_comm_pref_badge');
+        const paymentPrefHint = document.getElementById('pos_payment_comm_pref_hint');
+        const paymentAutoSwitch = document.getElementById('pos_auto_send_notification');
+        if (paymentPrefBadge) {
+          const badgeSpan = paymentPrefBadge.querySelector('.comm-pref-name');
+          if (badgeSpan) badgeSpan.textContent = prefName;
+          paymentPrefBadge.className = 'badge fs-12 fw-normal border';
+          if (prefCode === 'email') {
+            paymentPrefBadge.classList.add('bg-primary-subtle', 'text-primary', 'border-primary-subtle');
+            if (paymentPrefHint) paymentPrefHint.textContent = '(Auto-send Email)';
+          } else if (prefCode === 'sms') {
+            paymentPrefBadge.classList.add('bg-info-subtle', 'text-info', 'border-info-subtle');
+            if (paymentPrefHint) paymentPrefHint.textContent = '(Auto-send SMS)';
+          } else if (prefCode === 'chat') {
+            paymentPrefBadge.classList.add('bg-success-subtle', 'text-success', 'border-success-subtle');
+            if (paymentPrefHint) paymentPrefHint.textContent = '(Auto-send WhatsApp)';
+          } else if (prefCode === 'print') {
+            paymentPrefBadge.classList.add('bg-secondary-subtle', 'text-secondary', 'border-secondary-subtle');
+            if (paymentPrefHint) paymentPrefHint.textContent = '(Print only - no electronic send)';
+          } else {
+            paymentPrefBadge.classList.add('bg-light', 'text-muted');
+            if (paymentPrefHint) paymentPrefHint.textContent = '(Print only - not set)';
+          }
+        }
+        if (paymentAutoSwitch) {
+          if (prefCode === 'print' || prefCode === 'not_set') {
+            paymentAutoSwitch.checked = false;
+            paymentAutoSwitch.disabled = true;
+          } else {
+            paymentAutoSwitch.checked = true;
+            paymentAutoSwitch.disabled = false;
+          }
         }
       };
 
@@ -3342,6 +3482,60 @@
           return false;
         });
       }
+
+      // POS Invoice Modal Quick-Send Handlers
+      $(document).on('click', '#btn_pos_invoice_send_wa, #btn_pos_invoice_send_email, #btn_pos_invoice_send_sms', function(e) {
+        e.preventDefault();
+        const channel = $(this).data('channel');
+        const orderId = window.currentPosInvoiceOrderId || $('#invoice_order_id').text().replace(/[^\d]/g, '');
+        if (!orderId) {
+          if (typeof toastr !== 'undefined') toastr.warning('Order ID not available for sending.');
+          else alert('Order ID not available for sending.');
+          return;
+        }
+
+        const btn = $(this);
+        const originalHtml = btn.html();
+        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>');
+
+        function doSend(force) {
+          $.ajax({
+            type: 'POST',
+            url: '/admin/pos/send-by-preference',
+            data: JSON.stringify({ order_id: orderId, channel: channel, force: force }),
+            contentType: 'application/json',
+            success: function(resp) {
+              btn.prop('disabled', false).html(originalHtml);
+              if (resp.alreadySent) {
+                if (confirm(resp.message)) {
+                  btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>');
+                  doSend(true);
+                }
+              } else if (resp.success) {
+                if (typeof toastr !== 'undefined') toastr.success(resp.message || 'Invoice dispatched successfully!');
+                else alert(resp.message || 'Invoice dispatched successfully!');
+                const banner = $('#pos_invoice_comm_banner');
+                if (banner.length) {
+                  banner.removeClass('d-none alert-warning alert-danger alert-info').addClass('alert-success');
+                  $('#pos_invoice_comm_icon').attr('class', 'fa fa-check-circle text-success');
+                  $('#pos_invoice_comm_text').text('Invoice sent via ' + channel.toUpperCase());
+                  $('#pos_invoice_comm_badge').attr('class', 'badge bg-success').text('Sent');
+                }
+              } else {
+                if (typeof toastr !== 'undefined') toastr.error(resp.message || 'Failed to dispatch invoice.');
+                else alert(resp.message || 'Failed to dispatch invoice.');
+              }
+            },
+            error: function(xhr) {
+              btn.prop('disabled', false).html(originalHtml);
+              const errMsg = xhr.responseJSON?.message || 'Network error sending invoice';
+              if (typeof toastr !== 'undefined') toastr.error(errMsg);
+              else alert(errMsg);
+            }
+          });
+        }
+        doSend(false);
+      });
     })();
   </script>
 </body>

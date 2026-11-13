@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require("../middelwer/auth");
 const access = require("../middelwer/access");
 var Excel = require("exceljs");
+const { paginateDataTable } = require("../middelwer/dataTableHelper");
 var {
   DataDelete,
   DataUpdate,
@@ -1223,6 +1224,180 @@ router.get("/export-profit-loss/:id", auth, async (req, res) => {
   } catch (error) {
     console.error("Error exporting Profit and Loss:", error);
     res.status(500).send("Error generating Excel export");
+  }
+});
+
+// ==========================================
+// Communication Logs Report
+// ==========================================
+
+// GET /report/communication-logs
+router.get("/communication-logs", auth, async (req, res) => {
+  try {
+    const { id, roll, store } = req.user;
+    const accessdata = await access(req.user);
+
+    const isAuthorized = await hasReportPermission(req.user, "reports");
+    if (!isAuthorized) {
+      req.flash("error", "You are not authorized to view reports");
+      return res.redirect(req.get("Referrer") || "/");
+    }
+
+    const isMaster = accessdata.logas === "master";
+    const storeList = await DataFind("SELECT id, name FROM tbl_store WHERE status = 1 AND delete_flage = 0 ORDER BY name ASC").catch(() => []);
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const startdate = `${year}-${month}-01`;
+    const enddate = `${year}-${month}-${day}`;
+    const selectedStore = isMaster ? (req.query.store || "0") : (store || "0");
+
+    res.render("communication_logs_report", {
+      accessdata,
+      storeList,
+      store: selectedStore,
+      isMaster,
+      startdate,
+      enddate,
+      language: req.language_data,
+      language_name: req.language_name,
+    });
+  } catch (error) {
+    console.error("Error in /report/communication-logs:", error);
+    req.flash("error", "Error loading communication logs report");
+    res.redirect("/report/daily");
+  }
+});
+
+// GET /report/communication-logs/data (Server-Side DataTable)
+router.get("/communication-logs/data", auth, async (req, res) => {
+  try {
+    const isAuthorized = await hasReportPermission(req.user, "reports");
+    if (!isAuthorized) {
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
+    }
+
+    const accessdata = await access(req.user);
+    const isMaster = accessdata.logas === "master";
+
+    let scopeConditions = [];
+    if (!isMaster) {
+      const staffStoreId = accessdata.topbardata?.store_ID || accessdata.topbardata?.store_id || req.user.store;
+      if (staffStoreId) {
+        scopeConditions.push(`tbl_communication_logs.store_id = '${staffStoreId}'`);
+      }
+    } else if (req.query.store_id && req.query.store_id !== "0" && req.query.store_id !== "") {
+      const cleanStore = String(req.query.store_id).replace(/'/g, "\\'");
+      scopeConditions.push(`tbl_communication_logs.store_id = '${cleanStore}'`);
+    }
+
+    const filterConditions = [];
+    if (req.query.start_date && req.query.start_date.trim() !== "") {
+      const cleanStart = String(req.query.start_date).trim().replace(/'/g, "\\'");
+      filterConditions.push(`DATE(tbl_communication_logs.created_at) >= '${cleanStart}'`);
+    }
+    if (req.query.end_date && req.query.end_date.trim() !== "") {
+      const cleanEnd = String(req.query.end_date).trim().replace(/'/g, "\\'");
+      filterConditions.push(`DATE(tbl_communication_logs.created_at) <= '${cleanEnd}'`);
+    }
+    if (req.query.channel && req.query.channel !== "all" && req.query.channel.trim() !== "") {
+      const cleanChannel = String(req.query.channel).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_communication_logs.channel = '${cleanChannel}'`);
+    }
+    if (req.query.status && req.query.status !== "all" && req.query.status.trim() !== "") {
+      const cleanStatus = String(req.query.status).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_communication_logs.status = '${cleanStatus}'`);
+    }
+    if (req.query.dispatch_mode && req.query.dispatch_mode !== "all" && req.query.dispatch_mode.trim() !== "") {
+      const cleanMode = String(req.query.dispatch_mode).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_communication_logs.dispatch_mode = '${cleanMode}'`);
+    }
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_communication_logs.*, COALESCE(tbl_store.name, '') as store_name`,
+      from: `tbl_communication_logs LEFT JOIN tbl_store ON tbl_communication_logs.store_id = tbl_store.id`,
+      searchColumns: [
+        "tbl_communication_logs.order_code",
+        "tbl_communication_logs.customer_name",
+        "tbl_communication_logs.recipient",
+        "tbl_communication_logs.channel",
+        "tbl_communication_logs.status",
+        "tbl_communication_logs.subject",
+        "tbl_communication_logs.message_preview",
+        "tbl_communication_logs.error_message",
+      ],
+      baseWhere: scopeConditions,
+      filterWhere: filterConditions,
+      defaultOrder: "tbl_communication_logs.id DESC",
+      columnMap: {
+        0: "tbl_communication_logs.id",
+        1: "tbl_communication_logs.created_at",
+        2: "tbl_communication_logs.order_code",
+        3: "tbl_communication_logs.customer_name",
+        4: "tbl_communication_logs.preference_code",
+        5: "tbl_communication_logs.channel",
+        6: "tbl_communication_logs.dispatch_mode",
+        7: "tbl_communication_logs.recipient",
+        8: "tbl_communication_logs.status",
+      },
+      postProcess: async (rows) => {
+        return rows.map((r) => ({
+          id: r.id,
+          created_at: r.created_at,
+          order_id: r.order_id,
+          order_code: r.order_code || "",
+          customer_id: r.customer_id,
+          customer_name: r.customer_name || "",
+          preference_code: r.preference_code || "not_set",
+          channel: r.channel,
+          dispatch_mode: r.dispatch_mode || "auto",
+          recipient: r.recipient || "",
+          subject: r.subject || "",
+          message_preview: r.message_preview || "",
+          status: r.status,
+          provider: r.provider || "",
+          provider_message_id: r.provider_message_id || "",
+          error_message: r.error_message || "",
+          triggered_by: r.triggered_by || "",
+          source_page: r.source_page || "",
+          store_name: r.store_name || "",
+        }));
+      },
+    });
+
+    let whereSql = "1=1";
+    const allConds = [...scopeConditions, ...filterConditions];
+    if (allConds.length > 0) {
+      whereSql = allConds.join(" AND ");
+    }
+    const kpiRows = await DataFind(`
+      SELECT 
+        COUNT(id) as total_dispatches,
+        SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as total_sent,
+        SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as total_failed,
+        SUM(CASE WHEN status = 'skipped' THEN 1 ELSE 0 END) as total_skipped
+      FROM tbl_communication_logs
+      WHERE ${whereSql}
+    `).catch(() => []);
+
+    result.kpi = {
+      total_dispatches: (kpiRows && kpiRows[0]?.total_dispatches) || 0,
+      total_sent: (kpiRows && kpiRows[0]?.total_sent) || 0,
+      total_failed: (kpiRows && kpiRows[0]?.total_failed) || 0,
+      total_skipped: (kpiRows && kpiRows[0]?.total_skipped) || 0,
+    };
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Communication logs report data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
   }
 });
 

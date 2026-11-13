@@ -4282,6 +4282,42 @@
 
                $('#order_note').html(res.order.note);
 
+               window.currentPosInvoiceOrderId = res.order ? res.order.id : null;
+               window.currentPosNotificationResult = res.notificationResult || null;
+
+               const $commBanner = $('#pos_invoice_comm_banner');
+               const $commIcon = $('#pos_invoice_comm_icon');
+               const $commText = $('#pos_invoice_comm_text');
+               const $commBadge = $('#pos_invoice_comm_badge');
+
+               if ($commBanner.length && res.notificationResult) {
+                  const nr = res.notificationResult;
+                  $commBanner.removeClass('d-none alert-success alert-warning alert-info alert-secondary');
+                  if (nr.sent) {
+                     $commBanner.addClass('alert-success');
+                     $commIcon.attr('class', 'fa fa-check-circle text-success');
+                     $commText.text('Invoice automatically sent via ' + (nr.channel || '').toUpperCase() + ' to ' + (nr.recipient || 'customer'));
+                     $commBadge.attr('class', 'badge bg-success').text('Auto-Sent');
+                     if (typeof toastr !== 'undefined') {
+                        toastr.info('Invoice auto-sent via ' + (nr.channel || '').toUpperCase());
+                     }
+                  } else if (nr.skipped) {
+                     $commBanner.addClass('alert-info');
+                     $commIcon.attr('class', 'fa fa-info-circle text-info');
+                     let skipMsg = 'Electronic auto-send skipped';
+                     if (nr.reason === 'preference_is_print') skipMsg = 'Customer preference is Print — invoice ready for printing';
+                     else if (nr.reason === 'preference_not_set') skipMsg = 'Customer preference not set — print invoice or pick a channel below';
+                     else if (nr.reason === 'auto_send_disabled_at_checkout') skipMsg = 'Auto-send was toggled off at checkout';
+                     $commText.text(skipMsg);
+                     $commBadge.attr('class', 'badge bg-secondary').text('Print Only');
+                  } else if (nr.error) {
+                     $commBanner.addClass('alert-warning');
+                     $commIcon.attr('class', 'fa fa-exclamation-triangle text-warning');
+                     $commText.text('Auto-send notice: ' + nr.error);
+                     $commBadge.attr('class', 'badge bg-warning text-dark').text('Not Sent');
+                  }
+               }
+
                $('#invoice').modal('show');
                invocurrency()
 

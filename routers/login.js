@@ -529,6 +529,15 @@ router.get("/register", async (req, res) => {
     "SELECT * FROM tbl_customer_type WHERE status = 1 ORDER BY id ASC",
   );
 
+  let communicationPreferences = [];
+  try {
+    communicationPreferences = await DataFind(
+      "SELECT id, code, name, description FROM tbl_communication_preferences WHERE status = 1 ORDER BY sort_order ASC, id ASC"
+    );
+  } catch (err) {
+    console.warn("Communication preferences fetch warning:", err.message);
+  }
+
   const Country_name = countryCodes.customList("countryCode", "{countryCode}");
   const nameCode = Object.values(Country_name);
 
@@ -562,6 +571,7 @@ router.get("/register", async (req, res) => {
       nameCode,
       CountryCode,
       customer_types: customerTypes,
+      communication_preferences: communicationPreferences,
       enable_store_signup: isStoreSignupEnabled,
     });
   } else {
@@ -572,6 +582,7 @@ router.get("/register", async (req, res) => {
       nameCode,
       CountryCode,
       customer_types: customerTypes,
+      communication_preferences: communicationPreferences,
       enable_store_signup: isStoreSignupEnabled,
     });
   }
@@ -656,6 +667,25 @@ router.post("/register", async (req, res) => {
     const safeCustomerType = (customer_type || 'Counter • Counter').trim().replace(/'/g, "\\'");
     const safeUsername = (username || '').trim().replace(/'/g, "\\'");
 
+    if (req.body.confirm_password !== undefined && password !== req.body.confirm_password) {
+      req.flash("error", "Password and Confirm Password do not match.");
+      return res.redirect(req.get("Referrer") || "/register");
+    }
+
+    let commPrefId = null;
+    const rawCommPref = (req.body.communication_preference || '').trim();
+    if (rawCommPref) {
+      const cleanPref = rawCommPref.replace(/'/g, "\\'");
+      const prefRows = await DataFind(
+        `SELECT id FROM tbl_communication_preferences WHERE (id = '${cleanPref}' OR LOWER(code) = LOWER('${cleanPref}') OR LOWER(name) = LOWER('${cleanPref}')) AND status = 1 LIMIT 1`
+      );
+      if (prefRows && prefRows.length > 0) {
+        commPrefId = prefRows[0].id;
+      }
+    }
+    const safeCommPrefSQL = commPrefId ? `${commPrefId}` : 'NULL';
+    const safeSmsOptIn = (String(req.body.sms_opt_in) === '1' || req.body.sms_opt_in === true || req.body.sms_opt_in === 'on') ? 1 : 0;
+
     const check_number = await DataFind(
       "SELECT * FROM tbl_customer WHERE number='" + safeNumber + "' AND delet_flage = 0",
     );
@@ -707,8 +737,8 @@ router.post("/register", async (req, res) => {
     if (store) {
       const customerInsert = await DataInsert(
         `tbl_customer`,
-        `name,first_name,last_name,dob,number,email,address,city,state,zipcode,customer_type,taxnumber,username,password,main_roll_id,approved,store_ID`,
-        `'${safeName}','${safeFirstName}','${safeLastName}',${safeDobSQL},'${safeNumber}','${safeEmail}','${safeAddress}','${safeCity}','${safeState}','${safeZipcode}','${safeCustomerType}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved},'${store}'`,
+        `name,first_name,last_name,dob,number,email,address,city,state,zipcode,customer_type,communication_preference_id,sms_opt_in,taxnumber,username,password,main_roll_id,approved,store_ID`,
+        `'${safeName}','${safeFirstName}','${safeLastName}',${safeDobSQL},'${safeNumber}','${safeEmail}','${safeAddress}','${safeCity}','${safeState}','${safeZipcode}','${safeCustomerType}',${safeCommPrefSQL},${safeSmsOptIn},'${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved},'${store}'`,
         req.hostname,
         req.protocol,
       );
@@ -723,8 +753,8 @@ router.post("/register", async (req, res) => {
     } else {
       const customerInsert = await DataInsert(
         `tbl_customer`,
-        `name,first_name,last_name,dob,number,email,address,city,state,zipcode,customer_type,taxnumber,username,password,main_roll_id,approved`,
-        `'${safeName}','${safeFirstName}','${safeLastName}',${safeDobSQL},'${safeNumber}','${safeEmail}','${safeAddress}','${safeCity}','${safeState}','${safeZipcode}','${safeCustomerType}','${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved}`,
+        `name,first_name,last_name,dob,number,email,address,city,state,zipcode,customer_type,communication_preference_id,sms_opt_in,taxnumber,username,password,main_roll_id,approved`,
+        `'${safeName}','${safeFirstName}','${safeLastName}',${safeDobSQL},'${safeNumber}','${safeEmail}','${safeAddress}','${safeCity}','${safeState}','${safeZipcode}','${safeCustomerType}',${safeCommPrefSQL},${safeSmsOptIn},'${safeTaxNumber}','${safeUsername}','${hashpass}','${customerId[0].id}',${approved}`,
         req.hostname,
         req.protocol,
       );

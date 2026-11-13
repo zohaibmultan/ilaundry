@@ -52,250 +52,395 @@
     <link rel="stylesheet" href="/vendor/toastr/css/toastr.min.css">
 </head>
 
-<body>
-    <div class="auth-split-wrapper">
-        <!-- Floating Theme Switcher -->
-        <div class="auth-top-controls">
-            <button type="button" class="auth-theme-btn" id="auth_theme_toggle" title="Switch Theme">
-                <i class="fas fa-moon lighticon"></i>
-                <i class="fas fa-sun darkicon d-none"></i>
-                <span id="theme_label">Dark Mode</span>
-            </button>
-        </div>
+<body class="vh-100 overflow-hidden">
+    <div class="container-fluid vh-100 p-0 overflow-hidden">
+        <div class="row g-0 h-100">
 
-        <!-- Left Canvas: Branding & Showcase -->
-        <div class="auth-hero-canvas">
-            <div class="auth-hero-glow-1"></div>
-            <div class="auth-hero-glow-2"></div>
-
-            <div class="auth-hero-brand">
-                <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-hero-brand-logo"
-                    alt="<%= data?.app_name || '' %> Logo">
-            </div>
-
-            <div class="auth-hero-content">
-                <h1 class="auth-hero-heading">
-                    Effortless Laundry care At Your Fingertips.
-                </h1>
-                <p class="auth-hero-lead">
-                    Create your customer account to track garment wash stages, view thermal billing receipts, schedule
-                    laundry drops, and manage your account ledger in real time.
-                </p>
-
-                <!-- <div class="auth-hero-pills">
-                    <div class="auth-hero-pill">
-                        <div class="auth-pill-icon"><i class="fas fa-clock"></i></div>
-                        <div>
-                            <div class="auth-pill-text">Live Order Tracking</div>
-                            <div class="fs-11 text-muted">Real-time Wash Milestones</div>
-                        </div>
+            <!-- Left Branding & Feature Showcase Column (Static & Full Height) -->
+            <div class="col-lg-5 col-xl-5 d-none d-lg-flex flex-column justify-content-between p-4 p-xl-5 position-relative overflow-hidden h-100">
+                <!-- Branding Header -->
+                <div>
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <img src="/uploads/<%= data?.app_logo || '' %>" alt="<%= data?.app_name || '' %> Logo"
+                            style="height: 56px; max-width: 190px; object-fit: contain;">
                     </div>
-                    <div class="auth-hero-pill">
-                        <div class="auth-pill-icon"><i class="fas fa-file-invoice-dollar"></i></div>
-                        <div>
-                            <div class="auth-pill-text">Digital Receipts</div>
-                            <div class="fs-11 text-muted">Itemized Billing History</div>
-                        </div>
-                    </div>
-                    <div class="auth-hero-pill">
-                        <div class="auth-pill-icon"><i class="fas fa-tags"></i></div>
-                        <div>
-                            <div class="auth-pill-text">Special Offers</div>
-                            <div class="fs-11 text-muted">Discounts &amp; Loyalty Points</div>
-                        </div>
-                    </div>
-                    <div class="auth-hero-pill">
-                        <div class="auth-pill-icon"><i class="fas fa-bell"></i></div>
-                        <div>
-                            <div class="auth-pill-text">Instant Notifications</div>
-                            <div class="fs-11 text-muted">SMS &amp; Email Ready Alerts</div>
-                        </div>
-                    </div>
-                </div> -->
-            </div>
+                </div>
 
-            <div class="auth-hero-footer">
-                <span>
-                    Copyright &copy; 2026 <%= data?.app_name || '' %> All rights reserved.
-                </span>
-            </div>
-        </div>
+                <!-- Hero Copy & Feature Cards -->
+                <div class="my-auto py-3">
+                    <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill border mb-3 small fw-bold text-primary">
+                        <i class="fas fa-sparkles"></i>
+                        <span>Customer Portal</span>
+                    </div>
 
-        <!-- Right Canvas: Auth Form -->
-        <div class="auth-form-canvas">
-            <div class="auth-glass-card auth-card-wide">
-                <div class="auth-card-header">
-                    <a href="/">
-                        <img src="/uploads/<%= data?.app_logo || '' %>" class="auth-card-logo"
-                            alt="<%= data?.app_name || '' %>">
-                    </a>
-                    <h3 class="auth-card-title">Create Your Account</h3>
-                    <p class="auth-card-subtitle">
-                        Select your registration role and fill in your profile details.
+                    <h1 class="fw-bold mb-3">
+                        Effortless Laundry Care At Your Fingertips.
+                    </h1>
+                    <p class="text-muted fs-6 mb-4">
+                        Create your customer account to track garment wash milestones, view digital billing receipts, schedule laundry pickups, and select your preferred communication channel.
                     </p>
+
                 </div>
 
-                <!-- Segmented Role Switcher -->
-                <div class="auth-role-segmented">
-                    <a href="/register" class="role-segment-btn active">
-                        <i class="fas fa-user me-1"></i> Customer Account
-                    </a>
-                    <% if (data?.type == '1' && (typeof enable_store_signup === 'undefined' || enable_store_signup)) { %>
-                        <a href="/shopregister" class="role-segment-btn">
-                            <i class="fas fa-store me-1"></i> Store / Branch Owner
-                        </a>
-                    <% } %>
+                <!-- Footer -->
+                <div class="pt-3 border-top small text-muted d-flex justify-content-between align-items-center">
+                    <span>Copyright &copy; 2026 <%= data?.app_name || 'iCleaners' %></span>
+                    <span>All rights reserved</span>
+                </div>
+            </div>
+
+            <!-- Right Registration Form Column (Scrollable & Full Height) -->
+            <div class="col-12 col-lg-7 col-xl-7 d-flex flex-column p-3 p-sm-4 p-md-5 position-relative overflow-auto h-100">
+                <!-- Top Controls (Mobile Logo + Theme Toggle) -->
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <div class="d-lg-none">
+                        <img src="/uploads/<%= data?.app_logo || '' %>" alt="<%= data?.app_name || '' %>"
+                            style="height: 42px; max-width: 150px; object-fit: contain;">
+                    </div>
+                    <div class="ms-auto">
+                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-1 d-inline-flex align-items-center gap-2"
+                            id="auth_theme_toggle" title="Switch Theme">
+                            <i class="fas fa-moon lighticon"></i>
+                            <i class="fas fa-sun darkicon d-none"></i>
+                            <span id="theme_label">Dark Mode</span>
+                        </button>
+                    </div>
                 </div>
 
-                <form action="/register" method="POST" class="needs-validation" id="register_form">
-                    <div class="row g-3">
-                        <!-- First Name -->
-                        <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>First Name</strong> <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="first_name" id="first_name" placeholder="John" required
-                                autofocus>
-                        </div>
+                <!-- Form Card Row -->
+                <div class="row justify-content-center w-100 g-0 my-0">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm rounded-4 mb-3">
+                            <div class="card-body p-3 p-sm-4 p-md-5">
 
-                        <!-- Last Name -->
-                        <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Last Name</strong> <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="last_name" id="last_name" placeholder="Doe" required>
-                        </div>
+                                <!-- Card Header -->
+                                <div class="text-center mb-4">
+                                    <h2 class="fw-bold mb-1">Create Customer Account</h2>
+                                    <p class="text-muted small mb-0">
+                                        Fill in your personal, address, and login credentials below to register your account.
+                                    </p>
+                                </div>
 
-                        <!-- Email Address -->
-                        <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Email Address</strong> <span
-                                    class="text-danger">*</span></label>
-                            <input type="email" class="form-control" name="email" placeholder="john@example.com"
-                                required>
-                        </div>
-
-                        <!-- Phone Number -->
-                        <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Phone Number</strong> <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="number" placeholder="+1234567890" required>
-                        </div>
-
-                        <!-- Customer Type -->
-                        <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Customer Type</strong> <span
-                                    class="text-danger">*</span></label>
-                            <select class="form-control form-select" name="customer_type" id="customer_type" required>
-                                <option value="" disabled>Choose Customer Type</option>
-                                <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
-                                    <% customer_types.forEach(function(ct, idx){ %>
-                                        <option value="<%= ct.name %>" <%= idx === 0 ? 'selected' : '' %>>
-                                            <%= ct.name %><% if (ct.description) { %> - <%= ct.description %><% } %>
-                                        </option>
-                                    <% }); %>
-                                <% } else { %>
-                                    <option value="Counter • Counter" selected>Counter • Counter - Customer will drop-off and customer will pickup</option>
-                                    <option value="Counter • Route">Counter • Route - Customer will drop-off and store will deliver</option>
-                                    <option value="Route • Route">Route • Route - Store will pickup and store will deliver</option>
-                                    <option value="Route • Counter">Route • Counter - Store will pickup and customer will pickup</option>
+                                <!-- Role Segmented Switcher (Customer vs Store Owner) -->
+                                <% if (data?.type == '1' && (typeof enable_store_signup === 'undefined' || enable_store_signup)) { %>
+                                    <ul class="nav nav-pills nav-fill p-1 border rounded-3 mb-4">
+                                        <li class="nav-item">
+                                            <a class="nav-link active fw-bold small py-2" href="/register">
+                                                <i class="fas fa-user me-1"></i> Customer Account
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link text-muted fw-bold small py-2" href="/shopregister">
+                                                <i class="fas fa-store me-1"></i> Store / Branch Owner
+                                            </a>
+                                        </li>
+                                    </ul>
                                 <% } %>
-                            </select>
-                        </div>
 
-                        <!-- Date of Birth (Optional) -->
-                        <div class="col-md-6">
-                            <label class="form-label mb-1"><strong>Date of Birth</strong> <span
-                                    class="text-muted fs-12 fw-normal">(Optional)</span></label>
-                            <input type="date" class="form-control" name="dob" id="dob" placeholder="YYYY-MM-DD">
-                        </div>
+                                <form action="/register" method="POST" class="needs-validation" id="register_form" novalidate>
 
-                        <!-- Address Fields -->
-                        <div class="col-md-12">
-                            <label class="form-label mb-1"><strong>Address</strong> <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="address" placeholder="Street address or P.O. Box"
-                                required>
-                        </div>
+                                    <!-- SECTION 1: Personal Details -->
+                                    <div class="card border rounded-3 mb-4 shadow-none">
+                                        <div class="card-header py-2 px-3 border-bottom d-flex align-items-center justify-content-between">
+                                            <span class="fw-bold d-flex align-items-center">
+                                                <i class="fas fa-user text-primary me-2"></i>Personal Details
+                                            </span>
+                                            <span class="badge bg-primary text-white rounded-pill px-2 py-1">Step 1 of 4</span>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="row g-3">
+                                                <!-- First Name -->
+                                                <div class="col-md-6">
+                                                    <label class="form-label mb-1" for="first_name">
+                                                        First Name <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="text" class="form-control" name="first_name" id="first_name"
+                                                        placeholder="e.g. John" required autofocus>
+                                                    <div class="invalid-feedback">Please enter your first name.</div>
+                                                </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label mb-1"><strong>City</strong> <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="city" placeholder="City"
-                                required>
-                        </div>
+                                                <!-- Last Name -->
+                                                <div class="col-md-6">
+                                                    <label class="form-label mb-1" for="last_name">
+                                                        Last Name <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="text" class="form-control" name="last_name" id="last_name"
+                                                        placeholder="e.g. Doe" required>
+                                                    <div class="invalid-feedback">Please enter your last name.</div>
+                                                </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label mb-1"><strong>State</strong> <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="state" placeholder="State / Province"
-                                required>
-                        </div>
+                                                <!-- Email Address -->
+                                                <div class="col-md-6">
+                                                    <label class="form-label mb-1" for="email">
+                                                        Email Address <span class="text-danger">*</span>
+                                                    </label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                                        <input type="email" class="form-control" name="email" id="email"
+                                                            placeholder="john@example.com" required>
+                                                        <div class="invalid-feedback">Please enter a valid email address.</div>
+                                                    </div>
+                                                </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label mb-1"><strong>Zip Code</strong></label>
-                            <input type="text" class="form-control" name="zipcode" placeholder="Postal / Zip code">
-                        </div>
+                                                <!-- Phone Number -->
+                                                <div class="col-md-6">
+                                                    <label class="form-label mb-1" for="number">
+                                                        Phone Number <span class="text-danger">*</span>
+                                                    </label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                                        <input type="tel" class="form-control" name="number" id="number"
+                                                            placeholder="+1 (555) 000-0000" required>
+                                                        <div class="invalid-feedback">Please enter your contact phone number.</div>
+                                                    </div>
+                                                </div>
 
-                        <!-- Store Selector (if multi-store mode enabled) -->
-                       
-                            <div class="col-md-12">
-                                <label class="form-label mb-1"><strong>Preferred Store</strong> <span
-                                        class="text-danger">*</span></label>
-                                <select class="form-control form-select" name="store" required>
-                                    <option value="" selected disabled>Choose Store Location</option>
-                                    <% store.forEach(function(st){ %>
-                                        <option value="<%= st.id %>">
-                                            <%= st.name %>
-                                        </option>
-                                        <% }); %>
-                                </select>
-                            </div>
-                            
-
-                                <!-- Username -->
-                                <div class="col-md-6">
-                                    <label class="form-label mb-1"><strong>Username</strong> <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="username"
-                                        placeholder="Choose username" required>
-                                </div>
-
-                                <!-- Password -->
-                                <div class="col-md-6">
-                                    <label class="form-label mb-1"><strong>Password</strong> <span
-                                            class="text-danger">*</span></label>
-                                    <div class="position-relative">
-                                        <input type="password" class="form-control pe-5" id="reg_password"
-                                            name="password" placeholder="Create password" required minlength="4">
-                                        <button type="button" class="password-toggle-btn"
-                                            onclick="togglePasswordVisibility('reg_password', this)">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
+                                                <!-- Date of Birth (Optional) -->
+                                                <div class="col-md-6">
+                                                    <label class="form-label mb-1" for="dob">
+                                                        Date of Birth <span class="text-muted fs-11 fw-normal">(Optional)</span>
+                                                    </label>
+                                                    <input type="date" class="form-control" name="dob" id="dob"
+                                                        placeholder="YYYY-MM-DD">
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
+
+                                    <!-- SECTION 2: Address Details -->
+                                    <div class="card border rounded-3 mb-4 shadow-none">
+                                        <div class="card-header py-2 px-3 border-bottom d-flex align-items-center justify-content-between">
+                                            <span class="fw-bold d-flex align-items-center">
+                                                <i class="fas fa-map-marker-alt text-primary me-2"></i>Address Details
+                                            </span>
+                                            <span class="badge bg-primary text-white rounded-pill px-2 py-1">Step 2 of 4</span>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="row g-3">
+                                                <!-- Street Address -->
+                                                <div class="col-12">
+                                                    <label class="form-label mb-1" for="address">
+                                                        Street Address <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="text" class="form-control" name="address" id="address"
+                                                        placeholder="Street address, suite or P.O. Box" required>
+                                                    <div class="invalid-feedback">Please enter your street address.</div>
+                                                </div>
+
+                                                <!-- City -->
+                                                <div class="col-md-4">
+                                                    <label class="form-label mb-1" for="city">
+                                                        City <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="text" class="form-control" name="city" id="city"
+                                                        placeholder="City" required>
+                                                    <div class="invalid-feedback">Please enter your city.</div>
+                                                </div>
+
+                                                <!-- State -->
+                                                <div class="col-md-4">
+                                                    <label class="form-label mb-1" for="state">
+                                                        State / Province <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="text" class="form-control" name="state" id="state"
+                                                        placeholder="State" required>
+                                                    <div class="invalid-feedback">Please enter your state or province.</div>
+                                                </div>
+
+                                                <!-- Zipcode -->
+                                                <div class="col-md-4">
+                                                    <label class="form-label mb-1" for="zipcode">
+                                                        Zip / Postal Code
+                                                    </label>
+                                                    <input type="text" class="form-control" name="zipcode" id="zipcode"
+                                                        placeholder="Postal code">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- SECTION 3: Service & Preferences -->
+                                    <div class="card border rounded-3 mb-4 shadow-none">
+                                        <div class="card-header py-2 px-3 border-bottom d-flex align-items-center justify-content-between">
+                                            <span class="fw-bold d-flex align-items-center">
+                                                <i class="fas fa-sliders-h text-primary me-2"></i>Service &amp; Communication Preferences
+                                            </span>
+                                            <span class="badge bg-primary text-white rounded-pill px-2 py-1">Step 3 of 4</span>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="row g-3">
+                                                <!-- Preferred Store (Rendered only when store list is provided in multi-store mode) -->
+                                                <% if (typeof store !== 'undefined' && store && store.length > 0) { %>
+                                                    <div class="col-12">
+                                                        <label class="form-label mb-1" for="store">
+                                                            Preferred Store Location <span class="text-danger">*</span>
+                                                        </label>
+                                                        <select class="form-control form-select" name="store" id="store" required>
+                                                            <option value="" selected disabled>Choose Store Location</option>
+                                                            <% store.forEach(function(st){ %>
+                                                                <option value="<%= st.id %>">
+                                                                    <%= st.name %>
+                                                                </option>
+                                                            <% }); %>
+                                                        </select>
+                                                        <div class="invalid-feedback">Please select your preferred store branch.</div>
+                                                    </div>
+                                                <% } %>
+
+                                                <!-- Customer Type -->
+                                                <div class="col-md-6">
+                                                    <label class="form-label mb-1" for="customer_type">
+                                                        Customer Intake &amp; Dispatch Type <span class="text-danger">*</span>
+                                                    </label>
+                                                    <select class="form-control form-select" name="customer_type" id="customer_type" required>
+                                                        <option value="" disabled>Choose Customer Type</option>
+                                                        <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
+                                                            <% customer_types.forEach(function(ct, idx){ %>
+                                                                <option value="<%= ct.name %>" <%= idx === 0 ? 'selected' : '' %>>
+                                                                    <%= ct.name %><% if (ct.description) { %> — <%= ct.description %><% } %>
+                                                                </option>
+                                                            <% }); %>
+                                                        <% } else { %>
+                                                            <option value="Counter • Counter" selected>Counter • Counter — Customer will drop-off and pickup</option>
+                                                            <option value="Counter • Route">Counter • Route — Customer will drop-off and store will deliver</option>
+                                                            <option value="Route • Route">Route • Route — Store will pickup and deliver</option>
+                                                            <option value="Route • Counter">Route • Counter — Store will pickup and customer will pickup</option>
+                                                        <% } %>
+                                                    </select>
+                                                    <div class="invalid-feedback">Please select your customer service type.</div>
+                                                </div>
+
+                                                <!-- Communication Preference -->
+                                                <div class="col-md-6">
+                                                    <label class="form-label mb-1" for="communication_preference">
+                                                        Communication Preference <span class="text-danger">*</span>
+                                                    </label>
+                                                    <select class="form-control form-select" name="communication_preference" id="communication_preference" required>
+                                                        <option value="" disabled selected>Choose Communication Preference</option>
+                                                        <% if (typeof communication_preferences !== 'undefined' && communication_preferences && communication_preferences.length > 0) { %>
+                                                            <% communication_preferences.forEach(function(cp){ %>
+                                                                <option value="<%= cp.name %>" data-desc="<%= cp.description || '' %>" data-code="<%= cp.code %>">
+                                                                    <%= cp.name %><% if (cp.description) { %> — <%= cp.description %><% } %>
+                                                                </option>
+                                                            <% }); %>
+                                                        <% } else { %>
+                                                            <option value="Print" data-desc="Printed paper receipts and counter tickets">Print — Paper receipts</option>
+                                                            <option value="Email" data-desc="Digital receipts and order status emails">Email — Digital receipts</option>
+                                                            <option value="SMS" data-desc="Automated mobile SMS alerts for order updates">SMS — Mobile SMS alerts</option>
+                                                            <option value="Chat" data-desc="Instant WhatsApp and direct chat updates">Chat — WhatsApp &amp; chat alerts</option>
+                                                        <% } %>
+                                                    </select>
+                                                    <div class="invalid-feedback">Please select your communication preference.</div>
+                                                    <div class="form-text small text-muted mt-1" id="comm_pref_help">
+                                                        Select how you prefer to receive invoices, drop updates, and ready alerts.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- SECTION 4: Signup & Account Details -->
+                                    <div class="card border rounded-3 mb-4 shadow-none">
+                                        <div class="card-header py-2 px-3 border-bottom d-flex align-items-center justify-content-between">
+                                            <span class="fw-bold d-flex align-items-center">
+                                                <i class="fas fa-user-shield text-primary me-2"></i>Signup &amp; Credentials
+                                            </span>
+                                            <span class="badge bg-primary text-white rounded-pill px-2 py-1">Step 4 of 4</span>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="row g-3">
+                                                <!-- Username -->
+                                                <div class="col-12">
+                                                    <label class="form-label mb-1" for="username">
+                                                        Account Username <span class="text-danger">*</span>
+                                                    </label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">@</span>
+                                                        <input type="text" class="form-control" name="username" id="username"
+                                                            placeholder="Choose a unique username" autocomplete="username" required>
+                                                        <div class="invalid-feedback">Please choose an account username.</div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Password -->
+                                                <div class="col-md-6">
+                                                    <label class="form-label mb-1" for="reg_password">
+                                                        Create Password <span class="text-danger">*</span>
+                                                    </label>
+                                                    <div class="position-relative">
+                                                        <input type="password" class="form-control pe-5" id="reg_password"
+                                                            name="password" placeholder="At least 4 characters" required minlength="4"
+                                                            autocomplete="new-password">
+                                                        <button type="button" class="password-toggle-btn"
+                                                            onclick="togglePasswordVisibility('reg_password', this)" title="Show/Hide Password">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div class="invalid-feedback">Password must be at least 4 characters long.</div>
+                                                    <!-- Password Strength Bar -->
+                                                    <div class="progress mt-2" style="height: 4px;">
+                                                        <div class="progress-bar" id="pw_strength_bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                                    </div>
+                                                    <div class="fs-11 text-muted mt-1" id="pw_strength_label">Password strength</div>
+                                                </div>
+
+                                                <!-- Confirm Password -->
+                                                <div class="col-md-6">
+                                                    <label class="form-label mb-1" for="reg_confirm_password">
+                                                        Confirm Password <span class="text-danger">*</span>
+                                                    </label>
+                                                    <div class="position-relative">
+                                                        <input type="password" class="form-control pe-5" id="reg_confirm_password"
+                                                            name="confirm_password" placeholder="Re-enter password" required minlength="4"
+                                                            autocomplete="new-password">
+                                                        <button type="button" class="password-toggle-btn"
+                                                            onclick="togglePasswordVisibility('reg_confirm_password', this)" title="Show/Hide Password">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div class="invalid-feedback" id="pw_match_feedback">Passwords must match.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- SMS Opt-In Consent Checkbox (CTIA & A2P 10DLC Mandatory Compliance) -->
+                                    <div class="p-3 rounded-3 border mb-4" id="sms_opt_in_wrapper">
+                                        <div class="form-check d-flex align-items-start gap-2 mb-0">
+                                            <input class="form-check-input mt-1 flex-shrink-0 ms-0" type="checkbox" name="sms_opt_in" id="sms_opt_in" value="1">
+                                            <label class="form-check-label fs-13 lh-sm" for="sms_opt_in">
+                                                I agree to receive automated transactional notifications from <strong><%= data?.app_name || 'iCleaners' %></strong> regarding my garment cleaning orders (order intake confirmations, ready for pickup alerts, route delivery schedules, and digital payment receipts). Message frequency varies based on order activity. Message &amp; data rates may apply. Reply STOP to cancel at any time, or reply HELP for help. View our <a href="/terms-and-conditions" target="_blank" class="text-primary text-decoration-underline fw-semibold">Terms of Service</a> and <a href="/privacy-policy" target="_blank" class="text-primary text-decoration-underline fw-semibold">Privacy Policy</a>.
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Submit Button -->
+                                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-2 shadow-sm" id="submit_register_btn">
+                                        <i class="fas fa-user-check me-2"></i> Register Customer Account
+                                    </button>
+                                </form>
+
+                                <!-- Footer Link to Sign In -->
+                                <div class="text-center mt-4 pt-3 border-top">
+                                    <p class="small text-muted mb-0">
+                                        Already have an account?
+                                        <a href="/" class="text-primary fw-bold text-decoration-none ms-1">
+                                            <i class="fas fa-sign-in-alt me-1"></i> Sign In
+                                        </a>
+                                    </p>
                                 </div>
-                        <!-- SMS Opt-In Consent Checkbox (CTIA & A2P 10DLC Mandatory Compliance) -->
-                        <div class="col-12 mt-2">
-                            <div class="form-check p-3 rounded-3 bg-light border">
-                                <input class="form-check-input ms-0 me-2" type="checkbox" name="sms_opt_in" id="sms_opt_in" value="1">
-                                <label class="form-check-label fs-13 text-dark lh-sm" for="sms_opt_in">
-                                    I agree to receive automated transactional SMS notifications from <strong><%= data?.app_name || 'iCleaners' %></strong> regarding my garment cleaning orders (order intake confirmations, ready for pickup alerts, route delivery schedules, and digital payment receipts). Message frequency varies based on order activity. Message &amp; data rates may apply. Reply STOP to cancel at any time, or reply HELP for help. View our <a href="/terms-and-conditions" target="_blank" class="text-primary text-decoration-underline fw-semibold">Terms of Service</a> and <a href="/privacy-policy" target="_blank" class="text-primary text-decoration-underline fw-semibold">Privacy Policy</a>.
-                                </label>
+
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <button type="submit" class="auth-submit-btn mt-4" id="submit_register_btn">
-                        <i class="fas fa-user-check me-1"></i> Register Customer Account
-                    </button>
-                </form>
-
-                <div class="text-center mt-4 pt-2 border-top">
-                    <p class="fs-13 text-muted mb-0">
-                        Already have an account?
-                        <a href="/" class="text-primary fw-bold text-decoration-none ms-1">
-                            <i class="fas fa-sign-in-alt me-1"></i> Sign In
-                        </a>
-                    </p>
+                <!-- Mobile Footer -->
+                <div class="text-center small text-muted py-2 d-lg-none">
+                    Copyright &copy; 2026 <%= data?.app_name || 'iCleaners' %> All rights reserved.
                 </div>
             </div>
+
         </div>
     </div>
 
@@ -316,7 +461,7 @@
         }
     </script>
 
-    <!-- Theme Switcher & Password Handlers -->
+    <!-- Theme Switcher, Form Handlers & Password Logic -->
     <script>
         function setCookie(name, value, days) {
             var expires = "";
@@ -355,16 +500,41 @@
 
         function togglePasswordVisibility(fieldId, btn) {
             var input = document.getElementById(fieldId);
+            if (!input) return;
             var icon = btn.querySelector('i');
             if (input.type === 'password') {
                 input.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
+                if (icon) {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                }
             } else {
                 input.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
+                if (icon) {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
             }
+        }
+
+        function checkPasswordStrength(password) {
+            var strength = 0;
+            if (!password) return { percent: 0, label: 'Password strength', colorClass: 'bg-secondary' };
+            if (password.length >= 4) strength += 25;
+            if (password.length >= 8) strength += 25;
+            if (/[0-9]/.test(password)) strength += 25;
+            if (/[^A-Za-z0-9]/.test(password) || (/[A-Z]/.test(password) && /[a-z]/.test(password))) strength += 25;
+
+            var label = 'Weak';
+            var colorClass = 'bg-danger';
+            if (strength >= 75) {
+                label = 'Strong';
+                colorClass = 'bg-success';
+            } else if (strength >= 50) {
+                label = 'Medium';
+                colorClass = 'bg-warning';
+            }
+            return { percent: strength, label: label, colorClass: colorClass };
         }
 
         $(document).ready(function () {
@@ -378,6 +548,81 @@
                 setCookie('theme_version', newTheme, 365);
                 localStorage.setItem('theme_version', newTheme);
                 applyAuthTheme(newTheme);
+            });
+
+            // Password strength calculation
+            $('#reg_password').on('input', function () {
+                var pw = $(this).val();
+                var result = checkPasswordStrength(pw);
+                var $bar = $('#pw_strength_bar');
+                $bar.css('width', result.percent + '%')
+                    .removeClass('bg-danger bg-warning bg-success bg-secondary')
+                    .addClass(result.colorClass);
+                $('#pw_strength_label').text('Password strength: ' + result.label);
+
+                // Re-verify match if confirm field has input
+                var confirmPw = $('#reg_confirm_password').val();
+                if (confirmPw.length > 0) {
+                    if (pw !== confirmPw) {
+                        $('#reg_confirm_password')[0].setCustomValidity('Passwords must match.');
+                    } else {
+                        $('#reg_confirm_password')[0].setCustomValidity('');
+                    }
+                }
+            });
+
+            // Confirm password matching
+            $('#reg_confirm_password').on('input', function () {
+                var confirmPw = $(this).val();
+                var pw = $('#reg_password').val();
+                if (pw !== confirmPw) {
+                    this.setCustomValidity('Passwords must match.');
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
+
+            // Communication Preference dynamic helper
+            $('#communication_preference').on('change', function () {
+                var $selected = $(this).find('option:selected');
+                var desc = $selected.attr('data-desc');
+                var code = $selected.attr('data-code') || '';
+                if (desc) {
+                    $('#comm_pref_help').text(desc);
+                }
+                // If SMS or Chat is selected, gentle visual indicator for SMS opt-in
+                if (code === 'sms' || code === 'chat' || $(this).val() === 'SMS' || $(this).val() === 'Chat') {
+                    $('#sms_opt_in_wrapper').addClass('border-primary');
+                } else {
+                    $('#sms_opt_in_wrapper').removeClass('border-primary');
+                }
+            });
+
+            // Form validation guard on submit
+            $('#register_form').on('submit', function (event) {
+                var form = this;
+                var pw = $('#reg_password').val();
+                var confirmPw = $('#reg_confirm_password').val();
+
+                if (pw !== confirmPw) {
+                    $('#reg_confirm_password')[0].setCustomValidity('Passwords must match.');
+                } else {
+                    $('#reg_confirm_password')[0].setCustomValidity('');
+                }
+
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    form.classList.add('was-validated');
+                    // Scroll to first invalid field
+                    var firstInvalid = form.querySelector(':invalid');
+                    if (firstInvalid) {
+                        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        firstInvalid.focus();
+                    }
+                    return false;
+                }
+                form.classList.add('was-validated');
             });
         });
     </script>
@@ -393,18 +638,18 @@
                 escapeHtml: false
             });
         </script>
-        <% } %>
+    <% } %>
 
-            <% if(typeof error !=='undefined' && error && error.length> 0){ %>
-                <script>
-                    toastr.error('<%= error %>', {
-                        timeOut: 6000,
-                        closeButton: true,
-                        progressBar: true,
-                        positionClass: "toast-top-right"
-                    });
-                </script>
-                <% } %>
+    <% if(typeof error !=='undefined' && error && error.length> 0){ %>
+        <script>
+            toastr.error('<%= error %>', {
+                timeOut: 6000,
+                closeButton: true,
+                progressBar: true,
+                positionClass: "toast-top-right"
+            });
+        </script>
+    <% } %>
 </body>
 
 </html>

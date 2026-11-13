@@ -18,45 +18,121 @@
                         <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <div>
                                 <h3 class="card-title mb-1 fw-bold text-dark d-flex align-items-center">
-                                    <i class="fa fa-bell text-primary me-2"></i><%= language.Notification || 'Notifications' %>
+                                    <i class="fa fa-bell text-primary me-2"></i><%= language.Notification || 'Notifications & Communications' %>
                                 </h3>
-                                <small class="text-muted"><%= language.Notification_Subtitle || 'Monitor system alerts, customer order updates, and activity notices' %></small>
+                                <small class="text-muted"><%= language.Notification_Subtitle || 'Monitor system alerts, customer order updates, and multichannel communication logs' %></small>
                             </div>
+                            <ul class="nav nav-pills" id="notifCommTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active py-1.5 px-3 fs-13 fw-semibold" id="tab-notif-link" data-bs-toggle="pill" data-bs-target="#pane-notif" type="button" role="tab" aria-selected="true">
+                                        <i class="fa fa-bell me-1"></i><%= language.System_Notifications || 'System Alerts' %>
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link py-1.5 px-3 fs-13 fw-semibold" id="tab-comm-link" data-bs-toggle="pill" data-bs-target="#pane-comm" type="button" role="tab" aria-selected="false">
+                                        <i class="fa fa-paper-plane me-1"></i><%= language.Communication_Logs || 'Communication Logs' %>
+                                    </button>
+                                </li>
+                            </ul>
                         </div>
                         <div class="card-body p-4">
-                            <!-- Server-side DataTable Toolbar -->
-                            <div class="row g-2 mb-3">
-                                <div class="col-12 col-md-6 col-lg-6">
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
-                                        <input class="form-control" type="search" id="dtNotificationSearch" placeholder="<%= language.Search || 'Search notifications...' %>">
+                            <div class="tab-content" id="notifCommTabContent">
+                                <!-- Tab 1: System Notifications -->
+                                <div class="tab-pane fade show active" id="pane-notif" role="tabpanel" aria-labelledby="tab-notif-link">
+                                    <!-- Server-side DataTable Toolbar -->
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-12 col-md-6 col-lg-6">
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
+                                                <input class="form-control" type="search" id="dtNotificationSearch" placeholder="<%= language.Search || 'Search notifications...' %>">
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-sm-6 col-md-3 col-lg-3">
+                                            <input type="date" class="form-control" id="dtNotificationDate" title="Filter by date">
+                                        </div>
+                                        <div class="col-12 col-sm-6 col-md-3 col-lg-3">
+                                            <select class="form-select" id="dtNotificationPageLength">
+                                                <option value="10">10 <%= language.Entries || 'entries' %></option>
+                                                <option value="25">25 <%= language.Entries || 'entries' %></option>
+                                                <option value="50">50 <%= language.Entries || 'entries' %></option>
+                                                <option value="100">100 <%= language.Entries || 'entries' %></option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="table-responsive">
+                                        <table id="server_notification_table" class="table display server-side-dt" style="width: 100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 130px;"><%= language.Invoice %></th>
+                                                    <th style="width: 140px;"><%= language.Date %></th>
+                                                    <th><%= language.Notification %></th>
+                                                    <th class="text-center" style="width: 90px;"><%= language.Action %></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
                                     </div>
                                 </div>
-                                <div class="col-12 col-sm-6 col-md-3 col-lg-3">
-                                    <input type="date" class="form-control" id="dtNotificationDate" title="Filter by date">
-                                </div>
-                                <div class="col-12 col-sm-6 col-md-3 col-lg-3">
-                                    <select class="form-select" id="dtNotificationPageLength">
-                                        <option value="10">10 <%= language.Entries || 'entries' %></option>
-                                        <option value="25">25 <%= language.Entries || 'entries' %></option>
-                                        <option value="50">50 <%= language.Entries || 'entries' %></option>
-                                        <option value="100">100 <%= language.Entries || 'entries' %></option>
-                                    </select>
-                                </div>
-                            </div>
 
-                            <div class="table-responsive">
-                                <table id="server_notification_table" class="table display server-side-dt" style="width: 100%;">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 130px;"><%= language.Invoice %></th>
-                                            <th style="width: 140px;"><%= language.Date %></th>
-                                            <th><%= language.Notification %></th>
-                                            <th class="text-center" style="width: 90px;"><%= language.Action %></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
+                                <!-- Tab 2: Multichannel Communication Logs -->
+                                <div class="tab-pane fade" id="pane-comm" role="tabpanel" aria-labelledby="tab-comm-link">
+                                    <!-- Comm Logs Toolbar -->
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-12 col-md-4">
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
+                                                <input class="form-control" type="search" id="dtCommSearch" placeholder="Search recipient, order, customer, error...">
+                                            </div>
+                                        </div>
+                                        <div class="col-6 col-md-2">
+                                            <input type="date" class="form-control" id="dtCommDate" title="Filter by date">
+                                        </div>
+                                        <div class="col-6 col-md-2">
+                                            <select class="form-select" id="dtCommChannel">
+                                                <option value="all">All Channels</option>
+                                                <option value="whatsapp">WhatsApp</option>
+                                                <option value="email">Email</option>
+                                                <option value="sms">SMS</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6 col-md-2">
+                                            <select class="form-select" id="dtCommStatus">
+                                                <option value="all">All Statuses</option>
+                                                <option value="sent">Sent</option>
+                                                <option value="failed">Failed</option>
+                                                <option value="skipped">Skipped</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6 col-md-2">
+                                            <select class="form-select" id="dtCommPageLength">
+                                                <option value="10">10 entries</option>
+                                                <option value="25">25 entries</option>
+                                                <option value="50">50 entries</option>
+                                                <option value="100">100 entries</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="table-responsive">
+                                        <table id="server_comm_logs_table" class="table display server-side-dt align-middle" style="width: 100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 140px;">Date & Time</th>
+                                                    <th style="width: 110px;">Order</th>
+                                                    <th>Customer</th>
+                                                    <th style="width: 110px;">Channel</th>
+                                                    <th style="width: 90px;">Pref</th>
+                                                    <th style="width: 80px;">Mode</th>
+                                                    <th>Recipient</th>
+                                                    <th style="width: 100px;">Status</th>
+                                                    <th class="text-center" style="width: 80px;">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -149,6 +225,161 @@
                 language: {
                     emptyTable: '<%= language.No_data_available_in_table || "No notifications found" %>'
                 }
+            });
+
+            // Communication Logs DataTable
+            const commColumns = [
+                {
+                    data: 'created_at',
+                    render: function(data) {
+                        if (!data) return '<span class="text-muted">-</span>';
+                        const d = new Date(data);
+                        return `<span class="text-muted text-nowrap">${d.toLocaleDateString()} <small>${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small></span>`;
+                    }
+                },
+                {
+                    data: 'order_code',
+                    render: function(data, type, row) {
+                        if (!data) return '<span class="text-muted">-</span>';
+                        if (row.order_id) {
+                            return `<a href="/order/view/${row.order_id}" class="fw-bold text-primary font-monospace">#${escapeHtml(data)}</a>`;
+                        }
+                        return `<span class="fw-bold font-monospace">#${escapeHtml(data)}</span>`;
+                    }
+                },
+                {
+                    data: 'customer_name',
+                    render: function(data) {
+                        return `<span class="fw-semibold text-dark">${escapeHtml(data || 'Walk-in Customer')}</span>`;
+                    }
+                },
+                {
+                    data: 'channel',
+                    render: function(data) {
+                        const ch = String(data || '').toLowerCase();
+                        if (ch === 'whatsapp') {
+                            return '<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fab fa-whatsapp me-1"></i>WhatsApp</span>';
+                        } else if (ch === 'email') {
+                            return '<span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="fa fa-envelope me-1"></i>Email</span>';
+                        } else if (ch === 'sms') {
+                            return '<span class="badge bg-info-subtle text-info border border-info-subtle"><i class="fa fa-comment me-1"></i>SMS</span>';
+                        }
+                        return `<span class="badge bg-light text-muted border">${escapeHtml(data || '-')}</span>`;
+                    }
+                },
+                {
+                    data: 'preference_code',
+                    render: function(data) {
+                        const code = String(data || 'not_set').toLowerCase();
+                        return `<span class="badge bg-light text-dark border text-uppercase" style="font-size:10px;">${escapeHtml(code)}</span>`;
+                    }
+                },
+                {
+                    data: 'dispatch_mode',
+                    render: function(data) {
+                        return `<span class="small text-muted text-uppercase">${escapeHtml(data || 'auto')}</span>`;
+                    }
+                },
+                {
+                    data: 'recipient',
+                    render: function(data, type, row) {
+                        if (!data) return '<span class="text-muted">-</span>';
+                        const tip = escapeHtml(row.error_message || row.subject || row.message_preview || '');
+                        return `<span class="font-monospace text-truncate d-inline-block" style="max-width:180px;" title="${tip}">${escapeHtml(data)}</span>`;
+                    }
+                },
+                {
+                    data: 'status',
+                    render: function(data, type, row) {
+                        const st = String(data || '').toLowerCase();
+                        if (st === 'sent') {
+                            return '<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fa fa-check me-1"></i>Sent</span>';
+                        } else if (st === 'failed') {
+                            const err = escapeHtml(row.error_message || 'Delivery failed');
+                            return `<span class="badge bg-danger-subtle text-danger border border-danger-subtle" title="${err}"><i class="fa fa-times me-1"></i>Failed</span>`;
+                        } else {
+                            return '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Skipped</span>';
+                        }
+                    }
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-center',
+                    render: function(data, type, row) {
+                        if (row.status !== 'sent') {
+                            return `
+                                <div class="tbl-action-group">
+                                    <button type="button" class="btn btn-xs btn-outline-primary btn-retry-comm" data-id="${row.id}" title="Retry Dispatch">
+                                        <i class="fa fa-redo"></i>
+                                    </button>
+                                </div>`;
+                        }
+                        return '<span class="text-muted">-</span>';
+                    }
+                }
+            ];
+
+            let commTableInit = false;
+            function ensureCommTable() {
+                if (commTableInit) return;
+                commTableInit = true;
+                window.initServerDataTable('#server_comm_logs_table', {
+                    ajaxUrl: '/admin/notification/communication-logs/data',
+                    columns: commColumns,
+                    searchInput: '#dtCommSearch',
+                    pageLengthSelect: '#dtCommPageLength',
+                    filterSelectors: {
+                        date_filter: '#dtCommDate',
+                        channel: '#dtCommChannel',
+                        status: '#dtCommStatus'
+                    },
+                    order: [[0, 'desc']],
+                    language: {
+                        emptyTable: 'No communication logs recorded'
+                    }
+                });
+            }
+
+            // Lazy initialize communication table when Tab 2 is clicked
+            $('#tab-comm-link').on('shown.bs.tab', function() {
+                ensureCommTable();
+            });
+
+            // Retry communication dispatch handler
+            $(document).on('click', '.btn-retry-comm', function(e) {
+                e.preventDefault();
+                const logId = $(this).data('id');
+                const btn = $(this);
+                const originalHtml = btn.html();
+                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/admin/notification/communication-logs/retry',
+                    data: JSON.stringify({ log_id: logId }),
+                    contentType: 'application/json',
+                    success: function(resp) {
+                        btn.prop('disabled', false).html(originalHtml);
+                        if (resp && resp.success) {
+                            if (typeof toastr !== 'undefined') toastr.success(resp.message || 'Retry dispatched!');
+                            else alert(resp.message || 'Retry dispatched!');
+                            if (window.serverDataTables && window.serverDataTables['#server_comm_logs_table']) {
+                                window.serverDataTables['#server_comm_logs_table'].ajax.reload(null, false);
+                            }
+                        } else {
+                            if (typeof toastr !== 'undefined') toastr.error((resp && resp.message) || 'Retry failed');
+                            else alert((resp && resp.message) || 'Retry failed');
+                        }
+                    },
+                    error: function(xhr) {
+                        btn.prop('disabled', false).html(originalHtml);
+                        const errMsg = (xhr.responseJSON && xhr.responseJSON.message) || 'Network error on retry';
+                        if (typeof toastr !== 'undefined') toastr.error(errMsg);
+                        else alert(errMsg);
+                    }
+                });
             });
         });
     </script>

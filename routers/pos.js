@@ -24,6 +24,10 @@ const {
 const {
   dispatchCustomerNotification,
   isRoutePickupOrderType,
+  getOrderCommunicationLogs,
+  hasOrderChannelAlreadySent,
+  recordCommunicationLog,
+  resolveCustomerCommunicationPreference,
 } = require("../services/notificationService");
 const OrderTypes = require("../public/js/shared/orderTypes");
 
@@ -161,6 +165,10 @@ async function getStoreScopedCustomers(storeId, includeWalkIn = true) {
       tbl_customer.zipcode, 
       tbl_customer.memo, 
       tbl_customer.taxnumber, 
+      tbl_customer.communication_preference_id,
+      tbl_customer.sms_opt_in,
+      COALESCE(tbl_communication_preferences.code, 'not_set') AS communication_preference_code,
+      COALESCE(tbl_communication_preferences.name, 'Not Set') AS communication_preference_name,
       tbl_store.name AS store_name,
       COALESCE(ord_stats.total_orders, 0) AS total_orders,
       COALESCE(ord_stats.unpaid_orders, 0) AS unpaid_orders,
@@ -169,6 +177,8 @@ async function getStoreScopedCustomers(storeId, includeWalkIn = true) {
       tbl_customer
     LEFT JOIN 
       tbl_store ON tbl_customer.store_ID = tbl_store.id
+    LEFT JOIN
+      tbl_communication_preferences ON tbl_customer.communication_preference_id = tbl_communication_preferences.id
     LEFT JOIN (
       SELECT 
         customer_id,
@@ -240,8 +250,13 @@ router.get("/pos", auth, async (req, res) => {
 
       // 1. Fetch customer details
       const customerData = await DataFind(
-        "SELECT id, name, number, email, store_ID, reffstore, customer_type FROM tbl_customer WHERE id=" +
-          id,
+        `SELECT tbl_customer.id, tbl_customer.name, tbl_customer.number, tbl_customer.email, tbl_customer.store_ID, tbl_customer.reffstore, tbl_customer.customer_type,
+                tbl_customer.communication_preference_id, tbl_customer.sms_opt_in,
+                COALESCE(tbl_communication_preferences.code, 'not_set') AS communication_preference_code,
+                COALESCE(tbl_communication_preferences.name, 'Not Set') AS communication_preference_name
+         FROM tbl_customer
+         LEFT JOIN tbl_communication_preferences ON tbl_customer.communication_preference_id = tbl_communication_preferences.id
+         WHERE tbl_customer.id = ${id}`
       );
       customerList =
         customerData.length > 0
@@ -638,6 +653,9 @@ router.get("/pos", auth, async (req, res) => {
     const customer_types = await DataFind(
       "SELECT * FROM tbl_customer_type WHERE status = 1 ORDER BY id ASC",
     );
+    const communication_preferences = await DataFind(
+      "SELECT * FROM tbl_communication_preferences WHERE status = 1 ORDER BY sort_order ASC",
+    ).catch(() => []);
 
     res.render("pos", {
       storePrinterConfig,
@@ -646,6 +664,7 @@ router.get("/pos", auth, async (req, res) => {
       login,
       storeList,
       customer_types,
+      communication_preferences: communication_preferences || [],
       service_list,
       categoryList,
       subcategoryList,
@@ -758,6 +777,9 @@ router.get("/edit/:id", auth, async (req, res) => {
     const customer_types = await DataFind(
       "SELECT * FROM tbl_customer_type WHERE status = 1 ORDER BY id ASC",
     );
+    const communication_preferences = await DataFind(
+      "SELECT * FROM tbl_communication_preferences WHERE status = 1 ORDER BY sort_order ASC",
+    ).catch(() => []);
 
     let storePrinterConfig = null;
     let overrideRatePercent = 10;
@@ -817,6 +839,7 @@ router.get("/edit/:id", auth, async (req, res) => {
       login: loginas == 0 ? "master" : (loginas == "staff" ? "staff" : "store"),
       storeList,
       customer_types,
+      communication_preferences: communication_preferences || [],
       service_list: service_list || [],
       categoryList: categoryList || [],
       subcategoryList: subcategoryList || [],
@@ -1547,14 +1570,30 @@ router.get("/newcustomerid/:id", auth, async (req, res) => {
       total_orders: 0,
       unpaid_orders: 0,
       unpaid_amount: 0,
-      memo: ""
+      memo: "",
+      communication_preference_id: null,
+      communication_preference_code: "not_set",
+      communication_preference_name: "Not Set",
+      sms_opt_in: false,
     };
 
     let custType = "Counter • Counter";
     if (cleanCustomerId && cleanCustomerId !== "0" && cleanCustomerId !== "null" && cleanCustomerId !== "undefined") {
-      const custData = await DataFind(`SELECT id, name, memo, customer_type, address, city, state, zipcode FROM tbl_customer WHERE id='${cleanCustomerId}' LIMIT 1`);
+      const custData = await DataFind(`
+        SELECT c.id, c.name, c.memo, c.customer_type, c.address, c.city, c.state, c.zipcode,
+               c.communication_preference_id, c.sms_opt_in,
+               cp.code AS communication_preference_code,
+               cp.name AS communication_preference_name
+        FROM tbl_customer c
+        LEFT JOIN tbl_communication_preferences cp ON cp.id = c.communication_preference_id
+        WHERE c.id='${cleanCustomerId}' LIMIT 1
+      `);
       if (custData && custData.length > 0) {
         stats.memo = custData[0].memo || "";
+        stats.communication_preference_id = custData[0].communication_preference_id || null;
+        stats.communication_preference_code = custData[0].communication_preference_code || "not_set";
+        stats.communication_preference_name = custData[0].communication_preference_name || "Not Set";
+        stats.sms_opt_in = Number(custData[0].sms_opt_in) === 1;
         if (custData[0].customer_type) {
           custType = custData[0].customer_type;
         }
@@ -1606,13 +1645,29 @@ router.get("/customer-stats/:id", auth, async (req, res) => {
       total_orders: 0,
       unpaid_orders: 0,
       unpaid_amount: 0,
-      memo: ""
+      memo: "",
+      communication_preference_id: null,
+      communication_preference_code: "not_set",
+      communication_preference_name: "Not Set",
+      sms_opt_in: false,
     };
 
     if (cleanCustomerId && cleanCustomerId !== "0" && cleanCustomerId !== "null" && cleanCustomerId !== "undefined") {
-      const custData = await DataFind(`SELECT id, name, memo FROM tbl_customer WHERE id='${cleanCustomerId}' LIMIT 1`);
+      const custData = await DataFind(`
+        SELECT c.id, c.name, c.memo,
+               c.communication_preference_id, c.sms_opt_in,
+               cp.code AS communication_preference_code,
+               cp.name AS communication_preference_name
+        FROM tbl_customer c
+        LEFT JOIN tbl_communication_preferences cp ON cp.id = c.communication_preference_id
+        WHERE c.id='${cleanCustomerId}' LIMIT 1
+      `);
       if (custData && custData.length > 0) {
         stats.memo = custData[0].memo || "";
+        stats.communication_preference_id = custData[0].communication_preference_id || null;
+        stats.communication_preference_code = custData[0].communication_preference_code || "not_set";
+        stats.communication_preference_name = custData[0].communication_preference_name || "Not Set";
+        stats.sms_opt_in = Number(custData[0].sms_opt_in) === 1;
       }
 
       const orderStats = await DataFind(`
@@ -4752,6 +4807,9 @@ router.post("/edit_order", auth, async (req, res) => {
         storeId: updated_order[0].store_id,
         customerId: updated_order[0].customer_id,
         orderId: updated_order[0].id,
+        dispatchMode: "auto",
+        sourcePage: "pos_edit",
+        triggeredBy: req.user ? (req.user.username || req.user.name || "pos_cashier") : "pos_cashier",
         accessdata,
       }).catch((e) => console.error("Edit order notification error:", e.message));
 
@@ -4761,6 +4819,9 @@ router.post("/edit_order", auth, async (req, res) => {
           storeId: updated_order[0].store_id,
           customerId: updated_order[0].customer_id,
           orderId: updated_order[0].id,
+          dispatchMode: "auto",
+          sourcePage: "pos_edit",
+          triggeredBy: req.user ? (req.user.username || req.user.name || "pos_cashier") : "pos_cashier",
           extraData: {
             paidNow: paid_amount,
             paymentMethod: payment_type || "Payment",
@@ -5357,13 +5418,30 @@ router.post("/order", auth, async (req, res) => {
         ? "route_pickup_scheduled"
         : "order_placed";
 
-    dispatchCustomerNotification({
-      eventKey: createdEventKey,
-      storeId: cart[0].store_id,
-      customerId: orderdata[0].customer_id,
-      orderId: orderdata[0].id,
-      accessdata,
-    }).catch((e) => console.error("Order notification error:", e.message));
+    const autoSendNotification = req.body.auto_send_notification !== "0" && req.body.auto_send_notification !== false;
+    let notificationResult = null;
+    if (autoSendNotification) {
+      try {
+        notificationResult = await Promise.race([
+          dispatchCustomerNotification({
+            eventKey: createdEventKey,
+            storeId: cart[0].store_id,
+            customerId: orderdata[0].customer_id,
+            orderId: orderdata[0].id,
+            dispatchMode: "auto",
+            sourcePage: "pos",
+            triggeredBy: req.user ? (req.user.username || req.user.name || "pos_cashier") : "pos_cashier",
+            accessdata,
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Notification dispatch timeout")), 4000)),
+        ]);
+      } catch (e) {
+        console.error("Order notification error:", e.message);
+        notificationResult = { sent: false, skipped: false, error: e.message };
+      }
+    } else {
+      notificationResult = { sent: false, skipped: true, reason: "auto_send_disabled_at_checkout" };
+    }
 
     if (orderdata && orderdata.length > 0) {
       broadcastCalendarChange(notifMeta.broadcastPayload);
@@ -5377,6 +5455,7 @@ router.post("/order", auth, async (req, res) => {
       addonslist,
       paymenttype,
       customer: coust[0],
+      notificationResult,
     });
   } catch (error) {
     console.error("Error in POST /order:", error);
@@ -5644,13 +5723,30 @@ router.post("/save_order", auth, async (req, res) => {
         ? "route_pickup_scheduled"
         : "order_placed";
 
-    dispatchCustomerNotification({
-      eventKey: saveOrderEventKey,
-      storeId: storeId,
-      customerId: customerId,
-      orderId: order.insertId,
-      accessdata,
-    }).catch((e) => console.error("Save order notification error:", e.message));
+    const autoSendNotification = req.body.auto_send_notification !== "0" && req.body.auto_send_notification !== false;
+    let notificationResult = null;
+    if (autoSendNotification) {
+      try {
+        notificationResult = await Promise.race([
+          dispatchCustomerNotification({
+            eventKey: saveOrderEventKey,
+            storeId: storeId,
+            customerId: customerId,
+            orderId: order.insertId,
+            dispatchMode: "auto",
+            sourcePage: "pos",
+            triggeredBy: req.user ? (req.user.username || req.user.name || "pos_cashier") : "pos_cashier",
+            accessdata,
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Notification dispatch timeout")), 4000)),
+        ]);
+      } catch (e) {
+        console.error("Save order notification error:", e.message);
+        notificationResult = { sent: false, skipped: false, error: e.message };
+      }
+    } else {
+      notificationResult = { sent: false, skipped: true, reason: "auto_send_disabled_at_checkout" };
+    }
 
     broadcastCalendarChange(notifMeta.broadcastPayload);
 
@@ -5659,6 +5755,7 @@ router.post("/save_order", auth, async (req, res) => {
       message: "Order placed successfully!",
       order_id: orderid,
       id: order.insertId,
+      notificationResult,
     });
   } catch (error) {
     console.error("Error saving order:", error);
@@ -5882,6 +5979,9 @@ const renderPosPrint = async (req, res) => {
       }
     }
 
+    const customerPreference = await resolveCustomerCommunicationPreference(orderdata[0].customer_id).catch(() => null);
+    const communicationLogs = await getOrderCommunicationLogs(orderdata[0].id).catch(() => []);
+
     res.render("posprint", {
       cartservice,
       shope: shope && shope.length > 0 ? shope[0] : {},
@@ -5891,6 +5991,8 @@ const renderPosPrint = async (req, res) => {
       paymenttype,
       customer:
         coust && coust.length > 0 ? coust[0] : { name: "Walk in customer" },
+      customerPreference,
+      communicationLogs,
       master: accessdata.masterstore,
       oate,
       ddate,
@@ -6018,6 +6120,236 @@ router.get("/notification/data", auth, async (req, res) => {
   } catch (error) {
     console.error("Notification list data error:", error);
     return res.status(500).json({ error: error.message, data: [] });
+  }
+});
+
+// ==========================================
+// Communication Logs & Preference Endpoints
+// ==========================================
+
+// Server-side DataTable endpoint for communication logs
+router.get("/notification/communication-logs/data", auth, async (req, res) => {
+  try {
+    const accessdata = await access(req.user);
+    const hasOrderRead = Boolean(
+      accessdata.logas === "master" ||
+      (accessdata.roll?.orders && accessdata.roll.orders.includes("read"))
+    );
+    if (!hasOrderRead) {
+      return res.status(403).json({
+        draw: parseInt(req.query.draw) || 1,
+        recordsTotal: 0,
+        recordsFiltered: 0,
+        data: [],
+      });
+    }
+
+    let scopeConditions = [];
+    if (accessdata.logas == "master") {
+      // master admin sees all
+    } else if (accessdata.logas == "store") {
+      scopeConditions.push(`tbl_communication_logs.store_id = '${accessdata.topbardata.store_ID || accessdata.topbardata.id}'`);
+    } else {
+      const storeId = accessdata.topbardata?.store_ID || accessdata.topbardata?.store_id;
+      if (storeId) {
+        scopeConditions.push(`tbl_communication_logs.store_id = '${storeId}'`);
+      }
+    }
+
+    const filterConditions = [];
+    if (req.query.date_filter && req.query.date_filter.trim() !== "") {
+      const cleanDate = String(req.query.date_filter).trim().replace(/'/g, "\\'");
+      filterConditions.push(`DATE(tbl_communication_logs.created_at) = '${cleanDate}'`);
+    }
+    if (req.query.channel && req.query.channel.trim() !== "" && req.query.channel !== "all") {
+      const cleanChannel = String(req.query.channel).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_communication_logs.channel = '${cleanChannel}'`);
+    }
+    if (req.query.status && req.query.status.trim() !== "" && req.query.status !== "all") {
+      const cleanStatus = String(req.query.status).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_communication_logs.status = '${cleanStatus}'`);
+    }
+    if (req.query.order_id && req.query.order_id.trim() !== "") {
+      const cleanOrderId = String(req.query.order_id).trim().replace(/'/g, "\\'");
+      filterConditions.push(`(tbl_communication_logs.order_id = '${cleanOrderId}' OR tbl_communication_logs.order_code = '${cleanOrderId}')`);
+    }
+    if (req.query.customer_id && req.query.customer_id.trim() !== "") {
+      const cleanCustId = String(req.query.customer_id).trim().replace(/'/g, "\\'");
+      filterConditions.push(`tbl_communication_logs.customer_id = '${cleanCustId}'`);
+    }
+
+    const result = await paginateDataTable(req, {
+      select: `tbl_communication_logs.*, COALESCE(tbl_store.name, '') as store_name`,
+      from: `tbl_communication_logs LEFT JOIN tbl_store ON tbl_communication_logs.store_id = tbl_store.id`,
+      searchColumns: [
+        "tbl_communication_logs.order_code",
+        "tbl_communication_logs.customer_name",
+        "tbl_communication_logs.recipient",
+        "tbl_communication_logs.channel",
+        "tbl_communication_logs.status",
+        "tbl_communication_logs.subject",
+        "tbl_communication_logs.message_preview",
+        "tbl_communication_logs.error_message",
+      ],
+      baseWhere: scopeConditions,
+      filterWhere: filterConditions,
+      defaultOrder: "tbl_communication_logs.id DESC",
+      columnMap: {
+        0: "tbl_communication_logs.id",
+        1: "tbl_communication_logs.created_at",
+        2: "tbl_communication_logs.order_code",
+        3: "tbl_communication_logs.customer_name",
+        4: "tbl_communication_logs.preference_code",
+        5: "tbl_communication_logs.channel",
+        6: "tbl_communication_logs.dispatch_mode",
+        7: "tbl_communication_logs.recipient",
+        8: "tbl_communication_logs.status",
+      },
+      postProcess: async (rows) => {
+        return rows.map((r) => ({
+          id: r.id,
+          created_at: r.created_at,
+          order_id: r.order_id,
+          order_code: r.order_code || "",
+          customer_id: r.customer_id,
+          customer_name: r.customer_name || "",
+          preference_code: r.preference_code || "not_set",
+          channel: r.channel,
+          dispatch_mode: r.dispatch_mode || "auto",
+          recipient: r.recipient || "",
+          subject: r.subject || "",
+          message_preview: r.message_preview || "",
+          status: r.status,
+          provider: r.provider || "",
+          provider_message_id: r.provider_message_id || "",
+          error_message: r.error_message || "",
+          triggered_by: r.triggered_by || "",
+          source_page: r.source_page || "",
+          store_name: r.store_name || "",
+        }));
+      },
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Communication logs data error:", error);
+    return res.status(500).json({ error: error.message, data: [] });
+  }
+});
+
+// Retry failed/skipped communication log
+router.post("/notification/communication-logs/retry", auth, async (req, res) => {
+  try {
+    const { log_id, id } = req.body;
+    const targetId = log_id || id;
+    if (!targetId) {
+      return res.status(400).json({ success: false, message: "Log ID is required." });
+    }
+
+    const logRows = await DataFind(`SELECT * FROM tbl_communication_logs WHERE id = '${targetId}' LIMIT 1`);
+    if (!logRows || logRows.length === 0) {
+      return res.status(404).json({ success: false, message: "Communication log entry not found." });
+    }
+    const log = logRows[0];
+    const accessdata = await access(req.user);
+
+    const forceEmail = log.channel === "email";
+    const forceSms = log.channel === "sms";
+    const forceWhatsapp = log.channel === "whatsapp";
+
+    const result = await dispatchCustomerNotification({
+      eventKey: log.event_key || "invoice_sent",
+      storeId: log.store_id,
+      customerId: log.customer_id,
+      orderId: log.order_id,
+      dispatchMode: "manual",
+      forceEmail,
+      forceSms,
+      forceWhatsapp,
+      overrideRecipient: log.recipient,
+      sourcePage: "notification_retry",
+      triggeredBy: req.user ? (req.user.username || req.user.name || "admin") : "admin",
+      accessdata,
+    });
+
+    return res.status(200).json({
+      success: Boolean(result && !result.error),
+      result,
+      message: result && !result.error ? "Retry dispatched successfully!" : (result?.error || "Retry failed"),
+    });
+  } catch (error) {
+    console.error("Error retrying communication log:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// POS interactive dispatch by customer preference or channel
+router.post("/pos/send-by-preference", auth, async (req, res) => {
+  try {
+    const { order_id, channel, force } = req.body;
+    if (!order_id) {
+      return res.status(400).json({ success: false, message: "Order ID is required." });
+    }
+
+    const ordRows = await DataFind(`SELECT * FROM tbl_order WHERE id = '${order_id}' OR order_id = '${order_id}' LIMIT 1`);
+    if (!ordRows || ordRows.length === 0) {
+      return res.status(404).json({ success: false, message: "Order not found." });
+    }
+    const order = ordRows[0];
+    const accessdata = await access(req.user);
+
+    let targetChannel = channel;
+    const pref = await resolveCustomerCommunicationPreference(order.customer_id).catch(() => null);
+
+    if (!targetChannel || targetChannel === "auto") {
+      targetChannel = pref?.preferenceCode;
+      if (!targetChannel || targetChannel === "print" || targetChannel === "not_set") {
+        return res.status(400).json({
+          success: false,
+          preference: pref,
+          message: `Customer preference is '${pref?.preferenceName || 'Print / Not Set'}'. Electronic auto-send is not available; please print invoice or pick a specific channel.`,
+        });
+      }
+      if (targetChannel === "chat") targetChannel = "whatsapp";
+    }
+
+    const normalizedChannel = targetChannel === "chat" ? "whatsapp" : targetChannel;
+
+    // Check if already sent
+    const alreadySent = await hasOrderChannelAlreadySent(order.id, normalizedChannel).catch(() => false);
+    if (alreadySent && !force) {
+      return res.status(200).json({
+        success: false,
+        alreadySent: true,
+        channel: normalizedChannel,
+        message: `This invoice has already been sent to this customer via ${normalizedChannel.toUpperCase()}. Are you sure you want to send it again?`,
+      });
+    }
+
+    const result = await dispatchCustomerNotification({
+      eventKey: "invoice_sent",
+      storeId: order.store_id,
+      customerId: order.customer_id,
+      orderId: order.id,
+      dispatchMode: "manual",
+      forceEmail: normalizedChannel === "email",
+      forceSms: normalizedChannel === "sms",
+      forceWhatsapp: normalizedChannel === "whatsapp",
+      sourcePage: "pos_invoice_modal",
+      triggeredBy: req.user ? (req.user.username || req.user.name || "pos_cashier") : "pos_cashier",
+      accessdata,
+    });
+
+    return res.status(200).json({
+      success: Boolean(result && !result.error),
+      alreadySent: false,
+      channel: normalizedChannel,
+      result,
+      message: result && !result.error ? `Invoice sent via ${normalizedChannel.toUpperCase()} successfully!` : (result?.error || "Send failed"),
+    });
+  } catch (error) {
+    console.error("Error in /pos/send-by-preference:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 });
 
