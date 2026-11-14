@@ -115,10 +115,10 @@
                                                         <%= language.Order_Date || 'Order Date' %>
                                                     </th>
                                                     <th>
-                                                        <%= language.Customer_Name || language.Customer || 'Customer Name' %>
+                                                        Name
                                                     </th>
                                                     <th>
-                                                        <%= language.Order_Amount || 'Order Amount' %>
+                                                        Amount
                                                     </th>
                                                     <th>
                                                         <%= language.Payment || 'Payment' %>
@@ -370,7 +370,7 @@
                                 },
                                 {
                                     data: 'gross_total',
-                                    className: 'symbol font-w600',
+                                    className: 'font-w600 text-end',
                                     render: function (data) {
                                         return parseFloat(data || 0).toFixed(2);
                                     }
