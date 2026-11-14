@@ -13,7 +13,7 @@
         <div class="content-body">
             <div class="container-fluid" style="min-height: 100vh;">
                 <div class="row">
-                    <% 
+                    <%
                         const isScopedUser = (typeof isStoreScoped !== 'undefined' && isStoreScoped) || (typeof isStaff !== 'undefined' && isStaff);
                         const currentStoreName = (typeof storeName !== 'undefined' && storeName) ? storeName : ((typeof staffStoreName !== 'undefined' && staffStoreName) ? staffStoreName : 'Assigned Store');
                     %>
@@ -242,13 +242,13 @@
                                                             <%= language.Order_Date || 'Order Date' %>
                                                         </th>
                                                         <th scope="col">
-                                                            <%= language.Customer_Name || language.Customer || 'Customer Name' %>
+                                                            Name
                                                         </th>
                                                         <th scope="col">
-                                                            <%= language.Order_Amount || 'Order Amount' %>
+                                                            Amount
                                                         </th>
                                                         <th scope="col">
-                                                            <%= language.Payment || language.Payment_Amount || 'Payment' %>
+                                                            Payment
                                                         </th>
                                                         <th scope="col">
                                                             <%= language.Status || 'Status' %>
@@ -271,11 +271,11 @@
                                                                 <td>
                                                                     <div class="server-dt-primary-text"><%= data.customer_name || data.customer || 'Walk In Customer' %></div>
                                                                 </td>
-                                                                <td class="symbol font-w600">
+                                                                <td class="symbol font-w600 text-end">
                                                                     <%= parseFloat(data.gross_total || 0).toFixed(2) %>
                                                                 </td>
                                                                 <td>
-                                                                    <% 
+                                                                    <%
                                                                         var gross = parseFloat(data.gross_total || 0).toFixed(2);
                                                                         var paid = parseFloat(data.paid_amount || 0).toFixed(2);
                                                                         var balance = parseFloat(data.balance_amount !== undefined ? data.balance_amount : (data.gross_total - data.paid_amount));
