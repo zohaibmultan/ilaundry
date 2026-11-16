@@ -3705,39 +3705,62 @@ router.post("/addonsadd", auth, async (req, res) => {
       " SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
     );
 
-    addon
-      ? Array.isArray(addon)
-        ? (addon = addon.join(","))
-        : addon
-      : (addon = "0");
-    const newaddonarry = addon.split(",");
-    var price = 0;
-    await Promise.all(
-      newaddonarry.map(async (data, i) => {
-        var x = await DataFind(
-          "SELECT price FROM tbl_addons WHERE id=" + data + "",
-        );
-        if (x.length > 0) {
-          return (price += x[0].price);
-        }
-      }),
-    );
+    const isClear = String(req.body.clear_addons || "") === "1";
+    const hasCustomTotal =
+      !isClear &&
+      req.body.custom_addon_price !== undefined &&
+      req.body.custom_addon_price !== "";
 
-    // const cartupdate = await DataFind(
-    //   "UPDATE tbl_cart SET addon_id='" +
-    //     addon +
-    //     "', addon_price=" +
-    //     price +
-    //     ", tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount)*tax / 100,2), gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2), balance = ROUND(gross_total - paid_amount,2)  WHERE created_by='" +
-    //     loginas +
-    //     "," +
-    //     id +
-    //     "'"
-    // );
+    if (isClear) {
+      addon = "0";
+    } else if (addon !== undefined) {
+      addon = Array.isArray(addon) ? addon.join(",") : String(addon || "0");
+      if (!addon.trim()) addon = "0";
+    } else if (hasCustomTotal && cart && cart.length > 0) {
+      addon = String(cart[0].addon_id || "0");
+    } else {
+      addon = "0";
+    }
+
+    const newaddonarry = String(addon)
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s && s !== "0");
+
+    var price = 0;
+    const selected_addons = [];
+
+    for (const addonId of newaddonarry) {
+      const cleanId = parseInt(addonId, 10);
+      if (!cleanId) continue;
+      const x = await DataFind(
+        "SELECT id, addon, price FROM tbl_addons WHERE id=" + cleanId,
+      );
+      if (x && x.length > 0) {
+        const customItemRateRaw = req.body["addon_price_" + cleanId];
+        const itemPrice =
+          customItemRateRaw !== undefined && String(customItemRateRaw).trim() !== ""
+            ? Math.max(0, parseFloat(customItemRateRaw) || 0)
+            : Math.max(0, parseFloat(x[0].price) || 0);
+        price += itemPrice;
+        selected_addons.push({
+          id: x[0].id,
+          addon: x[0].addon,
+          price: Number(itemPrice.toFixed(2)),
+          default_price: Number((parseFloat(x[0].price) || 0).toFixed(2)),
+        });
+      }
+    }
+
+    if (hasCustomTotal) {
+      price = Math.max(0, parseFloat(req.body.custom_addon_price) || 0);
+    }
+    price = Number(price.toFixed(2));
+    const finalAddonStr = newaddonarry.length > 0 ? newaddonarry.join(",") : "0";
 
     const cartupdate = await DataUpdate(
       "tbl_cart",
-      `addon_id = '${addon}',
+      `addon_id = '${finalAddonStr}',
    addon_price = ${price},
    tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount) * tax / 100, 2),
    gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
@@ -3761,63 +3784,103 @@ router.post("/addonsadd", auth, async (req, res) => {
         "')",
     );
 
-    res.status(200).json({ cart: cart[0], cartservice, loginas });
+    return res.status(200).json({
+      success: true,
+      cart: cart[0],
+      cartservice,
+      selected_addons,
+      loginas,
+    });
   } catch (error) {
     console.error("Route error:", error);
     return res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Add Addons's to cart
+// Add Addons's to cart (Edit Order Mode)
 router.post("/edit_onsadd", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
-
     var addon = req.body.addon;
-    // var order_date = await DataFind(`SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`)
-    // console.log('order_date', order_date);
-    // var cart = await DataFind(" SELECT * FROM tbl_cart WHERE created_by='"+loginas+','+id+"'");
-
-    addon
-      ? Array.isArray(addon)
-        ? (addon = addon.join(","))
-        : addon
-      : (addon = "0");
-    const newaddonarry = addon.split(",");
-    var price = 0;
-    await Promise.all(
-      newaddonarry.map(async (data, i) => {
-        var x = await DataFind(
-          "SELECT price FROM tbl_addons WHERE id=" + data + "",
-        );
-        if (x.length > 0) {
-          return (price += x[0].price);
-        }
-      }),
-    );
 
     const old_order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`,
     );
+    if (!old_order_date || old_order_date.length === 0) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
 
-    const sub_total = parseFloat(old_order_date[0].sub_total);
+    const isClear = String(req.body.clear_addons || "") === "1";
+    const hasCustomTotal =
+      !isClear &&
+      req.body.custom_addon_price !== undefined &&
+      req.body.custom_addon_price !== "";
+
+    if (isClear) {
+      addon = "0";
+    } else if (addon !== undefined) {
+      addon = Array.isArray(addon) ? addon.join(",") : String(addon || "0");
+      if (!addon.trim()) addon = "0";
+    } else if (hasCustomTotal) {
+      addon = String(old_order_date[0].addon_data || "0");
+    } else {
+      addon = "0";
+    }
+
+    const newaddonarry = String(addon)
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s && s !== "0");
+
+    var price = 0;
+    const selected_addons = [];
+
+    for (const addonId of newaddonarry) {
+      const cleanId = parseInt(addonId, 10);
+      if (!cleanId) continue;
+      const x = await DataFind(
+        "SELECT id, addon, price FROM tbl_addons WHERE id=" + cleanId,
+      );
+      if (x && x.length > 0) {
+        const customItemRateRaw = req.body["addon_price_" + cleanId];
+        const itemPrice =
+          customItemRateRaw !== undefined && String(customItemRateRaw).trim() !== ""
+            ? Math.max(0, parseFloat(customItemRateRaw) || 0)
+            : Math.max(0, parseFloat(x[0].price) || 0);
+        price += itemPrice;
+        selected_addons.push({
+          id: x[0].id,
+          addon: x[0].addon,
+          price: Number(itemPrice.toFixed(2)),
+          default_price: Number((parseFloat(x[0].price) || 0).toFixed(2)),
+        });
+      }
+    }
+
+    if (hasCustomTotal) {
+      price = Math.max(0, parseFloat(req.body.custom_addon_price) || 0);
+    }
+    price = Number(price.toFixed(2));
+    const finalAddonStr = newaddonarry.length > 0 ? newaddonarry.join(",") : "0";
+
+    const sub_total = parseFloat(old_order_date[0].sub_total) || 0;
 
     const tax_amount = (
       (parseFloat(sub_total) +
         parseFloat(price) -
-        parseFloat(old_order_date[0].coupon_discount)) *
-      (parseFloat(old_order_date[0].tax) / 100)
+        (parseFloat(old_order_date[0].coupon_discount) || 0)) *
+      ((parseFloat(old_order_date[0].tax) || 0) / 100)
     ).toFixed(2);
 
     const gross_total = (
       parseFloat(sub_total) +
       parseFloat(tax_amount) +
       parseFloat(price) -
-      parseFloat(old_order_date[0].coupon_discount) -
-      parseFloat(old_order_date[0].extra_discount)
+      (parseFloat(old_order_date[0].coupon_discount) || 0) -
+      (parseFloat(old_order_date[0].extra_discount) || 0)
     ).toFixed(2);
 
-    if (gross_total < old_order_date[0].paid_amount) {
+    if (parseFloat(gross_total) < (parseFloat(old_order_date[0].paid_amount) || 0)) {
       req.flash("error", "gross_total Less-than paid_amount");
       return res.json(400);
     }
@@ -3825,27 +3888,17 @@ router.post("/edit_onsadd", auth, async (req, res) => {
     const store_data = await DataFind(
       `SELECT * FROM tbl_store WHERE id = '${old_order_date[0].store_id}'`,
     );
-
-    // await DataFind(
-    //   "UPDATE tbl_order SET addon_data='" +
-    //     addon +
-    //     "', addon_price=" +
-    //     price +
-    //     ", tax_amount =ROUND((sub_total + addon_price - coupon_discount)*tax / 100,2), gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2), balance_amount = ROUND(gross_total - paid_amount,2), master_comission = ROUND((gross_total * '" +
-    //     store_data[0].shop_commission +
-    //     "') / 100,2)  WHERE id='" +
-    //     req.body.order_id +
-    //     "'"
-    // );
+    const shopCommission =
+      store_data && store_data.length > 0 ? store_data[0].shop_commission : 0;
 
     const updateOrder = await DataUpdate(
       "tbl_order",
-      `addon_data = '${addon}',
+      `addon_data = '${finalAddonStr}',
    addon_price = ${price},
    tax_amount = ROUND((sub_total + addon_price - coupon_discount) * tax / 100, 2),
    gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
    balance_amount = ROUND(gross_total - paid_amount, 2),
-   master_comission = ROUND((gross_total * '${store_data[0].shop_commission}') / 100, 2)`,
+   master_comission = ROUND((gross_total * '${shopCommission}') / 100, 2)`,
       `id = '${req.body.order_id}'`,
       req.hostname,
       req.protocol,
@@ -3856,19 +3909,22 @@ router.post("/edit_onsadd", auth, async (req, res) => {
       return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
-    // const cartupdate = await DataFind("UPDATE tbl_cart SET addon_id='"+addon+"', addon_price="+price+", tax_amount =ROUND((sub_total + addon_price - coupon_discount - extra_discount)*tax / 100,2), gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2), balance = ROUND(gross_total - paid_amount,2)  WHERE created_by='"+loginas+','+id+"'");
-
     var order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`,
     );
-    // var cart = await DataFind(" SELECT * FROM tbl_cart WHERE created_by='"+loginas+','+id+"'");
     var cartservice = await DataFind(
       "SELECT * from tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
         order_date[0].service_list +
         "')",
     );
 
-    res.status(200).json({ order_date: order_date[0], cartservice, loginas });
+    return res.status(200).json({
+      success: true,
+      order_date: order_date[0],
+      cartservice,
+      selected_addons,
+      loginas,
+    });
   } catch (error) {
     console.error("Route error:", error);
     return res.status(500).json({ success: false, error: error.message });

@@ -2531,3 +2531,100 @@ body.pos-screen-layout .pos-content-body .container-fluid {
 [data-theme-version="dark"] .pos-cust-selector-trigger .form-control {
   color: #f8fafc !important;
 }
+
+/* ==========================================================================
+   POS Active Addons Identification Bar, Clear Button & Editable Addon Inputs
+   ========================================================================== */
+
+.pos-active-addons-bar {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  font-size: 11.5px;
+}
+
+.pos-addon-bar-title {
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.pos-addon-pill {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1px solid #7dd3fc !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 2px 7px !important;
+  border-radius: 999px !important;
+}
+
+.pos-addon-pill-remove {
+  width: 8px !important;
+  height: 8px !important;
+  padding: 2px !important;
+  font-size: 7px !important;
+  opacity: 0.65;
+  box-shadow: none !important;
+}
+
+.pos-addon-pill-remove:hover {
+  opacity: 1;
+}
+
+.pos-btn-clear-addons {
+  height: 22px !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  padding: 0 7px !important;
+  border-radius: 4px !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.pos-addon-total-input {
+  width: 68px !important;
+  height: 22px !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  padding: 1px 4px !important;
+  text-align: right !important;
+}
+
+.pos-modal-addon-price {
+  width: 86px !important;
+  height: 32px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+[data-theme-version="dark"] .pos-active-addons-bar {
+  background: rgba(14, 165, 233, 0.12) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+[data-theme-version="dark"] .pos-addon-pill {
+  background-color: #1e293b !important;
+  color: #38bdf8 !important;
+  border-color: #0284c7 !important;
+}
+
+[data-theme-version="dark"] .pos-addon-pill-remove {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+[data-theme-version="dark"] .pos-addon-total-input,
+[data-theme-version="dark"] .pos-modal-addon-price {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] .pos-addon-modal-card {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme-version="dark"] .pos-addon-modal-card h6 {
+  color: #f8fafc !important;
+}

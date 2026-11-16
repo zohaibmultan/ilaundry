@@ -1138,25 +1138,37 @@
             }
 
             if (res.addon_list.length < 1) {
-               $('#POS_addons').html('<div class="p-2 center"><div class=""><div class="card-body p-2 "> <h3 class="text-center text-danger">No addon List Found</h3> </div></div></div>')
+               $('#POS_addons').html('<div class="p-3 text-center w-100"><h5 class="text-danger">No addon List Found</h5></div>')
             }
             $.each(res.addon_list, function (index, value) {
+               const defPrice = (Number(value.price) || 0).toFixed(2);
                $('#POS_addons').append(`
-                 <label class="col-6 d-flex mb-3 addon-clickable" for="update_customer_read_${value.id}" style="cursor:pointer;">
-                 <div class="col-12 d-flex mb-3 addon-clickable" data-id="${value.id}">
-                   <div class="mx-3">
-                     <input class="form-check-input mt-3" type="checkbox"
-                            id="update_customer_read_${value.id}" 
-                            name="addon" value="${value.id}">
-                   </div>
-                   <div class="d-flex flex-column justify-content-between">
-                     <h5>${value.addon}</h5>
-                     <h6>$ ${value.price}</h6>
+                 <div class="col-md-6">
+                   <div class="card h-100 border p-2 mb-0 d-flex flex-row align-items-center justify-content-between rounded-3 addon-clickable pos-addon-modal-card" data-id="${value.id}">
+                     <label class="d-flex align-items-center gap-2 mb-0 flex-grow-1 cursor-pointer" for="update_customer_read_${value.id}" role="button">
+                       <input class="form-check-input m-0 pos-addon-checkbox" type="checkbox"
+                              id="update_customer_read_${value.id}"
+                              name="addon" value="${value.id}"
+                              data-addon-name="${value.addon}"
+                              data-default-price="${defPrice}">
+                       <div>
+                         <h6 class="mb-0 fw-semibold text-dark">${value.addon}</h6>
+                         <small class="text-muted">Default: $${defPrice}</small>
+                       </div>
+                     </label>
+                     <div class="d-flex align-items-center gap-1 ms-2 flex-shrink-0">
+                       <input type="number" class="form-control form-control-sm pos-table-input pos-modal-addon-price no-spin-arrows"
+                              name="addon_price_${value.id}" id="pos_addon_price_${value.id}"
+                              data-addon-id="${value.id}" data-default-price="${defPrice}"
+                              value="${defPrice}" min="0" step="0.25" title="Addon Amount">
+                     </div>
                    </div>
                  </div>
-                  </label>
                `);
             });
+            if (typeof window.syncPosAddonsUI === 'function') {
+               window.syncPosAddonsUI(res.cart ? res.cart.addon_id : '0', res.cart ? res.cart.addon_price : 0, []);
+            }
 
 
          }
@@ -2603,6 +2615,13 @@
             $('#POS_tax_total').html(res.cart.tax_amount.toFixed(2))
             $('#POS_service_added_list').html(' ')
             $('input[name=addon]').prop('checked', false)
+            $('.pos-modal-addon-price').each(function () {
+               const defVal = $(this).attr('data-default-price') || '0.00';
+               $(this).val(Number(defVal).toFixed(2));
+            });
+            if (typeof window.syncPosAddonsUI === 'function') {
+               window.syncPosAddonsUI('0', 0, []);
+            }
             if ($('#pos_order_type').length) {
                $('#pos_order_type').val('Counter & Counter');
                $('#pos_pickup_date_group').show();
@@ -3435,6 +3454,163 @@
    $(document).ready(function () {
       var baseUrl = window.location.origin;
 
+      function isPosEditOrderMode() {
+         return $('#edit_addons_pos_cart_submit').length > 0 || $('#pos_addons_order_id').length > 0;
+      }
+
+      function getPosEditOrderId() {
+         return $('#pos_addons_order_id').val() || $('#POS_addon_total_input').attr('data-order_id') || '';
+      }
+
+      window.updatePosModalAddonsPreview = function () {
+         let total = 0;
+         $('#POS_addons .pos-addon-checkbox').each(function () {
+            const $cb = $(this);
+            const id = $cb.val();
+            const $card = $cb.closest('.pos-addon-modal-card');
+            const $priceInput = $('#pos_addon_price_' + id);
+            const priceVal = Math.max(0, parseFloat($priceInput.val()) || 0);
+            if ($cb.prop('checked')) {
+               total += priceVal;
+               $card.addClass('border-primary bg-light-subtle');
+            } else {
+               $card.removeClass('border-primary bg-light-subtle');
+            }
+         });
+         $('#pos_modal_addons_total_preview').text('$' + total.toFixed(2));
+      };
+
+      window.syncPosAddonsUI = function (addonIdsStr, addonTotalVal, selectedAddonsList) {
+         const cleanTotal = Math.max(0, parseFloat(addonTotalVal) || 0);
+         $('#POS_addon_total_input').val(cleanTotal.toFixed(2));
+
+         const ids = String(addonIdsStr || '')
+            .split(',')
+            .map(function (s) { return s.trim(); })
+            .filter(function (s) { return s && s !== '0'; });
+
+         // Sync checkboxes inside #addons modal
+         $('#POS_addons .pos-addon-checkbox').each(function () {
+            const id = String($(this).val());
+            $(this).prop('checked', ids.includes(id));
+         });
+
+         // Resolve addon objects from selectedAddonsList or DOM checkboxes
+         let resolvedAddons = Array.isArray(selectedAddonsList) && selectedAddonsList.length > 0
+            ? selectedAddonsList
+            : [];
+         if (resolvedAddons.length === 0 && ids.length > 0) {
+            ids.forEach(function (id) {
+               const $cb = $('#update_customer_read_' + id);
+               const $p = $('#pos_addon_price_' + id);
+               if ($cb.length) {
+                  resolvedAddons.push({
+                     id: id,
+                     addon: $cb.attr('data-addon-name') || 'Addon',
+                     price: parseFloat($p.val()) || parseFloat($cb.attr('data-default-price')) || 0
+                  });
+               }
+            });
+         } else if (resolvedAddons.length > 0) {
+            resolvedAddons.forEach(function (ad) {
+               if (ad && ad.id !== undefined && ad.price !== undefined) {
+                  $('#pos_addon_price_' + ad.id).val(Number(ad.price).toFixed(2));
+               }
+            });
+         }
+
+         const hasActive = resolvedAddons.length > 0 || cleanTotal > 0;
+         const badgeCount = resolvedAddons.length > 0 ? resolvedAddons.length : (cleanTotal > 0 ? 1 : 0);
+
+         const $btn = $('#btn_pos_addons_modal');
+         const $icon = $('#pos_addons_btn_icon');
+         const $badge = $('#pos_addons_btn_badge');
+         if (hasActive) {
+            $btn.removeClass('btn-primary').addClass('btn-info text-white');
+            $icon.removeClass('fa-plus-circle').addClass('fa-check-circle');
+            $badge.text(badgeCount).removeClass('d-none');
+         } else {
+            $btn.removeClass('btn-info text-white').addClass('btn-primary');
+            $icon.removeClass('fa-check-circle').addClass('fa-plus-circle');
+            $badge.text('0').addClass('d-none');
+         }
+
+         const $bar = $('#pos_active_addons_bar');
+         const $pills = $('#pos_active_addons_pills');
+         if (!hasActive) {
+            $bar.addClass('d-none');
+            $pills.html('');
+         } else {
+            $bar.removeClass('d-none');
+            let html = '';
+            if (resolvedAddons.length > 0) {
+               resolvedAddons.forEach(function (ad) {
+                  const pStr = (Number(ad.price) || 0).toFixed(2);
+                  const safeName = $('<div>').text(ad.addon || 'Addon').html();
+                  html +=
+                     '<span class="badge pos-addon-pill d-inline-flex align-items-center gap-1" data-addon-id="' + ad.id + '">' +
+                     '<span>' + safeName + '</span>' +
+                     '<span class="opacity-75">($' + pStr + ')</span>' +
+                     '<button type="button" class="btn-close pos-addon-pill-remove" data-id="' + ad.id + '" title="Remove ' + safeName + '" aria-label="Remove"></button>' +
+                     '</span>';
+               });
+            } else if (cleanTotal > 0) {
+               html =
+                  '<span class="badge pos-addon-pill d-inline-flex align-items-center gap-1">' +
+                  '<span>Custom Addon Amount</span>' +
+                  '<span>($' + cleanTotal.toFixed(2) + ')</span>' +
+                  '</span>';
+            }
+            $pills.html(html);
+         }
+
+         window.updatePosModalAddonsPreview();
+      };
+
+      function applyPosAddonsResponse(res, isEdit) {
+         if (isEdit) {
+            if (res == 400 || (res && res.success === false)) {
+               if (typeof toastr !== 'undefined') toastr.error(res.message || 'gross_total Less-than paid_amount');
+               return;
+            }
+            const ord = res.order_date || {};
+            $('#POS_paid_amount').html((Number(ord.paid_amount) || 0).toFixed(2));
+            $('#POS_gross_total').html((Number(ord.gross_total) || 0).toFixed(2));
+            $('#POS_sub_total').html((Number(ord.sub_total) || 0).toFixed(2));
+            $('#POS_addon_total').html((Number(ord.addon_price) || 0).toFixed(2));
+            $('#POS_coupon_total').html((Number(ord.coupon_discount) || 0).toFixed(2));
+            $('#POS_tax_total').html((Number(ord.tax_amount) || 0).toFixed(2));
+            window.syncPosAddonsUI(ord.addon_data, ord.addon_price, res.selected_addons || []);
+            poscurrency();
+         } else {
+            const crt = res.cart || {};
+            $('#POS_gross_total').html((Number(crt.gross_total) || 0).toFixed(2));
+            $('#POS_sub_total').html((Number(crt.sub_total) || 0).toFixed(2));
+            $('#POS_addon_total').html((Number(crt.addon_price) || 0).toFixed(2));
+            $('#POS_coupon_total').html((Number(crt.coupon_discount) || 0).toFixed(2));
+            $('#POS_tax_total').html((Number(crt.tax_amount) || 0).toFixed(2));
+            window.syncPosAddonsUI(crt.addon_id, crt.addon_price, res.selected_addons || []);
+            poscurrency();
+         }
+      }
+
+      $(document).on('change', '#POS_addons .pos-addon-checkbox', function () {
+         window.updatePosModalAddonsPreview();
+      });
+
+      $(document).on('input change', '#POS_addons .pos-modal-addon-price', function () {
+         const addonId = $(this).attr('data-addon-id');
+         const val = parseFloat($(this).val());
+         if (!isNaN(val) && val > 0) {
+            $('#update_customer_read_' + addonId).prop('checked', true);
+         }
+         window.updatePosModalAddonsPreview();
+      });
+
+      $('#addons').on('show.bs.modal', function () {
+         window.updatePosModalAddonsPreview();
+      });
+
       $("#add_addons_pos_cart_submit").click(function (e) {
          e.preventDefault();
          $.ajax({
@@ -3443,17 +3619,10 @@
             data: $('#add_addons_pos_cart').serialize(),
             success: function (res) {
                $('#addons').modal('hide');
-               $('#POS_gross_total').html(res.cart.gross_total.toFixed(2))
-               $('#POS_sub_total').html(res.cart.sub_total.toFixed(2))
-               $('#POS_addon_total').html(res.cart.addon_price.toFixed(2))
-               $('#POS_coupon_total').html(res.cart.coupon_discount.toFixed(2))
-               $('#POS_tax_total').html(res.cart.tax_amount.toFixed(2))
-               poscurrency()
+               applyPosAddonsResponse(res, false);
             },
-
          });
-      })
-
+      });
 
       $("#edit_addons_pos_cart_submit").click(function (e) {
          e.preventDefault();
@@ -3462,21 +3631,85 @@
             url: baseUrl + "/admin/edit_onsadd",
             data: $('#add_addons_pos_cart').serialize(),
             success: function (res) {
-               if (res == 400) {
-                  toastr.error('gross_total Less-than paid_amount')
-               }
                $('#addons').modal('hide');
-               $('#POS_paid_amount').html(res.order_date.paid_amount.toFixed(2))
-               $('#POS_gross_total').html(res.order_date.gross_total.toFixed(2))
-               $('#POS_sub_total').html(res.order_date.sub_total.toFixed(2))
-               $('#POS_addon_total').html(res.order_date.addon_price.toFixed(2))
-               $('#POS_coupon_total').html(res.order_date.coupon_discount.toFixed(2))
-               $('#POS_tax_total').html(res.order_date.tax_amount.toFixed(2))
-               poscurrency()
+               applyPosAddonsResponse(res, true);
             },
-
          });
-      })
+      });
+
+      // Clear all addons (both from POS Cart bar and from inside Addons Modal)
+      $(document).on('click', '#btn_pos_clear_addons, #btn_modal_clear_addons', function (e) {
+         e.preventDefault();
+         const isModalBtn = $(this).attr('id') === 'btn_modal_clear_addons';
+         $('#POS_addons .pos-addon-checkbox').prop('checked', false);
+         $('#POS_addons .pos-modal-addon-price').each(function () {
+            const defPrice = $(this).attr('data-default-price') || '0.00';
+            $(this).val(Number(defPrice).toFixed(2));
+         });
+         window.updatePosModalAddonsPreview();
+
+         const isEdit = isPosEditOrderMode();
+         const endpoint = isEdit ? "/admin/edit_onsadd" : "/admin/addonsadd";
+         const payload = { clear_addons: '1' };
+         if (isEdit) {
+            payload.order_id = getPosEditOrderId();
+         }
+
+         $.ajax({
+            type: 'POST',
+            url: baseUrl + endpoint,
+            data: payload,
+            success: function (res) {
+               if (isModalBtn) {
+                  $('#addons').modal('hide');
+               }
+               applyPosAddonsResponse(res, isEdit);
+               if (typeof toastr !== 'undefined') {
+                  toastr.info('Addons cleared from order');
+               }
+            }
+         });
+      });
+
+      // Remove a single addon pill from POS Cart bar
+      $(document).on('click', '.pos-addon-pill-remove', function (e) {
+         e.preventDefault();
+         e.stopPropagation();
+         const removeId = String($(this).attr('data-id'));
+         $('#update_customer_read_' + removeId).prop('checked', false);
+         const isEdit = isPosEditOrderMode();
+         const endpoint = isEdit ? "/admin/edit_onsadd" : "/admin/addonsadd";
+
+         $.ajax({
+            type: 'POST',
+            url: baseUrl + endpoint,
+            data: $('#add_addons_pos_cart').serialize(),
+            success: function (res) {
+               applyPosAddonsResponse(res, isEdit);
+            }
+         });
+      });
+
+      // Inline edit of total addon amount on POS screen (#POS_addon_total_input)
+      $(document).on('change', '#POS_addon_total_input', function () {
+         const rawVal = Math.max(0, parseFloat($(this).val()) || 0);
+         $(this).val(rawVal.toFixed(2));
+         const isEdit = isPosEditOrderMode();
+         const endpoint = isEdit ? "/admin/edit_onsadd" : "/admin/addonsadd";
+         const payload = { custom_addon_price: rawVal.toFixed(2) };
+         if (isEdit) {
+            payload.order_id = getPosEditOrderId();
+         }
+
+         $.ajax({
+            type: 'POST',
+            url: baseUrl + endpoint,
+            data: payload,
+            success: function (res) {
+               applyPosAddonsResponse(res, isEdit);
+            }
+         });
+      });
    });
 
 
@@ -5418,6 +5651,13 @@
    }
 
    function poscurrency() {
+      if ($('#POS_addon_total').length && $('#POS_addon_total_input').length) {
+         var rawAddonTxt = String($('#POS_addon_total').text() || '').replace(/[^0-9.-]/g, '');
+         var parsedAddon = parseFloat(rawAddonTxt);
+         if (!isNaN(parsedAddon)) {
+            $('#POS_addon_total_input').val(parsedAddon.toFixed(2));
+         }
+      }
       var sym = $('input[name=sym]').val()
       var pls = $('input[name=pls]').val()
 

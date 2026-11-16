@@ -1,0 +1,101 @@
+display_order,pos_item_code,item_name,image_filename
+1,GP-051,Apron,GP-051_apron.png
+2,GP-061,Beanie,GP-061_beanie.png
+3,GP-094,Bedsheet Set,GP-094_bedsheet_set.png
+4,GP-093,Bedspread Quilt,GP-093_bedspread_quilt.png
+5,GP-064,Belt,GP-064_belt.png
+6,GP-092,Blanket,GP-092_blanket.png
+7,GP-044,Bomber Jacket,GP-044_bomber_jacket.png
+8,GP-066,Bow Tie,GP-066_bow_tie.png
+9,GP-028,Bridesmaid Dress,GP-028_bridesmaid_dress.png
+10,GP-060,Cap,GP-060_cap.png
+11,GP-056,Cape,GP-056_cape.png
+12,GP-008,Cardigan,GP-008_cardigan.png
+13,GP-054,Cardigan Long,GP-054_cardigan_long.png
+14,GP-018,Casual Pants,GP-018_casual_pants.png
+15,GP-050,Chef Coat,GP-050_chef_coat.png
+16,GP-031,Coat Light,GP-031_coat_light.png
+17,GP-029,Cocktail Dress,GP-029_cocktail_dress.png
+18,GP-091,Comforter,GP-091_comforter.png
+19,GP-022,Culottes,GP-022_culottes.png
+20,GP-069,Cummerbund,GP-069_cummerbund.png
+21,GP-045,Denim Jacket,GP-045_denim_jacket.png
+22,GP-016,Dinner Jacket Tuxedo,GP-016_dinner_jacket_tuxedo.png
+23,GP-034,Down Jacket,GP-034_down_jacket.png
+24,GP-099,Drapes Curtains,GP-099_drapes_curtains.png
+25,GP-023,Dress Casual,GP-023_dress_casual.png
+26,GP-024,Dress Formal,GP-024_dress_formal.png
+27,GP-097,Duvet Cover,GP-097_duvet_cover.png
+28,GP-025,Evening Dress,GP-025_evening_dress.png
+29,GP-041,Fleece Jacket,GP-041_fleece_jacket.png
+30,GP-062,Gloves,GP-062_gloves.png
+31,GP-071,Handkerchief,GP-071_handkerchief.png
+32,GP-059,Hat,GP-059_hat.png
+33,GP-005,Hoodie,GP-005_hoodie.png
+34,GP-084,Housecoat,GP-084_housecoat.png
+35,GP-019,Jeans,GP-019_jeans.png
+36,GP-030,Jumpsuit,GP-030_jumpsuit.png
+37,GP-085,Kimono,GP-085_kimono.png
+38,GP-049,Lab Coat,GP-049_lab_coat.png
+39,GP-042,Leather Jacket,GP-042_leather_jacket.png
+40,GP-076,Lingerie,GP-076_lingerie.png
+41,GP-048,Medical Scrub,GP-048_medical_scrub.png
+42,GP-001,Mens Dress Shirt,GP-001_mens_dress_shirt.png
+43,GP-063,Mittens,GP-063_mittens.png
+44,GP-101,Napkins,GP-101_napkins.png
+45,GP-083,Nightgown,GP-083_nightgown.png
+46,GP-100,Other Specialty,GP-100_other_specialty.png
+47,GP-032,Overcoat,GP-032_overcoat.png
+48,GP-082,Pajamas Set,GP-082_pajamas_set.png
+49,GP-035,Parka,GP-035_parka.png
+50,GP-078,Petticoat,GP-078_petticoat.png
+51,GP-095,Pillow,GP-095_pillow.png
+52,GP-096,Pillowcase,GP-096_pillowcase.png
+53,GP-067,Pocket Square,GP-067_pocket_square.png
+54,GP-003,Polo Shirt,GP-003_polo_shirt.png
+55,GP-055,Poncho,GP-055_poncho.png
+56,GP-026,Prom Dress,GP-026_prom_dress.png
+57,GP-038,Raincoat,GP-038_raincoat.png
+58,GP-081,Robe Bathrobe,GP-081_robe_bathrobe.png
+59,GP-070,Sash,GP-070_sash.png
+60,GP-058,Scarf,GP-058_scarf.png
+61,GP-079,Shapewear,GP-079_shapewear.png
+62,GP-057,Shawl Wrap,GP-057_shawl_wrap.png
+63,GP-020,Shorts,GP-020_shorts.png
+64,GP-040,Ski Jacket,GP-040_ski_jacket.png
+65,GP-021,Skirt,GP-021_skirt.png
+66,GP-017,Slacks Dress Pants,GP-017_slacks_dress_pants.png
+67,GP-077,Slip,GP-077_slip.png
+68,GP-072,Socks,GP-072_socks.png
+69,GP-015,Sport Coat,GP-015_sport_coat.png
+70,GP-089,Sports Jersey,GP-089_sports_jersey.png
+71,GP-073,Stockings Tights,GP-073_stockings_tights.png
+72,GP-043,Suede Jacket,GP-043_suede_jacket.png
+73,GP-013,Suit 2-Piece,GP-013_suit_2_piece.png
+74,GP-014,Suit 3-Piece,GP-014_suit_3_piece.png
+75,GP-012,Suit Jacket Blazer,GP-012_suit_jacket_blazer.png
+76,GP-068,Suspenders,GP-068_suspenders.png
+77,GP-007,Sweater,GP-007_sweater.png
+78,GP-006,Sweatshirt,GP-006_sweatshirt.png
+79,GP-080,Swimwear,GP-080_swimwear.png
+80,GP-004,T-Shirt,GP-004_t_shirt.png
+81,GP-098,Tablecloth,GP-098_tablecloth.png
+82,GP-065,Tie,GP-065_tie.png
+83,GP-090,Tracksuit Set,GP-090_tracksuit_set.png
+84,GP-037,Trench Coat,GP-037_trench_coat.png
+85,GP-010,Turtleneck,GP-010_turtleneck.png
+86,GP-075,Undershirt,GP-075_undershirt.png
+87,GP-074,Underwear,GP-074_underwear.png
+88,GP-087,Uniform School,GP-087_uniform_school.png
+89,GP-088,Uniform Service,GP-088_uniform_service.png
+90,GP-009,V-Neck Sweater,GP-009_v_neck_sweater.png
+91,GP-046,Varsity Jacket,GP-046_varsity_jacket.png
+92,GP-011,Vest,GP-011_vest.png
+93,GP-052,Vest Puffer,GP-052_vest_puffer.png
+94,GP-053,Vest Suit,GP-053_vest_suit.png
+95,GP-027,Wedding Dress,GP-027_wedding_dress.png
+96,GP-039,Windbreaker,GP-039_windbreaker.png
+97,GP-033,Winter Coat,GP-033_winter_coat.png
+98,GP-002,Womens Blouse,GP-002_womens_blouse.png
+99,GP-036,Wool Coat,GP-036_wool_coat.png
+100,GP-047,Work Uniform,GP-047_work_uniform.png
