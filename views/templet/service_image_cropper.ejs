@@ -1,0 +1,83 @@
+<!-- Modal: Service Image Cropper (1:1 Square) -->
+<div class="modal fade" id="cropImageModal" tabindex="-1" aria-labelledby="cropImageModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-3">
+            <div class="modal-header border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="modal-title fw-bold d-flex align-items-center mb-0" id="cropImageModalLabel">
+                        <i class="fa fa-crop text-primary me-2"></i>
+                        <%= (typeof language !== 'undefined' && language.Crop_Service_Image) ? language.Crop_Service_Image : 'Crop Service Image' %>
+                    </h5>
+                    <small class="text-muted">Adjust and crop garment image to a 1:1 square ratio for POS catalog tiles</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4 align-items-center">
+                    <!-- Left: Staging Canvas and Transform Toolbar -->
+                    <div class="col-lg-8">
+                        <div class="cropper-stage-wrap mb-3">
+                            <img id="cropperTargetImage" src="" alt="Crop Target">
+                        </div>
+                        <div class="d-flex align-items-center justify-content-center flex-wrap gap-1">
+                            <div class="btn-group me-1" role="group" aria-label="Zoom controls">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="cropperZoomIn" title="Zoom In">
+                                    <i class="fa fa-search-plus"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="cropperZoomOut" title="Zoom Out">
+                                    <i class="fa fa-search-minus"></i>
+                                </button>
+                            </div>
+                            <div class="btn-group me-1" role="group" aria-label="Rotate controls">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="cropperRotateLeft" title="Rotate -90 deg">
+                                    <i class="fa fa-undo"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="cropperRotateRight" title="Rotate +90 deg">
+                                    <i class="fa fa-redo"></i>
+                                </button>
+                            </div>
+                            <div class="btn-group me-1" role="group" aria-label="Flip controls">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="cropperFlipH" title="Flip Horizontal">
+                                    <i class="fa fa-arrows-alt-h"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="cropperFlipV" title="Flip Vertical">
+                                    <i class="fa fa-arrows-alt-v"></i>
+                                </button>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="cropperReset" title="Reset to Initial Framing">
+                                <i class="fa fa-sync-alt me-1"></i> Reset
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Live Square Preview & Guidance -->
+                    <div class="col-lg-4">
+                        <div class="cropper-preview-card p-3 text-center d-flex flex-column align-items-center justify-content-center h-100">
+                            <h6 class="fw-bold mb-2 d-flex align-items-center">
+                                <i class="fas fa-eye text-primary me-2"></i>
+                                Square Preview
+                            </h6>
+                            <div class="cropper-live-preview mb-3 shadow-sm"></div>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 mb-2 fw-semibold">
+                                400 &times; 400 px &middot; 1:1 Square
+                            </span>
+                            <small class="text-muted lh-sm">
+                                Move or resize the crop box to frame the garment cleanly. The result will display on POS catalog tiles and receipts.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top py-3 px-4 d-flex align-items-center justify-content-between">
+                <button type="button" class="btn btn-secondary d-inline-flex align-items-center" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-2"></i>
+                    <%= (typeof language !== 'undefined' && language.Cancel) ? language.Cancel : 'Cancel' %>
+                </button>
+                <button type="button" class="btn btn-primary d-inline-flex align-items-center shadow-sm" id="btnConfirmCropImage">
+                    <i class="fa fa-check me-2"></i>
+                    <%= (typeof language !== 'undefined' && language.Confirm_and_Crop) ? language.Confirm_and_Crop : 'Confirm & Apply' %>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

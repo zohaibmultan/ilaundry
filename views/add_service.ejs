@@ -4,6 +4,7 @@
 <head>
     <!-- meta and links start -->
     <%- include('templet/meta')-%>
+    <link rel="stylesheet" href="/vendor/cropperjs/cropper.min.css">
     <style>
         .service-preview-box {
             border: 2px dashed rgba(148, 163, 184, 0.35);
@@ -190,11 +191,15 @@
                                                 <img id="file-preview" src="../images/one.png" alt="Service Preview">
                                             </div>
 
-                                            <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                                            <div class="d-flex align-items-center justify-content-center flex-wrap gap-2 mb-2">
                                                 <label class="btn btn-primary mb-0 d-inline-flex align-items-center shadow-sm" for="file-1" id="Uploadfile-1">
                                                     <i class="fa fa-camera me-2"></i>
                                                     <%= language.Upload_Image %>
                                                 </label>
+                                                <button type="button" class="btn btn-info text-white d-inline-flex align-items-center shadow-sm" id="btnCropImage" title="Crop Image">
+                                                    <i class="fa fa-crop me-2"></i>
+                                                    <%= (typeof language !== 'undefined' && language.Crop_Image) ? language.Crop_Image : 'Crop Image' %>
+                                                </button>
                                                 <button type="button" class="btn btn-danger d-inline-flex align-items-center" onclick="resetPreview()" title="<%= language.Reset || 'Reset' %>">
                                                     <i class="fa fa-undo me-2"></i>
                                                     <%= language.Reset || 'Reset' %>
@@ -294,10 +299,14 @@
     <%- include('templet/footer')-%>
     <!--**********************************Footer end***********************************-->
 
+    <%- include('templet/service_image_cropper')-%>
+
     </div>
     <!--********** Main wrapper end **********-->
     
     <%- include('templet/script')-%>
+    <script src="/vendor/cropperjs/cropper.min.js"></script>
+    <script src="/js/service-image-cropper.js"></script>
 
     <script>
         function validateForm() {
@@ -330,13 +339,26 @@
         }
 
         function resetPreview() {
-            document.getElementById('file-preview').src = '../images/one.png';
-            const fileInput = document.getElementById('file-1');
-            fileInput.value = '';
-            document.getElementById('ImgRequired').classList.add('d-none');
+            if (typeof window.resetServiceImageCropper === 'function') {
+                window.resetServiceImageCropper();
+            } else {
+                document.getElementById('file-preview').src = '../images/one.png';
+                const fileInput = document.getElementById('file-1');
+                fileInput.value = '';
+                document.getElementById('ImgRequired').classList.add('d-none');
+            }
         }
 
         $(document).ready(function() {
+            if (window.ServiceImageCropper) {
+                ServiceImageCropper.init({
+                    fileInputId: 'file-1',
+                    previewImgId: 'file-preview',
+                    cropBtnId: 'btnCropImage',
+                    errorElId: 'ImgRequired',
+                    defaultImageSrc: '../images/one.png'
+                });
+            }
             $('#service_category_id').on('change', function() {
                 const catId = $(this).val();
                 const $subSelect = $('#service_subcategory_id');
