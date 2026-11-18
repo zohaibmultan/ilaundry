@@ -169,10 +169,14 @@
                                             </h6>
 
                                             <div class="service-preview-thumb-wrap mb-3 shadow-sm">
-                                                <img id="file-preview" src="../../uploads/<%= services.image %>" alt="Service Preview" onerror="this.src='../../images/one.png'">
+                                                <img id="file-preview" src="<%= (typeof serviceImageUrl !== 'undefined' && serviceImageUrl) ? serviceImageUrl : (services && services.image ? '/uploads/medium/' + encodeURIComponent(services.image) : '../../images/one.png') %>" alt="Service Preview" onerror="this.src='../../images/one.png'">
                                             </div>
 
                                             <div class="d-flex align-items-center justify-content-center flex-wrap gap-2 mb-2">
+                                                <button type="button" class="btn btn-outline-primary d-inline-flex align-items-center shadow-sm" id="btnOpenImageLibrary" title="<%= (typeof language !== 'undefined' && language.Select_From_Image_Library) ? language.Select_From_Image_Library : 'Select from Image Library' %>">
+                                                    <i class="fas fa-photo-video me-2"></i>
+                                                    <%= (typeof language !== 'undefined' && language.Image_Library) ? language.Image_Library : 'Image Library' %>
+                                                </button>
                                                 <label class="btn btn-primary mb-0 d-inline-flex align-items-center shadow-sm" for="file-1" id="Uploadfile-1">
                                                     <i class="fa fa-camera me-2"></i>
                                                     <%= language.Upload_Image %>
@@ -188,6 +192,7 @@
                                             </div>
 
                                             <input class="d-none" type="file" id="file-1" name="image_update" accept="image/*" onchange="showPreview(event)">
+                                            <input type="hidden" id="library_image_input" name="library_image" value="">
 
                                             <small class="text-muted mt-2">Recommended: PNG or JPG (Square, 400x400)</small>
                                         </div>
@@ -320,6 +325,7 @@
     <!--**********************************Footer end***********************************-->
 
     <%- include('templet/service_image_cropper')-%>
+    <%- include('templet/service_image_library')-%>
 
     </div>
     <!--********** Main wrapper end **********-->
@@ -329,7 +335,7 @@
     <script src="/js/service-image-cropper.js"></script>
 
     <script>
-        const originalImageSrc = "<%= (services && services.image) ? '../../uploads/' + services.image : '' %>";
+        const originalImageSrc = "<%= (typeof serviceImageUrl !== 'undefined' && serviceImageUrl) ? serviceImageUrl : ((services && services.image) ? '/uploads/medium/' + encodeURIComponent(services.image) : '') %>";
 
         function showPreview(event) {
             const file = event.target.files[0];

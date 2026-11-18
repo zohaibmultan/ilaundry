@@ -1,0 +1,73 @@
+<!-- Modal: Service Image Library Picker -->
+<div class="modal fade" id="serviceImageLibraryModal" tabindex="-1" aria-labelledby="serviceImageLibraryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg rounded-3">
+      <div class="modal-header border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+        <div>
+          <h5 class="modal-title fw-bold d-flex align-items-center mb-0" id="serviceImageLibraryModalLabel">
+            <i class="fas fa-photo-video text-primary me-2"></i>
+            <%= (typeof language !== 'undefined' && language.Select_From_Image_Library) ? language.Select_From_Image_Library : 'Select Service Image from Library' %>
+          </h5>
+          <small class="text-muted">
+            Pre-defined laundry and garment images (<span id="libraryImageCount">0</span> available)
+          </small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- Search and Filter Bar -->
+      <div class="px-4 pt-3 pb-2 border-bottom bg-light-subtle">
+        <div class="input-group">
+          <span class="input-group-text bg-white border-end-0 text-muted">
+            <i class="fas fa-search"></i>
+          </span>
+          <input type="text" id="libraryImageSearch" class="form-control border-start-0 border-end-0 ps-0" placeholder="Search garment image (e.g. Shirt, Jacket, Dress, Towel, Bedsheet)..." autocomplete="off">
+          <button class="btn btn-sm btn-outline-secondary border-start-0 bg-white text-muted" type="button" id="btnClearLibrarySearch" title="Clear search">
+            <i class="fa fa-times"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body: Image Grid -->
+      <div class="modal-body p-4">
+        <!-- Loading Spinner -->
+        <div id="libraryLoading" class="text-center py-5 d-none">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading images...</span>
+          </div>
+          <p class="text-muted small mt-2 mb-0">Loading image library...</p>
+        </div>
+
+        <!-- Empty Search Results -->
+        <div id="libraryEmptyState" class="text-center py-5 d-none">
+          <i class="fas fa-search fa-3x text-muted mb-3 opacity-50"></i>
+          <h6 class="fw-bold text-dark mb-1">No matching images found</h6>
+          <p class="text-muted small mb-0">Try searching with a different garment name or clear the filter.</p>
+        </div>
+
+        <!-- Grid View -->
+        <div class="library-grid-scroll">
+          <div id="libraryImageGrid" class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer border-top py-3 px-4 d-flex align-items-center justify-content-between">
+        <div class="text-truncate me-2" style="max-width: 320px;">
+          <span class="small text-muted" id="librarySelectedInfo">Double-click or select an image</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-secondary d-inline-flex align-items-center" data-bs-dismiss="modal">
+            <i class="fa fa-times me-2"></i>
+            <%= (typeof language !== 'undefined' && language.Cancel) ? language.Cancel : 'Cancel' %>
+          </button>
+          <button type="button" class="btn btn-primary d-inline-flex align-items-center shadow-sm" id="btnConfirmLibraryImage" disabled>
+            <i class="fa fa-check me-2"></i>
+            <%= (typeof language !== 'undefined' && language.Use_Selected_Image) ? language.Use_Selected_Image : 'Use Selected Image' %>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

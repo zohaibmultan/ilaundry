@@ -19,6 +19,10 @@ const {
   calculateReadyDateTime,
 } = require("../middelwer/readyScheduleHelper");
 const {
+  attachPosImageMeta,
+  getEffectivePosImageSize,
+} = require("../middelwer/posImageHelper");
+const {
   broadcastCalendarChange,
 } = require("../middelwer/calendarBroadcaster");
 const {
@@ -657,7 +661,11 @@ router.get("/pos", auth, async (req, res) => {
       "SELECT * FROM tbl_communication_preferences WHERE status = 1 ORDER BY sort_order ASC",
     ).catch(() => []);
 
+    const posImageSize = await getEffectivePosImageSize(targetStoreId);
+    await attachPosImageMeta(service_list, targetStoreId, posImageSize);
+
     res.render("pos", {
+      posImageSize,
       storePrinterConfig,
       overrideRatePercent,
       canOverridePriceDiscount: canOverridePosPriceDiscount(accessdata),
@@ -832,7 +840,11 @@ router.get("/edit/:id", auth, async (req, res) => {
       order_item: cartservice || [],
     };
 
+    const posImageSize = await getEffectivePosImageSize(targetStoreId);
+    await attachPosImageMeta(service_list, targetStoreId, posImageSize);
+
     res.render("pos", {
+      posImageSize,
       storePrinterConfig,
       overrideRatePercent,
       canOverridePriceDiscount: canOverridePosPriceDiscount(accessdata),
@@ -918,7 +930,10 @@ router.get("/servicelist/:id", auth, async (req, res) => {
     const subcategories = await DataFind(
       `SELECT id, category_id, name, sequence_no FROM tbl_service_subcategory WHERE store_ID = '${safeStoreId}' AND delete_flage = '0' AND status = '0' ORDER BY sequence_no ASC, name ASC`,
     );
-    res.status(200).json({ service_list, categories, subcategories });
+    const posImageSize = await getEffectivePosImageSize(safeStoreId);
+    await attachPosImageMeta(service_list, safeStoreId, posImageSize);
+
+    res.status(200).json({ service_list, categories, subcategories, pos_image_size: posImageSize });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });

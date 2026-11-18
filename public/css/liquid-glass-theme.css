@@ -4463,4 +4463,119 @@ table.dataTable td.text-center {
   border-color: rgba(255, 255, 255, 0.1);
 }
 
+/* ==========================================================================
+   Service Image Library Modal Grid & Selection
+   ========================================================================== */
+.library-grid-scroll {
+  max-height: 55vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.library-img-card {
+  border: 2px solid rgba(226, 232, 240, 0.85);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.library-img-card:hover {
+  border-color: #0081ee;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 129, 238, 0.15);
+}
+
+.library-img-card.selected {
+  border-color: #0081ee !important;
+  background: rgba(0, 129, 238, 0.05) !important;
+  box-shadow: 0 0 0 3px rgba(0, 129, 238, 0.25) !important;
+}
+
+.library-img-card .selected-check {
+  display: none;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #0081ee;
+  color: #ffffff;
+  font-size: 11px;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 129, 238, 0.35);
+}
+
+.library-img-card.selected .selected-check {
+  display: flex;
+}
+
+.library-img-thumb-wrap {
+  width: 96px;
+  height: 96px;
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.library-img-thumb-wrap img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.library-img-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  text-align: center;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-theme-version="dark"] .library-img-card {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme-version="dark"] .library-img-card:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.2);
+}
+
+[data-theme-version="dark"] .library-img-card.selected {
+  border-color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.12) !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.3) !important;
+}
+
+[data-theme-version="dark"] .library-img-card .selected-check {
+  background: #38bdf8;
+  box-shadow: 0 2px 6px rgba(56, 189, 248, 0.4);
+}
+
+[data-theme-version="dark"] .library-img-thumb-wrap {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+[data-theme-version="dark"] .library-img-label {
+  color: #f1f5f9;
+}
+
+
 

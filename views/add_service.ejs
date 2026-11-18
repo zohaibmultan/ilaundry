@@ -192,6 +192,10 @@
                                             </div>
 
                                             <div class="d-flex align-items-center justify-content-center flex-wrap gap-2 mb-2">
+                                                <button type="button" class="btn btn-outline-primary d-inline-flex align-items-center shadow-sm" id="btnOpenImageLibrary" title="<%= (typeof language !== 'undefined' && language.Select_From_Image_Library) ? language.Select_From_Image_Library : 'Select from Image Library' %>">
+                                                    <i class="fas fa-photo-video me-2"></i>
+                                                    <%= (typeof language !== 'undefined' && language.Image_Library) ? language.Image_Library : 'Image Library' %>
+                                                </button>
                                                 <label class="btn btn-primary mb-0 d-inline-flex align-items-center shadow-sm" for="file-1" id="Uploadfile-1">
                                                     <i class="fa fa-camera me-2"></i>
                                                     <%= language.Upload_Image %>
@@ -207,6 +211,7 @@
                                             </div>
 
                                             <input class="d-none" type="file" id="file-1" name="image" accept="image/*" onchange="showPreview(event)">
+                                            <input type="hidden" id="library_image_input" name="library_image" value="">
 
                                             <div class="text-danger small mt-1 fw-bold d-none" id="ImgRequired">
                                                 <i class="fas fa-exclamation-triangle me-1"></i> <%= language.Image_is_required || 'Service image is required!' %>
@@ -300,6 +305,7 @@
     <!--**********************************Footer end***********************************-->
 
     <%- include('templet/service_image_cropper')-%>
+    <%- include('templet/service_image_library')-%>
 
     </div>
     <!--********** Main wrapper end **********-->
@@ -311,12 +317,16 @@
     <script>
         function validateForm() {
             const fileInput = document.getElementById('file-1');
+            const libraryInput = document.getElementById('library_image_input');
             const errorSpan = document.getElementById('ImgRequired');
 
-            if (!fileInput.files.length) {
-                errorSpan.classList.remove('d-none');
+            const hasUploadedFile = fileInput && fileInput.files && fileInput.files.length > 0;
+            const hasLibraryImage = libraryInput && libraryInput.value && libraryInput.value.trim() !== '';
+
+            if (!hasUploadedFile && !hasLibraryImage) {
+                if (errorSpan) errorSpan.classList.remove('d-none');
                 if (typeof toastr !== 'undefined') {
-                    toastr.error('Please upload a service image', {
+                    toastr.error('Please upload a service image or select one from the Image Library', {
                         timeOut: 3000,
                         closeButton: true,
                         progressBar: true
@@ -324,7 +334,7 @@
                 }
                 return false;
             } else {
-                errorSpan.classList.add('d-none');
+                if (errorSpan) errorSpan.classList.add('d-none');
                 return true;
             }
         }

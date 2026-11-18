@@ -382,7 +382,7 @@
                       <td>
                         <div class="d-flex">
                           <div class="mx-5">
-                            <img class="rounded-circle" width="60" height="60" src="../../uploads/<%= data.service_img %>" alt="image">
+                            <img class="rounded-circle p-1 border" width="60" height="60" style="object-fit: contain;" src="/uploads/small/<%= encodeURIComponent(data.service_img || '') %>" onerror="this.onerror=null; this.src='/uploads/<%= encodeURIComponent(data.service_img || '') %>';" alt="image">
                           </div>
                           <div class="d-flex flex-column justify-content-center">
                             <span class="fw-bold">

@@ -1,5 +1,5 @@
 /**
- * iCleaners Service Image Cropper (1:1 Square Ratio)
+ * iCleaners Service Image Cropper & Image Library Picker (1:1 Square Ratio)
  * Powered by Cropper.js (v1.6.2)
  */
 (function (window, $) {
@@ -16,7 +16,19 @@
                 targetImgId: 'cropperTargetImage',
                 confirmBtnId: 'btnConfirmCropImage',
                 defaultImageSrc: '../images/one.png',
-                originalImageSrc: ''
+                originalImageSrc: '',
+                // Image Library integration options
+                libraryBtnId: 'btnOpenImageLibrary',
+                libraryModalId: 'serviceImageLibraryModal',
+                libraryInputId: 'library_image_input',
+                libraryGridId: 'libraryImageGrid',
+                librarySearchId: 'libraryImageSearch',
+                libraryClearSearchId: 'btnClearLibrarySearch',
+                libraryConfirmBtnId: 'btnConfirmLibraryImage',
+                libraryCountId: 'libraryImageCount',
+                libraryEmptyId: 'libraryEmptyState',
+                libraryLoadingId: 'libraryLoading',
+                librarySelectedInfoId: 'librarySelectedInfo'
             }, options || {});
 
             const fileInput = document.getElementById(config.fileInputId);
@@ -26,6 +38,19 @@
             const modalEl = document.getElementById(config.modalId);
             const targetImg = document.getElementById(config.targetImgId);
             const confirmBtn = document.getElementById(config.confirmBtnId);
+
+            // Library elements
+            const libraryBtn = document.getElementById(config.libraryBtnId);
+            const libraryModalEl = document.getElementById(config.libraryModalId);
+            const libraryInput = document.getElementById(config.libraryInputId);
+            const libraryGrid = document.getElementById(config.libraryGridId);
+            const librarySearch = document.getElementById(config.librarySearchId);
+            const libraryClearSearch = document.getElementById(config.libraryClearSearchId);
+            const libraryConfirmBtn = document.getElementById(config.libraryConfirmBtnId);
+            const libraryCount = document.getElementById(config.libraryCountId);
+            const libraryEmpty = document.getElementById(config.libraryEmptyId);
+            const libraryLoading = document.getElementById(config.libraryLoadingId);
+            const librarySelectedInfo = document.getElementById(config.librarySelectedInfoId);
 
             if (!fileInput || !previewImg || !cropBtn || !modalEl || !targetImg || !confirmBtn) {
                 console.warn('[ServiceImageCropper] Missing required DOM elements for cropper initialization.');
@@ -39,6 +64,10 @@
             let scaleX = 1;
             let scaleY = 1;
 
+            // Image Library cached state
+            let cachedLibraryImages = null;
+            let selectedLibraryItem = null;
+
             // Check if there is an existing original image on edit forms
             if (config.originalImageSrc && !config.originalImageSrc.endsWith('one.png')) {
                 currentSourceUrl = config.originalImageSrc;
@@ -49,7 +78,7 @@
                 }
             }
 
-            // Listen for user uploading a new file
+            // Listen for user uploading a new file directly
             fileInput.addEventListener('change', function (e) {
                 const file = e.target.files && e.target.files[0];
                 if (file) {
@@ -60,6 +89,12 @@
                     currentFileName = file.name;
                     currentMimeType = file.type || 'image/png';
                     previewImg.src = currentSourceUrl;
+
+                    // Upload takes precedence over library selection
+                    if (libraryInput) {
+                        libraryInput.value = '';
+                    }
+
                     if (errorEl) {
                         errorEl.classList.add('d-none');
                     }
@@ -81,7 +116,11 @@
                     } else {
                         alert('Please select or upload an image first before cropping.');
                     }
-                    fileInput.click();
+                    if (libraryBtn) {
+                        libraryBtn.focus();
+                    } else {
+                        fileInput.click();
+                    }
                     return;
                 }
 
@@ -210,6 +249,11 @@
                         }
                     }
 
+                    // A cropped staged file replaces any raw library image string
+                    if (libraryInput) {
+                        libraryInput.value = '';
+                    }
+
                     // Update UI preview
                     if (currentSourceUrl && currentSourceUrl.startsWith('blob:')) {
                         try { URL.revokeObjectURL(currentSourceUrl); } catch (e) {}
@@ -236,6 +280,199 @@
                 }, outputMime, isJpeg ? 0.92 : undefined);
             });
 
+            // ==============================================================
+            // Image Library Modal & Picker Functionality
+            // ==============================================================
+            function escapeHtml(str) {
+                if (!str) return '';
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function renderLibraryGrid(filterTerm) {
+                if (!libraryGrid || !cachedLibraryImages) return;
+                const term = (filterTerm || '').toLowerCase().trim();
+
+                const filtered = cachedLibraryImages.filter(function (item) {
+                    if (!term) return true;
+                    return item.label.toLowerCase().includes(term) || item.filename.toLowerCase().includes(term);
+                });
+
+                if (libraryCount) {
+                    libraryCount.textContent = filtered.length;
+                }
+
+                if (filtered.length === 0) {
+                    libraryGrid.innerHTML = '';
+                    if (libraryEmpty) libraryEmpty.classList.remove('d-none');
+                    return;
+                }
+
+                if (libraryEmpty) libraryEmpty.classList.add('d-none');
+
+                let html = '';
+                filtered.forEach(function (item) {
+                    const isSelected = selectedLibraryItem && selectedLibraryItem.filename === item.filename;
+                    html += `
+                        <div class="col">
+                            <div class="library-img-card ${isSelected ? 'selected' : ''}" 
+                                 data-filename="${escapeHtml(item.filename)}" 
+                                 data-label="${escapeHtml(item.label)}" 
+                                 data-url="${escapeHtml(item.url)}"
+                                 title="${escapeHtml(item.label)}">
+                                <div class="selected-check"><i class="fa fa-check"></i></div>
+                                <div class="library-img-thumb-wrap">
+                                    <img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.label)}" loading="lazy">
+                                </div>
+                                <div class="library-img-label">${escapeHtml(item.label)}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                libraryGrid.innerHTML = html;
+
+                // Bind click and double-click handlers on cards
+                const cards = libraryGrid.querySelectorAll('.library-img-card');
+                cards.forEach(function (card) {
+                    card.addEventListener('click', function () {
+                        cards.forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        selectedLibraryItem = {
+                            filename: card.getAttribute('data-filename'),
+                            label: card.getAttribute('data-label'),
+                            url: card.getAttribute('data-url')
+                        };
+                        if (librarySelectedInfo) {
+                            librarySelectedInfo.textContent = 'Selected: ' + selectedLibraryItem.label;
+                        }
+                        if (libraryConfirmBtn) {
+                            libraryConfirmBtn.disabled = false;
+                        }
+                    });
+
+                    card.addEventListener('dblclick', function () {
+                        selectedLibraryItem = {
+                            filename: card.getAttribute('data-filename'),
+                            label: card.getAttribute('data-label'),
+                            url: card.getAttribute('data-url')
+                        };
+                        applySelectedLibraryImage();
+                    });
+                });
+            }
+
+            function applySelectedLibraryImage() {
+                if (!selectedLibraryItem) return;
+
+                if (libraryInput) {
+                    libraryInput.value = selectedLibraryItem.filename;
+                }
+
+                // Clear any staged local file so library selection takes precedence
+                fileInput.value = '';
+
+                if (currentSourceUrl && currentSourceUrl.startsWith('blob:')) {
+                    try { URL.revokeObjectURL(currentSourceUrl); } catch (e) {}
+                }
+                currentSourceUrl = selectedLibraryItem.url;
+                currentFileName = selectedLibraryItem.filename;
+                currentMimeType = selectedLibraryItem.filename.toLowerCase().endsWith('.jpg') ? 'image/jpeg' : 'image/png';
+
+                previewImg.src = selectedLibraryItem.url;
+
+                if (errorEl) {
+                    errorEl.classList.add('d-none');
+                }
+
+                if (libraryModalEl) {
+                    const bsModal = bootstrap.Modal.getInstance(libraryModalEl);
+                    if (bsModal) {
+                        bsModal.hide();
+                    }
+                }
+
+                if (typeof toastr !== 'undefined') {
+                    toastr.info('Selected "' + selectedLibraryItem.label + '" from image library', {
+                        timeOut: 3000,
+                        progressBar: true
+                    });
+                }
+            }
+
+            function fetchLibraryImages() {
+                if (libraryLoading) libraryLoading.classList.remove('d-none');
+                if (libraryEmpty) libraryEmpty.classList.add('d-none');
+
+                var storeInput = document.querySelector('select[name="storeid"], select[name="store_ID"], #add_servie_storelist');
+                var storeVal = storeInput ? storeInput.value : '';
+                var fetchUrl = storeVal ? ('/services/image-library?store_id=' + encodeURIComponent(storeVal)) : '/services/image-library';
+
+                fetch(fetchUrl, {
+                    headers: { 'Accept': 'application/json' }
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (libraryLoading) libraryLoading.classList.add('d-none');
+                        if (data && data.success && Array.isArray(data.images)) {
+                            cachedLibraryImages = data.images;
+                            renderLibraryGrid(librarySearch ? librarySearch.value : '');
+                        } else {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error('Failed to load image library');
+                            }
+                        }
+                    })
+                    .catch(function (err) {
+                        if (libraryLoading) libraryLoading.classList.add('d-none');
+                        console.error('[ServiceImageCropper] Error fetching image library:', err);
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Failed to connect to image library');
+                        }
+                    });
+            }
+
+            // Open Library Modal Button
+            if (libraryBtn && libraryModalEl) {
+                libraryBtn.addEventListener('click', function () {
+                    const bsModal = bootstrap.Modal.getOrCreateInstance(libraryModalEl);
+                    bsModal.show();
+
+                    if (!cachedLibraryImages) {
+                        fetchLibraryImages();
+                    } else {
+                        renderLibraryGrid(librarySearch ? librarySearch.value : '');
+                    }
+                });
+            }
+
+            // Search filter event
+            if (librarySearch) {
+                librarySearch.addEventListener('input', function () {
+                    renderLibraryGrid(this.value);
+                });
+            }
+
+            // Clear search filter button
+            if (libraryClearSearch && librarySearch) {
+                libraryClearSearch.addEventListener('click', function () {
+                    librarySearch.value = '';
+                    renderLibraryGrid('');
+                    librarySearch.focus();
+                });
+            }
+
+            // Confirm selection button
+            if (libraryConfirmBtn) {
+                libraryConfirmBtn.addEventListener('click', function () {
+                    applySelectedLibraryImage();
+                });
+            }
+
             // Expose a helper to reset state when user clicks Reset on form
             window.resetServiceImageCropper = function () {
                 if (currentSourceUrl && currentSourceUrl.startsWith('blob:')) {
@@ -249,6 +486,16 @@
                     previewImg.src = config.defaultImageSrc;
                 }
                 fileInput.value = '';
+                if (libraryInput) {
+                    libraryInput.value = '';
+                }
+                selectedLibraryItem = null;
+                if (librarySelectedInfo) {
+                    librarySelectedInfo.textContent = 'Double-click or select an image';
+                }
+                if (libraryConfirmBtn) {
+                    libraryConfirmBtn.disabled = true;
+                }
                 if (errorEl) {
                     errorEl.classList.add('d-none');
                 }

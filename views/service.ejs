@@ -195,8 +195,9 @@
                     {
                         data: 'name',
                         render: function(data, type, row) {
-                            const imgHtml = row.image 
-                                ? `<img class="rounded-3 me-2 border" width="44" height="44" style="object-fit: cover;" src="../uploads/${escapeHtml(row.image)}" alt="" onerror="this.style.display='none'">` 
+                            const resolvedImg = row.image_url || (row.image ? `/uploads/small/${encodeURIComponent(row.image)}` : '');
+                            const imgHtml = resolvedImg 
+                                ? `<img class="rounded-3 me-2 border p-1" width="44" height="44" style="object-fit: contain;" src="${escapeHtml(resolvedImg)}" alt="" onerror="this.style.display='none'">` 
                                 : '';
                             return `
                                 <div class="d-flex align-items-center">

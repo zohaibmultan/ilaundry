@@ -637,11 +637,15 @@ router.get("/storesetting", auth, async (req, res) => {
       paymentAccounts = await DataFind(`SELECT id, ac_name FROM tbl_account WHERE store_ID = ${storedata[0].id} AND delet_flage != '1'`);
     }
 
+    const masterShop = await DataFind("SELECT pos_image_size FROM tbl_master_shop LIMIT 1");
+    const masterPosImageSize = (masterShop && masterShop.length > 0 && masterShop[0].pos_image_size) ? masterShop[0].pos_image_size : 'medium';
+
     res.render("storeSetting", {
       storedata,
       update,
       accessdata,
       paymentAccounts,
+      masterPosImageSize,
       language: req.language_data,
       language_name: req.language_name,
     });
@@ -796,9 +800,14 @@ router.post(
         const safeOverrideRate1 = (!isNaN(rawOverrideRate1) && rawOverrideRate1 >= 0) ? rawOverrideRate1 : 10;
         const defaultPaymentType = req.body.default_payment_type ? req.body.default_payment_type.trim().replace(/'/g, "\\'") : 'Cash';
 
+        let storePosImageSizeSQL = "NULL";
+        if (req.body.pos_image_size && ["small", "medium", "large"].includes(String(req.body.pos_image_size).trim().toLowerCase())) {
+          storePosImageSizeSQL = `'${String(req.body.pos_image_size).trim().toLowerCase()}'`;
+        }
+
         const storeUpdate = await DataUpdate(
           "tbl_store",
-          `name='${name}', default_payment_type='${defaultPaymentType}', order_prefix='${safeOrderPrefix}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, override_rate_percent=${safeOverrideRate1}, country='${country}', state='${state}', city='${city}', district='${safeDistrict}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}, onesignal_app_id='${onesignalAppId}', onesignal_api_key='${onesignalApiKey}', twilio_sid='${twilioSid}', twilio_auth_token='${twilioAuthToken}', twilio_phone_no='${twilioPhoneNo}', default_customer_enabled=${defaultCustomerEnabled}, contact_first_name='${safeContactFName}', contact_last_name='${safeContactLName}', contact_phone='${safeContactPhone}', contact_email='${safeContactEmail}'`,
+          `name='${name}', default_payment_type='${defaultPaymentType}', order_prefix='${safeOrderPrefix}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, override_rate_percent=${safeOverrideRate1}, pos_image_size=${storePosImageSizeSQL}, country='${country}', state='${state}', city='${city}', district='${safeDistrict}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}, onesignal_app_id='${onesignalAppId}', onesignal_api_key='${onesignalApiKey}', twilio_sid='${twilioSid}', twilio_auth_token='${twilioAuthToken}', twilio_phone_no='${twilioPhoneNo}', default_customer_enabled=${defaultCustomerEnabled}, contact_first_name='${safeContactFName}', contact_last_name='${safeContactLName}', contact_phone='${safeContactPhone}', contact_email='${safeContactEmail}'`,
           `id=${dataid}`,
           req.hostname,
           req.protocol,
@@ -1242,11 +1251,15 @@ router.get("/approvedshop/:id", auth, async (req, res) => {
         paymentAccounts = await DataFind(`SELECT id, ac_name FROM tbl_account WHERE store_ID = ${storedata[0].id} AND delet_flage != '1'`);
       }
 
+      const masterShop = await DataFind("SELECT pos_image_size FROM tbl_master_shop LIMIT 1");
+      const masterPosImageSize = (masterShop && masterShop.length > 0 && masterShop[0].pos_image_size) ? masterShop[0].pos_image_size : 'medium';
+
       res.render("store_settings_bymaster", {
         rolldata,
         storedata,
         accessdata,
         paymentAccounts,
+        masterPosImageSize,
         language: req.language_data,
         language_name: req.language_name,
       });
@@ -1374,9 +1387,14 @@ router.post(
         const safeOverrideRate2 = (!isNaN(rawOverrideRate2) && rawOverrideRate2 >= 0) ? rawOverrideRate2 : 10;
         const defaultPaymentType = req.body.default_payment_type ? req.body.default_payment_type.trim().replace(/'/g, "\\'") : 'Cash';
 
+        let storePosImageSizeSQL2 = "NULL";
+        if (req.body.pos_image_size && ["small", "medium", "large"].includes(String(req.body.pos_image_size).trim().toLowerCase())) {
+          storePosImageSizeSQL2 = `'${String(req.body.pos_image_size).trim().toLowerCase()}'`;
+        }
+
         const storeUpdate = await DataUpdate(
           "tbl_store",
-          `name='${name}', default_payment_type='${defaultPaymentType}', order_prefix='${safeOrderPrefix}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, override_rate_percent=${safeOverrideRate2}, country='${country}', state='${state}', city='${city}', district='${safeDistrict}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', status=${status}, roll_ID=${roll}, logo='${imgFiled}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}, onesignal_app_id='${onesignalAppId}', onesignal_api_key='${onesignalApiKey}', twilio_sid='${twilioSid}', twilio_auth_token='${twilioAuthToken}', twilio_phone_no='${twilioPhoneNo}', default_customer_enabled=${defaultCustomerEnabled}, contact_first_name='${safeContactFName}', contact_last_name='${safeContactLName}', contact_phone='${safeContactPhone}', contact_email='${safeContactEmail}'`,
+          `name='${name}', default_payment_type='${defaultPaymentType}', order_prefix='${safeOrderPrefix}', mobile_number='${number}', username='${username}', password='${haspass}', shop_commission=${commission}, tax_percent=${taxpercent}, override_rate_percent=${safeOverrideRate2}, pos_image_size=${storePosImageSizeSQL2}, country='${country}', state='${state}', city='${city}', district='${safeDistrict}', zipcode='${zip_code}', store_email='${store_email}', store_tax_number='${tax_number}', address='${address}', status=${status}, roll_ID=${roll}, logo='${imgFiled}', ready_lead_days=${leadDaysSQL}, ready_cutoff_time=${cutoffSQL}, ready_time=${readyTimeSQL}, ready_working_days=${wDaysSQL}, onesignal_app_id='${onesignalAppId}', onesignal_api_key='${onesignalApiKey}', twilio_sid='${twilioSid}', twilio_auth_token='${twilioAuthToken}', twilio_phone_no='${twilioPhoneNo}', default_customer_enabled=${defaultCustomerEnabled}, contact_first_name='${safeContactFName}', contact_last_name='${safeContactLName}', contact_phone='${safeContactPhone}', contact_email='${safeContactEmail}'`,
           `id=${dataid}`,
           req.hostname,
           req.protocol,
@@ -2620,6 +2638,9 @@ router.post(
         let curTwilioToken = (existingMaster.length > 0 && existingMaster[0].twilio_auth_token) ? existingMaster[0].twilio_auth_token : '';
         let curTwilioPhone = (existingMaster.length > 0 && existingMaster[0].twilio_phone_no) ? existingMaster[0].twilio_phone_no : '';
         let defaultPaymentType = (req.body.default_payment_type || "Cash").trim().replace(/'/g, "\\'");
+        let masterPosImageSize = (req.body.pos_image_size && ["small", "medium", "large"].includes(String(req.body.pos_image_size).trim().toLowerCase()))
+          ? String(req.body.pos_image_size).trim().toLowerCase()
+          : "medium";
 
         const settingsUpdate = await DataUpdate(
           "tbl_master_shop",
@@ -2636,6 +2657,7 @@ router.post(
    storeroll=${storeroll},
    app_name='${appname}',
    default_payment_type='${defaultPaymentType}',
+   pos_image_size='${masterPosImageSize}',
    onesignal_app_id='${curOneSignalId}',
    onesignal_api_key='${curOneSignalKey}',
    twilio_sid='${curTwilioSid}',

@@ -16,6 +16,7 @@ var {
 } = require("../middelwer/databaseQurey");
 var mysql = require("mysql2");
 const { paginateDataTable } = require("../middelwer/dataTableHelper");
+const { getEffectivePosImageSize, resolvePosServiceImageUrl } = require("../middelwer/posImageHelper");
 
 function normalizeParallelTiers(seqs, types, prices, items, readyTimes) {
   const toArr = (v) => (v === undefined || v === null ? [] : Array.isArray(v) ? v : [v]);
@@ -50,6 +51,73 @@ function normalizeParallelTiers(seqs, types, prices, items, readyTimes) {
     services_type_items: tiers.map((t) => t.items).join(","),
     services_type_ready_time: tiers.map((t) => t.ready_time).join(","),
   };
+}
+
+function ensureUploadVariants(filename) {
+  if (!filename || typeof filename !== "string") return;
+  const safeFilename = path.basename(filename.trim());
+  const uploadsDir = path.join(__dirname, "../public/uploads");
+  const sourcePath = path.join(uploadsDir, safeFilename);
+  if (!fs.existsSync(sourcePath)) return;
+
+  ["small", "medium", "large"].forEach((size) => {
+    const sizeDir = path.join(uploadsDir, size);
+    if (!fs.existsSync(sizeDir)) fs.mkdirSync(sizeDir, { recursive: true });
+    const targetPath = path.join(sizeDir, safeFilename);
+    if (!fs.existsSync(targetPath)) {
+      try {
+        fs.copyFileSync(sourcePath, targetPath);
+      } catch (e) {
+        console.warn(`[ensureUploadVariants] Failed copying to ${size}:`, e.message);
+      }
+    }
+  });
+}
+
+function copyLibraryImageToUploads(libraryFilename) {
+  if (!libraryFilename || typeof libraryFilename !== "string") return "";
+  const safeFilename = path.basename(libraryFilename.trim());
+  const allowedExtensions = [".png", ".jpg", ".jpeg"];
+  const ext = path.extname(safeFilename).toLowerCase();
+  if (!allowedExtensions.includes(ext)) {
+    console.warn(`[ImageLibrary] Disallowed file extension: ${safeFilename}`);
+    return "";
+  }
+  const libraryDir = path.join(__dirname, "../public/images/service-library");
+  let sourcePath = path.join(libraryDir, safeFilename);
+
+  // If not in root, check medium, small, large subdirectories
+  if (!fs.existsSync(sourcePath)) {
+    if (fs.existsSync(path.join(libraryDir, "medium", safeFilename))) {
+      sourcePath = path.join(libraryDir, "medium", safeFilename);
+    } else if (fs.existsSync(path.join(libraryDir, "small", safeFilename))) {
+      sourcePath = path.join(libraryDir, "small", safeFilename);
+    } else if (fs.existsSync(path.join(libraryDir, "large", safeFilename))) {
+      sourcePath = path.join(libraryDir, "large", safeFilename);
+    } else {
+      console.warn(`[ImageLibrary] Source file not found: ${sourcePath}`);
+      return "";
+    }
+  }
+
+  const targetFilename = `${Date.now()}-${safeFilename}`;
+  const uploadsDir = path.join(__dirname, "../public/uploads");
+
+  if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+  // Copy resolution-specific variants into uploads/{small,medium,large}/
+  ["small", "medium", "large"].forEach((size) => {
+    const sizeUploadsDir = path.join(uploadsDir, size);
+    if (!fs.existsSync(sizeUploadsDir)) fs.mkdirSync(sizeUploadsDir, { recursive: true });
+    const sizeLibPath = path.join(libraryDir, size, safeFilename);
+    if (fs.existsSync(sizeLibPath)) {
+      fs.copyFileSync(sizeLibPath, path.join(sizeUploadsDir, targetFilename));
+    } else {
+      fs.copyFileSync(sourcePath, path.join(sizeUploadsDir, targetFilename));
+    }
+  });
+
+  return targetFilename;
 }
 
 // <<<<<<<<<<<<<<<<<<<SERVICE LIST ALL CRUD ROUTER>>>>>>>>>>>>>>>>>>>>>>
@@ -258,6 +326,7 @@ router.get("/list/data", auth, async (req, res) => {
           subcategory_name: s.subcategory_name || "—",
           no_of_items: parseInt(s.no_of_items) > 0 ? parseInt(s.no_of_items) : 1,
           image: s.image || "",
+          image_url: resolvePosServiceImageUrl(s.image, "small"),
           serviceType: s.serviceType || "",
           store: s.store || "",
           status: parseInt(s.status) || 0,
@@ -271,6 +340,56 @@ router.get("/list/data", auth, async (req, res) => {
   } catch (error) {
     console.error("Services list data error:", error);
     return res.status(500).json({ error: error.message, data: [] });
+  }
+});
+
+router.get("/image-library", auth, async (req, res) => {
+  try {
+    const storeId = req.query.store_id || (req.user && req.user.store ? req.user.store : 0);
+    const posImageSize = await getEffectivePosImageSize(storeId);
+    const baseLibraryDir = path.join(__dirname, "../public/images/service-library");
+    const sizeDir = path.join(baseLibraryDir, posImageSize);
+    const targetDir = fs.existsSync(sizeDir) ? sizeDir : baseLibraryDir;
+
+    if (!fs.existsSync(targetDir)) {
+      return res.status(200).json({ success: true, count: 0, pos_image_size: posImageSize, images: [] });
+    }
+
+    const allowedExtensions = [".png", ".jpg", ".jpeg"];
+    const files = fs.readdirSync(targetDir);
+    const seenNames = new Set();
+    const images = [];
+
+    files.forEach((file) => {
+      const ext = path.extname(file).toLowerCase();
+      if (!allowedExtensions.includes(ext)) return;
+
+      const base = path.basename(file, ext);
+      const label = base.replace(/[_-]+/g, " ").trim();
+      const lowerKey = label.toLowerCase();
+
+      // Deduplicate aliases (prefer space over underscore filename)
+      if (seenNames.has(lowerKey)) return;
+      seenNames.add(lowerKey);
+
+      const urlPath = fs.existsSync(sizeDir)
+        ? `/images/service-library/${posImageSize}/${encodeURIComponent(file)}`
+        : `/images/service-library/${encodeURIComponent(file)}`;
+
+      images.push({
+        filename: file,
+        label: label,
+        size: posImageSize,
+        url: urlPath,
+      });
+    });
+
+    images.sort((a, b) => a.label.localeCompare(b.label));
+
+    return res.status(200).json({ success: true, count: images.length, pos_image_size: posImageSize, images });
+  } catch (error) {
+    console.error("Error in /services/image-library:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch image library" });
   }
 });
 
@@ -381,7 +500,12 @@ router.post("/addservice", auth, upload.single("image"), async (req, res) => {
       rolldetail.length > 0 &&
       rolldetail[0].service.includes("write")
     ) {
-      var img = req.file ? req.file.filename : "";
+      var img = req.file
+        ? req.file.filename
+        : (req.body.library_image ? copyLibraryImageToUploads(req.body.library_image) : "");
+      if (req.file && img) {
+        ensureUploadVariants(img);
+      }
 
       var {
         name,
@@ -680,6 +804,7 @@ router.get("/updateService/:id", auth, async (req, res) => {
 
       res.render("edit_service", {
         services: servicesdata[0],
+        serviceImageUrl: resolvePosServiceImageUrl(servicesdata[0].image, "medium"),
         categories,
         subcategories,
         typedata: servicestypedata,
@@ -765,12 +890,17 @@ router.post(
           }
         }
 
-        if (req.file) {
-          var img = req.file.filename;
+        const newImageFilename = req.file
+          ? req.file.filename
+          : (req.body.library_image ? copyLibraryImageToUploads(req.body.library_image) : "");
+        if (req.file && newImageFilename) {
+          ensureUploadVariants(newImageFilename);
+        }
 
+        if (newImageFilename) {
           const updateServiceImage = await DataUpdate(
             "tbl_services",
-            `image = '${img}'`,
+            `image = '${newImageFilename}'`,
             `id = ${req.params.id}`,
             req.hostname,
             req.protocol,

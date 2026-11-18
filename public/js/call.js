@@ -1078,6 +1078,12 @@
          dataType: 'json',
          success: function (res) {
             $('#pos_service').html('')
+            var activeSize = res.pos_image_size || $('#pos_image_size').val() || 'medium';
+            $('#pos_image_size').val(activeSize);
+            $('#pos_service')
+               .removeClass('pos-img-size-small pos-img-size-medium pos-img-size-large')
+               .addClass('pos-img-size-' + activeSize);
+
             if (res.service_list.length < 1) {
                $('#pos_service').html('<div class="p-2 center"><div class=""><div class="card-body p-2 "> <h3 class="text-center text-danger">Not listed any services yet</h3> </div></div></div>')
             } else {
@@ -1085,12 +1091,13 @@
                   var pcsBadge = (value.no_of_items && parseInt(value.no_of_items) > 1)
                      ? '<span class="position-absolute top-0 end-0 badge bg-primary text-white m-1 rounded-pill shadow-sm" style="z-index: 2; font-size: 0.7rem;">' + value.no_of_items + ' Pcs</span>'
                      : '';
+                  var imgUrl = value.pos_image_url || ('../../uploads/' + activeSize + '/' + encodeURIComponent(value.image || ''));
                   $('#pos_service').append(
                      '<a href="#" class="pos-service-item services text-decoration-none" data-name="' + (value.name || '').toLowerCase() + '" data-category-id="' + (value.category_id || '') + '" data-subcategory-id="' + (value.subcategory_id || '') + '" data-bs-toggle="modal" data-bs-target="#service_type_model" data-id="' + value.id + '">' +
                      '<div class="card h-100 shadow-sm border rounded-3 text-center overflow-hidden pos-service-card position-relative">' +
                      pcsBadge +
                      '<div class="ratio ratio-1x1 bg-light position-relative">' +
-                     '<img src="../../uploads/' + value.image + '" class="card-img-top w-100 h-100" style="object-fit: cover;" onerror="this.style.display=\'none\'; this.nextElementSibling.classList.remove(\'d-none\'); this.nextElementSibling.classList.add(\'d-flex\');" alt="' + value.name + '">' +
+                     '<img src="' + imgUrl + '" class="card-img-top w-100 h-100 pos-service-img" onerror="this.style.display=\'none\'; this.nextElementSibling.classList.remove(\'d-none\'); this.nextElementSibling.classList.add(\'d-flex\');" alt="' + value.name + '">' +
                      '<div class="pos-service-fallback-icon position-absolute top-0 start-0 w-100 h-100 align-items-center justify-content-center text-primary fs-3 d-none"><i class="fa fa-tshirt"></i></div>' +
                      '</div>' +
                      '<div class="card-body p-2 d-flex align-items-center justify-content-center">' +

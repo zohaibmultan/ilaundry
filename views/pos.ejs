@@ -421,7 +421,8 @@
               </div>
 
               <!-- Services Catalog Grid -->
-              <div class="pos-services-grid mt-2" id="pos_service">
+              <input type="hidden" id="pos_image_size" value="<%= typeof posImageSize !== 'undefined' ? posImageSize : 'medium' %>">
+              <div class="pos-services-grid pos-img-size-<%= typeof posImageSize !== 'undefined' ? posImageSize : 'medium' %> mt-2" id="pos_service">
                 <% if (service_list.length < 1 && login === 'master' && (!cart.store_id || cart.store_id == 0)) { %>
                 <div class="p-3 text-center w-100">
                   <h5 class="text-muted"><%= language.Please_Select_Store || 'Please Select Store' %></h5>
@@ -440,7 +441,7 @@
                     </span>
                     <% } %>
                     <div class="ratio ratio-1x1 bg-light position-relative">
-                      <img src="/uploads/<%= data.image %>" class="card-img-top w-100 h-100" style="object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none'); this.nextElementSibling.classList.add('d-flex');" alt="<%= data.name %>">
+                      <img src="<%= data.pos_image_url || ('/uploads/' + (typeof posImageSize !== 'undefined' ? (posImageSize + '/') : '') + data.image) %>" class="card-img-top w-100 h-100 pos-service-img" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none'); this.nextElementSibling.classList.add('d-flex');" alt="<%= data.name %>">
                       <div class="pos-service-fallback-icon position-absolute top-0 start-0 w-100 h-100 align-items-center justify-content-center text-primary fs-3 d-none">
                         <i class="fa fa-tshirt"></i>
                       </div>

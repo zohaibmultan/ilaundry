@@ -561,6 +561,37 @@
                             </div>
                         </div>
 
+                        <!-- Section 6: POS Display Settings -->
+                        <div class="card border-0 shadow-sm rounded-3 mb-4" style="height: auto;">
+                            <div class="card-header border-bottom py-3 px-4">
+                                <h5 class="card-title mb-0 fw-bold d-flex align-items-center text-dark">
+                                    <i class="fa fa-th-large text-info me-2"></i><%= language.POS_Display_Settings || 'POS Catalog Display Settings' %>
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="mb-2">
+                                    <label class="form-label fw-semibold">Service Image Resolution & Tile Size</label>
+                                    <select class="form-select" name="pos_image_size" <%= update ? '' : 'disabled' %>>
+                                        <option value="" <%= (!data.pos_image_size) ? 'selected' : '' %>>
+                                            Inherit Global Default (<%= (typeof masterPosImageSize !== 'undefined' && masterPosImageSize) ? masterPosImageSize.toUpperCase() : 'MEDIUM' %>)
+                                        </option>
+                                        <option value="small" <%= (data.pos_image_size === 'small') ? 'selected' : '' %>>
+                                            Small (256x256 - Compact Tiles)
+                                        </option>
+                                        <option value="medium" <%= (data.pos_image_size === 'medium') ? 'selected' : '' %>>
+                                            Medium (512x512 - Standard)
+                                        </option>
+                                        <option value="large" <%= (data.pos_image_size === 'large') ? 'selected' : '' %>>
+                                            Large (1024x1024 - Showcase)
+                                        </option>
+                                    </select>
+                                    <small class="text-muted d-block mt-2 fs-12">
+                                        Configure the image resolution fetched and the grid card dimensions in the POS terminal for this branch. Select "Inherit Global Default" to follow the master system setting.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                     <!-- Right Column: Branding & Publishing Actions (4 Columns) -->

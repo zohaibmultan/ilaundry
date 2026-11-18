@@ -40,4 +40,6 @@ config.env
 # Dynamic User Uploads
 uploads/
 
-
+# Raw Source & Crop Processing Artifacts
+new-images/
+croped/
