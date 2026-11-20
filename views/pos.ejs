@@ -3,7 +3,7 @@
 
 <head>
   <%- include('templet/meta') -%>
-  <link rel="stylesheet" href="/css/pos-compact.css?v=6">
+  <link rel="stylesheet" href="/css/pos-compact.css?v=7">
 </head>
 
 <body class="pos-screen-layout">
@@ -160,9 +160,10 @@
             <div class="card-body p-1.5 px-2 d-flex align-items-center justify-content-between">
               <!-- Left Section: Navigation & Store Identity -->
               <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-sm pos-menu-btn d-flex align-items-center justify-content-center" id="pos_sidebar_toggle" title="Toggle Sidebar">
-                  <i class="fa fa-bars fs-14"></i>
-                </button>
+                <a href="/index" class="btn btn-sm pos-menu-btn d-inline-flex align-items-center justify-content-center gap-1 text-decoration-none" id="pos_dashboard_link" title="<%= (typeof language !== 'undefined' && language.Dashboard) ? language.Dashboard : 'Dashboard' %>">
+                  <i class="fas fa-home fs-14"></i>
+                  <span class="d-none d-xl-inline fw-semibold"><%= (typeof language !== 'undefined' && language.Dashboard) ? language.Dashboard : 'Dashboard' %></span>
+                </a>
 
                 <% if (typeof showStoreSelect !== 'undefined' && showStoreSelect) { %>
                   <select class="default-select fw-bold text-dark" name="store" id="pos_store_id" data-live-search="true" required>
@@ -229,6 +230,11 @@
                     </div>
                   </div>
                 </div>
+
+                <!-- Full Screen View Toggle Button -->
+                <button type="button" class="btn btn-sm pos-header-icon-btn pos-fullscreen-btn" id="pos_fullscreen_toggle" title="Enter Full Screen" aria-label="Enter Full Screen" aria-pressed="false">
+                  <i class="fas fa-expand fs-14" id="pos_fullscreen_icon"></i>
+                </button>
 
                 <!-- Light/Dark Theme Switcher Button -->
                 <button type="button" class="btn btn-sm pos-header-icon-btn pos-theme-toggle" id="pos_theme_toggle" onclick="window.toggleAppTheme(event)" title="Toggle Dark/Light Mode">
@@ -446,7 +452,7 @@
                         <i class="fa fa-tshirt"></i>
                       </div>
                     </div>
-                    <div class="card-body p-2 d-flex align-items-center justify-content-center">
+                    <div class="card-body d-flex align-items-center justify-content-center">
                       <h6 class="card-title m-0 fw-bold fs-7 pos-service-name" title="<%= data.name %>">
                         <%= data.name %>
                       </h6>
@@ -2596,25 +2602,93 @@
 
       // Document Ready Lifecycle
       document.addEventListener('DOMContentLoaded', function() {
-        // Auto-collapse sidebar for wide POS layout
-        const mainWrapper = document.getElementById('main-wrapper');
-        if (mainWrapper) mainWrapper.classList.add('menu-toggle');
-        const hamburger = document.querySelector('.hamburger');
-        if (hamburger) hamburger.classList.add('is-active');
+        // Full Screen View Toggle Controller (Cross-Browser Fullscreen API)
+        const posFullscreenBtn = document.getElementById('pos_fullscreen_toggle');
+        const posFullscreenIcon = document.getElementById('pos_fullscreen_icon');
 
-        // Sidebar Expand/Collapse Toggle Button
-        const posSidebarBtn = document.getElementById('pos_sidebar_toggle');
-        if (posSidebarBtn) {
-          posSidebarBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const navControl = document.querySelector('.nav-control');
-            if (navControl) {
-              navControl.click();
-            } else {
-              if (mainWrapper) mainWrapper.classList.toggle('menu-toggle');
-              if (hamburger) hamburger.classList.toggle('is-active');
-            }
-          });
+        const getFullscreenElement = function() {
+          return document.fullscreenElement
+            || document.webkitFullscreenElement
+            || document.mozFullScreenElement
+            || document.msFullscreenElement
+            || null;
+        };
+
+        const isFullscreenSupported = function() {
+          const docEl = document.documentElement;
+          return Boolean(
+            document.fullscreenEnabled
+            || document.webkitFullscreenEnabled
+            || document.mozFullScreenEnabled
+            || document.msFullscreenEnabled
+            || docEl.requestFullscreen
+            || docEl.webkitRequestFullscreen
+            || docEl.mozRequestFullScreen
+            || docEl.msRequestFullscreen
+          );
+        };
+
+        const syncPosFullscreenState = function() {
+          const active = Boolean(getFullscreenElement());
+          document.body.classList.toggle('pos-is-fullscreen', active);
+          if (posFullscreenBtn) {
+            posFullscreenBtn.classList.toggle('is-fullscreen', active);
+            posFullscreenBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+            const label = active ? 'Exit Full Screen' : 'Enter Full Screen';
+            posFullscreenBtn.setAttribute('title', label);
+            posFullscreenBtn.setAttribute('aria-label', label);
+          }
+          if (posFullscreenIcon) {
+            posFullscreenIcon.classList.toggle('fa-expand', !active);
+            posFullscreenIcon.classList.toggle('fa-compress', active);
+          }
+        };
+
+        if (posFullscreenBtn) {
+          if (!isFullscreenSupported()) {
+            posFullscreenBtn.classList.add('d-none');
+          } else {
+            posFullscreenBtn.addEventListener('click', function(e) {
+              e.preventDefault();
+              try {
+                if (!getFullscreenElement()) {
+                  const docEl = document.documentElement;
+                  const req = docEl.requestFullscreen
+                    || docEl.webkitRequestFullscreen
+                    || docEl.mozRequestFullScreen
+                    || docEl.msRequestFullscreen;
+                  if (req) {
+                    const result = req.call(docEl);
+                    if (result && typeof result.catch === 'function') {
+                      result.catch(function(err) {
+                        console.warn('Unable to enter full screen:', err);
+                      });
+                    }
+                  }
+                } else {
+                  const exit = document.exitFullscreen
+                    || document.webkitExitFullscreen
+                    || document.mozCancelFullScreen
+                    || document.msExitFullscreen;
+                  if (exit) {
+                    const result = exit.call(document);
+                    if (result && typeof result.catch === 'function') {
+                      result.catch(function(err) {
+                        console.warn('Unable to exit full screen:', err);
+                      });
+                    }
+                  }
+                }
+              } catch (err) {
+                console.warn('Fullscreen toggle error:', err);
+              }
+            });
+
+            ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(function(evtName) {
+              document.addEventListener(evtName, syncPosFullscreenState);
+            });
+            syncPosFullscreenState();
+          }
         }
 
         // Initial Customer Intelligence Stats Population

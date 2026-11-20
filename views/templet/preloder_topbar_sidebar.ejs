@@ -409,6 +409,16 @@
         </li>
         <% } %>
 
+        <% if (accessdata?.logas !== 'custmor' && (accessdata?.logas === 'master' || accessdata?.isstore === true || accessdata?.roll?.orders?.includes('read') || accessdata?.roll?.service?.includes('read'))) { %>
+        <li><a href="/order-categories" class="has-arrow ai-icon" aria-expanded="false">
+            <i class="fa fa-sitemap"></i>
+            <span class="nav-text">
+              <%= (typeof language !== 'undefined' && language.Order_Categories) ? language.Order_Categories : 'Order Categories' %>
+            </span>
+          </a>
+        </li>
+        <% } %>
+
         <% if((accessdata?.logas=='custmor' && accessdata?.roll?.customers?.includes('read')) ||  accessdata?.roll?.customers?.includes('read')){ %>
         <li><a href="/coustomer/list" class="has-arrow ai-icon" aria-expanded="false">
             <i class="fa fa-users"></i>

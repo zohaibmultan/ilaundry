@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <%- include('templet/meta') -%>
+</head>
+
+<body>
+    <%- include('templet/preloder_topbar_sidebar', { titel: accessdata?.topbardata?.name }) -%>
+
+    <%
+        const isEditMode = (typeof mode !== 'undefined' && mode === 'edit');
+        const safeCat = (typeof category !== 'undefined' && category)
+            ? category
+            : { id: null, store_id: null, store_name: '', parent_id: null, name: '', description: '', image: '', image_url: '', status: 'active' };
+        const safeParentOptions = (typeof parentOptions !== 'undefined' && Array.isArray(parentOptions)) ? parentOptions : [];
+        const safeIsMulty = Boolean(typeof ismulty !== 'undefined' && ismulty);
+        const safeStoreList = (typeof storeList !== 'undefined' && Array.isArray(storeList)) ? storeList : [];
+        const formAction = isEditMode
+            ? ('/order-categories/edit/' + safeCat.id)
+            : '/order-categories/create';
+    %>
+
+    <!--********** Content body start **********-->
+    <div class="content-body">
+        <div class="container-fluid min-vh-100">
+            <div class="row justify-content-center">
+                <div class="col-12 col-xl-10">
+                    <!-- Top Header Card -->
+                    <div class="card border-0 shadow-sm rounded-3 mb-4">
+                        <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div>
+                                <h3 class="card-title mb-1 fw-bold d-flex align-items-center flex-wrap gap-2">
+                                    <span>
+                                        <i class="fa <%= isEditMode ? 'fa-pen-to-square' : 'fa-plus-circle' %> text-primary me-2"></i>
+                                        <span><%= isEditMode ? 'Edit Order Category' : 'Add Order Category' %></span>
+                                    </span>
+                                    <% if (safeCat.store_name && (isEditMode || !safeIsMulty)) { %>
+                                    <span class="badge bg-info-subtle text-info rounded-pill fs-12 fw-semibold">
+                                        <i class="fa fa-store me-1"></i><%= safeCat.store_name %>
+                                    </span>
+                                    <% } %>
+                                </h3>
+                                <small class="text-muted">
+                                    <%= isEditMode
+                                        ? 'Update category details, parent placement, status, or image'
+                                        : 'Create a top-level order category or attach it under an existing parent category' %>
+                                </small>
+                            </div>
+                            <a href="/order-categories" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center">
+                                <i class="fa fa-arrow-left me-2"></i>
+                                <span>Back to Tree List</span>
+                            </a>
+                        </div>
+
+                        <div class="card-body p-4">
+                            <form action="<%= formAction %>" method="post" enctype="multipart/form-data" id="orderCategoryForm" class="needs-validation">
+                                <input type="hidden" name="remove_image" id="ocRemoveImageInput" value="0">
+
+                                <div class="row g-4">
+                                    <!-- Left Column: Core Details -->
+                                    <div class="col-12 col-lg-8">
+                                        <div class="row g-3">
+                                            <% if (!isEditMode && safeIsMulty) { %>
+                                            <!-- Store Selection (Master Multi-Store Only) -->
+                                            <div class="col-12">
+                                                <label class="form-label fw-bold" for="ocStoreId">
+                                                    <i class="fa fa-store text-primary me-1"></i>
+                                                    Store <span class="text-danger">*</span>
+                                                </label>
+                                                <select class="form-select" name="store_id" id="ocStoreId" required>
+                                                    <option value="" disabled <%= (!safeCat.store_id) ? 'selected' : '' %>>Select Store *</option>
+                                                    <% safeStoreList.forEach(function(st) { %>
+                                                    <option value="<%= st.id %>" <%= (safeCat.store_id && Number(safeCat.store_id) === Number(st.id)) ? 'selected' : '' %>>
+                                                        <%= st.name %>
+                                                    </option>
+                                                    <% }); %>
+                                                </select>
+                                                <small class="text-muted d-block mt-1">
+                                                    Order categories are isolated per store. Selecting a store updates the available parent categories below.
+                                                </small>
+                                            </div>
+                                            <% } %>
+
+                                            <!-- Parent Order Category -->
+                                            <div class="col-12">
+                                                <label class="form-label fw-bold" for="ocParentId">
+                                                    <i class="fa fa-sitemap text-primary me-1"></i>
+                                                    Parent Order Category
+                                                    <span class="text-muted fw-normal small">(Optional)</span>
+                                                </label>
+                                                <select class="form-select" name="parent_id" id="ocParentId">
+                                                    <option value="" <%= (!safeCat.parent_id) ? 'selected' : '' %>>
+                                                        — None (Top-Level Category) —
+                                                    </option>
+                                                    <% safeParentOptions.forEach(function(opt) { %>
+                                                    <option value="<%= opt.id %>" <%= (safeCat.parent_id && Number(safeCat.parent_id) === Number(opt.id)) ? 'selected' : '' %>>
+                                                        <%= opt.label %><%= opt.status === 'inactive' ? ' [Inactive]' : '' %>
+                                                    </option>
+                                                    <% }); %>
+                                                </select>
+                                                <small class="text-muted d-block mt-1">
+                                                    Leave empty to create a root category, or choose a parent to nest this as a subcategory.
+                                                </small>
+                                            </div>
+
+                                            <!-- Category Name -->
+                                            <div class="col-12">
+                                                <label class="form-label fw-bold" for="ocName">
+                                                    Category Name <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="text"
+                                                       class="form-control"
+                                                       id="ocName"
+                                                       name="name"
+                                                       value="<%= safeCat.name %>"
+                                                       maxlength="255"
+                                                       placeholder="e.g. Express Orders, Dry Cleaning, Alterations..."
+                                                       required>
+                                            </div>
+
+                                            <!-- Description -->
+                                            <div class="col-12">
+                                                <label class="form-label fw-bold" for="ocDescription">
+                                                    Description
+                                                    <span class="text-muted fw-normal small">(Optional)</span>
+                                                </label>
+                                                <textarea class="form-control"
+                                                          id="ocDescription"
+                                                          name="description"
+                                                          rows="4"
+                                                          placeholder="Enter a short description for this order category..."><%= safeCat.description %></textarea>
+                                            </div>
+
+                                            <!-- Status (Active / Inactive) -->
+                                            <div class="col-12">
+                                                <label class="form-label fw-bold d-block mb-2">
+                                                    Status <span class="text-danger">*</span>
+                                                </label>
+                                                <div class="row g-2">
+                                                    <div class="col-12 col-sm-6">
+                                                        <label class="oc-status-option-card d-flex align-items-center gap-2 w-100 mb-0" for="ocStatusActive">
+                                                            <input class="form-check-input mt-0"
+                                                                   type="radio"
+                                                                   name="status"
+                                                                   id="ocStatusActive"
+                                                                   value="active"
+                                                                   <%= (safeCat.status !== 'inactive') ? 'checked' : '' %>>
+                                                            <div>
+                                                                <div class="fw-bold d-flex align-items-center gap-1">
+                                                                    <i class="fas fa-check-circle text-success"></i>
+                                                                    <span>Active</span>
+                                                                </div>
+                                                                <small class="text-muted">Visible and available for selection</small>
+                                                            </div>
+                                                        </label>
+                                                    </div>
+                                                    <div class="col-12 col-sm-6">
+                                                        <label class="oc-status-option-card d-flex align-items-center gap-2 w-100 mb-0" for="ocStatusInactive">
+                                                            <input class="form-check-input mt-0"
+                                                                   type="radio"
+                                                                   name="status"
+                                                                   id="ocStatusInactive"
+                                                                   value="inactive"
+                                                                   <%= (safeCat.status === 'inactive') ? 'checked' : '' %>>
+                                                            <div>
+                                                                <div class="fw-bold d-flex align-items-center gap-1">
+                                                                    <i class="fas fa-pause-circle text-danger"></i>
+                                                                    <span>Inactive</span>
+                                                                </div>
+                                                                <small class="text-muted">Hidden from active workflows</small>
+                                                            </div>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Right Column: Category Image -->
+                                    <div class="col-12 col-lg-4">
+                                        <label class="form-label fw-bold d-block mb-2">
+                                            <i class="fa fa-image text-primary me-1"></i>
+                                            Category Image
+                                            <span class="text-muted fw-normal small">(Optional)</span>
+                                        </label>
+
+                                        <div class="oc-preview-box p-3 mb-3 d-flex flex-column align-items-center justify-content-center text-center">
+                                            <div id="ocPlaceholderBox" class="<%= safeCat.image_url ? 'd-none' : '' %> py-3">
+                                                <i class="fa fa-image fa-3x text-primary opacity-50 mb-2 d-block"></i>
+                                                <div class="fw-semibold small">No Image Selected</div>
+                                                <div class="text-muted" style="font-size: 11.5px;">PNG, JPG, JPEG, WEBP (max 2MB)</div>
+                                            </div>
+                                            <img id="ocImagePreview"
+                                                 src="<%= safeCat.image_url || '' %>"
+                                                 alt="Category Preview"
+                                                 class="oc-preview-img rounded-3 <%= safeCat.image_url ? '' : 'd-none' %>">
+                                        </div>
+
+                                        <input type="file"
+                                               class="d-none"
+                                               id="ocImageInput"
+                                               name="image"
+                                               accept="image/png,image/jpeg,image/jpg,image/webp">
+
+                                        <div class="d-grid gap-2">
+                                            <label class="btn btn-outline-primary btn-sm fw-semibold mb-0" for="ocImageInput">
+                                                <i class="fa fa-upload me-1"></i>
+                                                <span><%= safeCat.image_url ? 'Change Image' : 'Upload Image' %></span>
+                                            </label>
+                                            <button type="button"
+                                                    class="btn btn-outline-secondary btn-sm d-none"
+                                                    id="btnOcResetImage">
+                                                <i class="fa fa-undo me-1"></i>
+                                                <span>Reset Selection</span>
+                                            </button>
+                                            <% if (isEditMode && safeCat.image_url) { %>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger btn-sm"
+                                                    id="btnOcRemoveExisting">
+                                                <i class="fa fa-trash me-1"></i>
+                                                <span>Remove Current Image</span>
+                                            </button>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Form Footer Actions -->
+                                <div class="d-flex justify-content-end align-items-center gap-2 pt-4 mt-4 border-top">
+                                    <a href="/order-categories" class="btn btn-secondary px-3">
+                                        <i class="fa fa-times me-1"></i>
+                                        <span><%= (typeof language !== 'undefined' && language.Cancel) ? language.Cancel : 'Cancel' %></span>
+                                    </a>
+                                    <button type="submit" class="btn btn-primary px-4">
+                                        <i class="fa fa-save me-2"></i>
+                                        <span><%= isEditMode ? 'Update Order Category' : 'Save Order Category' %></span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--********** Content body end **********-->
+
+    <%- include('templet/script') -%>
+
+    <script>
+        (function () {
+            const originalImageUrl = "<%= safeCat.image_url || '' %>";
+            const fileInput = document.getElementById('ocImageInput');
+            const previewImg = document.getElementById('ocImagePreview');
+            const placeholderBox = document.getElementById('ocPlaceholderBox');
+            const resetBtn = document.getElementById('btnOcResetImage');
+            const removeExistingBtn = document.getElementById('btnOcRemoveExisting');
+            const removeInput = document.getElementById('ocRemoveImageInput');
+            let currentObjectUrl = null;
+
+            if (fileInput) {
+                fileInput.addEventListener('change', function (e) {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+
+                    if (currentObjectUrl) {
+                        URL.revokeObjectURL(currentObjectUrl);
+                    }
+                    currentObjectUrl = URL.createObjectURL(file);
+                    previewImg.src = currentObjectUrl;
+                    previewImg.classList.remove('d-none');
+                    placeholderBox.classList.add('d-none');
+                    if (removeInput) removeInput.value = '0';
+                    if (resetBtn) resetBtn.classList.remove('d-none');
+                    if (removeExistingBtn) removeExistingBtn.classList.remove('d-none');
+                });
+            }
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function () {
+                    if (currentObjectUrl) {
+                        URL.revokeObjectURL(currentObjectUrl);
+                        currentObjectUrl = null;
+                    }
+                    if (fileInput) fileInput.value = '';
+                    if (removeInput) removeInput.value = '0';
+
+                    if (originalImageUrl) {
+                        previewImg.src = originalImageUrl;
+                        previewImg.classList.remove('d-none');
+                        placeholderBox.classList.add('d-none');
+                        if (removeExistingBtn) removeExistingBtn.classList.remove('d-none');
+                    } else {
+                        previewImg.src = '';
+                        previewImg.classList.add('d-none');
+                        placeholderBox.classList.remove('d-none');
+                    }
+                    resetBtn.classList.add('d-none');
+                });
+            }
+
+            if (removeExistingBtn) {
+                removeExistingBtn.addEventListener('click', function () {
+                    if (currentObjectUrl) {
+                        URL.revokeObjectURL(currentObjectUrl);
+                        currentObjectUrl = null;
+                    }
+                    if (fileInput) fileInput.value = '';
+                    if (removeInput) removeInput.value = '1';
+                    previewImg.src = '';
+                    previewImg.classList.add('d-none');
+                    placeholderBox.classList.remove('d-none');
+                    removeExistingBtn.classList.add('d-none');
+                    if (resetBtn && originalImageUrl) resetBtn.classList.remove('d-none');
+                });
+            }
+
+            // Refresh Parent Category options when Master changes Store
+            const storeSelect = document.getElementById('ocStoreId');
+            const parentSelect = document.getElementById('ocParentId');
+            if (storeSelect && parentSelect) {
+                storeSelect.addEventListener('change', function () {
+                    const storeId = storeSelect.value;
+                    if (!storeId) return;
+
+                    parentSelect.disabled = true;
+                    fetch('/order-categories/parents-by-store/' + encodeURIComponent(storeId), {
+                        headers: { 'Accept': 'application/json' }
+                    })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        parentSelect.innerHTML = '';
+                        const noneOpt = document.createElement('option');
+                        noneOpt.value = '';
+                        noneOpt.textContent = '— None (Top-Level Category) —';
+                        parentSelect.appendChild(noneOpt);
+
+                        if (data && data.success && Array.isArray(data.options)) {
+                            data.options.forEach(function (opt) {
+                                const el = document.createElement('option');
+                                el.value = opt.id;
+                                el.textContent = opt.label + (opt.status === 'inactive' ? ' [Inactive]' : '');
+                                parentSelect.appendChild(el);
+                            });
+                        }
+                        parentSelect.disabled = false;
+                    })
+                    .catch(function (err) {
+                        console.error('Error fetching store parent categories:', err);
+                        parentSelect.disabled = false;
+                    });
+                });
+            }
+        })();
+    </script>
+</body>
+
+</html>

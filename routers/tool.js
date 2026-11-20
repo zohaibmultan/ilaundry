@@ -1118,6 +1118,12 @@ router.get("/deletestore/:id", auth, async (req, res) => {
       req.hostname,
       req.protocol,
     );
+    await DataDelete(
+      "tbl_order_categories",
+      `store_id = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    ).catch(() => {});
 
     // 4. Delete addons and coupons
     await DataDelete(

@@ -373,7 +373,7 @@ select.pos-input-sm {
   gap: 8px !important;
 }
 .pos-services-grid.pos-img-size-medium .pos-service-card .card-body {
-  min-height: 42px !important;
+  min-height: 29px !important;
   padding: 6px !important;
 }
 .pos-services-grid.pos-img-size-medium .pos-service-name {
@@ -1977,16 +1977,25 @@ select.pos-input-sm {
 }
 
 /* ==========================================================================
-   Full View POS: Hide Top Header & Optimize Layout
+   Full View POS: Hide Top Header, Sidebar & Optimize Layout
    ========================================================================== */
-body.pos-screen-layout .header {
+body.pos-screen-layout .header,
+body.pos-screen-layout .deznav,
+body.pos-screen-layout .nav-header {
   display: none !important;
 }
 
-body.pos-screen-layout .content-body.pos-content-body {
+body.pos-screen-layout .content-body.pos-content-body,
+body.pos-screen-layout #main-wrapper .content-body.pos-content-body,
+body.pos-screen-layout #main-wrapper.menu-toggle .content-body.pos-content-body,
+[direction="rtl"] body.pos-screen-layout .content-body.pos-content-body,
+body.pos-screen-layout[direction="rtl"] .content-body.pos-content-body {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
   padding-top: 10px !important;
   padding-bottom: 8px !important;
   min-height: 100vh;
+  width: 100% !important;
 }
 
 body.pos-screen-layout .pos-content-body .container-fluid {
@@ -2113,6 +2122,19 @@ body.pos-screen-layout .pos-content-body .container-fluid {
   background: rgba(56, 189, 248, 0.15) !important;
   color: #38bdf8 !important;
   border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+/* Full Screen Toggle Active State */
+.pos-header-icon-btn.pos-fullscreen-btn.is-fullscreen {
+  background: rgba(0, 129, 238, 0.12) !important;
+  border-color: rgba(0, 129, 238, 0.4) !important;
+  color: #0081ee !important;
+}
+
+[data-theme-version="dark"] .pos-header-icon-btn.pos-fullscreen-btn.is-fullscreen {
+  background: rgba(56, 189, 248, 0.18) !important;
+  border-color: rgba(56, 189, 248, 0.45) !important;
+  color: #38bdf8 !important;
 }
 
 /* User profile avatar in POS menu bar */
