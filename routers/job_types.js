@@ -5,10 +5,11 @@ const path = require("path");
 const multer = require("multer");
 const auth = require("../middelwer/auth");
 const access = require("../middelwer/access");
-const { mySqlQury } = require("../middelwer/db");
+const { conn, mySqlQury } = require("../middelwer/db");
+const { resolvePosServiceImageUrl } = require("../middelwer/posImageHelper");
 
-// Dedicated upload directory for order category images
-const UPLOAD_SUBDIR = path.join(__dirname, "../public/uploads/order-categories");
+// Dedicated upload directory for job type images
+const UPLOAD_SUBDIR = path.join(__dirname, "../public/uploads/job-types");
 if (!fs.existsSync(UPLOAD_SUBDIR)) {
   fs.mkdirSync(UPLOAD_SUBDIR, { recursive: true });
 }
@@ -23,14 +24,14 @@ const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname || "").toLowerCase();
     const base = path
-      .basename(file.originalname || "category", ext)
+      .basename(file.originalname || "job_type", ext)
       .replace(/[^a-zA-Z0-9_-]/g, "_")
       .slice(0, 60);
     cb(null, `${Date.now()}-${base}${ext}`);
   },
 });
 
-const uploadCategoryImage = multer({
+const uploadJobTypeImage = multer({
   storage,
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
   fileFilter: (req, file, cb) => {
@@ -46,16 +47,16 @@ const uploadCategoryImage = multer({
 });
 
 function handleImageUpload(req, res, next) {
-  uploadCategoryImage.single("image")(req, res, (err) => {
+  uploadJobTypeImage.single("image")(req, res, (err) => {
     if (err) {
       req.flash("error", err.message || "Invalid image upload");
-      return res.redirect(req.get("Referrer") || "/order-categories");
+      return res.redirect(req.get("Referrer") || "/job-types");
     }
     return next();
   });
 }
 
-function safeUnlinkCategoryImage(filename) {
+function safeUnlinkJobTypeImage(filename) {
   if (!filename || typeof filename !== "string") return;
   const safeName = path.basename(filename.trim());
   if (!safeName) return;
@@ -65,7 +66,7 @@ function safeUnlinkCategoryImage(filename) {
       fs.unlinkSync(fullPath);
     }
   } catch (err) {
-    console.warn(`[OrderCategories] Could not delete image ${safeName}:`, err.message);
+    console.warn(`[JobTypes] Could not delete image ${safeName}:`, err.message);
   }
 }
 
@@ -102,7 +103,7 @@ function collectDescendantIds(rows, rootId) {
   return descendants;
 }
 
-function buildCategoryTree(rows) {
+function buildJobTypeTree(rows) {
   const byId = new Map();
   const roots = [];
 
@@ -115,8 +116,9 @@ function buildCategoryTree(rows) {
       name: r.name || "",
       description: r.description || "",
       image: r.image || "",
-      image_url: r.image ? `/uploads/order-categories/${encodeURIComponent(path.basename(r.image))}` : "",
+      image_url: r.image ? `/uploads/job-types/${encodeURIComponent(path.basename(r.image))}` : "",
       status: normalizeStatus(r.status),
+      pricedCount: Number(r.priced_count) || 0,
       children: [],
       depth: 0,
       childCount: 0,
@@ -175,6 +177,76 @@ function flattenTreeOptions(treeNodes, excludeIds = new Set()) {
   }
   walk(treeNodes, 0);
   return options;
+}
+
+function buildJobTypeBreadcrumb(rows, targetId) {
+  const byId = new Map();
+  for (const r of rows || []) {
+    byId.set(Number(r.id), {
+      id: Number(r.id),
+      parent_id: r.parent_id !== null && r.parent_id !== undefined ? Number(r.parent_id) : null,
+      name: r.name || "",
+    });
+  }
+  const chain = [];
+  const visited = new Set();
+  let cur = byId.get(Number(targetId));
+  while (cur && !visited.has(cur.id)) {
+    visited.add(cur.id);
+    chain.unshift({ id: cur.id, name: cur.name });
+    cur = cur.parent_id !== null ? byId.get(cur.parent_id) : null;
+  }
+  return chain;
+}
+
+function parsePriceEntries(body, validServiceIdSet, storeId, jobTypeId) {
+  let rawMap = {};
+  if (body && body.prices_payload !== undefined && body.prices_payload !== null && String(body.prices_payload).trim() !== "") {
+    if (typeof body.prices_payload === "string") {
+      try {
+        const parsed = JSON.parse(body.prices_payload);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          rawMap = parsed;
+        }
+      } catch (err) {
+        rawMap = {};
+      }
+    } else if (typeof body.prices_payload === "object" && !Array.isArray(body.prices_payload)) {
+      rawMap = body.prices_payload;
+    }
+  } else if (body && body.prices && typeof body.prices === "object" && !Array.isArray(body.prices)) {
+    rawMap = body.prices;
+  }
+
+  const positiveRows = [];
+  const zeroedServiceIds = [];
+
+  for (const [rawKey, rawVal] of Object.entries(rawMap)) {
+    const serviceId = Number(rawKey);
+    if (!Number.isInteger(serviceId) || serviceId <= 0) continue;
+    if (!validServiceIdSet.has(serviceId)) continue;
+
+    const strVal = rawVal === undefined || rawVal === null ? "" : String(rawVal).trim();
+    if (strVal === "") {
+      zeroedServiceIds.push(serviceId);
+      continue;
+    }
+
+    const numeric = Number(strVal);
+    if (!Number.isFinite(numeric) || numeric <= 0) {
+      zeroedServiceIds.push(serviceId);
+      continue;
+    }
+
+    const rounded = Math.round(numeric * 100) / 100;
+    if (rounded > 0) {
+      positiveRows.push([Number(storeId), Number(jobTypeId), serviceId, rounded]);
+    } else {
+      zeroedServiceIds.push(serviceId);
+    }
+  }
+
+  return { positiveRows, zeroedServiceIds };
 }
 
 async function resolvePermissions(req) {
@@ -266,49 +338,56 @@ async function resolvePermissions(req) {
 }
 
 // =====================================================================
-// GET /order-categories — Tree List View (Store-Scoped)
+// GET /job-types — Tree List View (Store-Scoped)
 // =====================================================================
 router.get("/", auth, async (req, res) => {
   try {
     const perms = await resolvePermissions(req);
     if (!perms.canRead) {
-      req.flash("error", "You are not authorized to access Order Categories.");
+      req.flash("error", "You are not authorized to access Job Types.");
       return res.redirect(req.get("Referrer") || "/index");
     }
 
     let selectedStoreId = "all";
     let querySql = `
-      SELECT oc.id, oc.store_id, oc.parent_id, oc.name, oc.description, oc.image, oc.status,
-             COALESCE(s.name, '') AS store_name
-      FROM tbl_order_categories oc
-      LEFT JOIN tbl_store s ON oc.store_id = s.id
+      SELECT jt.id, jt.store_id, jt.parent_id, jt.name, jt.description, jt.image, jt.status,
+             COALESCE(s.name, '') AS store_name,
+             COALESCE(p.priced_count, 0) AS priced_count
+      FROM tbl_job_types jt
+      LEFT JOIN tbl_store s ON jt.store_id = s.id
+      LEFT JOIN (
+        SELECT job_type_id, COUNT(*) AS priced_count
+        FROM tbl_job_item_prices
+        WHERE price > 0
+        GROUP BY job_type_id
+      ) p ON p.job_type_id = jt.id
     `;
     const params = [];
 
     if (!perms.ismulty) {
       selectedStoreId = String(perms.assignedStoreId);
-      querySql += " WHERE oc.store_id = ?";
+      querySql += " WHERE jt.store_id = ?";
       params.push(perms.assignedStoreId);
     } else if (req.query.store_id && String(req.query.store_id).trim() !== "" && String(req.query.store_id) !== "all") {
       const parsedFilterStore = Number(req.query.store_id);
       if (Number.isInteger(parsedFilterStore) && parsedFilterStore > 0) {
         selectedStoreId = String(parsedFilterStore);
-        querySql += " WHERE oc.store_id = ?";
+        querySql += " WHERE jt.store_id = ?";
         params.push(parsedFilterStore);
       }
     }
 
-    querySql += " ORDER BY oc.store_id ASC, oc.name ASC, oc.id ASC";
+    querySql += " ORDER BY jt.store_id ASC, jt.name ASC, jt.id ASC";
     const rows = await mySqlQury(querySql, params);
 
-    const categoryTree = buildCategoryTree(rows);
+    const jobTypeTree = buildJobTypeTree(rows);
     const totalCount = rows.length;
-    const rootCount = categoryTree.length;
+    const rootCount = jobTypeTree.length;
     const subCount = Math.max(0, totalCount - rootCount);
     const activeCount = rows.filter((r) => normalizeStatus(r.status) === "active").length;
     const inactiveCount = totalCount - activeCount;
 
-    return res.render("order_categories", {
+    return res.render("job_types", {
       accessdata: perms.accessdata,
       language: req.language_data,
       language_name: req.language_name,
@@ -317,11 +396,11 @@ router.get("/", auth, async (req, res) => {
       selectedStoreId,
       assignedStoreId: perms.assignedStoreId,
       assignedStoreName: perms.assignedStoreName,
-      categoryTree,
+      jobTypeTree,
       stats: {
         total: totalCount,
         roots: rootCount,
-        subcategories: subCount,
+        subtypes: subCount,
         active: activeCount,
         inactive: inactiveCount,
       },
@@ -332,14 +411,14 @@ router.get("/", auth, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error in GET /order-categories:", error);
-    req.flash("error", "Failed to load Order Categories.");
+    console.error("Error in GET /job-types:", error);
+    req.flash("error", "Failed to load Job Types.");
     return res.redirect("/index");
   }
 });
 
 // =====================================================================
-// GET /order-categories/parents-by-store/:store_id — Dynamic Parent Options API
+// GET /job-types/parents-by-store/:store_id — Dynamic Parent Options API
 // =====================================================================
 router.get("/parents-by-store/:store_id", auth, async (req, res) => {
   try {
@@ -358,7 +437,7 @@ router.get("/parents-by-store/:store_id", auth, async (req, res) => {
 
     const rows = await mySqlQury(
       `SELECT id, store_id, parent_id, name, description, image, status
-       FROM tbl_order_categories
+       FROM tbl_job_types
        WHERE store_id = ?
        ORDER BY name ASC, id ASC`,
       [targetStoreId]
@@ -373,25 +452,25 @@ router.get("/parents-by-store/:store_id", auth, async (req, res) => {
       }
     }
 
-    const tree = buildCategoryTree(rows);
+    const tree = buildJobTypeTree(rows);
     const options = flattenTreeOptions(tree, excludeIds);
 
     return res.status(200).json({ success: true, store_id: targetStoreId, options });
   } catch (error) {
-    console.error("Error in GET /order-categories/parents-by-store/:store_id:", error);
-    return res.status(500).json({ success: false, message: "Failed to load parent categories.", options: [] });
+    console.error("Error in GET /job-types/parents-by-store/:store_id:", error);
+    return res.status(500).json({ success: false, message: "Failed to load parent job types.", options: [] });
   }
 });
 
 // =====================================================================
-// GET /order-categories/create — Dedicated Create Page (Store-Scoped)
+// GET /job-types/create — Dedicated Create Page (Store-Scoped)
 // =====================================================================
 router.get("/create", auth, async (req, res) => {
   try {
     const perms = await resolvePermissions(req);
     if (!perms.canWrite) {
-      req.flash("error", "You are not authorized to create Order Categories.");
-      return res.redirect("/order-categories");
+      req.flash("error", "You are not authorized to create Job Types.");
+      return res.redirect("/job-types");
     }
 
     let targetStoreId = perms.assignedStoreId;
@@ -402,7 +481,7 @@ router.get("/create", auth, async (req, res) => {
       const parsedParent = Number(req.query.parent_id);
       if (Number.isInteger(parsedParent) && parsedParent > 0) {
         const parentRows = await mySqlQury(
-          "SELECT id, store_id FROM tbl_order_categories WHERE id = ? LIMIT 1",
+          "SELECT id, store_id FROM tbl_job_types WHERE id = ? LIMIT 1",
           [parsedParent]
         );
         if (parentRows && parentRows.length > 0) {
@@ -424,24 +503,24 @@ router.get("/create", auth, async (req, res) => {
 
     const rows = await mySqlQury(
       `SELECT id, store_id, parent_id, name, description, image, status
-       FROM tbl_order_categories
+       FROM tbl_job_types
        WHERE store_id = ?
        ORDER BY name ASC, id ASC`,
       [targetStoreId]
     );
-    const tree = buildCategoryTree(rows);
+    const tree = buildJobTypeTree(rows);
     const parentOptions = flattenTreeOptions(tree);
 
     const targetStoreObj = perms.storeList.find((s) => Number(s.id) === targetStoreId);
 
-    return res.render("order_category_form", {
+    return res.render("job_type_form", {
       accessdata: perms.accessdata,
       language: req.language_data,
       language_name: req.language_name,
       mode: "create",
       ismulty: perms.ismulty,
       storeList: perms.storeList,
-      category: {
+      jobType: {
         id: null,
         store_id: targetStoreId,
         store_name: targetStoreObj ? targetStoreObj.name : perms.assignedStoreName,
@@ -455,28 +534,28 @@ router.get("/create", auth, async (req, res) => {
       parentOptions,
     });
   } catch (error) {
-    console.error("Error in GET /order-categories/create:", error);
-    req.flash("error", "Failed to load Create Order Category page.");
-    return res.redirect("/order-categories");
+    console.error("Error in GET /job-types/create:", error);
+    req.flash("error", "Failed to load Create Job Type page.");
+    return res.redirect("/job-types");
   }
 });
 
 // =====================================================================
-// POST /order-categories/create — Persist New Store-Scoped Category
+// POST /job-types/create — Persist New Store-Scoped Job Type
 // =====================================================================
 router.post("/create", auth, handleImageUpload, async (req, res) => {
   try {
     if (process.env.DISABLE_DB_WRITE === "true") {
-      if (req.file) safeUnlinkCategoryImage(req.file.filename);
+      if (req.file) safeUnlinkJobTypeImage(req.file.filename);
       req.flash("error", "For demo purpose we disabled crud operations!!");
-      return res.redirect("/order-categories");
+      return res.redirect("/job-types");
     }
 
     const perms = await resolvePermissions(req);
     if (!perms.canWrite) {
-      if (req.file) safeUnlinkCategoryImage(req.file.filename);
-      req.flash("error", "You are not authorized to create Order Categories.");
-      return res.redirect("/order-categories");
+      if (req.file) safeUnlinkJobTypeImage(req.file.filename);
+      req.flash("error", "You are not authorized to create Job Types.");
+      return res.redirect("/job-types");
     }
 
     // Determine target store_id (non-master strictly locked to assignedStoreId)
@@ -484,50 +563,50 @@ router.post("/create", auth, handleImageUpload, async (req, res) => {
     if (perms.ismulty) {
       const submittedStore = Number(req.body.store_id);
       if (!Number.isInteger(submittedStore) || submittedStore <= 0) {
-        if (req.file) safeUnlinkCategoryImage(req.file.filename);
+        if (req.file) safeUnlinkJobTypeImage(req.file.filename);
         req.flash("error", "Please select a valid store.");
-        return res.redirect(req.get("Referrer") || "/order-categories/create");
+        return res.redirect(req.get("Referrer") || "/job-types/create");
       }
       const storeExists = await mySqlQury(
         "SELECT id FROM tbl_store WHERE id = ? AND delete_flage = '0' LIMIT 1",
         [submittedStore]
       );
       if (!storeExists || storeExists.length === 0) {
-        if (req.file) safeUnlinkCategoryImage(req.file.filename);
+        if (req.file) safeUnlinkJobTypeImage(req.file.filename);
         req.flash("error", "Selected store does not exist.");
-        return res.redirect(req.get("Referrer") || "/order-categories/create");
+        return res.redirect(req.get("Referrer") || "/job-types/create");
       }
       targetStoreId = submittedStore;
     }
 
     const name = String(req.body.name || "").trim();
     if (!name) {
-      if (req.file) safeUnlinkCategoryImage(req.file.filename);
-      req.flash("error", "Category name is required.");
-      return res.redirect(req.get("Referrer") || "/order-categories/create");
+      if (req.file) safeUnlinkJobTypeImage(req.file.filename);
+      req.flash("error", "Job Type name is required.");
+      return res.redirect(req.get("Referrer") || "/job-types/create");
     }
 
     let parentId = null;
     if (req.body.parent_id !== undefined && String(req.body.parent_id).trim() !== "") {
       const parsedParent = Number(req.body.parent_id);
       if (!Number.isInteger(parsedParent) || parsedParent <= 0) {
-        if (req.file) safeUnlinkCategoryImage(req.file.filename);
-        req.flash("error", "Invalid parent category selected.");
-        return res.redirect(req.get("Referrer") || "/order-categories/create");
+        if (req.file) safeUnlinkJobTypeImage(req.file.filename);
+        req.flash("error", "Invalid parent job type selected.");
+        return res.redirect(req.get("Referrer") || "/job-types/create");
       }
       const parentCheck = await mySqlQury(
-        "SELECT id, store_id FROM tbl_order_categories WHERE id = ? LIMIT 1",
+        "SELECT id, store_id FROM tbl_job_types WHERE id = ? LIMIT 1",
         [parsedParent]
       );
       if (!parentCheck || parentCheck.length === 0) {
-        if (req.file) safeUnlinkCategoryImage(req.file.filename);
-        req.flash("error", "Selected parent category does not exist.");
-        return res.redirect(req.get("Referrer") || "/order-categories/create");
+        if (req.file) safeUnlinkJobTypeImage(req.file.filename);
+        req.flash("error", "Selected parent job type does not exist.");
+        return res.redirect(req.get("Referrer") || "/job-types/create");
       }
       if (Number(parentCheck[0].store_id) !== Number(targetStoreId)) {
-        if (req.file) safeUnlinkCategoryImage(req.file.filename);
-        req.flash("error", "Parent category must belong to the same store.");
-        return res.redirect(req.get("Referrer") || "/order-categories/create");
+        if (req.file) safeUnlinkJobTypeImage(req.file.filename);
+        req.flash("error", "Parent job type must belong to the same store.");
+        return res.redirect(req.get("Referrer") || "/job-types/create");
       }
       parentId = parsedParent;
     }
@@ -537,84 +616,84 @@ router.post("/create", auth, handleImageUpload, async (req, res) => {
     const image = req.file ? req.file.filename : null;
 
     await mySqlQury(
-      `INSERT INTO tbl_order_categories (store_id, parent_id, name, description, image, status)
+      `INSERT INTO tbl_job_types (store_id, parent_id, name, description, image, status)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [targetStoreId, parentId, name, description || null, image, status]
     );
 
-    req.flash("success", `Order Category "${name}" created successfully!`);
-    return res.redirect(perms.ismulty ? `/order-categories?store_id=${targetStoreId}` : "/order-categories");
+    req.flash("success", `Job Type "${name}" created successfully!`);
+    return res.redirect(perms.ismulty ? `/job-types?store_id=${targetStoreId}` : "/job-types");
   } catch (error) {
-    if (req.file) safeUnlinkCategoryImage(req.file.filename);
-    console.error("Error in POST /order-categories/create:", error);
-    req.flash("error", "Failed to create Order Category.");
-    return res.redirect("/order-categories");
+    if (req.file) safeUnlinkJobTypeImage(req.file.filename);
+    console.error("Error in POST /job-types/create:", error);
+    req.flash("error", "Failed to create Job Type.");
+    return res.redirect("/job-types");
   }
 });
 
 // =====================================================================
-// GET /order-categories/edit/:id — Dedicated Edit Page (Store-Scoped)
+// GET /job-types/edit/:id — Dedicated Edit Page (Store-Scoped)
 // =====================================================================
 router.get("/edit/:id", auth, async (req, res) => {
   try {
     const perms = await resolvePermissions(req);
     if (!perms.canEdit) {
-      req.flash("error", "You are not authorized to edit Order Categories.");
-      return res.redirect("/order-categories");
+      req.flash("error", "You are not authorized to edit Job Types.");
+      return res.redirect("/job-types");
     }
 
-    const catId = Number(req.params.id);
-    if (!Number.isInteger(catId) || catId <= 0) {
-      req.flash("error", "Invalid Order Category ID.");
-      return res.redirect("/order-categories");
+    const jtId = Number(req.params.id);
+    if (!Number.isInteger(jtId) || jtId <= 0) {
+      req.flash("error", "Invalid Job Type ID.");
+      return res.redirect("/job-types");
     }
 
     const targetRows = await mySqlQury(
-      `SELECT oc.id, oc.store_id, oc.parent_id, oc.name, oc.description, oc.image, oc.status,
+      `SELECT jt.id, jt.store_id, jt.parent_id, jt.name, jt.description, jt.image, jt.status,
               COALESCE(s.name, '') AS store_name
-       FROM tbl_order_categories oc
-       LEFT JOIN tbl_store s ON oc.store_id = s.id
-       WHERE oc.id = ? LIMIT 1`,
-      [catId]
+       FROM tbl_job_types jt
+       LEFT JOIN tbl_store s ON jt.store_id = s.id
+       WHERE jt.id = ? LIMIT 1`,
+      [jtId]
     );
 
     if (!targetRows || targetRows.length === 0) {
-      req.flash("error", "Order Category not found.");
-      return res.redirect("/order-categories");
+      req.flash("error", "Job Type not found.");
+      return res.redirect("/job-types");
     }
 
     const target = targetRows[0];
     const targetStoreId = Number(target.store_id);
 
     if (!perms.ismulty && targetStoreId !== perms.assignedStoreId) {
-      req.flash("error", "You are not authorized to edit categories belonging to another store.");
-      return res.redirect("/order-categories");
+      req.flash("error", "You are not authorized to edit job types belonging to another store.");
+      return res.redirect("/job-types");
     }
 
-    // Load only categories belonging to the SAME store
+    // Load only job types belonging to the SAME store
     const storeRows = await mySqlQury(
       `SELECT id, store_id, parent_id, name, description, image, status
-       FROM tbl_order_categories
+       FROM tbl_job_types
        WHERE store_id = ?
        ORDER BY name ASC, id ASC`,
       [targetStoreId]
     );
 
     // Exclude self and all descendants to prevent circular hierarchy
-    const excludeIds = collectDescendantIds(storeRows, catId);
-    excludeIds.add(catId);
+    const excludeIds = collectDescendantIds(storeRows, jtId);
+    excludeIds.add(jtId);
 
-    const tree = buildCategoryTree(storeRows);
+    const tree = buildJobTypeTree(storeRows);
     const parentOptions = flattenTreeOptions(tree, excludeIds);
 
-    return res.render("order_category_form", {
+    return res.render("job_type_form", {
       accessdata: perms.accessdata,
       language: req.language_data,
       language_name: req.language_name,
       mode: "edit",
       ismulty: perms.ismulty,
       storeList: perms.storeList,
-      category: {
+      jobType: {
         id: Number(target.id),
         store_id: targetStoreId,
         store_name: target.store_name || perms.assignedStoreName,
@@ -623,94 +702,94 @@ router.get("/edit/:id", auth, async (req, res) => {
         description: target.description || "",
         image: target.image || "",
         image_url: target.image
-          ? `/uploads/order-categories/${encodeURIComponent(path.basename(target.image))}`
+          ? `/uploads/job-types/${encodeURIComponent(path.basename(target.image))}`
           : "",
         status: normalizeStatus(target.status),
       },
       parentOptions,
     });
   } catch (error) {
-    console.error("Error in GET /order-categories/edit/:id:", error);
-    req.flash("error", "Failed to load Edit Order Category page.");
-    return res.redirect("/order-categories");
+    console.error("Error in GET /job-types/edit/:id:", error);
+    req.flash("error", "Failed to load Edit Job Type page.");
+    return res.redirect("/job-types");
   }
 });
 
 // =====================================================================
-// POST /order-categories/edit/:id — Update Category (Store-Scoped)
+// POST /job-types/edit/:id — Update Job Type (Store-Scoped)
 // =====================================================================
 router.post("/edit/:id", auth, handleImageUpload, async (req, res) => {
   try {
     if (process.env.DISABLE_DB_WRITE === "true") {
-      if (req.file) safeUnlinkCategoryImage(req.file.filename);
+      if (req.file) safeUnlinkJobTypeImage(req.file.filename);
       req.flash("error", "For demo purpose we disabled crud operations!!");
-      return res.redirect("/order-categories");
+      return res.redirect("/job-types");
     }
 
     const perms = await resolvePermissions(req);
     if (!perms.canEdit) {
-      if (req.file) safeUnlinkCategoryImage(req.file.filename);
-      req.flash("error", "You are not authorized to edit Order Categories.");
-      return res.redirect("/order-categories");
+      if (req.file) safeUnlinkJobTypeImage(req.file.filename);
+      req.flash("error", "You are not authorized to edit Job Types.");
+      return res.redirect("/job-types");
     }
 
-    const catId = Number(req.params.id);
-    if (!Number.isInteger(catId) || catId <= 0) {
-      if (req.file) safeUnlinkCategoryImage(req.file.filename);
-      req.flash("error", "Invalid Order Category ID.");
-      return res.redirect("/order-categories");
+    const jtId = Number(req.params.id);
+    if (!Number.isInteger(jtId) || jtId <= 0) {
+      if (req.file) safeUnlinkJobTypeImage(req.file.filename);
+      req.flash("error", "Invalid Job Type ID.");
+      return res.redirect("/job-types");
     }
 
     const existingRows = await mySqlQury(
-      "SELECT id, store_id, parent_id, name, description, image, status FROM tbl_order_categories WHERE id = ? LIMIT 1",
-      [catId]
+      "SELECT id, store_id, parent_id, name, description, image, status FROM tbl_job_types WHERE id = ? LIMIT 1",
+      [jtId]
     );
     if (!existingRows || existingRows.length === 0) {
-      if (req.file) safeUnlinkCategoryImage(req.file.filename);
-      req.flash("error", "Order Category not found.");
-      return res.redirect("/order-categories");
+      if (req.file) safeUnlinkJobTypeImage(req.file.filename);
+      req.flash("error", "Job Type not found.");
+      return res.redirect("/job-types");
     }
 
     const existing = existingRows[0];
     const targetStoreId = Number(existing.store_id);
 
     if (!perms.ismulty && targetStoreId !== perms.assignedStoreId) {
-      if (req.file) safeUnlinkCategoryImage(req.file.filename);
-      req.flash("error", "You are not authorized to update categories belonging to another store.");
-      return res.redirect("/order-categories");
+      if (req.file) safeUnlinkJobTypeImage(req.file.filename);
+      req.flash("error", "You are not authorized to update job types belonging to another store.");
+      return res.redirect("/job-types");
     }
 
     const name = String(req.body.name || "").trim();
     if (!name) {
-      if (req.file) safeUnlinkCategoryImage(req.file.filename);
-      req.flash("error", "Category name is required.");
-      return res.redirect(`/order-categories/edit/${catId}`);
+      if (req.file) safeUnlinkJobTypeImage(req.file.filename);
+      req.flash("error", "Job Type name is required.");
+      return res.redirect(`/job-types/edit/${jtId}`);
     }
 
     const storeRows = await mySqlQury(
-      "SELECT id, store_id, parent_id FROM tbl_order_categories WHERE store_id = ?",
+      "SELECT id, store_id, parent_id FROM tbl_job_types WHERE store_id = ?",
       [targetStoreId]
     );
 
     let parentId = null;
     if (req.body.parent_id !== undefined && String(req.body.parent_id).trim() !== "") {
       const parsedParent = Number(req.body.parent_id);
-      const descendants = collectDescendantIds(storeRows, catId);
+      const descendants = collectDescendantIds(storeRows, jtId);
       if (
         !Number.isInteger(parsedParent) ||
         parsedParent <= 0 ||
-        parsedParent === catId ||
+        parsedParent === jtId ||
         descendants.has(parsedParent)
       ) {
-        if (req.file) safeUnlinkCategoryImage(req.file.filename);
-        req.flash("error", "Invalid parent selection: a category cannot be a child of itself or its subcategories.");
-        return res.redirect(`/order-categories/edit/${catId}`);
+        if (req.file) safeUnlinkJobTypeImage(req.file.filename);
+        req.flash("error", "Invalid parent selection: a job type cannot be a child of itself or its sub-types.");
+        return res.redirect(`/job-types/edit/${jtId}`);
       }
       const sameStoreParent = storeRows.some((r) => Number(r.id) === parsedParent);
       if (!sameStoreParent) {
-        if (req.file) safeUnlinkCategoryImage(req.file.filename);
-        req.flash("error", "Selected parent category must belong to the same store.");
-        return res.redirect(`/order-categories/edit/${catId}`);
+        if (req.file) safeUnlinkJobTypeImage(req.file.filename);
+        req.flash("error", "Selected parent job type must belong to the same store.");
+        return res.redirect(`/job-types/edit/${jtId}`);
       }
       parentId = parsedParent;
     }
@@ -722,32 +801,32 @@ router.post("/edit/:id", auth, handleImageUpload, async (req, res) => {
     const removeImage = String(req.body.remove_image || "") === "1";
 
     if (req.file) {
-      if (existing.image) safeUnlinkCategoryImage(existing.image);
+      if (existing.image) safeUnlinkJobTypeImage(existing.image);
       nextImage = req.file.filename;
     } else if (removeImage) {
-      if (existing.image) safeUnlinkCategoryImage(existing.image);
+      if (existing.image) safeUnlinkJobTypeImage(existing.image);
       nextImage = null;
     }
 
     await mySqlQury(
-      `UPDATE tbl_order_categories
+      `UPDATE tbl_job_types
        SET parent_id = ?, name = ?, description = ?, image = ?, status = ?
        WHERE id = ? AND store_id = ?`,
-      [parentId, name, description || null, nextImage, status, catId, targetStoreId]
+      [parentId, name, description || null, nextImage, status, jtId, targetStoreId]
     );
 
-    req.flash("success", `Order Category "${name}" updated successfully!`);
-    return res.redirect(perms.ismulty ? `/order-categories?store_id=${targetStoreId}` : "/order-categories");
+    req.flash("success", `Job Type "${name}" updated successfully!`);
+    return res.redirect(perms.ismulty ? `/job-types?store_id=${targetStoreId}` : "/job-types");
   } catch (error) {
-    if (req.file) safeUnlinkCategoryImage(req.file.filename);
-    console.error("Error in POST /order-categories/edit/:id:", error);
-    req.flash("error", "Failed to update Order Category.");
-    return res.redirect("/order-categories");
+    if (req.file) safeUnlinkJobTypeImage(req.file.filename);
+    console.error("Error in POST /job-types/edit/:id:", error);
+    req.flash("error", "Failed to update Job Type.");
+    return res.redirect("/job-types");
   }
 });
 
 // =====================================================================
-// POST /order-categories/status/:id — AJAX Active/Inactive Toggle
+// POST /job-types/status/:id — AJAX Active/Inactive Toggle
 // =====================================================================
 router.post("/status/:id", auth, async (req, res) => {
   try {
@@ -760,113 +839,342 @@ router.post("/status/:id", auth, async (req, res) => {
       return res.status(403).json({ success: false, message: "Not authorized to update status." });
     }
 
-    const catId = Number(req.params.id);
-    if (!Number.isInteger(catId) || catId <= 0) {
-      return res.status(400).json({ success: false, message: "Invalid category ID." });
+    const jtId = Number(req.params.id);
+    if (!Number.isInteger(jtId) || jtId <= 0) {
+      return res.status(400).json({ success: false, message: "Invalid job type ID." });
     }
 
     const existing = await mySqlQury(
-      "SELECT id, store_id FROM tbl_order_categories WHERE id = ? LIMIT 1",
-      [catId]
+      "SELECT id, store_id FROM tbl_job_types WHERE id = ? LIMIT 1",
+      [jtId]
     );
     if (!existing || existing.length === 0) {
-      return res.status(404).json({ success: false, message: "Order Category not found." });
+      return res.status(404).json({ success: false, message: "Job Type not found." });
     }
 
     if (!perms.ismulty && Number(existing[0].store_id) !== perms.assignedStoreId) {
-      return res.status(403).json({ success: false, message: "Not authorized to modify another store's category." });
+      return res.status(403).json({ success: false, message: "Not authorized to modify another store's job type." });
     }
 
     const status = normalizeStatus(req.body.status);
     await mySqlQury(
-      "UPDATE tbl_order_categories SET status = ? WHERE id = ?",
-      [status, catId]
+      "UPDATE tbl_job_types SET status = ? WHERE id = ?",
+      [status, jtId]
     );
 
-    return res.status(200).json({ success: true, id: catId, status });
+    return res.status(200).json({ success: true, id: jtId, status });
   } catch (error) {
-    console.error("Error in POST /order-categories/status/:id:", error);
+    console.error("Error in POST /job-types/status/:id:", error);
     return res.status(500).json({ success: false, message: "Failed to update status." });
   }
 });
 
 // =====================================================================
-// POST /order-categories/delete/:id — Store-Scoped Cascade Delete
+// POST /job-types/delete/:id — Store-Scoped Cascade Delete
 // =====================================================================
 router.post("/delete/:id", auth, async (req, res) => {
   try {
     if (process.env.DISABLE_DB_WRITE === "true") {
       req.flash("error", "For demo purpose we disabled crud operations!!");
-      return res.redirect("/order-categories");
+      return res.redirect("/job-types");
     }
 
     const perms = await resolvePermissions(req);
     if (!perms.canDelete) {
-      req.flash("error", "You are not authorized to delete Order Categories.");
-      return res.redirect("/order-categories");
+      req.flash("error", "You are not authorized to delete Job Types.");
+      return res.redirect("/job-types");
     }
 
-    const catId = Number(req.params.id);
-    if (!Number.isInteger(catId) || catId <= 0) {
-      req.flash("error", "Invalid Order Category ID.");
-      return res.redirect("/order-categories");
+    const jtId = Number(req.params.id);
+    if (!Number.isInteger(jtId) || jtId <= 0) {
+      req.flash("error", "Invalid Job Type ID.");
+      return res.redirect("/job-types");
     }
 
     const targetRows = await mySqlQury(
-      "SELECT id, store_id, name FROM tbl_order_categories WHERE id = ? LIMIT 1",
-      [catId]
+      "SELECT id, store_id, name FROM tbl_job_types WHERE id = ? LIMIT 1",
+      [jtId]
     );
     if (!targetRows || targetRows.length === 0) {
-      req.flash("error", "Order Category not found.");
-      return res.redirect("/order-categories");
+      req.flash("error", "Job Type not found.");
+      return res.redirect("/job-types");
     }
 
     const target = targetRows[0];
     const targetStoreId = Number(target.store_id);
 
     if (!perms.ismulty && targetStoreId !== perms.assignedStoreId) {
-      req.flash("error", "You are not authorized to delete categories belonging to another store.");
-      return res.redirect("/order-categories");
+      req.flash("error", "You are not authorized to delete job types belonging to another store.");
+      return res.redirect("/job-types");
     }
 
     const storeRows = await mySqlQury(
-      "SELECT id, parent_id, image FROM tbl_order_categories WHERE store_id = ?",
+      "SELECT id, parent_id, image FROM tbl_job_types WHERE store_id = ?",
       [targetStoreId]
     );
 
     // Collect self + all descendants so uploaded image files are also removed
-    const descendantIds = collectDescendantIds(storeRows, catId);
-    const idsToClean = new Set([catId, ...descendantIds]);
+    const descendantIds = collectDescendantIds(storeRows, jtId);
+    const idsToClean = new Set([jtId, ...descendantIds]);
 
     for (const r of storeRows) {
       if (idsToClean.has(Number(r.id)) && r.image) {
-        safeUnlinkCategoryImage(r.image);
+        safeUnlinkJobTypeImage(r.image);
       }
     }
 
     // ON DELETE CASCADE removes all child & descendant rows atomically
-    await mySqlQury("DELETE FROM tbl_order_categories WHERE id = ? AND store_id = ?", [catId, targetStoreId]);
+    await mySqlQury("DELETE FROM tbl_job_types WHERE id = ? AND store_id = ?", [jtId, targetStoreId]);
 
     const subDeleted = descendantIds.size;
     const msg =
       subDeleted > 0
-        ? `Deleted "${target.name}" along with ${subDeleted} ${subDeleted === 1 ? "subcategory" : "subcategories"}.`
-        : `Order Category "${target.name}" deleted successfully.`;
+        ? `Deleted "${target.name}" along with ${subDeleted} ${subDeleted === 1 ? "sub-type" : "sub-types"}.`
+        : `Job Type "${target.name}" deleted successfully.`;
 
     req.flash("success", msg);
-    return res.redirect(req.get("Referrer") || "/order-categories");
+    return res.redirect(req.get("Referrer") || "/job-types");
   } catch (error) {
-    console.error("Error in POST /order-categories/delete/:id:", error);
-    req.flash("error", "Failed to delete Order Category.");
-    return res.redirect("/order-categories");
+    console.error("Error in POST /job-types/delete/:id:", error);
+    req.flash("error", "Failed to delete Job Type.");
+    return res.redirect("/job-types");
+  }
+});
+
+// =====================================================================
+// GET /job-types/:id/prices — Item & Price Configuration Page
+// =====================================================================
+router.get("/:id/prices", auth, async (req, res) => {
+  try {
+    const perms = await resolvePermissions(req);
+    if (!perms.canRead) {
+      req.flash("error", "You are not authorized to access Job Type Item Prices.");
+      return res.redirect("/job-types");
+    }
+
+    const jtId = Number(req.params.id);
+    if (!Number.isInteger(jtId) || jtId <= 0) {
+      req.flash("error", "Invalid Job Type ID.");
+      return res.redirect("/job-types");
+    }
+
+    const targetRows = await mySqlQury(
+      `SELECT jt.id, jt.store_id, jt.parent_id, jt.name, jt.description, jt.image, jt.status,
+              COALESCE(s.name, '') AS store_name
+       FROM tbl_job_types jt
+       LEFT JOIN tbl_store s ON jt.store_id = s.id
+       WHERE jt.id = ? LIMIT 1`,
+      [jtId]
+    );
+
+    if (!targetRows || targetRows.length === 0) {
+      req.flash("error", "Job Type not found.");
+      return res.redirect("/job-types");
+    }
+
+    const target = targetRows[0];
+    const targetStoreId = Number(target.store_id);
+
+    if (!perms.ismulty && targetStoreId !== perms.assignedStoreId) {
+      req.flash("error", "You are not authorized to configure prices for another store's job type.");
+      return res.redirect("/job-types");
+    }
+
+    const [storeJobTypes, activeServices, savedPrices, masterShop] = await Promise.all([
+      mySqlQury(
+        "SELECT id, parent_id, name FROM tbl_job_types WHERE store_id = ?",
+        [targetStoreId]
+      ),
+      mySqlQury(
+        `SELECT id, name, image, no_of_items, sequence_no, item_code
+         FROM tbl_services
+         WHERE store_ID = ? AND status = '0'
+         ORDER BY sequence_no ASC, name ASC, id ASC`,
+        [String(targetStoreId)]
+      ),
+      mySqlQury(
+        "SELECT service_id, price FROM tbl_job_item_prices WHERE job_type_id = ? AND price > 0",
+        [jtId]
+      ),
+      mySqlQury("SELECT currency_symbol, currency_placement FROM tbl_master_shop LIMIT 1"),
+    ]);
+
+    const breadcrumb = buildJobTypeBreadcrumb(storeJobTypes, jtId);
+    const savedMap = new Map();
+    for (const row of savedPrices || []) {
+      const numeric = Number(row.price);
+      if (Number.isFinite(numeric) && numeric > 0) {
+        savedMap.set(Number(row.service_id), numeric);
+      }
+    }
+
+    let pricedCount = 0;
+    const items = (activeServices || []).map((svc) => {
+      const svcId = Number(svc.id);
+      const savedPrice = savedMap.has(svcId) ? savedMap.get(svcId) : 0;
+      const isPriced = savedPrice > 0;
+      if (isPriced) pricedCount++;
+      return {
+        id: svcId,
+        name: svc.name || "",
+        item_code: svc.item_code || "",
+        sequence_no: Number(svc.sequence_no) || 0,
+        no_of_items: parseInt(svc.no_of_items, 10) > 0 ? parseInt(svc.no_of_items, 10) : 1,
+        image_url: resolvePosServiceImageUrl(svc.image, "small"),
+        price: isPriced ? savedPrice.toFixed(2) : "0.00",
+        isPriced,
+      };
+    });
+
+    const m0 = masterShop && masterShop.length > 0 ? masterShop[0] : {};
+    const currencySymbol = m0.currency_symbol ? String(m0.currency_symbol) : "$";
+    const currencyPlacement = Number(m0.currency_placement) || 0;
+    const backUrl = perms.ismulty ? `/job-types?store_id=${targetStoreId}` : "/job-types";
+
+    return res.render("job_type_prices", {
+      accessdata: perms.accessdata,
+      language: req.language_data,
+      language_name: req.language_name,
+      jobType: {
+        id: Number(target.id),
+        store_id: targetStoreId,
+        store_name: target.store_name || perms.assignedStoreName,
+        name: target.name || "",
+        description: target.description || "",
+        status: normalizeStatus(target.status),
+      },
+      breadcrumb,
+      items,
+      stats: {
+        total: items.length,
+        priced: pricedCount,
+        unpriced: Math.max(0, items.length - pricedCount),
+      },
+      currencySymbol,
+      currencyPlacement,
+      canSave: Boolean(perms.canEdit || perms.canWrite),
+      backUrl,
+    });
+  } catch (error) {
+    console.error("Error in GET /job-types/:id/prices:", error);
+    req.flash("error", "Failed to load Item & Price configuration page.");
+    return res.redirect("/job-types");
+  }
+});
+
+// =====================================================================
+// POST /job-types/:id/prices — Save Positive Item Prices & Delete Zeroes
+// =====================================================================
+router.post("/:id/prices", auth, async (req, res) => {
+  let poolConn = null;
+  try {
+    const jtId = Number(req.params.id);
+    if (!Number.isInteger(jtId) || jtId <= 0) {
+      req.flash("error", "Invalid Job Type ID.");
+      return res.redirect("/job-types");
+    }
+
+    if (process.env.DISABLE_DB_WRITE === "true") {
+      req.flash("error", "For demo purpose we disabled crud operations!!");
+      return res.redirect(`/job-types/${jtId}/prices`);
+    }
+
+    const perms = await resolvePermissions(req);
+    if (!perms.canEdit && !perms.canWrite) {
+      req.flash("error", "You are not authorized to update Job Type Item Prices.");
+      return res.redirect(`/job-types/${jtId}/prices`);
+    }
+
+    const targetRows = await mySqlQury(
+      "SELECT id, store_id, name FROM tbl_job_types WHERE id = ? LIMIT 1",
+      [jtId]
+    );
+    if (!targetRows || targetRows.length === 0) {
+      req.flash("error", "Job Type not found.");
+      return res.redirect("/job-types");
+    }
+
+    const target = targetRows[0];
+    const targetStoreId = Number(target.store_id);
+
+    if (!perms.ismulty && targetStoreId !== perms.assignedStoreId) {
+      req.flash("error", "You are not authorized to update prices for another store's job type.");
+      return res.redirect("/job-types");
+    }
+
+    const activeServiceRows = await mySqlQury(
+      "SELECT id FROM tbl_services WHERE store_ID = ? AND status = '0'",
+      [String(targetStoreId)]
+    );
+    const validServiceIds = new Set((activeServiceRows || []).map((r) => Number(r.id)));
+
+    const { positiveRows, zeroedServiceIds } = parsePriceEntries(
+      req.body,
+      validServiceIds,
+      targetStoreId,
+      jtId
+    );
+
+    poolConn = await conn.promise().getConnection();
+    await poolConn.beginTransaction();
+
+    let deletedCount = 0;
+    if (zeroedServiceIds.length > 0) {
+      const [delResult] = await poolConn.query(
+        "DELETE FROM tbl_job_item_prices WHERE job_type_id = ? AND service_id IN (?)",
+        [jtId, zeroedServiceIds]
+      );
+      deletedCount = delResult && delResult.affectedRows ? Number(delResult.affectedRows) : 0;
+    }
+
+    if (positiveRows.length > 0) {
+      await poolConn.query(
+        `INSERT INTO tbl_job_item_prices (store_id, job_type_id, service_id, price)
+         VALUES ?
+         ON DUPLICATE KEY UPDATE
+           store_id = VALUES(store_id),
+           price = VALUES(price),
+           updated_at = CURRENT_TIMESTAMP`,
+        [positiveRows]
+      );
+    }
+
+    await poolConn.commit();
+
+    const savedCount = positiveRows.length;
+    let msg = `Saved ${savedCount} priced ${savedCount === 1 ? "item" : "items"} for "${target.name}".`;
+    if (deletedCount > 0) {
+      msg += ` Removed ${deletedCount} zero-priced ${deletedCount === 1 ? "item" : "items"}.`;
+    }
+
+    req.flash("success", msg);
+    return res.redirect(`/job-types/${jtId}/prices`);
+  } catch (error) {
+    if (poolConn) {
+      try {
+        await poolConn.rollback();
+      } catch (rbErr) {
+        console.error("Rollback error in POST /job-types/:id/prices:", rbErr);
+      }
+    }
+    console.error("Error in POST /job-types/:id/prices:", error);
+    req.flash("error", "Failed to save Job Type Item Prices.");
+    const fallbackId = Number(req.params.id);
+    return res.redirect(Number.isInteger(fallbackId) && fallbackId > 0 ? `/job-types/${fallbackId}/prices` : "/job-types");
+  } finally {
+    if (poolConn) {
+      poolConn.release();
+    }
   }
 });
 
 router._helpers = {
   normalizeStatus,
   collectDescendantIds,
-  buildCategoryTree,
+  buildJobTypeTree,
   flattenTreeOptions,
+  buildJobTypeBreadcrumb,
+  parsePriceEntries,
   resolvePermissions,
 };
 

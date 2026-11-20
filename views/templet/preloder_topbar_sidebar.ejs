@@ -365,6 +365,13 @@
             </span>
           </a>
         </li>
+        <li><a href="/pos-2" class="has-arrow ai-icon" aria-expanded="false">
+            <i class="fa fa-bolt"></i>
+            <span class="nav-text">
+              <%= (typeof language !== 'undefined' && language.POS_2) ? language.POS_2 : 'POS-2' %>
+            </span>
+          </a>
+        </li>
         <% } %>
 
         <% if(accessdata?.logas !='custmor' && (accessdata?.logas === 'master' || accessdata?.roll?.racks?.includes('read'))){ %>
@@ -410,10 +417,10 @@
         <% } %>
 
         <% if (accessdata?.logas !== 'custmor' && (accessdata?.logas === 'master' || accessdata?.isstore === true || accessdata?.roll?.orders?.includes('read') || accessdata?.roll?.service?.includes('read'))) { %>
-        <li><a href="/order-categories" class="has-arrow ai-icon" aria-expanded="false">
+        <li><a href="/job-types" class="has-arrow ai-icon" aria-expanded="false">
             <i class="fa fa-sitemap"></i>
             <span class="nav-text">
-              <%= (typeof language !== 'undefined' && language.Order_Categories) ? language.Order_Categories : 'Order Categories' %>
+              <%= (typeof language !== 'undefined' && language.Job_Types) ? language.Job_Types : 'Job Types' %>
             </span>
           </a>
         </li>

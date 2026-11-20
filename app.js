@@ -147,7 +147,8 @@ app.use("/app", require("./routers/app_login"));
 app.use("/admin", require("./routers/pos"));
 app.use("/coupon", require("./routers/coupon"));
 app.use("/order", require("./routers/order"));
-app.use("/order-categories", require("./routers/order_categories"));
+app.use("/job-types", require("./routers/job_types"));
+app.use("/pos-2", require("./routers/pos2"));
 
 app.listen(PORT, () => {
   console.log(`server running on port http://localhost:${PORT}/`);

@@ -3,11 +3,22 @@
 
 <head>
   <%- include('templet/meta') -%>
-  <link rel="stylesheet" href="/css/pos-compact.css?v=7">
+  <link rel="stylesheet" href="/css/pos-compact.css?v=8">
 </head>
 
 <body class="pos-screen-layout">
   <%
+    const isPos2Mode = Boolean(typeof isPos2 !== 'undefined' && isPos2);
+    const safePosBaseUrl = (typeof posBaseUrl !== 'undefined' && posBaseUrl) ? posBaseUrl : (isPos2Mode ? '/pos-2' : '/admin/pos');
+    const safeActiveJobType = (typeof activeJobType !== 'undefined' && activeJobType) ? activeJobType : null;
+    const safeActiveJtBreadcrumb = (typeof activeJobTypeBreadcrumb !== 'undefined' && Array.isArray(activeJobTypeBreadcrumb)) ? activeJobTypeBreadcrumb : [];
+    const safeActiveJtLabel = safeActiveJtBreadcrumb.length > 0
+      ? safeActiveJtBreadcrumb.map(c => c.name).join(' › ')
+      : (safeActiveJobType ? safeActiveJobType.name : '');
+    const safeJobTypeTree = (typeof jobTypeTree !== 'undefined' && Array.isArray(jobTypeTree)) ? jobTypeTree : [];
+    const safeShouldOpenJtModal = Boolean(typeof shouldOpenJobTypeModal !== 'undefined' && shouldOpenJobTypeModal);
+    const posCurrSym = accessdata?.symbol || '$';
+    const posCurrPls = String(accessdata?.plac || '0');
     const isEditMode = Boolean((typeof isEdit !== 'undefined' && isEdit) || (typeof cart !== 'undefined' && cart && cart.isEdit));
     const canOverridePrice = (login !== 'customer') && Boolean(
       typeof canOverridePriceDiscount !== 'undefined'
@@ -145,6 +156,9 @@
           <input type="hidden" name="thousands_separator" value="<%= accessdata?.thousands_separator || ',' %>">
           <input type="hidden" id="pos_override_rate_percent" value="<%= (typeof overrideRatePercent !== 'undefined' && overrideRatePercent !== null) ? overrideRatePercent : 10 %>">
           <input type="hidden" id="can_override_pos_price_discount" value="<%= canOverridePrice ? '1' : '0' %>">
+          <input type="hidden" id="is_pos2" value="<%= isPos2Mode ? '1' : '0' %>">
+          <input type="hidden" id="pos_base_url" value="<%= safePosBaseUrl %>">
+          <input type="hidden" id="pos2_active_job_type_id" value="<%= safeActiveJobType ? safeActiveJobType.id : '' %>">
           <% if (isEditMode) { %>
           <input type="hidden" id="pos_mode" value="edit">
           <input type="hidden" id="order_id" name="order_id" value="<%= cart.id %>">
@@ -164,6 +178,11 @@
                   <i class="fas fa-home fs-14"></i>
                   <span class="d-none d-xl-inline fw-semibold"><%= (typeof language !== 'undefined' && language.Dashboard) ? language.Dashboard : 'Dashboard' %></span>
                 </a>
+                <% if (isPos2Mode) { %>
+                <span class="badge bg-primary-subtle text-primary rounded-pill fw-bold px-2 py-1 fs-11">
+                  <i class="fa fa-bolt me-1"></i>POS-2
+                </span>
+                <% } %>
 
                 <% if (typeof showStoreSelect !== 'undefined' && showStoreSelect) { %>
                   <select class="default-select fw-bold text-dark" name="store" id="pos_store_id" data-live-search="true" required>
@@ -395,6 +414,79 @@
                 </span>
               </div>
 
+              <% if (isPos2Mode) { %>
+              <!-- POS-2 Active Job Type Banner -->
+              <div class="pos2-job-type-bar d-flex align-items-center justify-content-between gap-2 mb-2 flex-wrap" id="pos2_active_job_type_bar">
+                <div class="d-flex align-items-center gap-2 min-w-0 flex-grow-1">
+                  <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary flex-shrink-0" style="width: 28px; height: 28px;">
+                    <i class="fa fa-sitemap fs-12"></i>
+                  </span>
+                  <div class="min-w-0">
+                    <div class="text-muted lh-1" style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">Active Job Type</div>
+                    <div class="d-flex align-items-center flex-wrap gap-2 mt-0.5">
+                      <strong class="fs-13 text-truncate" id="pos2_active_job_type_breadcrumb"><%= safeActiveJtLabel || 'No Job Type Selected' %></strong>
+                      <span class="badge bg-success-subtle text-success rounded-pill fs-11 <%= safeActiveJobType ? '' : 'd-none' %>" id="pos2_active_job_type_count">
+                        <%= safeActiveJobType ? (safeActiveJobType.pricedCount + (safeActiveJobType.pricedCount === 1 ? ' item' : ' items')) : '' %>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-xs btn-primary rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1 flex-shrink-0" id="btn_pos2_change_job_type">
+                  <i class="fa fa-exchange-alt fs-11"></i>
+                  <span id="pos2_change_job_type_label"><%= safeActiveJobType ? 'Change Job Type' : 'Select Job Type' %></span>
+                </button>
+              </div>
+
+              <!-- POS-2 Priced Services Catalog Grid -->
+              <input type="hidden" id="pos_image_size" value="<%= typeof posImageSize !== 'undefined' ? posImageSize : 'medium' %>">
+              <div class="pos-services-grid pos-img-size-<%= typeof posImageSize !== 'undefined' ? posImageSize : 'medium' %> mt-2" id="pos_service">
+                <% if (service_list.length < 1 && login === 'master' && (!cart.store_id || cart.store_id == 0)) { %>
+                <div class="p-4 text-center w-100 text-muted">
+                  <i class="fa fa-store fa-2x opacity-50 mb-2 d-block"></i>
+                  <h6 class="text-muted mb-0"><%= language.Please_Select_Store || 'Please Select Store' %></h6>
+                </div>
+                <% } else if (!safeActiveJobType) { %>
+                <div class="p-4 text-center w-100 text-muted">
+                  <i class="fa fa-sitemap fa-2x opacity-50 mb-2 d-block"></i>
+                  <h6 class="fw-semibold text-muted mb-0">Select a Job Type to load priced services</h6>
+                </div>
+                <% } else if (service_list.length < 1) { %>
+                <div class="p-4 text-center w-100 text-muted">
+                  <i class="fa fa-box-open fa-2x opacity-50 mb-2 d-block"></i>
+                  <h6 class="fw-semibold text-danger mb-0">No priced service items available for this Job Type</h6>
+                </div>
+                <% } else { %>
+                <% service_list.forEach(function(data) {
+                  const itemPriceNum = Number(data.job_item_price || 0);
+                  const itemPriceText = posCurrPls === '1'
+                    ? (itemPriceNum.toFixed(2) + ' ' + posCurrSym)
+                    : (posCurrSym + itemPriceNum.toFixed(2));
+                %>
+                <a href="javascript:void(0)" class="pos-service-item pos2-direct-service text-decoration-none" data-name="<%= (data.name || '').toLowerCase() %>" data-id="<%= data.id %>" data-job-price="<%= itemPriceNum.toFixed(2) %>">
+                  <div class="card h-100 shadow-sm border rounded-3 text-center overflow-hidden pos-service-card position-relative">
+                    <% if (data.no_of_items && parseInt(data.no_of_items) > 1) { %>
+                    <span class="position-absolute top-0 end-0 badge bg-primary text-white m-1 rounded-pill shadow-sm" style="z-index: 2; font-size: 0.7rem;">
+                      <%= data.no_of_items %> Pcs
+                    </span>
+                    <% } %>
+                    <span class="pos2-card-price-badge"><%= itemPriceText %></span>
+                    <div class="ratio ratio-1x1 bg-light position-relative">
+                      <img src="<%= data.pos_image_url || ('/uploads/' + (typeof posImageSize !== 'undefined' ? (posImageSize + '/') : '') + data.image) %>" class="card-img-top w-100 h-100 pos-service-img" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none'); this.nextElementSibling.classList.add('d-flex');" alt="<%= data.name %>">
+                      <div class="pos-service-fallback-icon position-absolute top-0 start-0 w-100 h-100 align-items-center justify-content-center text-primary fs-3 d-none">
+                        <i class="fa fa-tshirt"></i>
+                      </div>
+                    </div>
+                    <div class="card-body d-flex align-items-center justify-content-center">
+                      <h6 class="card-title m-0 fw-bold fs-7 pos-service-name" title="<%= data.name %>">
+                        <%= data.name %>
+                      </h6>
+                    </div>
+                  </div>
+                </a>
+                <% }) %>
+                <% } %>
+              </div>
+              <% } else { %>
               <!-- Category & Subcategory Filter Tabs -->
               <div class="pos-category-filter-container mb-2">
                 <!-- Primary Category Pills -->
@@ -462,6 +554,7 @@
                 <% }) %>
                 <% } %>
               </div>
+              <% } %>
             </div>
           </div>
         </div>
@@ -473,9 +566,16 @@
               <div class="row g-3">
                 <!-- Order Number -->
                 <div class="col-sm-3">
-                  <label class="pos-field-label mb-0">
-                    <%= language.Order_No || 'Order #' %> <span class="text-danger">*</span>
-                  </label>
+                  <div class="d-flex align-items-center justify-content-between gap-1">
+                    <label class="pos-field-label mb-0">
+                      <%= language.Order_No || 'Order #' %> <span class="text-danger">*</span>
+                    </label>
+                    <% if (isPos2Mode) { %>
+                    <span id="pos2_cart_job_type_pill" class="badge bg-primary-subtle text-primary rounded-pill fs-10 text-truncate pos2-cart-jt-chip <%= safeActiveJobType ? '' : 'd-none' %>" style="max-width: 110px;" title="Active Job Type (click to change)">
+                      <i class="fa fa-sitemap me-1"></i><span id="pos2_cart_job_type_text"><%= safeActiveJtLabel %></span>
+                    </span>
+                    <% } %>
+                  </div>
                   <input type="text" id="pos_order_id" class="form-control pos-input-sm w-100 fw-bold text-dark" value="<%= cart.order_id %>" readonly title="Order ID">
                 </div>
 
@@ -3582,7 +3682,8 @@
             dataType: 'json',
             success: function(res) {
               if (res && res.success) {
-                window.location.href = '/admin/posprint?id=' + encodeURIComponent(res.id || res.order_id);
+                const printReturnParam = $('#is_pos2').val() === '1' ? '&return_to=%2Fpos-2' : '';
+                window.location.href = '/admin/posprint?id=' + encodeURIComponent(res.id || res.order_id) + printReturnParam;
               } else {
                 $submitBtn.prop('disabled', false).html('<i class="fa fa-print me-2"></i><%= language.Print || "Print" %>');
                 const errMsg = (res && res.message) ? res.message : 'Error placing order. Please try again.';
@@ -3666,6 +3767,19 @@
       });
     })();
   </script>
+
+  <% if (isPos2Mode) { %>
+  <%- include('partials/pos2_job_type_modal') -%>
+  <script>
+    window.POS2_BOOTSTRAP = <%- JSON.stringify({
+      jobTypeTree: safeJobTypeTree,
+      activeJobType: safeActiveJobType,
+      activeJobTypeBreadcrumb: safeActiveJtBreadcrumb,
+      shouldOpenJobTypeModal: safeShouldOpenJtModal
+    }) %>;
+  </script>
+  <script src="/js/pos2.js?v=1"></script>
+  <% } %>
 </body>
 
 </html>

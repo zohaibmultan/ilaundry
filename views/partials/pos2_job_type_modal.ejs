@@ -1,0 +1,107 @@
+<!-- POS-2 Modal: Select Job Type / Sub-Type -->
+<div class="modal fade" id="pos2JobTypeModal" tabindex="-1" aria-labelledby="pos2JobTypeModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content border-0 shadow-lg rounded-3">
+      <div class="modal-header border-bottom py-3 px-4">
+        <div>
+          <h5 class="modal-title fw-bold d-flex align-items-center gap-2 mb-0" id="pos2JobTypeModalLabel">
+            <span class="d-inline-flex align-items-center justify-content-center rounded-circle text-primary bg-primary-subtle" style="width: 34px; height: 34px;">
+              <i class="fa fa-sitemap"></i>
+            </span>
+            <span>Select Job Type</span>
+          </h5>
+          <small class="text-muted">Choose a job type or sub-type to load its priced services for this order</small>
+        </div>
+        <button type="button" class="btn-close d-none" id="btnPos2JobTypeModalClose" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body p-4">
+        <% if (typeof showStoreSelect !== 'undefined' && showStoreSelect) { %>
+        <!-- Store Selector inside Modal (Master Admin) -->
+        <div class="mb-3">
+          <label class="form-label fw-bold small mb-1" for="pos2ModalStoreSelect">
+            <i class="fa fa-store text-primary me-1"></i>
+            Select Store <span class="text-danger">*</span>
+          </label>
+          <select class="form-select" id="pos2ModalStoreSelect">
+            <option value="0" <%= (!cart.store_id || cart.store_id == 0) ? 'selected' : '' %> disabled>Choose a store to view its Job Types...</option>
+            <% (storeList || []).forEach(function(st) { %>
+            <option value="<%= st.id %>" <%= (String(cart.store_id) === String(st.id)) ? 'selected' : '' %>><%= st.name %></option>
+            <% }); %>
+          </select>
+        </div>
+        <% } %>
+
+        <!-- Search Input -->
+        <div class="input-group input-group-sm mb-3">
+          <span class="input-group-text"><i class="fa fa-search text-muted"></i></span>
+          <input type="search" class="form-control" id="pos2JobTypeSearch" placeholder="Search job types or sub-types..." autocomplete="off">
+        </div>
+
+        <!-- Job Type Tree Picker Container -->
+        <div id="pos2JobTypeTreeContainer" class="pos2-jt-modal-tree">
+          <div class="text-center py-4 text-muted">
+            <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+            <span>Loading job types...</span>
+          </div>
+        </div>
+
+        <!-- Empty Search State -->
+        <div id="pos2JobTypeEmptySearch" class="text-center py-4 text-muted border rounded-3 d-none">
+          <i class="fa fa-search fa-lg opacity-50 mb-2 d-block"></i>
+          <div class="fw-semibold small">No matching job types found</div>
+        </div>
+      </div>
+
+      <div class="modal-footer border-top py-2.5 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="small text-muted d-flex align-items-center gap-2 min-w-0">
+          <i class="fa fa-check-circle text-primary d-none" id="pos2ModalSelectedIcon"></i>
+          <span id="pos2ModalSelectedPreview" class="text-truncate fw-semibold">No job type selected</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="btnPos2JobTypeCancel" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-sm btn-primary px-4 fw-semibold shadow-sm" id="btnPos2ConfirmJobType" disabled>
+            <i class="fa fa-check me-1"></i>
+            <span>Confirm Job Type</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- POS-2 Modal: Confirm Clear Cart Before Switching Job Type -->
+<div class="modal fade" id="pos2SwitchJobTypeConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content border-0 shadow-lg rounded-3">
+      <div class="modal-header border-bottom">
+        <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+          <span class="d-inline-flex align-items-center justify-content-center rounded-circle text-warning bg-warning-subtle" style="width: 34px; height: 34px;">
+            <i class="fas fa-exchange-alt"></i>
+          </span>
+          <span>Switch Job Type?</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="mb-2">
+          Your cart currently has items from <strong id="pos2SwitchCurrentJtName"></strong>.
+        </p>
+        <div class="alert alert-warning py-2 px-3 small mb-0">
+          <i class="fas fa-exclamation-triangle me-1"></i>
+          Switching to a different Job Type will clear the items currently in this cart so each order uses a single Job Type.
+        </div>
+      </div>
+      <div class="modal-footer border-top">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+          Keep Current Order
+        </button>
+        <button type="button" class="btn btn-sm btn-warning fw-semibold" id="btnPos2ConfirmClearAndSwitch">
+          <i class="fa fa-trash-alt me-1"></i>Clear Cart &amp; Switch
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

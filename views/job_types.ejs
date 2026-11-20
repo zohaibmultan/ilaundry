@@ -9,16 +9,16 @@
     <%- include('templet/preloder_topbar_sidebar', { titel: accessdata?.topbardata?.name }) -%>
 
     <%
-        const safeTree = (typeof categoryTree !== 'undefined' && Array.isArray(categoryTree)) ? categoryTree : [];
-        const safeStats = (typeof stats !== 'undefined' && stats) ? stats : { total: 0, roots: 0, subcategories: 0, active: 0, inactive: 0 };
+        const safeTree = (typeof jobTypeTree !== 'undefined' && Array.isArray(jobTypeTree)) ? jobTypeTree : [];
+        const safeStats = (typeof stats !== 'undefined' && stats) ? stats : { total: 0, roots: 0, subtypes: 0, active: 0, inactive: 0 };
         const safePerms = (typeof perms !== 'undefined' && perms) ? perms : { canWrite: false, canEdit: false, canDelete: false };
         const safeIsMulty = Boolean(typeof ismulty !== 'undefined' && ismulty);
         const safeStoreList = (typeof storeList !== 'undefined' && Array.isArray(storeList)) ? storeList : [];
         const safeSelectedStore = (typeof selectedStoreId !== 'undefined' && selectedStoreId) ? String(selectedStoreId) : 'all';
         const safeAssignedStoreName = (typeof assignedStoreName !== 'undefined' && assignedStoreName) ? String(assignedStoreName) : '';
         const createBaseUrl = (safeIsMulty && safeSelectedStore !== 'all')
-            ? ('/order-categories/create?store_id=' + encodeURIComponent(safeSelectedStore))
-            : '/order-categories/create';
+            ? ('/job-types/create?store_id=' + encodeURIComponent(safeSelectedStore))
+            : '/job-types/create';
     %>
 
     <!--********** Content body start **********-->
@@ -33,7 +33,7 @@
                                 <h3 class="card-title mb-1 fw-bold d-flex align-items-center flex-wrap gap-2">
                                     <span>
                                         <i class="fa fa-sitemap text-primary me-2"></i>
-                                        <%= (typeof language !== 'undefined' && language.Order_Categories) ? language.Order_Categories : 'Order Categories' %>
+                                        <%= (typeof language !== 'undefined' && language.Job_Types) ? language.Job_Types : 'Job Types' %>
                                     </span>
                                     <% if (!safeIsMulty && safeAssignedStoreName) { %>
                                     <span class="badge bg-info-subtle text-info rounded-pill fs-12 fw-semibold">
@@ -41,13 +41,13 @@
                                     </span>
                                     <% } %>
                                 </h3>
-                                <small class="text-muted">Manage store-specific order categories and nested subcategories in a hierarchical tree view</small>
+                                <small class="text-muted">Manage store-specific job types and nested sub-types in a hierarchical tree view</small>
                             </div>
                             <div class="d-flex align-items-center gap-2 flex-wrap">
                                 <% if (safePerms.canWrite) { %>
                                 <a href="<%= createBaseUrl %>" class="btn btn-sm btn-primary d-inline-flex align-items-center shadow-sm">
                                     <i class="fa fa-plus me-2"></i>
-                                    <span>Add Order Category</span>
+                                    <span>Add Job Type</span>
                                 </a>
                                 <% } %>
                             </div>
@@ -56,30 +56,30 @@
                         <div class="card-body p-4">
                             <!-- KPI Summary Strip -->
                             <div class="d-flex flex-wrap gap-2 mb-4">
-                                <div class="oc-kpi-pill d-flex align-items-center gap-2">
+                                <div class="jt-kpi-pill d-flex align-items-center gap-2">
                                     <i class="fas fa-layer-group text-primary"></i>
                                     <span class="text-muted small">Total:</span>
-                                    <strong class="fs-6" id="ocStatTotal"><%= safeStats.total %></strong>
+                                    <strong class="fs-6" id="jtStatTotal"><%= safeStats.total %></strong>
                                 </div>
-                                <div class="oc-kpi-pill d-flex align-items-center gap-2">
+                                <div class="jt-kpi-pill d-flex align-items-center gap-2">
                                     <i class="fas fa-folder text-info"></i>
-                                    <span class="text-muted small">Categories:</span>
+                                    <span class="text-muted small">Job Types:</span>
                                     <strong class="fs-6"><%= safeStats.roots %></strong>
                                 </div>
-                                <div class="oc-kpi-pill d-flex align-items-center gap-2">
+                                <div class="jt-kpi-pill d-flex align-items-center gap-2">
                                     <i class="fas fa-code-branch text-secondary"></i>
-                                    <span class="text-muted small">Subcategories:</span>
-                                    <strong class="fs-6"><%= safeStats.subcategories %></strong>
+                                    <span class="text-muted small">Sub-Types:</span>
+                                    <strong class="fs-6"><%= safeStats.subtypes %></strong>
                                 </div>
-                                <div class="oc-kpi-pill d-flex align-items-center gap-2">
+                                <div class="jt-kpi-pill d-flex align-items-center gap-2">
                                     <i class="fas fa-check-circle text-success"></i>
                                     <span class="text-muted small">Active:</span>
-                                    <strong class="fs-6 text-success" id="ocStatActive"><%= safeStats.active %></strong>
+                                    <strong class="fs-6 text-success" id="jtStatActive"><%= safeStats.active %></strong>
                                 </div>
-                                <div class="oc-kpi-pill d-flex align-items-center gap-2">
+                                <div class="jt-kpi-pill d-flex align-items-center gap-2">
                                     <i class="fas fa-pause-circle text-danger"></i>
                                     <span class="text-muted small">Inactive:</span>
-                                    <strong class="fs-6 text-danger" id="ocStatInactive"><%= safeStats.inactive %></strong>
+                                    <strong class="fs-6 text-danger" id="jtStatInactive"><%= safeStats.inactive %></strong>
                                 </div>
                             </div>
 
@@ -88,12 +88,12 @@
                                 <div class="<%= safeIsMulty ? 'col-12 col-md-4 col-lg-4' : 'col-12 col-md-5 col-lg-5' %>">
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa fa-search text-muted"></i></span>
-                                        <input type="search" class="form-control" id="orderCatSearch" placeholder="Search categories or subcategories..." autocomplete="off">
+                                        <input type="search" class="form-control" id="jobTypeSearch" placeholder="Search job types or sub-types..." autocomplete="off">
                                     </div>
                                 </div>
                                 <% if (safeIsMulty) { %>
                                 <div class="col-6 col-md-3 col-lg-3">
-                                    <select class="form-select" id="orderCatStoreFilter" title="Filter by Store">
+                                    <select class="form-select" id="jobTypeStoreFilter" title="Filter by Store">
                                         <option value="all" <%= safeSelectedStore === 'all' ? 'selected' : '' %>>All Stores</option>
                                         <% safeStoreList.forEach(function(st) { %>
                                         <option value="<%= st.id %>" <%= safeSelectedStore === String(st.id) ? 'selected' : '' %>><%= st.name %></option>
@@ -102,7 +102,7 @@
                                 </div>
                                 <% } %>
                                 <div class="<%= safeIsMulty ? 'col-6 col-md-2 col-lg-2' : 'col-6 col-md-3 col-lg-3' %>">
-                                    <select class="form-select" id="orderCatStatusFilter">
+                                    <select class="form-select" id="jobTypeStatusFilter">
                                         <option value="all">All Status</option>
                                         <option value="active">Active</option>
                                         <option value="inactive">Inactive</option>
@@ -126,11 +126,11 @@
                                 <div class="mb-3">
                                     <i class="fa fa-sitemap fa-3x text-primary opacity-50"></i>
                                 </div>
-                                <h5 class="fw-bold mb-1">No Order Categories Yet</h5>
-                                <p class="text-muted small mb-3">Create your first order category to start building your category &amp; subcategory tree.</p>
+                                <h5 class="fw-bold mb-1">No Job Types Yet</h5>
+                                <p class="text-muted small mb-3">Create your first job type to start building your job type &amp; sub-type tree.</p>
                                 <% if (safePerms.canWrite) { %>
                                 <a href="<%= createBaseUrl %>" class="btn btn-sm btn-primary">
-                                    <i class="fa fa-plus me-2"></i>Create First Order Category
+                                    <i class="fa fa-plus me-2"></i>Create First Job Type
                                 </a>
                                 <% } %>
                             </div>
@@ -138,36 +138,36 @@
                             <%
                                 function renderTreeLevel(nodes, isRootLevel) {
                             %>
-                            <ul class="<%= isRootLevel ? 'oc-tree-list' : 'oc-tree-children' %>">
+                            <ul class="<%= isRootLevel ? 'jt-tree-list' : 'jt-tree-children' %>">
                                 <% nodes.forEach(function(node) {
                                     const hasChildren = Array.isArray(node.children) && node.children.length > 0;
                                     const isActive = node.status === 'active';
                                 %>
-                                <li class="oc-tree-item"
+                                <li class="jt-tree-item"
                                     data-id="<%= node.id %>"
                                     data-name="<%= (node.name || '').toLowerCase() %>"
                                     data-desc="<%= (node.description || '').toLowerCase() %>"
                                     data-status="<%= node.status %>">
-                                    <div class="oc-tree-row <%= node.depth === 0 ? 'oc-is-root' : '' %>">
+                                    <div class="jt-tree-row <%= node.depth === 0 ? 'jt-is-root' : '' %>">
                                         <!-- Left: Toggle + Thumbnail + Info -->
                                         <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
                                             <% if (hasChildren) { %>
-                                            <button type="button" class="oc-tree-toggle" aria-expanded="true" title="Expand / Collapse">
+                                            <button type="button" class="jt-tree-toggle" aria-expanded="true" title="Expand / Collapse">
                                                 <i class="fas fa-chevron-down"></i>
                                             </button>
                                             <% } else { %>
-                                            <span class="oc-tree-leaf-dot" aria-hidden="true">
+                                            <span class="jt-tree-leaf-dot" aria-hidden="true">
                                                 <i class="fas fa-circle"></i>
                                             </span>
                                             <% } %>
 
                                             <% if (node.image_url) { %>
-                                            <img src="<%= node.image_url %>" alt="<%= node.name %>" class="oc-tree-thumb" onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
-                                            <div class="oc-tree-thumb-fallback d-none">
+                                            <img src="<%= node.image_url %>" alt="<%= node.name %>" class="jt-tree-thumb" onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+                                            <div class="jt-tree-thumb-fallback d-none">
                                                 <i class="fas <%= node.depth === 0 ? 'fa-folder' : 'fa-tag' %>"></i>
                                             </div>
                                             <% } else { %>
-                                            <div class="oc-tree-thumb-fallback">
+                                            <div class="jt-tree-thumb-fallback">
                                                 <i class="fas <%= node.depth === 0 ? 'fa-folder' : 'fa-tag' %>"></i>
                                             </div>
                                             <% } %>
@@ -176,14 +176,21 @@
                                                 <div class="d-flex align-items-center flex-wrap gap-2">
                                                     <span class="fw-bold text-truncate"><%= node.name %></span>
                                                     <% if (node.depth === 0) { %>
-                                                    <span class="badge bg-primary-subtle text-primary rounded-pill">Category</span>
+                                                    <span class="badge bg-primary-subtle text-primary rounded-pill">Job Type</span>
                                                     <% } else { %>
-                                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill">Subcategory (L<%= node.depth %>)</span>
+                                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill">Sub-Type (L<%= node.depth %>)</span>
                                                     <% } %>
                                                     <% if (hasChildren) { %>
                                                     <span class="badge bg-info-subtle text-info rounded-pill">
                                                         <%= node.childCount %> <%= node.childCount === 1 ? 'child' : 'children' %>
                                                     </span>
+                                                    <% } %>
+                                                    <% if (node.pricedCount > 0) { %>
+                                                    <a href="/job-types/<%= node.id %>/prices"
+                                                       class="badge bg-success-subtle text-success rounded-pill text-decoration-none"
+                                                       title="View or edit item prices for <%= node.name %>">
+                                                        <i class="fa fa-tags me-1"></i><%= node.pricedCount %> <%= node.pricedCount === 1 ? 'item priced' : 'items priced' %>
+                                                    </a>
                                                     <% } %>
                                                     <% if (safeIsMulty && safeSelectedStore === 'all' && node.depth === 0 && node.store_name) { %>
                                                     <span class="badge bg-warning-subtle text-warning rounded-pill">
@@ -192,7 +199,7 @@
                                                     <% } %>
                                                 </div>
                                                 <% if (node.description) { %>
-                                                <div class="text-muted text-truncate oc-tree-desc mt-1" title="<%= node.description %>">
+                                                <div class="text-muted text-truncate jt-tree-desc mt-1" title="<%= node.description %>">
                                                     <%= node.description %>
                                                 </div>
                                                 <% } %>
@@ -204,7 +211,7 @@
                                             <div class="d-flex align-items-center gap-2">
                                                 <% if (safePerms.canEdit) { %>
                                                 <div class="form-check form-switch mb-0">
-                                                    <input class="form-check-input oc-status-toggle"
+                                                    <input class="form-check-input jt-status-toggle"
                                                            type="checkbox"
                                                            role="switch"
                                                            data-id="<%= node.id %>"
@@ -212,21 +219,28 @@
                                                            title="Toggle Active / Inactive">
                                                 </div>
                                                 <% } %>
-                                                <span class="badge-status-pill oc-status-badge <%= isActive ? 'status-completed' : 'status-cancelled' %>">
+                                                <span class="badge-status-pill jt-status-badge <%= isActive ? 'status-completed' : 'status-cancelled' %>">
                                                     <%= isActive ? 'Active' : 'Inactive' %>
                                                 </span>
                                             </div>
 
                                             <div class="server-dt-actions d-flex align-items-center gap-1">
+                                                <% if (safePerms.canEdit || safePerms.canWrite) { %>
+                                                <a href="/job-types/<%= node.id %>/prices"
+                                                   class="btn-dt-action btn-jt-price <%= node.pricedCount > 0 ? 'has-prices' : '' %>"
+                                                   title="Set Item & Price for <%= node.name %>">
+                                                    <i class="fa fa-dollar-sign"></i>
+                                                </a>
+                                                <% } %>
                                                 <% if (safePerms.canWrite) { %>
-                                                <a href="/order-categories/create?parent_id=<%= node.id %>"
+                                                <a href="/job-types/create?parent_id=<%= node.id %>"
                                                    class="btn-dt-action btn-view"
-                                                   title="Add Subcategory under <%= node.name %>">
+                                                   title="Add Sub-Type under <%= node.name %>">
                                                     <i class="fa fa-plus"></i>
                                                 </a>
                                                 <% } %>
                                                 <% if (safePerms.canEdit) { %>
-                                                <a href="/order-categories/edit/<%= node.id %>"
+                                                <a href="/job-types/edit/<%= node.id %>"
                                                    class="btn-dt-action btn-edit"
                                                    title="Edit <%= node.name %>">
                                                     <i class="fa fa-pen"></i>
@@ -234,9 +248,9 @@
                                                 <% } %>
                                                 <% if (safePerms.canDelete) { %>
                                                 <button type="button"
-                                                        class="btn-dt-action btn-delete btn-oc-delete"
+                                                        class="btn-dt-action btn-delete btn-jt-delete"
                                                         data-bs-toggle="modal"
-                                                        data-bs-target="#deleteOrderCategoryModal"
+                                                        data-bs-target="#deleteJobTypeModal"
                                                         data-id="<%= node.id %>"
                                                         data-name="<%= node.name %>"
                                                         data-descendants="<%= node.totalDescendantCount %>"
@@ -258,14 +272,14 @@
                                 }
                             %>
 
-                            <div id="orderCategoryTreeRoot">
+                            <div id="jobTypeTreeRoot">
                                 <% renderTreeLevel(safeTree, true); %>
                             </div>
 
                             <!-- Empty Filter State -->
-                            <div id="ocEmptyFilterState" class="text-center py-5 border rounded-3 d-none">
+                            <div id="jtEmptyFilterState" class="text-center py-5 border rounded-3 d-none">
                                 <i class="fas fa-search fa-2x text-muted mb-2 opacity-50"></i>
-                                <h6 class="fw-bold mb-1">No matching order categories found</h6>
+                                <h6 class="fw-bold mb-1">No matching job types found</h6>
                                 <p class="text-muted small mb-0">Try adjusting your search query or status filter.</p>
                             </div>
                             <% } %>
@@ -277,27 +291,27 @@
     </div>
     <!--********** Content body end **********-->
 
-    <!-- Destructive Confirmation Modal: Delete Order Category -->
-    <div class="modal fade" id="deleteOrderCategoryModal" tabindex="-1" aria-labelledby="deleteOrderCategoryModalLabel" aria-hidden="true">
+    <!-- Destructive Confirmation Modal: Delete Job Type -->
+    <div class="modal fade" id="deleteJobTypeModal" tabindex="-1" aria-labelledby="deleteJobTypeModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
-            <form method="post" action="" id="deleteOrderCategoryForm" class="modal-content border-0 shadow-lg rounded-3">
+            <form method="post" action="" id="deleteJobTypeForm" class="modal-content border-0 shadow-lg rounded-3">
                 <div class="modal-header border-bottom">
-                    <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="deleteOrderCategoryModalLabel">
+                    <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="deleteJobTypeModalLabel">
                         <span class="d-inline-flex align-items-center justify-content-center rounded-circle text-danger" style="width: 34px; height: 34px; background: rgba(239, 68, 68, 0.12);">
                             <i class="fas fa-exclamation-triangle"></i>
                         </span>
-                        <span>Delete Order Category</span>
+                        <span>Delete Job Type</span>
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
                     <p class="mb-2">
-                        Are you sure you want to permanently delete the order category
-                        <strong id="deleteOrderCategoryModalName"></strong>?
+                        Are you sure you want to permanently delete the job type
+                        <strong id="deleteJobTypeModalName"></strong>?
                     </p>
-                    <div id="deleteOrderCategoryCascadeAlert" class="alert alert-danger py-2 px-3 small mb-0 d-none">
+                    <div id="deleteJobTypeCascadeAlert" class="alert alert-danger py-2 px-3 small mb-0 d-none">
                         <i class="fas fa-exclamation-circle me-1"></i>
-                        <span id="deleteOrderCategoryCascadeText"></span>
+                        <span id="deleteJobTypeCascadeText"></span>
                     </div>
                 </div>
                 <div class="modal-footer border-top">
@@ -318,10 +332,10 @@
     <script>
         (function () {
             // 1. Expand / Collapse individual tree branches
-            $(document).on('click', '.oc-tree-toggle', function () {
+            $(document).on('click', '.jt-tree-toggle', function () {
                 const btn = $(this);
-                const item = btn.closest('.oc-tree-item');
-                const childrenList = item.children('.oc-tree-children');
+                const item = btn.closest('.jt-tree-item');
+                const childrenList = item.children('.jt-tree-children');
                 const isExpanded = btn.attr('aria-expanded') === 'true';
 
                 if (isExpanded) {
@@ -335,20 +349,20 @@
 
             // 2. Expand All / Collapse All buttons
             $('#btnExpandAllTree').on('click', function () {
-                $('#orderCategoryTreeRoot .oc-tree-children').removeClass('d-none');
-                $('#orderCategoryTreeRoot .oc-tree-toggle').attr('aria-expanded', 'true');
+                $('#jobTypeTreeRoot .jt-tree-children').removeClass('d-none');
+                $('#jobTypeTreeRoot .jt-tree-toggle').attr('aria-expanded', 'true');
             });
 
             $('#btnCollapseAllTree').on('click', function () {
-                $('#orderCategoryTreeRoot .oc-tree-children').addClass('d-none');
-                $('#orderCategoryTreeRoot .oc-tree-toggle').attr('aria-expanded', 'false');
+                $('#jobTypeTreeRoot .jt-tree-children').addClass('d-none');
+                $('#jobTypeTreeRoot .jt-tree-toggle').attr('aria-expanded', 'false');
             });
 
             // 3. Live Search & Status Filtering (preserves ancestor path)
             function applyTreeFilter() {
-                const query = ($('#orderCatSearch').val() || '').trim().toLowerCase();
-                const statusFilter = $('#orderCatStatusFilter').val() || 'all';
-                const rootList = $('#orderCategoryTreeRoot > .oc-tree-list');
+                const query = ($('#jobTypeSearch').val() || '').trim().toLowerCase();
+                const statusFilter = $('#jobTypeStatusFilter').val() || 'all';
+                const rootList = $('#jobTypeTreeRoot > .jt-tree-list');
                 if (!rootList.length) return;
 
                 let visibleRootCount = 0;
@@ -363,9 +377,9 @@
                     const selfMatches = matchesText && matchesStatus;
 
                     let anyChildVisible = false;
-                    const $childrenUl = $li.children('.oc-tree-children');
+                    const $childrenUl = $li.children('.jt-tree-children');
                     if ($childrenUl.length) {
-                        $childrenUl.children('.oc-tree-item').each(function () {
+                        $childrenUl.children('.jt-tree-item').each(function () {
                             if (filterNode($(this))) {
                                 anyChildVisible = true;
                             }
@@ -375,53 +389,53 @@
                     const shouldShow = selfMatches || anyChildVisible;
                     $li.toggleClass('d-none', !shouldShow);
 
-                    const $row = $li.children('.oc-tree-row');
-                    $row.toggleClass('oc-match-highlight', Boolean((query || statusFilter !== 'all') && selfMatches));
+                    const $row = $li.children('.jt-tree-row');
+                    $row.toggleClass('jt-match-highlight', Boolean((query || statusFilter !== 'all') && selfMatches));
 
                     if (anyChildVisible && (query || statusFilter !== 'all')) {
                         $childrenUl.removeClass('d-none');
-                        $row.find('.oc-tree-toggle').attr('aria-expanded', 'true');
+                        $row.find('.jt-tree-toggle').attr('aria-expanded', 'true');
                     }
 
                     return shouldShow;
                 }
 
-                rootList.children('.oc-tree-item').each(function () {
+                rootList.children('.jt-tree-item').each(function () {
                     if (filterNode($(this))) visibleRootCount++;
                 });
 
-                $('#ocEmptyFilterState').toggleClass('d-none', visibleRootCount > 0);
+                $('#jtEmptyFilterState').toggleClass('d-none', visibleRootCount > 0);
             }
 
             let filterTimer = null;
-            $('#orderCatSearch').on('input', function () {
+            $('#jobTypeSearch').on('input', function () {
                 clearTimeout(filterTimer);
                 filterTimer = setTimeout(applyTreeFilter, 180);
             });
-            $('#orderCatStatusFilter').on('change', applyTreeFilter);
+            $('#jobTypeStatusFilter').on('change', applyTreeFilter);
 
             // Store Filter Navigation (Master multi-store)
-            $('#orderCatStoreFilter').on('change', function () {
+            $('#jobTypeStoreFilter').on('change', function () {
                 const storeVal = $(this).val() || 'all';
                 if (storeVal === 'all') {
-                    window.location.href = '/order-categories';
+                    window.location.href = '/job-types';
                 } else {
-                    window.location.href = '/order-categories?store_id=' + encodeURIComponent(storeVal);
+                    window.location.href = '/job-types?store_id=' + encodeURIComponent(storeVal);
                 }
             });
 
             // 4. Inline Active/Inactive Status Switch (AJAX)
-            $(document).on('change', '.oc-status-toggle', function () {
+            $(document).on('change', '.jt-status-toggle', function () {
                 const checkbox = this;
                 const $cb = $(checkbox);
                 const id = $cb.attr('data-id');
                 const nextStatus = checkbox.checked ? 'active' : 'inactive';
-                const $item = $cb.closest('.oc-tree-item');
-                const $badge = $cb.closest('.oc-tree-row').find('.oc-status-badge');
+                const $item = $cb.closest('.jt-tree-item');
+                const $badge = $cb.closest('.jt-tree-row').find('.jt-status-badge');
 
                 $cb.prop('disabled', true);
 
-                fetch('/order-categories/status/' + encodeURIComponent(id), {
+                fetch('/job-types/status/' + encodeURIComponent(id), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ status: nextStatus })
@@ -438,13 +452,13 @@
                             .toggleClass('status-cancelled', !isAct);
 
                         // Recalculate KPI active/inactive counts from DOM
-                        const activeTotal = $('#orderCategoryTreeRoot .oc-tree-item[data-status="active"]').length;
-                        const inactiveTotal = $('#orderCategoryTreeRoot .oc-tree-item[data-status="inactive"]').length;
-                        $('#ocStatActive').text(activeTotal);
-                        $('#ocStatInactive').text(inactiveTotal);
+                        const activeTotal = $('#jobTypeTreeRoot .jt-tree-item[data-status="active"]').length;
+                        const inactiveTotal = $('#jobTypeTreeRoot .jt-tree-item[data-status="inactive"]').length;
+                        $('#jtStatActive').text(activeTotal);
+                        $('#jtStatInactive').text(inactiveTotal);
 
                         if (typeof toastr !== 'undefined') {
-                            toastr.success('Category status updated to ' + (isAct ? 'Active' : 'Inactive'));
+                            toastr.success('Job Type status updated to ' + (isAct ? 'Active' : 'Inactive'));
                         }
                         applyTreeFilter();
                     } else {
@@ -465,38 +479,38 @@
 
             // 5. Dual-Binding Delete Confirmation Modal + Form Guard (Rule I)
             function populateDeleteModal(triggerEl) {
-                const $btn = $(triggerEl).closest('.btn-oc-delete, [data-bs-toggle="modal"], button');
+                const $btn = $(triggerEl).closest('.btn-jt-delete, [data-bs-toggle="modal"], button');
                 const id = $btn.attr('data-id');
                 const name = $btn.attr('data-name') || ('#' + id);
                 const descendants = parseInt($btn.attr('data-descendants'), 10) || 0;
 
                 if (!id) return;
 
-                $('#deleteOrderCategoryForm').attr('action', '/order-categories/delete/' + encodeURIComponent(id));
-                $('#deleteOrderCategoryModalName').text(name);
+                $('#deleteJobTypeForm').attr('action', '/job-types/delete/' + encodeURIComponent(id));
+                $('#deleteJobTypeModalName').text(name);
 
                 if (descendants > 0) {
-                    const plural = descendants === 1 ? 'subcategory' : 'subcategories';
-                    $('#deleteOrderCategoryCascadeText').text(
+                    const plural = descendants === 1 ? 'sub-type' : 'sub-types';
+                    $('#deleteJobTypeCascadeText').text(
                         'Warning: This will also permanently delete ' + descendants + ' nested ' + plural + ' under "' + name + '".'
                     );
-                    $('#deleteOrderCategoryCascadeAlert').removeClass('d-none');
+                    $('#deleteJobTypeCascadeAlert').removeClass('d-none');
                 } else {
-                    $('#deleteOrderCategoryCascadeAlert').addClass('d-none');
+                    $('#deleteJobTypeCascadeAlert').addClass('d-none');
                 }
             }
 
-            $(document).on('click', '.btn-oc-delete', function () {
+            $(document).on('click', '.btn-jt-delete', function () {
                 populateDeleteModal(this);
             });
 
-            $('#deleteOrderCategoryModal').on('show.bs.modal', function (e) {
+            $('#deleteJobTypeModal').on('show.bs.modal', function (e) {
                 if (e.relatedTarget) {
                     populateDeleteModal(e.relatedTarget);
                 }
             });
 
-            $('#deleteOrderCategoryForm').on('submit', function (e) {
+            $('#deleteJobTypeForm').on('submit', function (e) {
                 const action = $(this).attr('action');
                 if (!action || action === '' || action.endsWith('/') || action.includes('undefined')) {
                     e.preventDefault();

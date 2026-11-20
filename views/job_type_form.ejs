@@ -10,15 +10,15 @@
 
     <%
         const isEditMode = (typeof mode !== 'undefined' && mode === 'edit');
-        const safeCat = (typeof category !== 'undefined' && category)
-            ? category
+        const safeJt = (typeof jobType !== 'undefined' && jobType)
+            ? jobType
             : { id: null, store_id: null, store_name: '', parent_id: null, name: '', description: '', image: '', image_url: '', status: 'active' };
         const safeParentOptions = (typeof parentOptions !== 'undefined' && Array.isArray(parentOptions)) ? parentOptions : [];
         const safeIsMulty = Boolean(typeof ismulty !== 'undefined' && ismulty);
         const safeStoreList = (typeof storeList !== 'undefined' && Array.isArray(storeList)) ? storeList : [];
         const formAction = isEditMode
-            ? ('/order-categories/edit/' + safeCat.id)
-            : '/order-categories/create';
+            ? ('/job-types/edit/' + safeJt.id)
+            : '/job-types/create';
     %>
 
     <!--********** Content body start **********-->
@@ -33,29 +33,29 @@
                                 <h3 class="card-title mb-1 fw-bold d-flex align-items-center flex-wrap gap-2">
                                     <span>
                                         <i class="fa <%= isEditMode ? 'fa-pen-to-square' : 'fa-plus-circle' %> text-primary me-2"></i>
-                                        <span><%= isEditMode ? 'Edit Order Category' : 'Add Order Category' %></span>
+                                        <span><%= isEditMode ? 'Edit Job Type' : 'Add Job Type' %></span>
                                     </span>
-                                    <% if (safeCat.store_name && (isEditMode || !safeIsMulty)) { %>
+                                    <% if (safeJt.store_name && (isEditMode || !safeIsMulty)) { %>
                                     <span class="badge bg-info-subtle text-info rounded-pill fs-12 fw-semibold">
-                                        <i class="fa fa-store me-1"></i><%= safeCat.store_name %>
+                                        <i class="fa fa-store me-1"></i><%= safeJt.store_name %>
                                     </span>
                                     <% } %>
                                 </h3>
                                 <small class="text-muted">
                                     <%= isEditMode
-                                        ? 'Update category details, parent placement, status, or image'
-                                        : 'Create a top-level order category or attach it under an existing parent category' %>
+                                        ? 'Update job type details, parent placement, status, or image'
+                                        : 'Create a top-level job type or attach it under an existing parent job type' %>
                                 </small>
                             </div>
-                            <a href="/order-categories" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center">
+                            <a href="/job-types" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center">
                                 <i class="fa fa-arrow-left me-2"></i>
                                 <span>Back to Tree List</span>
                             </a>
                         </div>
 
                         <div class="card-body p-4">
-                            <form action="<%= formAction %>" method="post" enctype="multipart/form-data" id="orderCategoryForm" class="needs-validation">
-                                <input type="hidden" name="remove_image" id="ocRemoveImageInput" value="0">
+                            <form action="<%= formAction %>" method="post" enctype="multipart/form-data" id="jobTypeForm" class="needs-validation">
+                                <input type="hidden" name="remove_image" id="jtRemoveImageInput" value="0">
 
                                 <div class="row g-4">
                                     <!-- Left Column: Core Details -->
@@ -64,72 +64,72 @@
                                             <% if (!isEditMode && safeIsMulty) { %>
                                             <!-- Store Selection (Master Multi-Store Only) -->
                                             <div class="col-12">
-                                                <label class="form-label fw-bold" for="ocStoreId">
+                                                <label class="form-label fw-bold" for="jtStoreId">
                                                     <i class="fa fa-store text-primary me-1"></i>
                                                     Store <span class="text-danger">*</span>
                                                 </label>
-                                                <select class="form-select" name="store_id" id="ocStoreId" required>
-                                                    <option value="" disabled <%= (!safeCat.store_id) ? 'selected' : '' %>>Select Store *</option>
+                                                <select class="form-select" name="store_id" id="jtStoreId" required>
+                                                    <option value="" disabled <%= (!safeJt.store_id) ? 'selected' : '' %>>Select Store *</option>
                                                     <% safeStoreList.forEach(function(st) { %>
-                                                    <option value="<%= st.id %>" <%= (safeCat.store_id && Number(safeCat.store_id) === Number(st.id)) ? 'selected' : '' %>>
+                                                    <option value="<%= st.id %>" <%= (safeJt.store_id && Number(safeJt.store_id) === Number(st.id)) ? 'selected' : '' %>>
                                                         <%= st.name %>
                                                     </option>
                                                     <% }); %>
                                                 </select>
                                                 <small class="text-muted d-block mt-1">
-                                                    Order categories are isolated per store. Selecting a store updates the available parent categories below.
+                                                    Job types are isolated per store. Selecting a store updates the available parent job types below.
                                                 </small>
                                             </div>
                                             <% } %>
 
-                                            <!-- Parent Order Category -->
+                                            <!-- Parent Job Type -->
                                             <div class="col-12">
-                                                <label class="form-label fw-bold" for="ocParentId">
+                                                <label class="form-label fw-bold" for="jtParentId">
                                                     <i class="fa fa-sitemap text-primary me-1"></i>
-                                                    Parent Order Category
+                                                    Parent Job Type
                                                     <span class="text-muted fw-normal small">(Optional)</span>
                                                 </label>
-                                                <select class="form-select" name="parent_id" id="ocParentId">
-                                                    <option value="" <%= (!safeCat.parent_id) ? 'selected' : '' %>>
-                                                        — None (Top-Level Category) —
+                                                <select class="form-select" name="parent_id" id="jtParentId">
+                                                    <option value="" <%= (!safeJt.parent_id) ? 'selected' : '' %>>
+                                                        — None (Top-Level Job Type) —
                                                     </option>
                                                     <% safeParentOptions.forEach(function(opt) { %>
-                                                    <option value="<%= opt.id %>" <%= (safeCat.parent_id && Number(safeCat.parent_id) === Number(opt.id)) ? 'selected' : '' %>>
+                                                    <option value="<%= opt.id %>" <%= (safeJt.parent_id && Number(safeJt.parent_id) === Number(opt.id)) ? 'selected' : '' %>>
                                                         <%= opt.label %><%= opt.status === 'inactive' ? ' [Inactive]' : '' %>
                                                     </option>
                                                     <% }); %>
                                                 </select>
                                                 <small class="text-muted d-block mt-1">
-                                                    Leave empty to create a root category, or choose a parent to nest this as a subcategory.
+                                                    Leave empty to create a root job type, or choose a parent to nest this as a sub-type.
                                                 </small>
                                             </div>
 
-                                            <!-- Category Name -->
+                                            <!-- Job Type Name -->
                                             <div class="col-12">
-                                                <label class="form-label fw-bold" for="ocName">
-                                                    Category Name <span class="text-danger">*</span>
+                                                <label class="form-label fw-bold" for="jtName">
+                                                    Job Type Name <span class="text-danger">*</span>
                                                 </label>
                                                 <input type="text"
                                                        class="form-control"
-                                                       id="ocName"
+                                                       id="jtName"
                                                        name="name"
-                                                       value="<%= safeCat.name %>"
+                                                       value="<%= safeJt.name %>"
                                                        maxlength="255"
-                                                       placeholder="e.g. Express Orders, Dry Cleaning, Alterations..."
+                                                       placeholder="e.g. DryClean, Laundry, Tailoring, Leather..."
                                                        required>
                                             </div>
 
                                             <!-- Description -->
                                             <div class="col-12">
-                                                <label class="form-label fw-bold" for="ocDescription">
+                                                <label class="form-label fw-bold" for="jtDescription">
                                                     Description
                                                     <span class="text-muted fw-normal small">(Optional)</span>
                                                 </label>
                                                 <textarea class="form-control"
-                                                          id="ocDescription"
+                                                          id="jtDescription"
                                                           name="description"
                                                           rows="4"
-                                                          placeholder="Enter a short description for this order category..."><%= safeCat.description %></textarea>
+                                                          placeholder="Enter a short description for this job type..."><%= safeJt.description %></textarea>
                                             </div>
 
                                             <!-- Status (Active / Inactive) -->
@@ -139,13 +139,13 @@
                                                 </label>
                                                 <div class="row g-2">
                                                     <div class="col-12 col-sm-6">
-                                                        <label class="oc-status-option-card d-flex align-items-center gap-2 w-100 mb-0" for="ocStatusActive">
+                                                        <label class="jt-status-option-card d-flex align-items-center gap-2 w-100 mb-0" for="jtStatusActive">
                                                             <input class="form-check-input mt-0"
                                                                    type="radio"
                                                                    name="status"
-                                                                   id="ocStatusActive"
+                                                                   id="jtStatusActive"
                                                                    value="active"
-                                                                   <%= (safeCat.status !== 'inactive') ? 'checked' : '' %>>
+                                                                   <%= (safeJt.status !== 'inactive') ? 'checked' : '' %>>
                                                             <div>
                                                                 <div class="fw-bold d-flex align-items-center gap-1">
                                                                     <i class="fas fa-check-circle text-success"></i>
@@ -156,13 +156,13 @@
                                                         </label>
                                                     </div>
                                                     <div class="col-12 col-sm-6">
-                                                        <label class="oc-status-option-card d-flex align-items-center gap-2 w-100 mb-0" for="ocStatusInactive">
+                                                        <label class="jt-status-option-card d-flex align-items-center gap-2 w-100 mb-0" for="jtStatusInactive">
                                                             <input class="form-check-input mt-0"
                                                                    type="radio"
                                                                    name="status"
-                                                                   id="ocStatusInactive"
+                                                                   id="jtStatusInactive"
                                                                    value="inactive"
-                                                                   <%= (safeCat.status === 'inactive') ? 'checked' : '' %>>
+                                                                   <%= (safeJt.status === 'inactive') ? 'checked' : '' %>>
                                                             <div>
                                                                 <div class="fw-bold d-flex align-items-center gap-1">
                                                                     <i class="fas fa-pause-circle text-danger"></i>
@@ -177,47 +177,47 @@
                                         </div>
                                     </div>
 
-                                    <!-- Right Column: Category Image -->
+                                    <!-- Right Column: Job Type Image -->
                                     <div class="col-12 col-lg-4">
                                         <label class="form-label fw-bold d-block mb-2">
                                             <i class="fa fa-image text-primary me-1"></i>
-                                            Category Image
+                                            Job Type Image
                                             <span class="text-muted fw-normal small">(Optional)</span>
                                         </label>
 
-                                        <div class="oc-preview-box p-3 mb-3 d-flex flex-column align-items-center justify-content-center text-center">
-                                            <div id="ocPlaceholderBox" class="<%= safeCat.image_url ? 'd-none' : '' %> py-3">
+                                        <div class="jt-preview-box p-3 mb-3 d-flex flex-column align-items-center justify-content-center text-center">
+                                            <div id="jtPlaceholderBox" class="<%= safeJt.image_url ? 'd-none' : '' %> py-3">
                                                 <i class="fa fa-image fa-3x text-primary opacity-50 mb-2 d-block"></i>
                                                 <div class="fw-semibold small">No Image Selected</div>
                                                 <div class="text-muted" style="font-size: 11.5px;">PNG, JPG, JPEG, WEBP (max 2MB)</div>
                                             </div>
-                                            <img id="ocImagePreview"
-                                                 src="<%= safeCat.image_url || '' %>"
-                                                 alt="Category Preview"
-                                                 class="oc-preview-img rounded-3 <%= safeCat.image_url ? '' : 'd-none' %>">
+                                            <img id="jtImagePreview"
+                                                 src="<%= safeJt.image_url || '' %>"
+                                                 alt="Job Type Preview"
+                                                 class="jt-preview-img rounded-3 <%= safeJt.image_url ? '' : 'd-none' %>">
                                         </div>
 
                                         <input type="file"
                                                class="d-none"
-                                               id="ocImageInput"
+                                               id="jtImageInput"
                                                name="image"
                                                accept="image/png,image/jpeg,image/jpg,image/webp">
 
                                         <div class="d-grid gap-2">
-                                            <label class="btn btn-outline-primary btn-sm fw-semibold mb-0" for="ocImageInput">
+                                            <label class="btn btn-outline-primary btn-sm fw-semibold mb-0" for="jtImageInput">
                                                 <i class="fa fa-upload me-1"></i>
-                                                <span><%= safeCat.image_url ? 'Change Image' : 'Upload Image' %></span>
+                                                <span><%= safeJt.image_url ? 'Change Image' : 'Upload Image' %></span>
                                             </label>
                                             <button type="button"
                                                     class="btn btn-outline-secondary btn-sm d-none"
-                                                    id="btnOcResetImage">
+                                                    id="btnJtResetImage">
                                                 <i class="fa fa-undo me-1"></i>
                                                 <span>Reset Selection</span>
                                             </button>
-                                            <% if (isEditMode && safeCat.image_url) { %>
+                                            <% if (isEditMode && safeJt.image_url) { %>
                                             <button type="button"
                                                     class="btn btn-outline-danger btn-sm"
-                                                    id="btnOcRemoveExisting">
+                                                    id="btnJtRemoveExisting">
                                                 <i class="fa fa-trash me-1"></i>
                                                 <span>Remove Current Image</span>
                                             </button>
@@ -228,13 +228,13 @@
 
                                 <!-- Form Footer Actions -->
                                 <div class="d-flex justify-content-end align-items-center gap-2 pt-4 mt-4 border-top">
-                                    <a href="/order-categories" class="btn btn-secondary px-3">
+                                    <a href="/job-types" class="btn btn-secondary px-3">
                                         <i class="fa fa-times me-1"></i>
                                         <span><%= (typeof language !== 'undefined' && language.Cancel) ? language.Cancel : 'Cancel' %></span>
                                     </a>
                                     <button type="submit" class="btn btn-primary px-4">
                                         <i class="fa fa-save me-2"></i>
-                                        <span><%= isEditMode ? 'Update Order Category' : 'Save Order Category' %></span>
+                                        <span><%= isEditMode ? 'Update Job Type' : 'Save Job Type' %></span>
                                     </button>
                                 </div>
                             </form>
@@ -250,13 +250,13 @@
 
     <script>
         (function () {
-            const originalImageUrl = "<%= safeCat.image_url || '' %>";
-            const fileInput = document.getElementById('ocImageInput');
-            const previewImg = document.getElementById('ocImagePreview');
-            const placeholderBox = document.getElementById('ocPlaceholderBox');
-            const resetBtn = document.getElementById('btnOcResetImage');
-            const removeExistingBtn = document.getElementById('btnOcRemoveExisting');
-            const removeInput = document.getElementById('ocRemoveImageInput');
+            const originalImageUrl = "<%= safeJt.image_url || '' %>";
+            const fileInput = document.getElementById('jtImageInput');
+            const previewImg = document.getElementById('jtImagePreview');
+            const placeholderBox = document.getElementById('jtPlaceholderBox');
+            const resetBtn = document.getElementById('btnJtResetImage');
+            const removeExistingBtn = document.getElementById('btnJtRemoveExisting');
+            const removeInput = document.getElementById('jtRemoveImageInput');
             let currentObjectUrl = null;
 
             if (fileInput) {
@@ -316,16 +316,16 @@
                 });
             }
 
-            // Refresh Parent Category options when Master changes Store
-            const storeSelect = document.getElementById('ocStoreId');
-            const parentSelect = document.getElementById('ocParentId');
+            // Refresh Parent Job Type options when Master changes Store
+            const storeSelect = document.getElementById('jtStoreId');
+            const parentSelect = document.getElementById('jtParentId');
             if (storeSelect && parentSelect) {
                 storeSelect.addEventListener('change', function () {
                     const storeId = storeSelect.value;
                     if (!storeId) return;
 
                     parentSelect.disabled = true;
-                    fetch('/order-categories/parents-by-store/' + encodeURIComponent(storeId), {
+                    fetch('/job-types/parents-by-store/' + encodeURIComponent(storeId), {
                         headers: { 'Accept': 'application/json' }
                     })
                     .then(function (res) { return res.json(); })
@@ -333,7 +333,7 @@
                         parentSelect.innerHTML = '';
                         const noneOpt = document.createElement('option');
                         noneOpt.value = '';
-                        noneOpt.textContent = '— None (Top-Level Category) —';
+                        noneOpt.textContent = '— None (Top-Level Job Type) —';
                         parentSelect.appendChild(noneOpt);
 
                         if (data && data.success && Array.isArray(data.options)) {
@@ -347,7 +347,7 @@
                         parentSelect.disabled = false;
                     })
                     .catch(function (err) {
-                        console.error('Error fetching store parent categories:', err);
+                        console.error('Error fetching store parent job types:', err);
                         parentSelect.disabled = false;
                     });
                 });

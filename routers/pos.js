@@ -201,6 +201,10 @@ async function getStoreScopedCustomers(storeId, includeWalkIn = true) {
   `);
 }
 
+router.get("/pos-2", auth, (req, res) => {
+  return res.redirect("/pos-2");
+});
+
 router.get("/pos", auth, async (req, res) => {
   try {
     const customer = await DataFind(
@@ -2210,6 +2214,7 @@ router.get("/clearcart", auth, async (req, res) => {
     payment_type = 0,
     balance = 0,
     notes = '',
+    job_type_id = NULL,
     tax = ${tax[0].tax_percent}
   `,
         `created_by='${loginas},${id}'`,
@@ -2315,9 +2320,10 @@ router.post("/void_order", auth, async (req, res) => {
     let combinedNote = `[VOID: ${safeReason}${safeNote ? (' - ' + safeNote) : ''}]`;
 
     // Persist this active cart as a VOID record in tbl_order
+    const voidJobTypeId = cartRow.job_type_id ? Number(cartRow.job_type_id) : null;
     await DataInsert(
       "tbl_order",
-      "order_id, order_type, order_date, ready_date, delivery_date, pickup_date, order_status, service_list, customer_id, store_id, created_by, addon_data, addon_price, sub_total, tax, coupon_id, coupon_discount, extra_discount, gross_total, paid_amount, balance_amount, payment_data, tax_amount, note, void_reason, voided_by, commission_status, stutus_change_date",
+      "order_id, order_type, order_date, ready_date, delivery_date, pickup_date, order_status, service_list, customer_id, store_id, created_by, addon_data, addon_price, sub_total, tax, coupon_id, coupon_discount, extra_discount, gross_total, paid_amount, balance_amount, payment_data, tax_amount, note, void_reason, voided_by, commission_status, stutus_change_date, job_type_id",
       `'${currentOrderId}',
        '${(cartRow.order_type || "Counter & Counter").replace(/'/g, "\\'")}',
        CURRENT_TIMESTAMP,
@@ -2345,7 +2351,8 @@ router.post("/void_order", auth, async (req, res) => {
        '${safeReason}',
        '${voidActor}',
        0,
-       CURRENT_TIMESTAMP`,
+       CURRENT_TIMESTAMP,
+       ${voidJobTypeId ? voidJobTypeId : "NULL"}`,
       req.hostname,
       req.protocol
     );
@@ -2385,7 +2392,8 @@ router.post("/void_order", auth, async (req, res) => {
        payment_type = 0,
        notes = '',
        customer_id = 0,
-       order_type = 'Counter • Counter'`,
+       order_type = 'Counter • Counter',
+       job_type_id = NULL`,
       `created_by = '${loginas},${id}'`,
       req.hostname,
       req.protocol
@@ -2450,7 +2458,8 @@ router.post("/new_order", auth, async (req, res) => {
        payment_type = 0,
        notes = '',
        customer_id = 0,
-       order_type = 'Counter • Counter'`,
+       order_type = 'Counter • Counter',
+       job_type_id = NULL`,
       `created_by = '${loginas},${id}'`,
       req.hostname,
       req.protocol
@@ -2579,11 +2588,12 @@ router.post("/save_draft_order", auth, async (req, res) => {
     const reference_number = req.body.reference_number || "";
 
     // Insert order with order_status = 8 (Draft)
+    const draftJobTypeId = cartRow.job_type_id ? Number(cartRow.job_type_id) : null;
     const order = await DataInsert(
       `tbl_order`,
-      `order_id,order_date,ready_date,delivery_date,pickup_date,order_type,order_status,service_list,customer_id,created_by,store_id,addon_data,addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission,commission_status,reference_number`,
+      `order_id,order_date,ready_date,delivery_date,pickup_date,order_type,order_status,service_list,customer_id,created_by,store_id,addon_data,addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission,commission_status,reference_number,job_type_id`,
       `'${orderid}',
-       '${order_fullDate}','${finalReadyDate}','${finalDeliveryDate}',${finalPickupDate ? `'${finalPickupDate}'` : 'NULL'},'${order_type.replace(/'/g, "\\'")}',8,'${serviceListId}','${customerId}','${cartRow.created_by}','${targetStoreId}','${cartRow.addon_id || '0'}',${cartAddon},${cartSub},'${cartRow.tax || 0}','${cartRow.coupon_id || 0}',${cartCoupon},${extraDiscount},${gross},${paid_amount},${balance},'0',${cartTaxAmt},'${note.replace(/'/g, "\\'")}',0,'1','${reference_number.replace(/'/g, "\\'")}'`,
+       '${order_fullDate}','${finalReadyDate}','${finalDeliveryDate}',${finalPickupDate ? `'${finalPickupDate}'` : 'NULL'},'${order_type.replace(/'/g, "\\'")}',8,'${serviceListId}','${customerId}','${cartRow.created_by}','${targetStoreId}','${cartRow.addon_id || '0'}',${cartAddon},${cartSub},'${cartRow.tax || 0}','${cartRow.coupon_id || 0}',${cartCoupon},${extraDiscount},${gross},${paid_amount},${balance},'0',${cartTaxAmt},'${note.replace(/'/g, "\\'")}',0,'1','${reference_number.replace(/'/g, "\\'")}',${draftJobTypeId ? draftJobTypeId : 'NULL'}`,
       req.hostname,
       req.protocol
     );
@@ -2619,7 +2629,8 @@ router.post("/save_draft_order", auth, async (req, res) => {
        payment_type = 0,
        notes = '',
        customer_id = 0,
-       order_type = 'Counter • Counter'`,
+       order_type = 'Counter • Counter',
+       job_type_id = NULL`,
       `created_by = '${loginas},${id}'`,
       req.hostname,
       req.protocol
@@ -5237,10 +5248,11 @@ router.post("/order", auth, async (req, res) => {
 
     const serviceListVal = (cart[0].service_list_id && String(cart[0].service_list_id).trim() !== '0') ? cart[0].service_list_id : '';
 
+    const orderJobTypeId = cart[0].job_type_id ? Number(cart[0].job_type_id) : null;
     const order = await DataInsert(
       `tbl_order`,
       `order_id,order_date,ready_date,delivery_date,pickup_date,order_type,order_status,service_list,customer_id,created_by,store_id,addon_data,
-        addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission, commission_status,reference_number`,
+        addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission, commission_status,reference_number,job_type_id`,
       `'${orderid}',
         '${order_fullDate}','${finalReadyDate}','${finalDeliveryDate}',${finalPickupDate ? `'${finalPickupDate}'` : 'NULL'},'${order_type.replace(/'/g, "\\'")}',${1},'${
           serviceListVal
@@ -5252,7 +5264,7 @@ router.post("/order", auth, async (req, res) => {
         }',${
           cart[0].coupon_discount || 0
         },${extradiscount},${gross},${paid_amount},${balance},
-        '${0}',${cart[0].tax_amount || 0},'${note}',${comi_amount},'1','${reference_number || ""}'`,
+        '${0}',${cart[0].tax_amount || 0},'${note}',${comi_amount},'1','${reference_number || ""}',${orderJobTypeId ? orderJobTypeId : 'NULL'}`,
       req.hostname,
       req.protocol,
     );
@@ -5420,6 +5432,7 @@ router.post("/order", auth, async (req, res) => {
    customer_id = '0',
    balance = 0,
    notes = '',
+   job_type_id = NULL,
    tax = ${tax[0].tax_percent}`,
       `created_by = '${loginas},${id}'`,
       req.hostname,
@@ -5644,10 +5657,11 @@ router.post("/save_order", auth, async (req, res) => {
         ? formatMySQLDateTime(cart[0].pickup_date)
         : (isRoutePickup ? `${order_fullDate} 10:00:00` : null);
 
+    const saveOrderJobTypeId = cart[0].job_type_id ? Number(cart[0].job_type_id) : null;
     const order = await DataInsert(
       `tbl_order`,
       `order_id,order_date,ready_date,delivery_date,pickup_date,order_type,order_status,service_list,customer_id,created_by,store_id,addon_data,
-        addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission,commission_status,reference_number`,
+        addon_price,sub_total,tax,coupon_id,coupon_discount,extra_discount,gross_total,paid_amount,balance_amount,payment_data,tax_amount,note,master_comission,commission_status,reference_number,job_type_id`,
       `'${orderid}',
         '${order_fullDate}','${finalReadyDate}','${finalDeliveryDate}',${finalPickupDate ? `'${finalPickupDate}'` : 'NULL'},'${order_type.replace(/'/g, "\\'")}',${1},'${
           serviceListId
@@ -5659,7 +5673,7 @@ router.post("/save_order", auth, async (req, res) => {
         }',${
           cartCoupon
         },${extradiscount},${gross},${paid_amount},${balance},
-        '${0}',${cartTaxAmt},'${(note || "").replace(/'/g, "\\'")}',${comi_amount},'1','${(reference_number || "").replace(/'/g, "\\'")}'`,
+        '${0}',${cartTaxAmt},'${(note || "").replace(/'/g, "\\'")}',${comi_amount},'1','${(reference_number || "").replace(/'/g, "\\'")}',${saveOrderJobTypeId ? saveOrderJobTypeId : 'NULL'}`,
       req.hostname,
       req.protocol,
     );
@@ -5783,6 +5797,7 @@ router.post("/save_order", auth, async (req, res) => {
    customer_id = '0',
    balance = 0,
    notes = '',
+   job_type_id = NULL,
    tax = ${(tax && tax.length > 0 && tax[0].tax_percent) ? tax[0].tax_percent : 0}`,
       `created_by = '${loginas},${id}'`,
       req.hostname,
@@ -6053,6 +6068,9 @@ const renderPosPrint = async (req, res) => {
     const customerPreference = await resolveCustomerCommunicationPreference(orderdata[0].customer_id).catch(() => null);
     const communicationLogs = await getOrderCommunicationLogs(orderdata[0].id).catch(() => []);
 
+    const rawReturnTo = req.query.return_to ? String(req.query.return_to).trim() : "";
+    const returnPosUrl = rawReturnTo === "/pos-2" ? "/pos-2" : "/admin/pos";
+
     res.render("posprint", {
       cartservice,
       shope: shope && shope.length > 0 ? shope[0] : {},
@@ -6072,6 +6090,7 @@ const renderPosPrint = async (req, res) => {
       oate2,
       accessdata,
       invoice_logo_base64,
+      returnPosUrl,
     });
 
   } catch (error) {

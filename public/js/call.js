@@ -1031,6 +1031,7 @@
    });
 
    $('body').on("change", "#pos_store_id", async function () {
+      if ($('#is_pos2').val() === '1') return;
 
 
       await clearcart();
@@ -1343,6 +1344,7 @@
    });
 
    $(document).on("click", ".pos-service-item, .services, #POS_service, [data-bs-target='#service_type_model']", function (e) {
+      if ($('#is_pos2').val() === '1') return;
       let $item = $(this).closest('.pos-service-item, .services, [data-id]');
       let id = $item.attr('data-id') || $(this).attr('data-id');
       if (!id) return;
@@ -1579,6 +1581,7 @@
          '</td>' +
          '</tr>';
    }
+   window.renderPosCartRowHTML = renderCartRowHTML;
 
    $(document).ready(function () {
       var baseUrl = window.location.origin;
@@ -2382,7 +2385,7 @@
                   if (isEdit === '1') {
                      window.location.href = '/order';
                   } else {
-                     window.location.href = '/admin/pos';
+                     window.location.href = $('#pos_base_url').val() || '/admin/pos';
                   }
                }, 600);
             } else {
@@ -2430,6 +2433,7 @@
    });
 
    function executeStartNewOrder() {
+      var targetPosUrl = $('#pos_base_url').val() || '/admin/pos';
       $.ajax({
          type: 'POST',
          url: window.location.origin + '/admin/new_order',
@@ -2440,12 +2444,12 @@
                   toastr.info('Started New Order #' + (res.new_order_id || ''), 'New Order');
                }
                setTimeout(function () {
-                  window.location.href = '/admin/pos';
+                  window.location.href = targetPosUrl;
                }, 300);
             }
          },
          error: function () {
-            window.location.href = '/admin/pos';
+            window.location.href = targetPosUrl;
          }
       });
    }
@@ -2494,7 +2498,7 @@
                   toastr.success(res.message || ('Draft order #' + res.order_id + ' saved successfully!'));
                }
                setTimeout(function () {
-                  window.location.href = '/admin/pos';
+                  window.location.href = $('#pos_base_url').val() || '/admin/pos';
                }, 400);
             } else {
                $btn.prop('disabled', false).html('<i class="fa fa-save me-1"></i><span>Save Draft</span>');
@@ -2581,7 +2585,8 @@
                   toastr.success(res.message || ('Order #' + res.order_id + ' placed successfully!'));
                }
                setTimeout(function () {
-                  window.location.href = '/admin/posprint?id=' + encodeURIComponent(res.id || res.order_id);
+                  var printReturnParam = $('#is_pos2').val() === '1' ? '&return_to=%2Fpos-2' : '';
+                  window.location.href = '/admin/posprint?id=' + encodeURIComponent(res.id || res.order_id) + printReturnParam;
                }, 300);
             } else {
                $btn.prop('disabled', false).html('<i class="fa fa-print me-1"></i><span>Print</span>');
@@ -5657,6 +5662,7 @@
 
    }
 
+   window.poscurrency = poscurrency;
    function poscurrency() {
       if ($('#POS_addon_total').length && $('#POS_addon_total_input').length) {
          var rawAddonTxt = String($('#POS_addon_total').text() || '').replace(/[^0-9.-]/g, '');

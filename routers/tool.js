@@ -1119,7 +1119,13 @@ router.get("/deletestore/:id", auth, async (req, res) => {
       req.protocol,
     );
     await DataDelete(
-      "tbl_order_categories",
+      "tbl_job_item_prices",
+      `store_id = '${storeId}'`,
+      req.hostname,
+      req.protocol,
+    ).catch(() => {});
+    await DataDelete(
+      "tbl_job_types",
       `store_id = '${storeId}'`,
       req.hostname,
       req.protocol,

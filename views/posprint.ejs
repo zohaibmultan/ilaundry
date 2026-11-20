@@ -2141,7 +2141,10 @@
     }
 
     function cancelAndBack() {
-      if (document.referrer && (document.referrer.indexOf("/admin/") !== -1 || document.referrer.indexOf("/order/") !== -1)) {
+      const explicitReturn = "<%= (typeof returnPosUrl !== 'undefined' && returnPosUrl) ? returnPosUrl : '' %>";
+      if (explicitReturn) {
+        window.location.href = explicitReturn;
+      } else if (document.referrer && (document.referrer.indexOf("/pos-2") !== -1 || document.referrer.indexOf("/admin/") !== -1 || document.referrer.indexOf("/order/") !== -1)) {
         window.location.href = document.referrer;
       } else if (window.history.length > 1) {
         window.history.back();

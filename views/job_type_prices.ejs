@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <%- include('templet/meta') -%>
+</head>
+
+<body>
+    <%- include('templet/preloder_topbar_sidebar', { titel: accessdata?.topbardata?.name }) -%>
+
+    <%
+        const safeJt = (typeof jobType !== 'undefined' && jobType)
+            ? jobType
+            : { id: 0, store_id: 0, store_name: '', name: '', description: '', status: 'active' };
+        const safeBreadcrumb = (typeof breadcrumb !== 'undefined' && Array.isArray(breadcrumb)) ? breadcrumb : [];
+        const safeItems = (typeof items !== 'undefined' && Array.isArray(items)) ? items : [];
+        const safeStats = (typeof stats !== 'undefined' && stats) ? stats : { total: 0, priced: 0, unpriced: 0 };
+        const safeCurrency = (typeof currencySymbol !== 'undefined' && currencySymbol) ? String(currencySymbol) : '$';
+        const safeCurrencyPlacement = (typeof currencyPlacement !== 'undefined') ? Number(currencyPlacement) : 0;
+        const safeCanSave = Boolean(typeof canSave !== 'undefined' && canSave);
+        const safeBackUrl = (typeof backUrl !== 'undefined' && backUrl) ? String(backUrl) : '/job-types';
+    %>
+
+    <!--********** Content body start **********-->
+    <div class="content-body">
+        <div class="container-fluid min-vh-100 pb-5 mb-5 jt-prices-container">
+            <form method="post" action="/job-types/<%= safeJt.id %>/prices" id="jobTypePricesForm">
+                <input type="hidden" name="prices_payload" id="jtPricesPayload" value="{}">
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm rounded-3 mb-4">
+                            <!-- Page Header -->
+                            <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <h3 class="card-title mb-1 fw-bold d-flex align-items-center flex-wrap gap-2">
+                                        <span>
+                                            <i class="fa fa-tags text-primary me-2"></i>
+                                            <span>Set Item &amp; Price</span>
+                                        </span>
+                                        <% if (safeJt.store_name) { %>
+                                        <span class="badge bg-info-subtle text-info rounded-pill fs-12 fw-semibold">
+                                            <i class="fa fa-store me-1"></i><%= safeJt.store_name %>
+                                        </span>
+                                        <% } %>
+                                    </h3>
+
+                                    <div class="d-flex align-items-center flex-wrap gap-1 small text-muted mt-1">
+                                        <span class="fw-semibold text-body">Job Type:</span>
+                                        <% if (safeBreadcrumb.length > 0) { %>
+                                            <% safeBreadcrumb.forEach(function(crumb, idx) { %>
+                                                <% if (idx > 0) { %>
+                                                <i class="fas fa-chevron-right mx-1 opacity-50" style="font-size: 10px;"></i>
+                                                <% } %>
+                                                <span class="<%= idx === safeBreadcrumb.length - 1 ? 'fw-bold text-primary' : '' %>"><%= crumb.name %></span>
+                                            <% }); %>
+                                        <% } else { %>
+                                            <span class="fw-bold text-primary"><%= safeJt.name %></span>
+                                        <% } %>
+                                        <span class="mx-2 opacity-50">|</span>
+                                        <span>Enter prices for applicable service items. Items left at 0 will not be saved.</span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <a href="<%= safeBackUrl %>" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center">
+                                        <i class="fa fa-arrow-left me-2"></i>
+                                        <span>Back to Tree</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="card-body p-4">
+                                <!-- KPI Summary Strip -->
+                                <div class="d-flex flex-wrap gap-2 mb-4">
+                                    <div class="jt-kpi-pill d-flex align-items-center gap-2">
+                                        <i class="fas fa-boxes text-primary"></i>
+                                        <span class="text-muted small">Total Services:</span>
+                                        <strong class="fs-6" id="jtPriceStatTotal"><%= safeStats.total %></strong>
+                                    </div>
+                                    <div class="jt-kpi-pill d-flex align-items-center gap-2">
+                                        <i class="fas fa-check-circle text-success"></i>
+                                        <span class="text-muted small">Priced (&gt; 0):</span>
+                                        <strong class="fs-6 text-success" id="jtPriceStatPriced"><%= safeStats.priced %></strong>
+                                    </div>
+                                    <div class="jt-kpi-pill d-flex align-items-center gap-2">
+                                        <i class="fas fa-minus-circle text-secondary"></i>
+                                        <span class="text-muted small">Unpriced (0):</span>
+                                        <strong class="fs-6 text-muted" id="jtPriceStatUnpriced"><%= safeStats.unpriced %></strong>
+                                    </div>
+                                </div>
+
+                                <!-- Search & Filter Toolbar -->
+                                <div class="row g-2 mb-4 align-items-center">
+                                    <div class="col-12 col-md-5 col-lg-5">
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fa fa-search text-muted"></i></span>
+                                            <input type="search"
+                                                   class="form-control"
+                                                   id="jtPriceSearch"
+                                                   placeholder="Search service items by name or code..."
+                                                   autocomplete="off">
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-7 col-lg-7 d-flex justify-content-md-end flex-wrap gap-2">
+                                        <div class="btn-group btn-group-sm" role="group" aria-label="Filter items by price status">
+                                            <button type="button" class="btn btn-outline-secondary jt-price-filter-btn active" data-filter="all">
+                                                All (<span id="jtFilterCountAll"><%= safeStats.total %></span>)
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary jt-price-filter-btn" data-filter="priced">
+                                                Priced Only (<span id="jtFilterCountPriced"><%= safeStats.priced %></span>)
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary jt-price-filter-btn" data-filter="unpriced">
+                                                Unpriced Only (<span id="jtFilterCountUnpriced"><%= safeStats.unpriced %></span>)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Service Items Pricing Table -->
+                                <% if (safeItems.length === 0) { %>
+                                <div class="text-center py-5 border rounded-3">
+                                    <div class="mb-3">
+                                        <i class="fa fa-box-open fa-3x text-primary opacity-50"></i>
+                                    </div>
+                                    <h5 class="fw-bold mb-1">No Active Service Items Found</h5>
+                                    <p class="text-muted small mb-0">Add active services for this store first before configuring job type item prices.</p>
+                                </div>
+                                <% } else { %>
+                                <div class="table-responsive">
+                                    <table class="table align-middle mb-0 jt-price-table" id="jtPriceTable">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-muted small text-uppercase" style="width: 56px;">#</th>
+                                                <th class="text-muted small text-uppercase">Service Item</th>
+                                                <th class="text-muted small text-uppercase" style="width: 150px;">Save Status</th>
+                                                <th class="text-muted small text-uppercase text-end" style="width: 240px;">Price (<%= safeCurrency %>)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% safeItems.forEach(function(item, idx) { %>
+                                            <tr class="jt-price-row <%= item.isPriced ? 'jt-price-row-active' : '' %>"
+                                                data-service-id="<%= item.id %>"
+                                                data-name="<%= (item.name || '').toLowerCase() %>"
+                                                data-code="<%= (item.item_code || '').toLowerCase() %>"
+                                                data-priced="<%= item.isPriced ? '1' : '0' %>">
+                                                <td class="text-muted small fw-semibold"><%= idx + 1 %></td>
+                                                <td>
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <% if (item.image_url) { %>
+                                                        <img src="<%= item.image_url %>"
+                                                             alt="<%= item.name %>"
+                                                             class="jt-tree-thumb"
+                                                             loading="lazy"
+                                                             onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+                                                        <div class="jt-tree-thumb-fallback d-none">
+                                                            <i class="fas fa-tshirt"></i>
+                                                        </div>
+                                                        <% } else { %>
+                                                        <div class="jt-tree-thumb-fallback">
+                                                            <i class="fas fa-tshirt"></i>
+                                                        </div>
+                                                        <% } %>
+                                                        <div class="min-w-0">
+                                                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                                                <span class="fw-bold"><%= item.name %></span>
+                                                                <% if (item.no_of_items > 1) { %>
+                                                                <span class="badge bg-info-subtle text-info rounded-pill"><%= item.no_of_items %> Pcs</span>
+                                                                <% } %>
+                                                                <% if (item.item_code) { %>
+                                                                <span class="badge bg-secondary-subtle text-secondary rounded-pill"><%= item.item_code %></span>
+                                                                <% } %>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge-status-pill jt-item-status-pill <%= item.isPriced ? 'status-active' : 'status-cancelled' %>">
+                                                        <%= item.isPriced ? 'Priced' : 'Not Saved (0)' %>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center justify-content-end gap-2">
+                                                        <div class="input-group input-group-sm jt-price-input-group">
+                                                            <% if (safeCurrencyPlacement !== 1) { %>
+                                                            <span class="input-group-text fw-bold"><%= safeCurrency %></span>
+                                                            <% } %>
+                                                            <input type="number"
+                                                                   class="form-control text-end fw-semibold jt-price-input"
+                                                                   data-service-id="<%= item.id %>"
+                                                                   data-initial="<%= item.price %>"
+                                                                   value="<%= item.price %>"
+                                                                   min="0"
+                                                                   step="0.01"
+                                                                   inputmode="decimal"
+                                                                   aria-label="Price for <%= item.name %>"
+                                                                   <%= safeCanSave ? '' : 'disabled' %>>
+                                                            <% if (safeCurrencyPlacement === 1) { %>
+                                                            <span class="input-group-text fw-bold"><%= safeCurrency %></span>
+                                                            <% } %>
+                                                            <% if (safeCanSave) { %>
+                                                            <button type="button"
+                                                                    class="btn btn-outline-secondary btn-jt-clear-price <%= item.isPriced ? '' : 'd-none' %>"
+                                                                    title="Reset to 0.00"
+                                                                    tabindex="-1">
+                                                                <i class="fa fa-times"></i>
+                                                            </button>
+                                                            <% } %>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <% }); %>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Empty Filter State -->
+                                <div id="jtPriceEmptyFilter" class="text-center py-5 border rounded-3 mt-3 d-none">
+                                    <i class="fas fa-search fa-2x text-muted mb-2 opacity-50"></i>
+                                    <h6 class="fw-bold mb-1">No matching service items found</h6>
+                                    <p class="text-muted small mb-0">Try clearing your search query or switching the filter tab.</p>
+                                </div>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sticky Save Footer (Rule O) -->
+                <% if (safeItems.length > 0) { %>
+                <div class="settings-sticky-footer flex-wrap gap-2">
+                    <div class="d-flex align-items-center flex-wrap gap-2 small">
+                        <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2 fw-semibold">
+                            <i class="fa fa-check-circle me-1"></i>
+                            <span id="jtFooterPricedCount"><%= safeStats.priced %></span> items will be saved
+                        </span>
+                        <span class="text-muted">
+                            (<span id="jtFooterUnpricedCount"><%= safeStats.unpriced %></span> zero-priced items excluded)
+                        </span>
+                        <span id="jtUnsavedBadge" class="badge bg-warning-subtle text-warning rounded-pill d-none">
+                            <i class="fa fa-circle me-1" style="font-size: 7px;"></i>Unsaved changes
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="<%= safeBackUrl %>" class="btn btn-sm btn-outline-secondary px-3">
+                            <i class="fa fa-arrow-left me-1"></i>
+                            <span>Back to Tree</span>
+                        </a>
+                        <% if (safeCanSave) { %>
+                        <button type="submit" class="btn btn-sm btn-primary px-4 fw-semibold shadow-sm" id="btnSaveJobPrices">
+                            <i class="fa fa-save me-2"></i>
+                            <span>Save Prices</span>
+                        </button>
+                        <% } %>
+                    </div>
+                </div>
+                <% } %>
+            </form>
+        </div>
+    </div>
+    <!--********** Content body end **********-->
+
+    <%- include('templet/script') -%>
+
+    <script>
+        (function () {
+            const $form = $('#jobTypePricesForm');
+            const $table = $('#jtPriceTable');
+            if (!$table.length) return;
+
+            let activeFilter = 'all';
+
+            function parseAmount(rawVal) {
+                if (rawVal === undefined || rawVal === null) return 0;
+                const str = String(rawVal).trim();
+                if (!str) return 0;
+                const n = Number(str);
+                if (!Number.isFinite(n) || n <= 0) return 0;
+                return Math.round(n * 100) / 100;
+            }
+
+            function updateRowState($input) {
+                const $row = $input.closest('.jt-price-row');
+                const val = parseAmount($input.val());
+                const isPriced = val > 0;
+
+                $row.attr('data-priced', isPriced ? '1' : '0');
+                $row.toggleClass('jt-price-row-active', isPriced);
+
+                const $pill = $row.find('.jt-item-status-pill');
+                $pill
+                    .text(isPriced ? 'Priced' : 'Not Saved (0)')
+                    .toggleClass('status-active', isPriced)
+                    .toggleClass('status-cancelled', !isPriced);
+
+                $row.find('.btn-jt-clear-price').toggleClass('d-none', !isPriced);
+            }
+
+            function recalculateSummary() {
+                let total = 0;
+                let priced = 0;
+                let hasChanges = false;
+
+                $table.find('.jt-price-input').each(function () {
+                    total++;
+                    const current = parseAmount($(this).val());
+                    const initial = parseAmount($(this).attr('data-initial'));
+                    if (current > 0) priced++;
+                    if (current !== initial) hasChanges = true;
+                });
+
+                const unpriced = Math.max(0, total - priced);
+                $('#jtPriceStatTotal').text(total);
+                $('#jtPriceStatPriced').text(priced);
+                $('#jtPriceStatUnpriced').text(unpriced);
+                $('#jtFilterCountAll').text(total);
+                $('#jtFilterCountPriced').text(priced);
+                $('#jtFilterCountUnpriced').text(unpriced);
+                $('#jtFooterPricedCount').text(priced);
+                $('#jtFooterUnpricedCount').text(unpriced);
+                $('#jtUnsavedBadge').toggleClass('d-none', !hasChanges);
+            }
+
+            function applyFilters() {
+                const query = ($('#jtPriceSearch').val() || '').trim().toLowerCase();
+                let visibleCount = 0;
+
+                $table.find('tbody .jt-price-row').each(function () {
+                    const $row = $(this);
+                    const name = String($row.attr('data-name') || '');
+                    const code = String($row.attr('data-code') || '');
+                    const isPriced = $row.attr('data-priced') === '1';
+
+                    const matchesQuery = !query || name.includes(query) || code.includes(query);
+                    const matchesTab =
+                        activeFilter === 'all' ||
+                        (activeFilter === 'priced' && isPriced) ||
+                        (activeFilter === 'unpriced' && !isPriced);
+
+                    const show = matchesQuery && matchesTab;
+                    $row.toggleClass('d-none', !show);
+                    if (show) visibleCount++;
+                });
+
+                $('#jtPriceEmptyFilter').toggleClass('d-none', visibleCount > 0);
+            }
+
+            // Input focus: select text for quick typing
+            $table.on('focus', '.jt-price-input', function () {
+                this.select();
+            });
+
+            // Live input update
+            $table.on('input', '.jt-price-input', function () {
+                updateRowState($(this));
+                recalculateSummary();
+            });
+
+            // Normalize formatting on blur (clamps negative / empty to 0.00)
+            $table.on('blur', '.jt-price-input', function () {
+                const amt = parseAmount($(this).val());
+                $(this).val(amt.toFixed(2));
+                updateRowState($(this));
+                recalculateSummary();
+                if (activeFilter !== 'all') applyFilters();
+            });
+
+            // Press Enter to jump cleanly to the next visible price box
+            $table.on('keydown', '.jt-price-input', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const visibleInputs = $table.find('tbody .jt-price-row:not(.d-none) .jt-price-input:not(:disabled)');
+                    const idx = visibleInputs.index(this);
+                    if (idx >= 0 && idx + 1 < visibleInputs.length) {
+                        visibleInputs.eq(idx + 1).focus();
+                    } else {
+                        $(this).blur();
+                    }
+                }
+            });
+
+            // Quick clear button (reset row price to 0.00)
+            $table.on('click', '.btn-jt-clear-price', function () {
+                const $input = $(this).closest('.jt-price-input-group').find('.jt-price-input');
+                $input.val('0.00');
+                updateRowState($input);
+                recalculateSummary();
+                if (activeFilter !== 'all') applyFilters();
+            });
+
+            // Debounced search
+            let searchTimer = null;
+            $('#jtPriceSearch').on('input', function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(applyFilters, 180);
+            });
+
+            // Filter tab buttons
+            $('.jt-price-filter-btn').on('click', function () {
+                $('.jt-price-filter-btn').removeClass('active');
+                $(this).addClass('active');
+                activeFilter = $(this).attr('data-filter') || 'all';
+                applyFilters();
+            });
+
+            // Serialize all rows into JSON payload on submit (including filtered-out rows)
+            $form.on('submit', function () {
+                const payload = {};
+                $table.find('.jt-price-input').each(function () {
+                    const sid = $(this).attr('data-service-id');
+                    if (!sid) return;
+                    const amt = parseAmount($(this).val());
+                    payload[sid] = amt > 0 ? amt.toFixed(2) : '0';
+                });
+                $('#jtPricesPayload').val(JSON.stringify(payload));
+
+                const $btn = $('#btnSaveJobPrices');
+                $btn.prop('disabled', true);
+                $btn.find('span').text('Saving...');
+            });
+        })();
+    </script>
+</body>
+
+</html>
