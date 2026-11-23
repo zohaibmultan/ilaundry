@@ -103,7 +103,7 @@
                                         </div>
                                     </div>
                                     <div class="col-12 col-md-7 col-lg-7 d-flex justify-content-md-end flex-wrap gap-2">
-                                        <div class="btn-group btn-group-sm" role="group" aria-label="Filter items by price status">
+                                        <div class="btn-group btn-group-sm flex-wrap" role="group" aria-label="Filter items by price status">
                                             <button type="button" class="btn btn-outline-secondary jt-price-filter-btn active" data-filter="all">
                                                 All (<span id="jtFilterCountAll"><%= safeStats.total %></span>)
                                             </button>
@@ -131,10 +131,10 @@
                                     <table class="table align-middle mb-0 jt-price-table" id="jtPriceTable">
                                         <thead>
                                             <tr>
-                                                <th class="text-muted small text-uppercase" style="width: 56px;">#</th>
+                                                <th class="text-muted small text-uppercase d-none d-sm-table-cell" style="width: 56px;">#</th>
                                                 <th class="text-muted small text-uppercase">Service Item</th>
-                                                <th class="text-muted small text-uppercase" style="width: 150px;">Save Status</th>
-                                                <th class="text-muted small text-uppercase text-end" style="width: 240px;">Price (<%= safeCurrency %>)</th>
+                                                <th class="text-muted small text-uppercase d-none d-sm-table-cell" style="width: 150px;">Save Status</th>
+                                                <th class="text-muted small text-uppercase text-end" style="width: 220px;">Price (<%= safeCurrency %>)</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -144,7 +144,7 @@
                                                 data-name="<%= (item.name || '').toLowerCase() %>"
                                                 data-code="<%= (item.item_code || '').toLowerCase() %>"
                                                 data-priced="<%= item.isPriced ? '1' : '0' %>">
-                                                <td class="text-muted small fw-semibold"><%= idx + 1 %></td>
+                                                <td class="text-muted small fw-semibold d-none d-sm-table-cell"><%= idx + 1 %></td>
                                                 <td>
                                                     <div class="d-flex align-items-center gap-3">
                                                         <% if (item.image_url) { %>
@@ -174,7 +174,7 @@
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td>
+                                                <td class="d-none d-sm-table-cell">
                                                     <span class="badge-status-pill jt-item-status-pill <%= item.isPriced ? 'status-active' : 'status-cancelled' %>">
                                                         <%= item.isPriced ? 'Priced' : 'Not Saved (0)' %>
                                                     </span>

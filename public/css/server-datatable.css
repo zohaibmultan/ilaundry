@@ -681,6 +681,35 @@
 /* ==========================================================================
    Responsive Adaptations (Mobile & Tablet)
    ========================================================================== */
+.server-datatable-wrapper .table-responsive {
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767.98px) {
+    .server-dt-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0.65rem 0.75rem;
+        gap: 8px;
+    }
+
+    .server-dt-filters {
+        width: 100%;
+        gap: 8px;
+    }
+
+    .server-dt-search {
+        min-width: 0;
+        width: 100%;
+        flex: 1 1 100%;
+    }
+
+    .server-dt-filter-item {
+        min-width: 0;
+        flex: 1 1 calc(50% - 4px);
+    }
+}
+
 @media (max-width: 575.98px) {
     .server-dt-footer {
         flex-direction: column !important;

@@ -3,7 +3,7 @@
 
 <head>
   <%- include('templet/meta') -%>
-  <link rel="stylesheet" href="/css/pos-compact.css?v=8">
+  <link rel="stylesheet" href="/css/pos-compact.css?v=12">
 </head>
 
 <body class="pos-screen-layout">
@@ -171,9 +171,9 @@
         <div class="col-lg-6 pos-tab-panel-catalog" id="posCatalogColumn">
           <!-- POS Top Compact Menu Bar -->
           <div class="card pos-menu-bar border-0 shadow-sm rounded-3 mb-2">
-            <div class="card-body p-1.5 px-2 d-flex align-items-center justify-content-between">
+            <div class="card-body p-1.5 px-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
               <!-- Left Section: Navigation & Store Identity -->
-              <div class="d-flex align-items-center gap-2">
+              <div class="d-flex align-items-center gap-2 flex-wrap">
                 <a href="/index" class="btn btn-sm pos-menu-btn d-inline-flex align-items-center justify-content-center gap-1 text-decoration-none" id="pos_dashboard_link" title="<%= (typeof language !== 'undefined' && language.Dashboard) ? language.Dashboard : 'Dashboard' %>">
                   <i class="fas fa-home fs-14"></i>
                   <span class="d-none d-xl-inline fw-semibold"><%= (typeof language !== 'undefined' && language.Dashboard) ? language.Dashboard : 'Dashboard' %></span>
@@ -200,7 +200,7 @@
               </div>
 
               <!-- Right Section: Printer Status, Theme, Notifications & Profile -->
-              <div class="d-flex align-items-center gap-2">
+              <div class="d-flex align-items-center gap-2 flex-wrap">
                 <!-- Printing Server Live Status Badge Dropdown -->
                 <div class="dropdown pos-printer-dropdown">
                   <button class="btn btn-sm pos-printer-badge-btn dropdown-toggle d-flex align-items-center gap-1" type="button" id="posPrinterStatusBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Printing Server Status">
@@ -563,9 +563,9 @@
         <div class="col-lg-6 pos-tab-panel-cart pos-panel-hidden" id="posCartColumn">
           <div class="pos-card pos-cart-card">
             <div class="pos-card-body">
-              <div class="row g-3">
+              <div class="row g-2 g-md-3">
                 <!-- Order Number -->
-                <div class="col-sm-3">
+                <div class="col-6 col-sm-4 col-xl-3">
                   <div class="d-flex align-items-center justify-content-between gap-1">
                     <label class="pos-field-label mb-0">
                       <%= language.Order_No || 'Order #' %> <span class="text-danger">*</span>
@@ -580,7 +580,7 @@
                 </div>
 
                 <!-- Order Date -->
-                <div class="col-3">
+                <div class="col-6 col-sm-4 col-xl-3">
                   <label class="pos-field-label mb-0">
                     <%= language.Order_Date || 'Order Date' %> <span class="text-danger">*</span>
                   </label>
@@ -588,7 +588,7 @@
                 </div>
 
                 <!-- Ready Date Time -->
-                <div class="col-6" id="<%= isEditMode ? 'edit_pos_ready_date_group' : 'pos_ready_date_group' %>">
+                <div class="col-12 col-sm-12 col-xl-6" id="<%= isEditMode ? 'edit_pos_ready_date_group' : 'pos_ready_date_group' %>">
                   <div class="d-flex align-items-center justify-content-between" style="margin-bottom: 5px">
                     <label class="pos-field-label">
                       <%= language.Ready_Schedule || 'Ready Schedule' %>
@@ -604,7 +604,7 @@
                 </div>
 
                 <!-- Customer -->
-                <div class="col-6">
+                <div class="col-12 col-md-6">
                   <% if (isEditMode) { %>
                     <label class="pos-field-label mb-0"><%= language.Customer || 'Customer' %></label>
                     <div class="input-group input-group-sm">
@@ -694,7 +694,7 @@
                 </div>
 
                 <!-- Customer Type -->
-                <div class="col-6">
+                <div class="col-12 col-md-6">
                   <label class="pos-field-label mb-0" for="<%= isEditMode ? 'edit_pos_order_type' : 'pos_order_type' %>">
                     <%= language.Customer_Type || 'Customer Type' %> <span class="text-danger">*</span>
                   </label>
@@ -709,8 +709,8 @@
                 </div>
 
                 <!-- Total Orders -->
-                <div class="col-2 d-flex">
-                  <button type="button" id="btn_pos_open_racks" class="me-2 btn btn-xs btn-outline-primary rounded-pill px-2 py-0 fw-bold d-inline-flex align-items-center gap-1 fs-11" title="View Customer Racks & Pickup (Active Invoices)" style="min-height: 22px;">
+                <div class="col-4 col-md-2 d-flex">
+                  <button type="button" id="btn_pos_open_racks" class="me-1 me-md-2 btn btn-xs btn-outline-primary rounded-pill px-2 py-0 fw-bold d-inline-flex align-items-center gap-1 fs-11" title="View Customer Racks & Pickup (Active Invoices)" style="min-height: 22px;">
                     <span class="badge bg-primary text-white rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 14px; height: 14px; font-size: 10px;">R</span>
                   </button>
                   <div class="pos-cust-stat-tile tile-total w-100" title="Total Lifetime Orders">
@@ -722,7 +722,7 @@
                 </div>
 
                 <!-- Unpaid Orders -->
-                <div class="col-2">
+                <div class="col-4 col-md-2">
                   <div class="pos-cust-stat-tile tile-unpaid" title="Orders Unpaid / Partially Paid">
                     <div class="stat-meta">
                       <span class="stat-num" id="pos_cust_stat_unpaid">0</span>
@@ -732,7 +732,7 @@
                 </div>
 
                 <!-- Total Due -->
-                <div class="col-2">
+                <div class="col-4 col-md-2">
                   <div class="pos-cust-stat-tile tile-balance" title="Total Outstanding Balance">
                     <div class="stat-meta">
                       <span class="stat-num" id="pos_cust_stat_balance"><%= accessdata?.symbol || '$' %> 0</span>
@@ -742,7 +742,7 @@
                 </div>
 
                 <!-- Customer Memo -->
-                <div class="col-6">
+                <div class="col-12 col-md-6">
                   <!-- Customer Memo Card with Quick-Edit -->
                   <div class="pos-cust-memo-card">
                     <!-- View Mode -->
@@ -768,7 +768,7 @@
                 </div>
 
                 <!-- Pick-up Date & Hour -->
-                <div class="col-6" id="<%= isEditMode ? 'edit_pos_pickup_date_group' : 'pos_pickup_date_group' %>" style="<%= !isRoutePickup ? 'display: none;' : '' %>">
+                <div class="col-12 col-md-6" id="<%= isEditMode ? 'edit_pos_pickup_date_group' : 'pos_pickup_date_group' %>" style="<%= !isRoutePickup ? 'display: none;' : '' %>">
                   <label class="pos-field-label mb-0">
                     <%= language.Route_Pickup_Date || 'Route Pick-up Schedule' %>
                   </label>
@@ -786,7 +786,7 @@
                 </div>
 
                 <!-- Delivery Date & Hour -->
-                <div class="col-6" id="<%= isEditMode ? 'edit_pos_delivery_date_group' : 'pos_delivery_date_group' %>" style="<%= !isRouteDelivery ? 'display: none;' : '' %>">
+                <div class="col-12 col-md-6" id="<%= isEditMode ? 'edit_pos_delivery_date_group' : 'pos_delivery_date_group' %>" style="<%= !isRouteDelivery ? 'display: none;' : '' %>">
                   <label class="pos-field-label mb-0">
                     <%= language.Route_Delivery_Date || 'Route Delivery Schedule' %>
                   </label>
@@ -947,65 +947,65 @@
                 <div class="<%= ((accessdata.logas == 'custmor' && accessdata.roll?.pos?.includes('write')) || (accessdata.roll?.pos && accessdata.roll.pos.includes('write'))) ? 'd-block' : 'd-none' %>">
                   <div class="row g-1">
                     <% if (isEditMode) { %>
-                      <div class="col">
+                      <div class="col-4 col-md-2">
                         <button type="button" class="btn <%= hasActiveAddons ? 'btn-info text-white' : 'btn-primary' %> pos-btn-mini w-100" id="btn_pos_addons_modal" data-bs-toggle="modal" data-bs-target="#addons">
                           <i class="fa <%= hasActiveAddons ? 'fa-check-circle' : 'fa-plus-circle' %> me-1" id="pos_addons_btn_icon"></i><span><%= language.Addons %></span>
                           <span class="badge bg-white text-dark rounded-pill ms-1 <%= hasActiveAddons ? '' : 'd-none' %>" id="pos_addons_btn_badge"><%= activeCartAddons.length > 0 ? activeCartAddons.length : 1 %></span>
                         </button>
                       </div>
-                      <div class="col">
+                      <div class="col-4 col-md-2">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_POS_coupon_model_show">
                           <i class="fa fa-tag me-1"></i><%= language.Coupon %>
                         </button>
                       </div>
-                      <div class="col">
+                      <div class="col-4 col-md-2">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_direct_save_btn">
                           <i class="fa fa-save me-1"></i><%= language.Save || 'Save Order' %>
                         </button>
                       </div>
-                      <div class="col">
+                      <div class="col-4 col-md-2">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_btn_pos_void">
                           <i class="fa fa-ban me-1"></i><%= language.Void || 'Void' %>
                         </button>
                       </div>
-                      <div class="col">
-                        <a class="btn btn-primary pos-btn-mini w-100" href="/admin/pos">
+                      <div class="col-4 col-md-2">
+                        <a class="btn btn-primary pos-btn-mini w-100" href="<%= safePosBaseUrl %>">
                           <i class="fa fa-plus me-1"></i><%= language.New || 'New Order' %>
                         </a>
                       </div>
-                      <div class="col">
+                      <div class="col-4 col-md-2">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_btn_pos_print">
                           <i class="fa fa-print me-1"></i><span><%= language.Print || 'Print' %></span>
                         </button>
                       </div>
                     <% } else { %>
-                      <div class="col">
+                      <div class="col-4 col-md-2">
                         <button type="button" class="btn <%= hasActiveAddons ? 'btn-info text-white' : 'btn-primary' %> pos-btn-mini w-100" id="btn_pos_addons_modal" data-bs-toggle="modal" data-bs-target="#addons">
                           <i class="fa <%= hasActiveAddons ? 'fa-check-circle' : 'fa-plus-circle' %> me-1" id="pos_addons_btn_icon"></i><span><%= language.Addons %></span>
                           <span class="badge bg-white text-dark rounded-pill ms-1 <%= hasActiveAddons ? '' : 'd-none' %>" id="pos_addons_btn_badge"><%= activeCartAddons.length > 0 ? activeCartAddons.length : 1 %></span>
                         </button>
                       </div>
-                      <div class="col">
+                      <div class="col-4 col-md-2">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="POS_coupon_model_show">
                           <i class="fa fa-tag me-1"></i><%= language.Coupon %>
                         </button>
                       </div>
-                      <div class="col">
+                      <div class="col-4 col-md-2">
                         <button type="button" class="btn btn-danger pos-btn-mini w-100 fw-bold" id="btn_pos_void">
                           <i class="fa fa-ban me-1"></i><%= language.Void || 'Void' %>
                         </button>
                       </div>
-                      <div class="col">
+                      <div class="col-4 col-md-2">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="btn_pos_new_order">
                           <i class="fa fa-plus me-1"></i><span>New Order</span>
                         </button>
                       </div>
-                      <div class="col">
+                      <div class="col-4 col-md-2">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="btn_pos_save_draft">
                           <i class="fa fa-save me-1"></i><span>Save Order</span>
                         </button>
                       </div>
-                      <div class="col">
+                      <div class="col-4 col-md-2">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="btn_pos_direct_print">
                           <i class="fa fa-print me-1"></i><span><%= language.Print || 'Print' %></span>
                         </button>
@@ -1013,8 +1013,8 @@
                     <% } %>
                   </div>
                 </div>
-                <div class="row mt-2">
-                  <div class="col-3 border-right">
+                <div class="row g-2 mt-2 align-items-center">
+                  <div class="col-12 col-sm-6 col-md-3 border-right pos-summary-col">
                     <div class="pos-total-row">
                       <span class="pos-total-label"><%= language.Sub_Total %>:</span>
                       <span class="pos-total-value symbol possymbol" id="POS_sub_total"><%= (Number(cart.sub_total) || 0).toFixed(2) %></span>
@@ -1031,7 +1031,7 @@
                       <span class="pos-total-value text-success symbol possymbol" id="POS_coupon_total"><%= (Number(cart.coupon_discount) || 0).toFixed(2) %></span>
                     </div>
                   </div>
-                  <div class="col-3 border-right">
+                  <div class="col-12 col-sm-6 col-md-3 border-right pos-summary-col">
                     <div class="pos-total-row">
                       <span class="pos-total-label" id="POS_tax_percent"><%= language.TAX %> (<%= cart.tax %> %):</span>
                       <span class="pos-total-value symbol possymbol" id="POS_tax_total"><%= (Number(cart.tax_amount) || 0).toFixed(2) %></span>
@@ -1043,14 +1043,14 @@
                       </div>
                     <% } %>
                   </div>
-                  <div class="col-3 border-right">
+                  <div class="col-6 col-md-3 border-right pos-summary-col">
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
                       <div><%= language.Gross_Total %></div>
                       <div class="text-dark" style="font-size: 20px; font-weight: bold;" id="POS_gross_total"><%= (Number(cart.gross_total) || 0).toFixed(2) %></div>
                     </div>
                   </div>
-                  <div class="col-3">
-                    <button type="button" class="btn btn-success pos-btn-pay-primary flex-grow-1 shadow-sm fw-bold d-flex align-items-center justify-content-center" id="POS_payment_model_show" style="height: 38px;">
+                  <div class="col-6 col-md-3">
+                    <button type="button" class="btn btn-success pos-btn-pay-primary w-100 shadow-sm fw-bold d-flex align-items-center justify-content-center" id="POS_payment_model_show" style="height: 40px;">
                       <span><%= language.Payment || 'Payment' %></span> <i class="fas fa-arrow-right ms-2"></i>
                     </button>
                   </div>
@@ -1797,7 +1797,7 @@
 
   <!-- Modal Addons Selection -->
   <div class="modal fade" id="addons">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
       <form id="add_addons_pos_cart" method="post" class="modal-content need-validation">
         <% if (isEditMode) { %>
         <input type="hidden" name="order_id" id="pos_addons_order_id" value="<%= cart.id %>">
@@ -1858,7 +1858,7 @@
 
   <!-- Modal: POS Customer Active Orders, Racks & Pickup -->
   <div class="modal fade" id="pos_customer_racks_modal" tabindex="-1" aria-labelledby="posCustomerRacksModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
       <div class="modal-content border-0 shadow">
         <div class="modal-header border-bottom py-3 px-4 bg-light-subtle d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center gap-2">
@@ -2017,23 +2017,23 @@
               </div>
             </div>
 
-            <div class="d-flex align-items-center px-2">
-              <div class="col-6" id="invoice_header">
+            <div class="row g-2 align-items-center px-2">
+              <div class="col-12 col-sm-6" id="invoice_header">
                 <h3 class="text-uppercase"><span id="shop_name">Laundry</span></h3>
                 <h6><%= language.Phone_Number %> <span id="shop_no">+000123456789</span></h6>
                 <h6 class="mb-0"><%= language.Email %> <span id="shop_email">demo@amtech.com</span></h6>
               </div>
-              <div class="col-6 d-flex justify-content-end">
+              <div class="col-12 col-sm-6 d-flex justify-content-sm-end">
                 <div id="show_pos_barcode_print"></div>
               </div>
             </div>
 
-            <div class="d-flex border-top border-bottom py-2 my-2 px-2">
-              <div class="col-6">
+            <div class="row g-2 border-top border-bottom py-2 my-2 px-2">
+              <div class="col-12 col-sm-6">
                 <h5><%= language.Order_ID %><span id="invoice_order_id"></span></h5>
                 <h5 class="mb-0"><%= language.Order_Status %> : Pending</h5>
               </div>
-              <div class="col-6 text-end">
+              <div class="col-12 col-sm-6 text-sm-end">
                 <h5><%= language.Order_Date %> : <span id="invoice_order_date"></span></h5>
                 <h5 class="mb-0"><%= language.Delivery_Date %><span id="invoice_delivery_date"></span></h5>
               </div>
@@ -2171,7 +2171,7 @@
 
   <!-- Garment Brand Lookup & Camera Inspection Modal -->
   <div class="modal fade" id="pos_brand_modal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl modal-fullscreen-sm-down" role="document">
       <div class="modal-content">
         <div class="modal-header py-2 px-3">
           <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
@@ -3778,7 +3778,7 @@
       shouldOpenJobTypeModal: safeShouldOpenJtModal
     }) %>;
   </script>
-  <script src="/js/pos2.js?v=1"></script>
+  <script src="/js/pos2.js?v=2"></script>
   <% } %>
 </body>
 

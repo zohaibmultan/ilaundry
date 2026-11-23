@@ -4880,5 +4880,145 @@ table.dataTable td.text-center {
   color: #ffffff !important;
 }
 
+/* ==========================================================================
+   Global Mobile & Tablet Responsive Compatibility Pass
+   ========================================================================== */
+html,
+body,
+#main-wrapper {
+  overflow-x: clip;
+}
+
+@media (max-width: 991.98px) {
+  /* Prevent iOS Safari / Android mobile fixed-background scroll jitter */
+  body,
+  [data-theme-version="dark"] body {
+    background-attachment: scroll !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  /* Job Types Tree Rows: stack actions cleanly below info on narrow screens */
+  .jt-tree-row {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .jt-tree-row > div:first-child {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .jt-tree-row > div:last-child {
+    flex: 1 1 100%;
+    width: 100%;
+    justify-content: space-between !important;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(148, 163, 184, 0.3);
+  }
+
+  .jt-tree-children {
+    margin: 6px 0 6px 10px;
+    padding: 0 0 0 12px;
+  }
+
+  .jt-tree-children > .jt-tree-item::before {
+    left: -12px;
+    width: 10px;
+  }
+
+  .jt-tree-desc {
+    max-width: 100%;
+  }
+
+  /* Role Permission Modals (roll.ejs): wrap module title above 4 checkboxes */
+  .modal-body .form-group > .d-flex.align-items-center.justify-content-between {
+    flex-wrap: wrap;
+    gap: 6px 4px;
+    padding: 6px 0;
+    border-bottom: 1px dashed rgba(148, 163, 184, 0.2);
+  }
+
+  .modal-body .form-group > .d-flex.align-items-center.justify-content-between > label.col-2 {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 2px;
+  }
+
+  .modal-body .form-group > .d-flex.align-items-center.justify-content-between > .form-check.col-2 {
+    flex: 1 1 calc(25% - 6px);
+    width: auto;
+    max-width: none;
+    margin-left: 0 !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  /* Viewport-clamped glass dropdowns on small phones */
+  .dropdown-menu.lang-glass-menu,
+  .header-profile .dropdown-menu.profile-glass-menu {
+    width: min(300px, calc(100vw - 24px)) !important;
+    min-width: 0 !important;
+    max-width: calc(100vw - 24px) !important;
+  }
+
+  /* Compact topbar spacing so icons never overflow horizontally */
+  .header .header-content {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  .header-icon-btn {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .header-pos-btn {
+    padding: 6px 10px !important;
+  }
+
+  /* Comfortable breathing room on mobile cards & containers */
+  .content-body .container-fluid {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  .card-header.px-4,
+  .card-body.p-4 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* Sticky Save Footer: stack cleanly on small phones */
+  .settings-sticky-footer {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 10px 14px !important;
+    bottom: 8px !important;
+  }
+
+  .settings-sticky-footer > div:last-child {
+    justify-content: stretch !important;
+  }
+
+  .settings-sticky-footer > div:last-child > .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  /* Job Type Item & Price input sizing on phones */
+  .jt-price-input-group {
+    min-width: 128px;
+    max-width: 168px;
+  }
+
+  .jt-price-input {
+    min-width: 72px;
+  }
+}
+
 
 
