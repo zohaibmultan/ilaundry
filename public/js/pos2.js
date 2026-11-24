@@ -15,6 +15,45 @@
   let pendingSelectedJtId = null;
   let pendingSwitchClearCart = false;
   let isAddingItem = false;
+  let posBeepAudioCtx = null;
+
+  function ensureBeepAudioContext() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return null;
+      if (!posBeepAudioCtx) {
+        posBeepAudioCtx = new AudioCtx();
+      }
+      if (posBeepAudioCtx.state === "suspended") {
+        posBeepAudioCtx.resume().catch(function () {});
+      }
+      return posBeepAudioCtx;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function playPosCartBeep() {
+    try {
+      const ctx = ensureBeepAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(1046.5, now); // Crisp, pleasant POS beep (C6)
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.exponentialRampToValueAtTime(0.14, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.09);
+    } catch (_) {
+      // Silently ignore if browser audio is blocked or unavailable
+    }
+  }
+  window.playPosCartBeep = playPosCartBeep;
 
   const baseUrl = window.location.origin;
 
@@ -178,8 +217,6 @@
       mediaHtml +
       `<div class="pos2-jt-tile-title" title="${escapeHtml(node.name)}">${escapeHtml(node.name)}</div>` +
       `<div class="d-flex align-items-center justify-content-center flex-wrap gap-1 mt-auto">` +
-        countBadge +
-        (extraMetaBadgeHtml || "") +
       `</div>`
     );
   }
@@ -406,7 +443,6 @@
   function openJobTypeModal(allowDismiss) {
     const canDismiss = Boolean(allowDismiss && activeJobType && activeJobType.id);
     $("#btnPos2JobTypeModalClose").toggleClass("d-none", !canDismiss);
-    $("#btnPos2JobTypeCancel").toggleClass("d-none", !canDismiss);
 
     const modalEl = document.getElementById("pos2JobTypeModal");
     if (!modalEl) return;
@@ -930,6 +966,7 @@
 
     if (isAddingItem) return;
     isAddingItem = true;
+    ensureBeepAudioContext();
     $card.addClass("pos2-service-adding");
 
     $.ajax({
@@ -944,13 +981,7 @@
       success: function (res) {
         if (res && res.success) {
           syncCartDisplay(res.cart, res.cartservice, res.loginas);
-          if (typeof toastr !== "undefined" && res.addedItem) {
-            toastr.success(
-              `Added ${res.addedItem.service_name} (${formatCurrency(res.addedItem.price)})`,
-              res.addedItem.job_type_name || "Added to Cart",
-              { timeOut: 1400 }
-            );
-          }
+          playPosCartBeep();
         } else {
           if (typeof toastr !== "undefined") {
             toastr.error((res && res.message) || "Could not add item to cart.");

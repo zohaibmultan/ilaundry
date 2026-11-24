@@ -18,6 +18,7 @@ const {
   attachPosImageMeta,
   getEffectivePosImageSize,
 } = require("../middelwer/posImageHelper");
+const { getActiveGenders } = require("../middelwer/genderHelper");
 const { generateOrderId } = require("../middelwer/orderIdHelper");
 
 function canOverridePosPriceDiscount(accessdata) {
@@ -650,10 +651,12 @@ router.get("/", auth, async (req, res) => {
 
     // Always open the Job Type modal when POS-2 is opened fresh (empty cart) or no valid Job Type is active
     const shouldOpenJobTypeModal = !activeJobType || cartservice.length === 0;
+    const genderList = await getActiveGenders();
 
     return res.render("pos", {
       isPos2: true,
       posBaseUrl: "/pos-2",
+      genderList,
       jobTypeTree,
       activeJobType,
       activeJobTypeBreadcrumb,
@@ -922,37 +925,90 @@ router.post("/direct-add", auth, async (req, res) => {
     const itemPrice = Number(Number(item.price).toFixed(2));
     const servicePieces = parseInt(item.no_of_items, 10) > 0 ? parseInt(item.no_of_items, 10) : 1;
 
-    const insertResult = await mySqlQury(
-      `INSERT INTO tbl_cart_servicelist
-         (service_id, service_type_id, service_type_price, original_rate, item_value,
-          service_quntity, service_color, service_name, service_type_name, service_img,
-          no_of_items, garment_pattern)
-       VALUES (?, ?, ?, ?, 0, 1, '#000000', ?, ?, ?, ?, 'Solid')`,
-      [
-        String(item.service_id),
-        String(item.job_type_id),
-        itemPrice,
-        itemPrice,
-        item.service_name || "",
-        item.job_type_name || "",
-        item.service_img || "default.png",
-        servicePieces,
-      ]
-    );
+    // Check if this service item (for the active job type) is already in the cart -> increment qty
+    const existingIds = String(cartRow.service_list_id || "")
+      .split(",")
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => Number.isInteger(n) && n > 0);
 
-    const newRowId = insertResult.insertId;
+    let existingMatch = null;
+    if (existingIds.length > 0) {
+      const placeholders = existingIds.map(() => "?").join(",");
+      const matchRows = await mySqlQury(
+        `SELECT * FROM tbl_cart_servicelist
+         WHERE id IN (${placeholders})
+           AND service_id = ?
+           AND service_type_id = ?
+         ORDER BY id DESC
+         LIMIT 1`,
+        [...existingIds, String(item.service_id), String(item.job_type_id)]
+      );
+      if (matchRows && matchRows.length > 0) {
+        existingMatch = matchRows[0];
+      }
+    }
 
-    await mySqlQury(
-      `UPDATE tbl_cart
-       SET job_type_id = ?,
-           service_list_id = CONCAT(service_list_id, ',', ?),
-           sub_total = ROUND(sub_total + ?, 2),
-           tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount) * (COALESCE(tax, 0) / 100), 2),
-           gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
-           balance = ROUND(gross_total - paid_amount, 2)
-       WHERE created_by = ?`,
-      [jobTypeId, newRowId, itemPrice, createdByKey]
-    );
+    let targetRowId;
+    let newQuantity = 1;
+    let priceDelta = itemPrice;
+    let wasIncremented = false;
+
+    if (existingMatch) {
+      targetRowId = existingMatch.id;
+      newQuantity = (parseInt(existingMatch.service_quntity, 10) || 1) + 1;
+      priceDelta = Number(Number(existingMatch.service_type_price || itemPrice).toFixed(2));
+      wasIncremented = true;
+
+      await mySqlQury(
+        `UPDATE tbl_cart_servicelist
+         SET service_quntity = ?
+         WHERE id = ?`,
+        [newQuantity, targetRowId]
+      );
+
+      await mySqlQury(
+        `UPDATE tbl_cart
+         SET job_type_id = ?,
+             sub_total = ROUND(sub_total + ?, 2),
+             tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount) * (COALESCE(tax, 0) / 100), 2),
+             gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
+             balance = ROUND(gross_total - paid_amount, 2)
+         WHERE created_by = ?`,
+        [jobTypeId, priceDelta, createdByKey]
+      );
+    } else {
+      const insertResult = await mySqlQury(
+        `INSERT INTO tbl_cart_servicelist
+           (service_id, service_type_id, service_type_price, original_rate, item_value,
+            service_quntity, service_color, service_name, service_type_name, service_img,
+            no_of_items, garment_pattern, gender)
+         VALUES (?, ?, ?, ?, 0, 1, '#000000', ?, ?, ?, ?, 'Solid', 'None')`,
+        [
+          String(item.service_id),
+          String(item.job_type_id),
+          itemPrice,
+          itemPrice,
+          item.service_name || "",
+          item.job_type_name || "",
+          item.service_img || "default.png",
+          servicePieces,
+        ]
+      );
+
+      targetRowId = insertResult.insertId;
+
+      await mySqlQury(
+        `UPDATE tbl_cart
+         SET job_type_id = ?,
+             service_list_id = CONCAT(service_list_id, ',', ?),
+             sub_total = ROUND(sub_total + ?, 2),
+             tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount) * (COALESCE(tax, 0) / 100), 2),
+             gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount, 2),
+             balance = ROUND(gross_total - paid_amount, 2)
+         WHERE created_by = ?`,
+        [jobTypeId, targetRowId, priceDelta, createdByKey]
+      );
+    }
 
     const updatedCartRows = await mySqlQury("SELECT * FROM tbl_cart WHERE created_by = ? LIMIT 1", [createdByKey]);
     const updatedCart = updatedCartRows[0];
@@ -968,11 +1024,13 @@ router.post("/direct-add", auth, async (req, res) => {
       cartservice,
       loginas,
       addedItem: {
-        id: newRowId,
+        id: targetRowId,
         service_id: item.service_id,
         service_name: item.service_name,
         job_type_name: item.job_type_name,
-        price: itemPrice,
+        price: priceDelta,
+        quantity: newQuantity,
+        incremented: wasIncremented,
       },
     });
   } catch (error) {

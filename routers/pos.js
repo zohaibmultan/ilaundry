@@ -23,6 +23,10 @@ const {
   getEffectivePosImageSize,
 } = require("../middelwer/posImageHelper");
 const {
+  getActiveGenders,
+  resolveActiveGender,
+} = require("../middelwer/genderHelper");
+const {
   broadcastCalendarChange,
 } = require("../middelwer/calendarBroadcaster");
 const {
@@ -667,9 +671,11 @@ router.get("/pos", auth, async (req, res) => {
 
     const posImageSize = await getEffectivePosImageSize(targetStoreId);
     await attachPosImageMeta(service_list, targetStoreId, posImageSize);
+    const genderList = await getActiveGenders();
 
     res.render("pos", {
       posImageSize,
+      genderList,
       storePrinterConfig,
       overrideRatePercent,
       canOverridePriceDiscount: canOverridePosPriceDiscount(accessdata),
@@ -846,9 +852,11 @@ router.get("/edit/:id", auth, async (req, res) => {
 
     const posImageSize = await getEffectivePosImageSize(targetStoreId);
     await attachPosImageMeta(service_list, targetStoreId, posImageSize);
+    const genderList = await getActiveGenders();
 
     res.render("pos", {
       posImageSize,
+      genderList,
       storePrinterConfig,
       overrideRatePercent,
       canOverridePriceDiscount: canOverridePosPriceDiscount(accessdata),
@@ -3087,7 +3095,7 @@ router.post("/scan_ocr", auth, upload.single("image"), async (req, res) => {
 router.post("/changebrand", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
-    const { id: serviceid, brand_id, primary_color, secondary_color, garment_pattern } = req.body;
+    const { id: serviceid, brand_id, primary_color, secondary_color, garment_pattern, gender } = req.body;
 
     const service = await DataFind(
       `SELECT * FROM tbl_cart_servicelist WHERE id=${serviceid}`,
@@ -3142,6 +3150,11 @@ router.post("/changebrand", auth, async (req, res) => {
     if (typeof garment_pattern !== "undefined") {
       const pat = String(garment_pattern || "Solid").replace(/'/g, "''");
       extraFields.push(`garment_pattern='${pat}'`);
+    }
+    if (typeof gender !== "undefined") {
+      const resolvedGender = await resolveActiveGender(gender);
+      const safeGender = String(resolvedGender.fullname || "None").replace(/'/g, "''");
+      extraFields.push(`gender='${safeGender}'`);
     }
     const extraSql = extraFields.length > 0 ? `, ${extraFields.join(", ")}` : "";
 
@@ -3202,7 +3215,7 @@ router.post("/changebrand", auth, async (req, res) => {
 router.post("/edit_changebrand", auth, async (req, res) => {
   try {
     const { id, roll, store, loginas } = req.user;
-    const { id: serviceid, brand_id, order_id, primary_color, secondary_color, garment_pattern } = req.body;
+    const { id: serviceid, brand_id, order_id, primary_color, secondary_color, garment_pattern, gender } = req.body;
 
     const service = await DataFind(
       `SELECT * FROM tbl_cart_servicelist WHERE id=${serviceid}`,
@@ -3265,6 +3278,11 @@ router.post("/edit_changebrand", auth, async (req, res) => {
       const pat = String(garment_pattern || "Solid").replace(/'/g, "''");
       extraFields.push(`garment_pattern='${pat}'`);
     }
+    if (typeof gender !== "undefined") {
+      const resolvedGender = await resolveActiveGender(gender);
+      const safeGender = String(resolvedGender.fullname || "None").replace(/'/g, "''");
+      extraFields.push(`gender='${safeGender}'`);
+    }
     const extraSql = extraFields.length > 0 ? `, ${extraFields.join(", ")}` : "";
 
     const updateservice = await DataUpdate(
@@ -3323,6 +3341,99 @@ router.post("/edit_changebrand", auth, async (req, res) => {
   } catch (error) {
     console.error("Error in /admin/edit_changebrand:", error);
     return res.status(500).json({ error: error.message });
+  }
+});
+
+// change garment gender on POS / POS-2 cart item
+router.post("/changegender", auth, async (req, res) => {
+  try {
+    const serviceId = parseInt(req.body.id, 10);
+    if (!Number.isInteger(serviceId) || serviceId <= 0) {
+      return res.status(400).json({ success: false, message: "Invalid cart item ID" });
+    }
+    const resolvedGender = await resolveActiveGender(req.body.gender);
+    const safeGender = String(resolvedGender.fullname || "None").replace(/'/g, "''");
+    const existing = await DataFind(
+      `SELECT id FROM tbl_cart_servicelist WHERE id=${serviceId} LIMIT 1`,
+    );
+    if (!existing || existing.length === 0) {
+      return res.status(404).json({ success: false, message: "Service item not found" });
+    }
+
+    const updated = await DataUpdate(
+      `tbl_cart_servicelist`,
+      `gender='${safeGender}'`,
+      `id=${serviceId}`,
+      req.hostname,
+      req.protocol,
+    );
+    if (updated === -1) {
+      return res.status(500).json({
+        success: false,
+        message: process.env.dataerror || "Database operation failed",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      id: serviceId,
+      gender: resolvedGender.fullname,
+      code: resolvedGender.code,
+    });
+  } catch (error) {
+    console.error("Error in /admin/changegender:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// change garment gender on Edit Order cart item
+router.post("/edit_changegender", auth, async (req, res) => {
+  try {
+    const serviceId = parseInt(req.body.id, 10);
+    const orderId = parseInt(req.body.order_id, 10);
+    if (!Number.isInteger(serviceId) || serviceId <= 0 || !Number.isInteger(orderId) || orderId <= 0) {
+      return res.status(400).json({ success: false, message: "Invalid order or item ID" });
+    }
+    const resolvedGender = await resolveActiveGender(req.body.gender);
+    const safeGender = String(resolvedGender.fullname || "None").replace(/'/g, "''");
+    const ordRows = await DataFind(
+      `SELECT id, service_list FROM tbl_order WHERE id=${orderId} LIMIT 1`,
+    );
+    if (!ordRows || ordRows.length === 0) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+    const itemIds = String(ordRows[0].service_list || "")
+      .split(",")
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n) && n > 0);
+    if (!itemIds.includes(serviceId)) {
+      return res.status(404).json({ success: false, message: "Item does not belong to this order" });
+    }
+
+    const updated = await DataUpdate(
+      `tbl_cart_servicelist`,
+      `gender='${safeGender}'`,
+      `id=${serviceId}`,
+      req.hostname,
+      req.protocol,
+    );
+    if (updated === -1) {
+      return res.status(500).json({
+        success: false,
+        message: process.env.dataerror || "Database operation failed",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      id: serviceId,
+      order_id: orderId,
+      gender: resolvedGender.fullname,
+      code: resolvedGender.code,
+    });
+  } catch (error) {
+    console.error("Error in /admin/edit_changegender:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 });
 

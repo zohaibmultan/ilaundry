@@ -405,7 +405,7 @@ async function loadCustomerOrdersEnriched(customerId, fallbackStoreName = "Store
     const idList = Array.from(serviceIdSet);
     const placeholders = idList.map(() => "?").join(",");
     const items = await DataFind(
-      `SELECT id, service_name, service_type_name, service_type_price, service_quntity, no_of_items, primary_color, brand_label
+      `SELECT id, service_name, service_type_name, service_type_price, service_quntity, no_of_items, primary_color, brand_label, gender
        FROM tbl_cart_servicelist
        WHERE id IN (${placeholders})`,
       idList
@@ -457,6 +457,7 @@ async function loadCustomerOrdersEnriched(customerId, fallbackStoreName = "Store
             lineTotal: parseFloat((parseFloat(item.service_type_price || 0) * qty).toFixed(2)),
             brand_label: item.brand_label || "",
             primary_color: item.primary_color || "",
+            gender: (item.gender && String(item.gender).trim()) ? String(item.gender).trim() : "None",
           });
         }
       });

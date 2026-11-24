@@ -322,6 +322,19 @@
                           <% if (it.brand_label) { %>
                           <span class="badge bg-primary-subtle ms-1"><%= it.brand_label %></span>
                           <% } %>
+                          <%
+                            const portalGenderRaw = (it.gender && String(it.gender).trim()) ? String(it.gender).trim() : 'None';
+                            const portalGender = /^male$/i.test(portalGenderRaw) ? 'Men' : (/^female$/i.test(portalGenderRaw) ? 'Women' : portalGenderRaw);
+                            const portalGenderLower = portalGender.toLowerCase();
+                            const portalGenderBadge = (portalGenderLower === 'men' || portalGenderLower === 'male')
+                              ? 'bg-primary-subtle text-primary'
+                              : ((portalGenderLower === 'women' || portalGenderLower === 'female')
+                                ? 'bg-danger-subtle text-danger'
+                                : (portalGenderLower === 'none'
+                                  ? 'bg-secondary-subtle text-secondary'
+                                  : 'bg-info-subtle text-info'));
+                          %>
+                          <span class="badge <%= portalGenderBadge %> ms-1">Gender: <%= portalGender %></span>
                         </td>
                         <td class="text-muted fs-12"><%= it.service_type_name %></td>
                         <td class="text-center">

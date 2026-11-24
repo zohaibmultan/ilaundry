@@ -3,7 +3,7 @@
 
 <head>
   <%- include('templet/meta') -%>
-  <link rel="stylesheet" href="/css/pos-compact.css?v=12">
+  <link rel="stylesheet" href="/css/pos-compact.css?v=17">
 </head>
 
 <body class="pos-screen-layout">
@@ -17,6 +17,37 @@
       : (safeActiveJobType ? safeActiveJobType.name : '');
     const safeJobTypeTree = (typeof jobTypeTree !== 'undefined' && Array.isArray(jobTypeTree)) ? jobTypeTree : [];
     const safeShouldOpenJtModal = Boolean(typeof shouldOpenJobTypeModal !== 'undefined' && shouldOpenJobTypeModal);
+    const safeGenderList = (typeof genderList !== 'undefined' && Array.isArray(genderList) && genderList.length > 0)
+      ? genderList
+      : [
+          { id: 1, fullname: 'Men', code: 'M', description: "Men's garments", status: 'active' },
+          { id: 2, fullname: 'Women', code: 'W', description: "Women's garments", status: 'active' },
+          { id: 3, fullname: 'None', code: 'N', description: 'No specific gender / unisex', status: 'active' }
+        ];
+    const resolveGenderOption = (rawVal) => {
+      const s = String(rawVal || '').trim().toLowerCase();
+      const alias = s === 'male' ? 'men' : (s === 'female' ? 'women' : s);
+      if (alias) {
+        const hit = safeGenderList.find(g => String(g.fullname || '').trim().toLowerCase() === alias || String(g.code || '').trim().toLowerCase() === alias);
+        if (hit) return hit;
+      }
+      return safeGenderList.find(g => String(g.fullname || '').trim().toLowerCase() === 'none' || String(g.code || '').trim().toUpperCase() === 'N') || safeGenderList[0];
+    };
+    const getGenderBadgeCls = (code) => {
+      const c = String(code || '').trim().toUpperCase();
+      if (c === 'M') return 'bg-primary-subtle text-primary';
+      if (c === 'W') return 'bg-danger-subtle text-danger';
+      if (c === 'N') return 'bg-secondary-subtle text-secondary';
+      return 'bg-info-subtle text-info';
+    };
+    const getGenderBtnStateCls = (code) => {
+      const c = String(code || '').trim().toUpperCase();
+      if (c === 'M') return 'is-male';
+      if (c === 'W') return 'is-female';
+      if (c === 'N') return '';
+      return 'is-custom';
+    };
+    const defaultGenderOpt = resolveGenderOption('None');
     const posCurrSym = accessdata?.symbol || '$';
     const posCurrPls = String(accessdata?.plac || '0');
     const isEditMode = Boolean((typeof isEdit !== 'undefined' && isEdit) || (typeof cart !== 'undefined' && cart && cart.isEdit));
@@ -128,6 +159,9 @@
       return c ? c.hex : (name.startsWith('#') ? name : '#000000');
     };
   %>
+  <script>
+    window.POS_GENDER_OPTIONS = <%- JSON.stringify(safeGenderList) %>;
+  </script>
 
   <%- include('templet/preloder_topbar_sidebar', { titel: accessdata?.topbardata?.name }) -%>
 
@@ -832,6 +866,12 @@
                   </thead>
                   <tbody id="POS_service_added_list">
                     <% cartservice.forEach(function(x) { %>
+                    <%
+                      const resolvedG = resolveGenderOption(x.gender);
+                      const itemGender = resolvedG ? resolvedG.fullname : 'None';
+                      const genderShort = resolvedG ? resolvedG.code : 'N';
+                      const genderStateClass = getGenderBtnStateCls(genderShort);
+                    %>
                     <tr>
                       <td>
                         <div class="pos-cart-service-info">
@@ -841,11 +881,28 @@
                             <span class="badge bg-secondary text-white ms-1" style="font-size:0.75rem;"><%= x.no_of_items %> Pcs</span>
                             <% } %>
                           </span>
-                          <span class="pos-cart-item-badge">[<%= x.service_type_name %>]</span>
+                          <div class="d-flex align-items-center gap-1 flex-wrap mt-1">
+                            <span class="pos-cart-item-badge">[<%= x.service_type_name %>]</span>
+                            <div class="dropdown d-inline-block pos-gender-dropdown" data-id="<%= x.id %>" data-gender="<%= itemGender %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %>>
+                              <button type="button" class="btn btn-xs dropdown-toggle pos-gender-btn <%= genderStateClass %>" aria-expanded="false" title="<%= itemGender %>" <%= (login !== 'customer') ? '' : 'disabled' %>>
+                                <span class="pos-gender-code"><%= genderShort %></span>
+                              </button>
+                              <ul class="dropdown-menu dropdown-menu-start pos-gender-menu shadow-sm py-1">
+                                <% safeGenderList.forEach(function(gOpt) { %>
+                                <li>
+                                  <button type="button" class="dropdown-item pos-gender-option d-flex align-items-center gap-2 <%= itemGender.toLowerCase() === String(gOpt.fullname || '').toLowerCase() ? 'active' : '' %>" data-value="<%= gOpt.fullname %>" data-code="<%= gOpt.code %>" title="<%= gOpt.description || gOpt.fullname %>">
+                                    <span class="badge <%= getGenderBadgeCls(gOpt.code) %>"><%= gOpt.code %></span>
+                                    <span><%= gOpt.fullname %></span>
+                                  </button>
+                                </li>
+                                <% }); %>
+                              </ul>
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td class="text-center">
-                        <button type="button" class="btn btn-xs <%= (x.brand_label && String(x.brand_label).trim()) ? 'btn-primary' : 'btn-outline-secondary' %> px-2 py-1 text-truncate pos-btn-brand" style="max-width: 85px; font-size: 11px;" data-id="<%= x.id %>" data-brand-id="<%= x.brand_id || 0 %>" data-brand-label="<%= x.brand_label || '' %>" data-primary-color="<%= x.primary_color || '' %>" data-secondary-color="<%= x.secondary_color || '' %>" data-pattern="<%= x.garment_pattern || 'Solid' %>" data-original-rate="<%= (x.original_rate && parseFloat(x.original_rate) > 0) ? x.original_rate : x.service_type_price %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> title="<%= (x.brand_label && String(x.brand_label).trim()) ? (x.brand_label + ' (' + (x.brand_category || '') + ' +' + (x.brand_upcharge_percent || 0) + '% / ' + (x.brand_price_multiplier || 1) + 'x)') : 'Select Brand' %>" <%= (login !== 'customer') ? '' : 'disabled' %>>
+                        <button type="button" class="btn btn-xs <%= (x.brand_label && String(x.brand_label).trim()) ? 'btn-primary' : 'btn-outline-secondary' %> px-2 py-1 text-truncate pos-btn-brand" style="max-width: 85px; font-size: 11px;" data-id="<%= x.id %>" data-brand-id="<%= x.brand_id || 0 %>" data-brand-label="<%= x.brand_label || '' %>" data-primary-color="<%= x.primary_color || '' %>" data-secondary-color="<%= x.secondary_color || '' %>" data-pattern="<%= x.garment_pattern || 'Solid' %>" data-gender="<%= itemGender %>" data-original-rate="<%= (x.original_rate && parseFloat(x.original_rate) > 0) ? x.original_rate : x.service_type_price %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> title="<%= (x.brand_label && String(x.brand_label).trim()) ? (x.brand_label + ' (' + (x.brand_category || '') + ' +' + (x.brand_upcharge_percent || 0) + '% / ' + (x.brand_price_multiplier || 1) + 'x)') : 'Select Brand' %>" <%= (login !== 'customer') ? '' : 'disabled' %>>
                           <i class="fa fa-tag me-1"></i><%= (x.brand_label && String(x.brand_label).trim()) ? x.brand_label : (language.Brand || 'Brand') %>
                         </button>
                       </td>
@@ -858,7 +915,7 @@
                           const pHex = getColorHex(pColor) || (x.service_color || '#000000');
                           const sHex = getColorHex(sColor);
                         %>
-                        <button type="button" class="btn btn-xs pos-btn-color <%= pColor ? 'has-color' : '' %> px-2 py-1 text-truncate d-inline-flex align-items-center" style="max-width: 145px; font-size: 11px;" data-id="<%= x.id %>" data-primary-color="<%= pColor %>" data-secondary-color="<%= sColor %>" data-pattern="<%= pat %>" data-brand-id="<%= x.brand_id || 0 %>" data-brand-label="<%= x.brand_label || '' %>" data-original-rate="<%= (x.original_rate && parseFloat(x.original_rate) > 0) ? x.original_rate : x.service_type_price %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> title="<%= colTitle %>" <%= (login !== 'customer') ? '' : 'disabled' %>>
+                        <button type="button" class="btn btn-xs pos-btn-color <%= pColor ? 'has-color' : '' %> px-2 py-1 text-truncate d-inline-flex align-items-center" style="max-width: 145px; font-size: 11px;" data-id="<%= x.id %>" data-primary-color="<%= pColor %>" data-secondary-color="<%= sColor %>" data-pattern="<%= pat %>" data-gender="<%= itemGender %>" data-brand-id="<%= x.brand_id || 0 %>" data-brand-label="<%= x.brand_label || '' %>" data-original-rate="<%= (x.original_rate && parseFloat(x.original_rate) > 0) ? x.original_rate : x.service_type_price %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> title="<%= colTitle %>" <%= (login !== 'customer') ? '' : 'disabled' %>>
                           <% if (pColor) { %>
                             <span class="rounded-circle d-inline-block border flex-shrink-0" style="width: 12px; height: 12px; background: <%= pHex %>;"></span>
                             <% if (sColor && sHex) { %>
@@ -2192,7 +2249,7 @@
             <div class="card-body p-2 px-3">
               <div class="row g-2 align-items-center">
                 <!-- Primary Color -->
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-sm-6 col-md-3">
                   <label class="form-label fs-12 fw-bold pos-modal-label mb-1 d-flex align-items-center gap-1">
                     <span class="rounded-circle bg-primary d-inline-block" style="width: 8px; height: 8px;"></span>
                     <span>Primary Color</span>
@@ -2208,7 +2265,7 @@
                 </div>
 
                 <!-- Secondary Color -->
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-sm-6 col-md-3">
                   <label class="form-label fs-12 fw-bold pos-modal-label text-muted mb-1 d-flex align-items-center gap-1">
                     <span class="rounded-circle bg-secondary d-inline-block" style="width: 8px; height: 8px;"></span>
                     <span>Secondary Color <small class="fw-normal text-muted">(Optional)</small></span>
@@ -2224,7 +2281,7 @@
                 </div>
 
                 <!-- Garment Pattern -->
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-sm-6 col-md-3">
                   <label class="form-label fs-12 fw-bold pos-modal-label mb-1 d-flex align-items-center gap-1">
                     <i class="fa fa-th-large text-primary me-1" style="font-size: 11px;"></i>
                     <span>Garment Pattern</span>
@@ -2236,6 +2293,30 @@
                       </option>
                     <% }); %>
                   </select>
+                </div>
+
+                <!-- Garment Gender -->
+                <div class="col-12 col-sm-6 col-md-3">
+                  <label class="form-label fs-12 fw-bold pos-modal-label mb-1 d-flex align-items-center gap-1">
+                    <i class="fa fa-venus-mars text-primary me-1" style="font-size: 11px;"></i>
+                    <span>Gender</span>
+                  </label>
+                  <input type="hidden" id="pos_modal_gender" value="<%= defaultGenderOpt.fullname %>">
+                  <div class="dropdown w-100" id="pos_modal_gender_dropdown">
+                    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle w-100 d-flex align-items-center justify-content-between pos-modal-gender-btn" id="pos_modal_gender_btn" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
+                      <span id="pos_modal_gender_label"><%= defaultGenderOpt.code %> - <%= defaultGenderOpt.fullname %></span>
+                    </button>
+                    <ul class="dropdown-menu w-100 shadow-sm py-1" aria-labelledby="pos_modal_gender_btn">
+                      <% safeGenderList.forEach(function(gOpt) { %>
+                      <li>
+                        <button type="button" class="dropdown-item pos-modal-gender-option d-flex align-items-center gap-2 <%= String(gOpt.fullname).toLowerCase() === String(defaultGenderOpt.fullname).toLowerCase() ? 'active' : '' %>" data-value="<%= gOpt.fullname %>" data-code="<%= gOpt.code %>" title="<%= gOpt.description || gOpt.fullname %>">
+                          <span class="badge <%= getGenderBadgeCls(gOpt.code) %>"><%= gOpt.code %></span>
+                          <span><%= gOpt.fullname %></span>
+                        </button>
+                      </li>
+                      <% }); %>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3778,7 +3859,7 @@
       shouldOpenJobTypeModal: safeShouldOpenJtModal
     }) %>;
   </script>
-  <script src="/js/pos2.js?v=2"></script>
+  <script src="/js/pos2.js?v=5"></script>
   <% } %>
 </body>
 

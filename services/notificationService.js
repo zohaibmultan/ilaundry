@@ -293,6 +293,7 @@ const TEMPLATE_VARIABLES = [
   { tag: "{paid_now}", label: "Payment Just Received", sample: "$20.00" },
   { tag: "{payment_method}", label: "Payment Method", sample: "Cash" },
   { tag: "{cancel_reason}", label: "Cancellation Reason", sample: "Customer request" },
+  { tag: "{items_summary}", label: "Itemized Garments with Gender", sample: "Shirt (Male) x1, Trousers (None) x2" },
 ];
 
 /**
@@ -1515,6 +1516,26 @@ async function resolveTwilioConfig(storeOrId, masterObj) {
   };
 }
 
+function normalizeItemGender(it) {
+  const g = it && it.gender ? String(it.gender).trim() : "";
+  if (!g) return "None";
+  if (/^male$/i.test(g)) return "Men";
+  if (/^female$/i.test(g)) return "Women";
+  return g;
+}
+
+function buildCompactItemsSummary(items) {
+  if (!Array.isArray(items) || items.length === 0) return "";
+  return items
+    .map((it) => {
+      const sName = it.service_name || "Service";
+      const genderVal = normalizeItemGender(it);
+      const qty = parseFloat(it.service_quntity || 1) || 1;
+      return `${sName} (${genderVal}) x${qty}`;
+    })
+    .join(", ");
+}
+
 /**
  * Build itemized WhatsApp order summary block appended to order lifecycle WhatsApp notifications
  */
@@ -1536,12 +1557,13 @@ function buildWhatsAppOrderSummaryBlock({ eventKey, order, items, sym, grossTota
     items.forEach((it) => {
       const sName = it.service_name || "Service";
       const sType = it.service_type_name ? ` [${it.service_type_name}]` : "";
+      const genderVal = normalizeItemGender(it);
       const qty = parseFloat(it.service_quntity || 1) || 1;
       const pcs = parseInt(it.no_of_items || 1, 10) || 1;
       const pcsBadge = pcs > 1 ? ` (${pcs} Pcs)` : "";
       const unitPrice = parseFloat(it.service_type_price || it.service_price || 0) || 0;
       const lineTotal = unitPrice * qty;
-      lines.push(`• ${sName}${sType}${pcsBadge} x ${qty} = ${sym}${lineTotal.toFixed(2)}`);
+      lines.push(`• ${sName}${sType} [Gender: ${genderVal}]${pcsBadge} x ${qty} = ${sym}${lineTotal.toFixed(2)}`);
     });
   }
 
@@ -1600,6 +1622,8 @@ function buildNotificationContent({ eventKey, customer, store, master, order, it
   const cancelReasonStr = extraData?.cancelReason || (order && order.note) || "Cancelled by store";
   const resolvedRacks = rackNames || extraData?.rackNames || "";
 
+  const itemsSummary = buildCompactItemsSummary(items);
+
   const varsMap = {
     customer_name: custName,
     order_id: orderCode,
@@ -1617,7 +1641,8 @@ function buildNotificationContent({ eventKey, customer, store, master, order, it
     rack_names: resolvedRacks,
     paid_now: paidNowFormatted,
     payment_method: paymentMethodStr,
-    cancel_reason: cancelReasonStr
+    cancel_reason: cancelReasonStr,
+    items_summary: itemsSummary
   };
 
   let badgeText = "Notification";
@@ -1697,7 +1722,19 @@ function buildNotificationContent({ eventKey, customer, store, master, order, it
   const headline = interpolateTemplate(activeTpl.emailHeadline, varsMap);
   const rawEmailBody = interpolateTemplate(activeTpl.emailBody, varsMap);
   const introHtml = `<p style="line-height:1.6;margin-top:0;">${rawEmailBody.replace(/\r?\n/g, "<br>")}</p>`;
-  const smsBody = interpolateTemplate(activeTpl.smsBody, varsMap);
+  const smsItemizedEvents = new Set([
+    "order_placed",
+    "route_intake_priced",
+    "order_modified",
+    "order_ready_pickup",
+    "order_out_for_delivery",
+    "order_delivered"
+  ]);
+  const rawSmsBody = interpolateTemplate(activeTpl.smsBody, varsMap);
+  const templateHasItemsTag = String(activeTpl.smsBody || "").includes("{items_summary}");
+  const smsBody = (order && itemsSummary && smsItemizedEvents.has(eventKey) && !templateHasItemsTag)
+    ? `${rawSmsBody}\nItems: ${itemsSummary}`
+    : rawSmsBody;
   const rawWaBody = interpolateTemplate(activeTpl.whatsappBody || activeTpl.smsBody, varsMap);
   const waSummaryBlock = buildWhatsAppOrderSummaryBlock({
     eventKey,
@@ -1721,9 +1758,14 @@ function buildNotificationContent({ eventKey, customer, store, master, order, it
       items.forEach((it) => {
         const sName = it.service_name || "Service";
         const sType = it.service_type_name ? ` <span style="color:#64748b;font-size:12px;">[${it.service_type_name}]</span>` : "";
+        const genderVal = normalizeItemGender(it);
         const colorPat = [it.primary_color, it.secondary_color].filter(Boolean).join("/");
         const patBadge = (it.garment_pattern && it.garment_pattern !== "Solid") ? ` (${it.garment_pattern})` : "";
-        const metaStr = (colorPat || patBadge) ? `<div style="font-size:11px;color:#64748b;">${colorPat}${patBadge}</div>` : "";
+        const metaParts = [];
+        if (it.brand_label) metaParts.push(`<strong>${it.brand_label}</strong>`);
+        if (colorPat || patBadge) metaParts.push(`${colorPat}${patBadge}`);
+        metaParts.push(`Gender: <strong>${genderVal}</strong>`);
+        const metaStr = `<div style="font-size:11px;color:#64748b;">${metaParts.join(" &bull; ")}</div>`;
         const qty = it.service_quntity || 1;
         const price = `${sym}${parseFloat(it.service_type_price || 0).toFixed(2)}`;
         itemsRowsHtml += `
@@ -2591,13 +2633,15 @@ function formatWhatsAppInvoiceMessage({ order, items, customer, store, master, r
   if (Array.isArray(items) && items.length > 0) {
     items.forEach((it) => {
       const sName = it.service_name || "Service";
+      const genderVal = normalizeItemGender(it);
       const qty = parseFloat(it.service_quntity || 1) || 1;
       const pcs = parseInt(it.no_of_items || 1, 10) || 1;
       const totalPcsLine = qty * pcs;
       totalPieces += totalPcsLine;
       const pcsBadge = pcs > 1 ? ` (${pcs} Pcs)` : "";
-      const price = parseFloat(it.service_price || 0) * qty;
-      itemsLines.push(`• ${sName}${pcsBadge} x ${qty} = ${sym}${price.toFixed(2)}`);
+      const unitPrice = parseFloat(it.service_type_price || it.service_price || 0) || 0;
+      const price = unitPrice * qty;
+      itemsLines.push(`• ${sName} [Gender: ${genderVal}]${pcsBadge} x ${qty} = ${sym}${price.toFixed(2)}`);
     });
   }
 

@@ -1513,6 +1513,51 @@
       var primColor = (value.primary_color && String(value.primary_color).trim()) ? String(value.primary_color).trim() : '';
       var secColor = (value.secondary_color && String(value.secondary_color).trim()) ? String(value.secondary_color).trim() : '';
       var pattern = (value.garment_pattern && String(value.garment_pattern).trim()) ? String(value.garment_pattern).trim() : 'Solid';
+      var genderOpts = (Array.isArray(window.POS_GENDER_OPTIONS) && window.POS_GENDER_OPTIONS.length > 0)
+         ? window.POS_GENDER_OPTIONS
+         : [
+            { id: 1, fullname: 'Men', code: 'M', description: "Men's garments", status: 'active' },
+            { id: 2, fullname: 'Women', code: 'W', description: "Women's garments", status: 'active' },
+            { id: 3, fullname: 'None', code: 'N', description: 'No specific gender / unisex', status: 'active' }
+         ];
+      var resolveGenderOpt = function (raw) {
+         var s = String(raw || '').trim().toLowerCase();
+         var alias = s === 'male' ? 'men' : (s === 'female' ? 'women' : s);
+         if (alias) {
+            for (var i = 0; i < genderOpts.length; i++) {
+               var g = genderOpts[i];
+               if (String(g.fullname || '').trim().toLowerCase() === alias || String(g.code || '').trim().toLowerCase() === alias) {
+                  return g;
+               }
+            }
+         }
+         for (var j = 0; j < genderOpts.length; j++) {
+            var gn = genderOpts[j];
+            if (String(gn.fullname || '').trim().toLowerCase() === 'none' || String(gn.code || '').trim().toUpperCase() === 'N') {
+               return gn;
+            }
+         }
+         return genderOpts[0];
+      };
+      var getGenderBadgeCls = function (code) {
+         var c = String(code || '').trim().toUpperCase();
+         if (c === 'M') return 'bg-primary-subtle text-primary';
+         if (c === 'W') return 'bg-danger-subtle text-danger';
+         if (c === 'N') return 'bg-secondary-subtle text-secondary';
+         return 'bg-info-subtle text-info';
+      };
+      var getGenderBtnStateCls = function (code) {
+         var c = String(code || '').trim().toUpperCase();
+         if (c === 'M') return 'is-male';
+         if (c === 'W') return 'is-female';
+         if (c === 'N') return '';
+         return 'is-custom';
+      };
+
+      var resolvedG = resolveGenderOpt(value.gender);
+      var itemGender = resolvedG ? String(resolvedG.fullname || 'None') : 'None';
+      var genderShort = resolvedG ? String(resolvedG.code || 'N') : 'N';
+      var genderStateClass = getGenderBtnStateCls(genderShort);
 
       var colorTitle = primColor
          ? (primColor + (secColor ? (' / ' + secColor) : '') + (pattern ? (' • ' + pattern) : ''))
@@ -1535,19 +1580,41 @@
          colorSwatchesHtml = '<i class="fa fa-palette me-1"></i><span class="pos-color-label text-truncate" style="max-width: 115px;">' + colorAndPatternLabel + '</span>';
       }
 
-      var colorBtnHtml = '<button type="button" class="btn btn-xs pos-btn-color ' + colorBtnClass + ' px-2 py-1 text-truncate d-inline-flex align-items-center" style="max-width: 145px; font-size: 11px;" data-id="' + value.id + '" data-primary-color="' + primColor.replace(/"/g, '&quot;') + '" data-secondary-color="' + secColor.replace(/"/g, '&quot;') + '" data-pattern="' + pattern.replace(/"/g, '&quot;') + '" data-brand-id="' + (value.brand_id || 0) + '" data-brand-label="' + brandLabel.replace(/"/g, '&quot;') + '" data-original-rate="' + origRate + '"' + orderAttr + ' title="' + colorTitle.replace(/"/g, '&quot;') + '" ' + brandColorDisabledAttr + '>' +
+      var colorBtnHtml = '<button type="button" class="btn btn-xs pos-btn-color ' + colorBtnClass + ' px-2 py-1 text-truncate d-inline-flex align-items-center" style="max-width: 145px; font-size: 11px;" data-id="' + value.id + '" data-primary-color="' + primColor.replace(/"/g, '&quot;') + '" data-secondary-color="' + secColor.replace(/"/g, '&quot;') + '" data-pattern="' + pattern.replace(/"/g, '&quot;') + '" data-gender="' + itemGender.replace(/"/g, '&quot;') + '" data-brand-id="' + (value.brand_id || 0) + '" data-brand-label="' + brandLabel.replace(/"/g, '&quot;') + '" data-original-rate="' + origRate + '"' + orderAttr + ' title="' + colorTitle.replace(/"/g, '&quot;') + '" ' + brandColorDisabledAttr + '>' +
          colorSwatchesHtml +
          '</button>';
+
+      var genderMenuItemsHtml = '';
+      for (var gi = 0; gi < genderOpts.length; gi++) {
+         var gOpt = genderOpts[gi];
+         var gFull = String(gOpt.fullname || '');
+         var gCode = String(gOpt.code || '');
+         var gDesc = String(gOpt.description || gFull);
+         var isAct = gFull.toLowerCase() === itemGender.toLowerCase();
+         genderMenuItemsHtml += '<li><button type="button" class="dropdown-item pos-gender-option d-flex align-items-center gap-2' + (isAct ? ' active' : '') + '" data-value="' + gFull.replace(/"/g, '&quot;') + '" data-code="' + gCode.replace(/"/g, '&quot;') + '" title="' + gDesc.replace(/"/g, '&quot;') + '"><span class="badge ' + getGenderBadgeCls(gCode) + '">' + gCode + '</span><span>' + gFull + '</span></button></li>';
+      }
+
+      var genderDropdownHtml = '<div class="dropdown d-inline-block pos-gender-dropdown" data-id="' + value.id + '" data-gender="' + itemGender.replace(/"/g, '&quot;') + '"' + orderAttr + '>' +
+         '<button type="button" class="btn btn-xs dropdown-toggle pos-gender-btn ' + genderStateClass + '" aria-expanded="false" title="' + itemGender.replace(/"/g, '&quot;') + '" ' + brandColorDisabledAttr + '>' +
+         '<span class="pos-gender-code">' + genderShort + '</span>' +
+         '</button>' +
+         '<ul class="dropdown-menu dropdown-menu-start pos-gender-menu shadow-sm py-1">' +
+         genderMenuItemsHtml +
+         '</ul>' +
+         '</div>';
 
       return '<tr>' +
          '<td>' +
          '<div class="pos-cart-service-info">' +
          '<span class="pos-cart-item-title" title="' + (value.service_name || '') + '">' + (value.service_name || '') + pcsBadge + '</span>' +
+         '<div class="d-flex align-items-center gap-1 flex-wrap mt-1">' +
          '<span class="pos-cart-item-badge">[' + (value.service_type_name || '') + ']</span>' +
+         genderDropdownHtml +
+         '</div>' +
          '</div>' +
          '</td>' +
          '<td class="text-center">' +
-         '<button type="button" class="btn btn-xs ' + brandBtnClass + ' px-2 py-1 text-truncate pos-btn-brand" style="max-width: 85px; font-size: 11px;" data-id="' + value.id + '" data-brand-id="' + (value.brand_id || 0) + '" data-brand-label="' + brandLabel.replace(/"/g, '&quot;') + '" data-primary-color="' + primColor.replace(/"/g, '&quot;') + '" data-secondary-color="' + secColor.replace(/"/g, '&quot;') + '" data-pattern="' + pattern.replace(/"/g, '&quot;') + '" data-original-rate="' + origRate + '"' + orderAttr + ' title="' + brandTitle.replace(/"/g, '&quot;') + '" ' + brandColorDisabledAttr + '>' +
+         '<button type="button" class="btn btn-xs ' + brandBtnClass + ' px-2 py-1 text-truncate pos-btn-brand" style="max-width: 85px; font-size: 11px;" data-id="' + value.id + '" data-brand-id="' + (value.brand_id || 0) + '" data-brand-label="' + brandLabel.replace(/"/g, '&quot;') + '" data-primary-color="' + primColor.replace(/"/g, '&quot;') + '" data-secondary-color="' + secColor.replace(/"/g, '&quot;') + '" data-pattern="' + pattern.replace(/"/g, '&quot;') + '" data-gender="' + itemGender.replace(/"/g, '&quot;') + '" data-original-rate="' + origRate + '"' + orderAttr + ' title="' + brandTitle.replace(/"/g, '&quot;') + '" ' + brandColorDisabledAttr + '>' +
          '<i class="fa fa-tag me-1"></i>' + brandBtnText +
          '</button>' +
          '</td>' +
@@ -2908,6 +2975,8 @@
       var primaryColor = $btn.attr('data-primary-color') || '';
       var secondaryColor = $btn.attr('data-secondary-color') || '';
       var pattern = $btn.attr('data-pattern') || 'Solid';
+      var rowGenderVal = $btn.closest('tr').find('.pos-gender-dropdown').attr('data-gender');
+      var gender = rowGenderVal || $btn.attr('data-gender') || 'None';
 
       $('#pos_brand_modal_service_id').val(serviceId);
       $('#pos_brand_modal_order_id').val(orderId);
@@ -2921,10 +2990,11 @@
       $('#btn_pos_scan_cloth').removeClass('btn-outline-primary').addClass('btn-primary').prop('disabled', false)
          .html('<i class="fa fa-camera-retro me-1"></i><span id="btn_pos_scan_cloth_text">Scan Cloth Details</span>');
 
-      // Populate Color & Pattern dropdowns
+      // Populate Color, Pattern & Gender dropdowns
       $('#pos_modal_primary_color').val(primaryColor).trigger('change');
       $('#pos_modal_secondary_color').val(secondaryColor).trigger('change');
       $('#pos_modal_pattern').val(pattern).trigger('change');
+      syncPosModalGenderUI(gender);
 
       $('#pos_brand_modal').modal('show');
       searchPosBrands('');
@@ -3133,7 +3203,7 @@
       updatePosBrandPreview();
    });
 
-   function applyPosBrandSelection(brandIdToApply, explicitPrimaryColor, explicitSecondaryColor, explicitPattern) {
+   function applyPosBrandSelection(brandIdToApply, explicitPrimaryColor, explicitSecondaryColor, explicitPattern, explicitGender) {
       var baseUrl = window.location.origin;
       var serviceId = $('#pos_brand_modal_service_id').val();
       var orderId = $('#pos_brand_modal_order_id').val();
@@ -3141,13 +3211,14 @@
       var primaryColor = (typeof explicitPrimaryColor !== 'undefined') ? explicitPrimaryColor : ($('#pos_modal_primary_color').val() || '');
       var secondaryColor = (typeof explicitSecondaryColor !== 'undefined') ? explicitSecondaryColor : ($('#pos_modal_secondary_color').val() || '');
       var pattern = (typeof explicitPattern !== 'undefined') ? explicitPattern : ($('#pos_modal_pattern').val() || 'Solid');
+      var gender = (typeof explicitGender !== 'undefined') ? explicitGender : ($('#pos_modal_gender').val() || 'None');
 
       if (!serviceId) return;
 
       var endpoint = isEdit ? (baseUrl + '/admin/edit_changebrand') : (baseUrl + '/admin/changebrand');
       var payload = isEdit
-         ? { id: serviceId, brand_id: brandIdToApply, order_id: orderId, primary_color: primaryColor, secondary_color: secondaryColor, garment_pattern: pattern }
-         : { id: serviceId, brand_id: brandIdToApply, primary_color: primaryColor, secondary_color: secondaryColor, garment_pattern: pattern };
+         ? { id: serviceId, brand_id: brandIdToApply, order_id: orderId, primary_color: primaryColor, secondary_color: secondaryColor, garment_pattern: pattern, gender: gender }
+         : { id: serviceId, brand_id: brandIdToApply, primary_color: primaryColor, secondary_color: secondaryColor, garment_pattern: pattern, gender: gender };
 
       $.ajax({
          type: 'POST',
@@ -3195,15 +3266,212 @@
       applyPosBrandSelection(selectedBrandId);
    });
 
+   function resolvePosGenderFromCache(genderVal) {
+      var opts = (Array.isArray(window.POS_GENDER_OPTIONS) && window.POS_GENDER_OPTIONS.length > 0)
+         ? window.POS_GENDER_OPTIONS
+         : [
+            { fullname: 'Men', code: 'M' },
+            { fullname: 'Women', code: 'W' },
+            { fullname: 'None', code: 'N' }
+         ];
+      var s = String(genderVal || '').trim().toLowerCase();
+      var alias = s === 'male' ? 'men' : (s === 'female' ? 'women' : s);
+      if (alias) {
+         for (var i = 0; i < opts.length; i++) {
+            if (String(opts[i].fullname || '').trim().toLowerCase() === alias || String(opts[i].code || '').trim().toLowerCase() === alias) {
+               return opts[i];
+            }
+         }
+      }
+      for (var j = 0; j < opts.length; j++) {
+         if (String(opts[j].fullname || '').trim().toLowerCase() === 'none' || String(opts[j].code || '').trim().toUpperCase() === 'N') {
+            return opts[j];
+         }
+      }
+      return opts[0];
+   }
+
+   function syncPosModalGenderUI(genderVal) {
+      var opt = resolvePosGenderFromCache(genderVal);
+      var val = opt.fullname;
+      var code = opt.code;
+      $('#pos_modal_gender').val(val);
+      $('#pos_modal_gender_label').text(code + ' - ' + val);
+      $('#pos_modal_gender_dropdown .pos-modal-gender-option').each(function () {
+         var isMatch = String($(this).attr('data-value') || '').toLowerCase() === val.toLowerCase();
+         $(this).toggleClass('active', isMatch);
+      });
+   }
+
+   function syncRowGenderDropdownUI($wrap, genderVal) {
+      var opt = resolvePosGenderFromCache(genderVal);
+      var val = opt.fullname;
+      var shortCode = String(opt.code || 'N').toUpperCase();
+      var $btn = $wrap.find('.pos-gender-btn');
+      $wrap.attr('data-gender', val);
+      $btn.attr('title', val);
+      $btn.find('.pos-gender-code').text(shortCode);
+      $btn.removeClass('is-male is-female is-custom');
+      if (shortCode === 'M') $btn.addClass('is-male');
+      else if (shortCode === 'W') $btn.addClass('is-female');
+      else if (shortCode !== 'N') $btn.addClass('is-custom');
+      $wrap.find('.pos-gender-option').each(function () {
+         var isMatch = String($(this).attr('data-value') || '').toLowerCase() === val.toLowerCase();
+         $(this).toggleClass('active', isMatch);
+      });
+   }
+
    $(document).on('click', '#btn_pos_clear_brand', function () {
       $('#pos_modal_primary_color').val('').trigger('change');
       $('#pos_modal_secondary_color').val('').trigger('change');
       $('#pos_modal_pattern').val('Solid').trigger('change');
+      syncPosModalGenderUI('None');
       $('#pos_brand_modal_selected_id').val(0);
       $('.pos-brand-select-row').removeClass('table-primary');
       $('.pos-brand-radio').prop('checked', false);
       updatePosBrandPreview();
-      applyPosBrandSelection(0, '', '', 'Solid');
+      applyPosBrandSelection(0, '', '', 'Solid', 'None');
+   });
+
+   // Modal Bootstrap Dropdown for Garment Gender
+   $(document).on('click', '.pos-modal-gender-option', function (e) {
+      e.preventDefault();
+      var val = $(this).attr('data-value') || 'None';
+      syncPosModalGenderUI(val);
+   });
+
+   // Portal-based Bootstrap Dropdown for cart rows (escapes .card backdrop-filter & .pos-table-scroll overflow clipping)
+   var activeGenderPortal = null;
+
+   function closeActiveGenderPortal() {
+      if (!activeGenderPortal) return;
+      var p = activeGenderPortal;
+      activeGenderPortal = null;
+      p.$menu.removeClass('show pos-gender-menu-portal').css({
+         position: '',
+         top: '',
+         left: '',
+         display: '',
+         zIndex: '',
+         margin: ''
+      });
+      if (p.$wrap && p.$wrap.length && $.contains(document.documentElement, p.$wrap[0])) {
+         p.$wrap.append(p.$menu);
+      } else {
+         p.$menu.remove();
+      }
+      p.$btn.removeClass('show').attr('aria-expanded', 'false');
+   }
+
+   $(document).on('click', '.pos-gender-btn', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var $btn = $(this);
+      if ($btn.prop('disabled')) return;
+
+      var $wrap = $btn.closest('.pos-gender-dropdown');
+      var wasSameOpen = Boolean(activeGenderPortal && activeGenderPortal.$btn[0] === $btn[0]);
+      closeActiveGenderPortal();
+      if (wasSameOpen) return;
+
+      var $menu = $wrap.find('.pos-gender-menu').first();
+      if (!$menu.length) return;
+
+      $menu.data('originWrap', $wrap);
+      $menu.appendTo('body').addClass('show pos-gender-menu-portal').css({
+         position: 'fixed',
+         display: 'block',
+         zIndex: 2050,
+         margin: 0,
+         top: '-9999px',
+         left: '-9999px'
+      });
+
+      var rect = $btn[0].getBoundingClientRect();
+      var menuW = $menu.outerWidth() || 120;
+      var menuH = $menu.outerHeight() || 110;
+      var leftPos = Math.max(8, Math.min(rect.left, window.innerWidth - menuW - 8));
+      var topPos = (rect.bottom + 4 + menuH > window.innerHeight - 8)
+         ? Math.max(8, rect.top - menuH - 4)
+         : (rect.bottom + 4);
+
+      $menu.css({
+         top: topPos + 'px',
+         left: leftPos + 'px'
+      });
+
+      $btn.addClass('show').attr('aria-expanded', 'true');
+      activeGenderPortal = { $wrap: $wrap, $btn: $btn, $menu: $menu };
+   });
+
+   $(document).on('click', function (e) {
+      if (activeGenderPortal && !$(e.target).closest('.pos-gender-menu, .pos-gender-btn').length) {
+         closeActiveGenderPortal();
+      }
+   });
+
+   $(document).on('keydown', function (e) {
+      if (e.key === 'Escape' && activeGenderPortal) {
+         closeActiveGenderPortal();
+      }
+   });
+
+   $(window).on('resize', closeActiveGenderPortal);
+   $(document).ready(function () {
+      $('.pos-table-scroll').on('scroll', closeActiveGenderPortal);
+   });
+
+   // Inline Bootstrap Dropdown item selection on cart rows
+   $(document).on('click', '.pos-gender-option', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var $opt = $(this);
+      var $menu = $opt.closest('.pos-gender-menu');
+      var $wrap = $menu.data('originWrap') || $opt.closest('.pos-gender-dropdown');
+      var serviceId = $wrap.attr('data-id');
+      var orderId = $wrap.attr('data-order_id') || '';
+      var isEdit = Boolean(orderId) || $('#pos_mode').val() === 'edit';
+      var prevVal = $wrap.attr('data-gender') || 'None';
+      var newVal = $opt.attr('data-value') || 'None';
+
+      closeActiveGenderPortal();
+
+      if (!serviceId) return;
+      if (newVal === prevVal) return;
+
+      var baseUrl = window.location.origin;
+      var endpoint = isEdit ? (baseUrl + '/admin/edit_changegender') : (baseUrl + '/admin/changegender');
+      var payload = isEdit
+         ? { id: serviceId, order_id: orderId || $('#order_id').val() || '', gender: newVal }
+         : { id: serviceId, gender: newVal };
+
+      syncRowGenderDropdownUI($wrap, newVal);
+
+      $.ajax({
+         type: 'POST',
+         url: endpoint,
+         data: payload,
+         dataType: 'json',
+         success: function (res) {
+            if (res && res.success) {
+               var savedGender = res.gender || newVal;
+               syncRowGenderDropdownUI($wrap, savedGender);
+               var $row = $wrap.closest('tr');
+               $row.find('.pos-btn-brand, .pos-btn-color').attr('data-gender', savedGender);
+            } else {
+               syncRowGenderDropdownUI($wrap, prevVal);
+               if (typeof toastr !== 'undefined') {
+                  toastr.error((res && res.message) || 'Failed to update gender.');
+               }
+            }
+         },
+         error: function () {
+            syncRowGenderDropdownUI($wrap, prevVal);
+            if (typeof toastr !== 'undefined') {
+               toastr.error('Error saving garment gender.');
+            }
+         }
+      });
    });
 
    $(document).on("change", "#POSservice_item_value", function () {

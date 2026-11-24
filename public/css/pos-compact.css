@@ -402,7 +402,7 @@ select.pos-input-sm {
 .col-xl-5>.pos-card {
   display: flex !important;
   flex-direction: column !important;
-  height: calc(100vh - 19px) !important;
+  /* height: calc(100vh - 19px) !important; */
   min-height: 0 !important;
 }
 
@@ -480,7 +480,7 @@ select.pos-input-sm {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  max-width: 150px;
+  max-width: 175px;
 }
 
 .pos-cart-item-title {
@@ -2863,7 +2863,7 @@ body.pos-screen-layout .pos-content-body .container-fluid {
   justify-content: flex-start;
   text-align: center;
   gap: 6px;
-  min-height: 124px;
+  /* min-height: 124px; */
   padding: 12px 10px 10px;
   border-radius: 12px;
   border: 1.5px solid #cbd5e1;
@@ -3059,6 +3059,110 @@ body.pos-screen-layout .pos-content-body .container-fluid {
 [data-theme-version="dark"] .pos2-jt-empty-state {
   background: rgba(15, 23, 42, 0.55);
   border-color: #334155;
+}
+
+/* ==========================================================================
+   POS Cart Item Gender Bootstrap Dropdown (Ultra-Compact M / W / N)
+   ========================================================================== */
+.pos-gender-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 38px !important;
+  height: 20px !important;
+  padding: 0 6px !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  border-radius: 4px !important;
+  border: 1px solid #cbd5e1 !important;
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.pos-gender-btn::after {
+  margin-left: 1px !important;
+  border-top-width: 0.3em !important;
+  border-right-width: 0.28em !important;
+  border-left-width: 0.28em !important;
+}
+
+.pos-gender-btn.is-male {
+  border-color: rgba(37, 99, 235, 0.55) !important;
+  background-color: rgba(37, 99, 235, 0.1) !important;
+  color: #1d4ed8 !important;
+}
+
+.pos-gender-btn.is-female {
+  border-color: rgba(219, 39, 119, 0.55) !important;
+  background-color: rgba(219, 39, 119, 0.1) !important;
+  color: #be185d !important;
+}
+
+.pos-gender-btn.is-custom {
+  border-color: rgba(14, 165, 233, 0.55) !important;
+  background-color: rgba(14, 165, 233, 0.1) !important;
+  color: #0369a1 !important;
+}
+
+.pos-gender-menu {
+  min-width: 118px !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+  z-index: 2050 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.pos-gender-menu .pos-gender-option {
+  padding: 5px 10px !important;
+  font-size: 12px !important;
+  font-weight: 600;
+}
+
+#pos_modal_gender_dropdown .dropdown-menu {
+  z-index: 1085 !important;
+}
+
+[data-theme-version="dark"] .pos-gender-btn {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme-version="dark"] .pos-gender-btn.is-male {
+  background-color: rgba(56, 189, 248, 0.18) !important;
+  border-color: rgba(56, 189, 248, 0.6) !important;
+  color: #7dd3fc !important;
+}
+
+[data-theme-version="dark"] .pos-gender-btn.is-female {
+  background-color: rgba(244, 114, 182, 0.18) !important;
+  border-color: rgba(244, 114, 182, 0.6) !important;
+  color: #f9a8d4 !important;
+}
+
+[data-theme-version="dark"] .pos-gender-btn.is-custom {
+  background-color: rgba(45, 212, 191, 0.18) !important;
+  border-color: rgba(45, 212, 191, 0.6) !important;
+  color: #5eead4 !important;
+}
+
+[data-theme-version="dark"] .pos-gender-menu {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme-version="dark"] .pos-gender-menu .pos-gender-option {
+  color: #e2e8f0 !important;
+}
+
+[data-theme-version="dark"] .pos-gender-menu .pos-gender-option:hover,
+[data-theme-version="dark"] .pos-gender-menu .pos-gender-option.active {
+  background-color: rgba(56, 189, 248, 0.18) !important;
+  color: #f8fafc !important;
 }
 
 /* ==========================================================================
