@@ -338,6 +338,20 @@
                 <div style="font-size: 11px; color: #475569; margin-top: 2px;">
                   <%= printMeta.join(' • ') %>
                 </div>
+                <%
+                  let orderPrintAddons = [];
+                  try {
+                    if (item.addons_json) {
+                      const rawOPA = typeof item.addons_json === 'string' ? JSON.parse(item.addons_json) : item.addons_json;
+                      if (Array.isArray(rawOPA)) orderPrintAddons = rawOPA.filter(a => a && (a.name || a.addon));
+                    }
+                  } catch (_) { orderPrintAddons = []; }
+                %>
+                <% if (orderPrintAddons.length > 0) { %>
+                <div style="font-size: 11px; color: #334155; margin-top: 2px;">
+                  <b>Addons:</b> <%= orderPrintAddons.map(a => (a.name || a.addon) + ' (' + (accessdata.symbol || '$') + Number(a.price || 0).toFixed(2) + ')').join(', ') %><% if (Number(item.addon_price || 0) > 0) { %> &bull; +<%= (accessdata.symbol || '$') %><%= Number(item.addon_price).toFixed(2) %><% } %>
+                </div>
+                <% } %>
               </td>
               <td class="text-end">
                 <% if (accessdata.plac=="1" ) { %>

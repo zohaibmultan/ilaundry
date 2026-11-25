@@ -27,6 +27,12 @@ const {
   resolveActiveGender,
 } = require("../middelwer/genderHelper");
 const {
+  parseItemAddons,
+  calculateItemAddonLineTotal,
+  recalcCartAddonAndTotals,
+  recalcOrderAddonAndTotals,
+} = require("../middelwer/itemAddonsHelper");
+const {
   broadcastCalendarChange,
 } = require("../middelwer/calendarBroadcaster");
 const {
@@ -1411,6 +1417,11 @@ router.post("/edit_removeservicelist", auth, async (req, res) => {
       return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
+    const removedItemAddons = parseItemAddons(service[0].addons_json);
+    if (removedItemAddons.length > 0 || parseFloat(service[0].addon_price || 0) > 0) {
+      await recalcOrderAddonAndTotals(req.body.order_id, req.hostname, req.protocol);
+    }
+
     const order_date = await DataFind(
       `SELECT * FROM tbl_order WHERE id = '${req.body.order_id}'`,
     );
@@ -1489,6 +1500,8 @@ router.get("/removeservicelist/:id", auth, async (req, res) => {
       req.flash("error", process.env.dataerror);
       return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
+
+    await recalcCartAddonAndTotals(`${loginas},${id}`, req.hostname, req.protocol);
 
     var cart = await DataFind(
       " SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
@@ -3687,9 +3700,12 @@ router.post("/edit_changequntity", auth, async (req, res) => {
     //     ""
     // );
 
+    const existingItemAddons = parseItemAddons(service[0].addons_json);
+    const { lineTotal: updatedItemAddonTotal } = calculateItemAddonLineTotal(existingItemAddons, qty);
+
     const updateServiceQty = await DataUpdate(
       `tbl_cart_servicelist`,
-      `service_quntity = ${qty}`,
+      `service_quntity = ${qty}, addon_price = ${updatedItemAddonTotal}`,
       `id = ${serviceid}`,
       req.hostname,
       req.protocol,
@@ -3703,16 +3719,6 @@ router.post("/edit_changequntity", auth, async (req, res) => {
     const store_data = await DataFind(
       `SELECT * FROM tbl_store WHERE id = '${old_order_date[0].store_id}'`,
     );
-
-    // await DataFind(
-    //   "UPDATE tbl_order SET coupon_id='0',coupon_discount='0', sub_total= ROUND(sub_total + " +
-    //     amount_diff +
-    //     ",2) , tax_amount =ROUND((sub_total + addon_price - coupon_discount) * (tax / 100),2) , gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2) , balance_amount = ROUND(gross_total - paid_amount,2), master_comission = ROUND((gross_total * '" +
-    //     store_data[0].shop_commission +
-    //     "') / 100,2) WHERE id = '" +
-    //     order_id +
-    //     "'"
-    // );
 
     const updateOrder = await DataUpdate(
       `tbl_order`,
@@ -3735,7 +3741,9 @@ router.post("/edit_changequntity", auth, async (req, res) => {
       return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
-    // const cartupdate = await DataFind("UPDATE tbl_cart SET sub_total= ROUND(sub_total + "+amount_diff+",2) , tax_amount =ROUND((sub_total + addon_price - coupon_discount - extra_discount) * (tax / 100),2) , gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2) , balance = ROUND(gross_total - paid_amount,2)   WHERE created_by='"+loginas+','+id+"'");
+    if (existingItemAddons.length > 0 || parseFloat(service[0].addon_price || 0) > 0) {
+      await recalcOrderAddonAndTotals(order_id, req.hostname, req.protocol);
+    }
 
     const order_date = await DataFind(
       " SELECT * FROM tbl_order WHERE id = '" + order_id + "'",
@@ -3776,9 +3784,12 @@ router.post("/changequntity", auth, async (req, res) => {
     //     ""
     // );
 
+    const existingCartItemAddons = parseItemAddons(service[0].addons_json);
+    const { lineTotal: updatedCartItemAddonTotal } = calculateItemAddonLineTotal(existingCartItemAddons, qty);
+
     const updateservice = await DataUpdate(
       "tbl_cart_servicelist",
-      `service_quntity = ${qty}`,
+      `service_quntity = ${qty}, addon_price = ${updatedCartItemAddonTotal}`,
       `id = ${serviceid}`,
       req.hostname,
       req.protocol,
@@ -3788,16 +3799,6 @@ router.post("/changequntity", auth, async (req, res) => {
       req.flash("errors", process.env.dataerror);
       return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
-
-    // const cartupdate = await DataFind(
-    //   "UPDATE tbl_cart SET  coupon_id='0', coupon_discount='0',sub_total= ROUND(sub_total + " +
-    //     amount_diff +
-    //     ",2) , tax_amount = ROUND((sub_total + addon_price - coupon_discount - extra_discount) * (tax / 100),2) , gross_total = ROUND(sub_total + tax_amount + addon_price - coupon_discount - extra_discount,2) , balance = ROUND(gross_total - paid_amount,2)   WHERE created_by='" +
-    //     loginas +
-    //     "," +
-    //     id +
-    //     "'"
-    // );
 
     const cartupdate = await DataUpdate(
       "tbl_cart",
@@ -3817,6 +3818,8 @@ router.post("/changequntity", auth, async (req, res) => {
       return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
     }
 
+    await recalcCartAddonAndTotals(`${loginas},${id}`, req.hostname, req.protocol);
+
     var cart = await DataFind(
       " SELECT * FROM tbl_cart WHERE created_by='" + loginas + "," + id + "'",
     );
@@ -3830,6 +3833,182 @@ router.post("/changequntity", auth, async (req, res) => {
   } catch (error) {
     console.error("Route error:", error);
     return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Per-Item Addons on POS / POS-2 active cart
+router.post("/item_addons", auth, async (req, res) => {
+  try {
+    const { id, loginas } = req.user;
+    const serviceListId = parseInt(req.body.service_list_id, 10);
+    if (!Number.isInteger(serviceListId) || serviceListId <= 0) {
+      return res.status(400).json({ success: false, message: "Invalid cart item ID." });
+    }
+
+    const createdByKey = `${loginas},${id}`;
+    const cartRows = await DataFind(`SELECT * FROM tbl_cart WHERE created_by='${createdByKey}' LIMIT 1`);
+    if (!cartRows || cartRows.length === 0) {
+      return res.status(404).json({ success: false, message: "Active cart not found." });
+    }
+
+    const itemRows = await DataFind(`SELECT * FROM tbl_cart_servicelist WHERE id=${serviceListId} LIMIT 1`);
+    if (!itemRows || itemRows.length === 0) {
+      return res.status(404).json({ success: false, message: "Cart item not found." });
+    }
+    const itemRow = itemRows[0];
+    const itemQty = Math.max(1, parseFloat(itemRow.service_quntity) || 1);
+
+    const isClear = String(req.body.clear_addons || "") === "1";
+    const rawAddon = req.body.addon;
+    const addonIds = isClear
+      ? []
+      : (Array.isArray(rawAddon) ? rawAddon : String(rawAddon || "").split(","))
+          .map((v) => parseInt(String(v).trim(), 10))
+          .filter((n) => Number.isInteger(n) && n > 0);
+
+    const selectedAddons = [];
+    for (const addonId of addonIds) {
+      const aRows = await DataFind(`SELECT id, addon, price FROM tbl_addons WHERE id=${addonId} LIMIT 1`);
+      if (aRows && aRows.length > 0) {
+        const customRaw = req.body["addon_price_" + addonId];
+        const unitPrice =
+          customRaw !== undefined && String(customRaw).trim() !== ""
+            ? Math.max(0, parseFloat(customRaw) || 0)
+            : Math.max(0, parseFloat(aRows[0].price) || 0);
+        selectedAddons.push({
+          id: Number(aRows[0].id),
+          name: String(aRows[0].addon || "").trim(),
+          price: Number(unitPrice.toFixed(2)),
+          default_price: Number((parseFloat(aRows[0].price) || 0).toFixed(2)),
+        });
+      }
+    }
+
+    const { lineTotal } = calculateItemAddonLineTotal(selectedAddons, itemQty);
+    const serializedJson = selectedAddons.length > 0 ? JSON.stringify(selectedAddons).replace(/'/g, "''") : "";
+    const jsonSql = serializedJson ? `'${serializedJson}'` : "NULL";
+
+    const upd = await DataUpdate(
+      "tbl_cart_servicelist",
+      `addons_json = ${jsonSql}, addon_price = ${lineTotal}`,
+      `id = ${serviceListId}`,
+      req.hostname,
+      req.protocol,
+    );
+    if (upd === -1) {
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
+    }
+
+    const updatedCart = await recalcCartAddonAndTotals(createdByKey, req.hostname, req.protocol);
+    const cartservice = await DataFind(
+      "SELECT * FROM tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
+        updatedCart.service_list_id +
+        "')",
+    );
+
+    return res.status(200).json({
+      success: true,
+      cart: updatedCart,
+      cartservice,
+      itemId: serviceListId,
+      itemAddons: selectedAddons,
+      loginas,
+    });
+  } catch (error) {
+    console.error("Error in POST /admin/item_addons:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Per-Item Addons on Edit Order mode
+router.post("/edit_item_addons", auth, async (req, res) => {
+  try {
+    const { loginas } = req.user;
+    const serviceListId = parseInt(req.body.service_list_id, 10);
+    const orderId = parseInt(req.body.order_id, 10);
+    if (!Number.isInteger(serviceListId) || serviceListId <= 0 || !Number.isInteger(orderId) || orderId <= 0) {
+      return res.status(400).json({ success: false, message: "Invalid order or item ID." });
+    }
+
+    const ordRows = await DataFind(`SELECT * FROM tbl_order WHERE id=${orderId} LIMIT 1`);
+    if (!ordRows || ordRows.length === 0) {
+      return res.status(404).json({ success: false, message: "Order not found." });
+    }
+
+    const itemIds = String(ordRows[0].service_list || "")
+      .split(",")
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => Number.isInteger(n) && n > 0);
+    if (!itemIds.includes(serviceListId)) {
+      return res.status(404).json({ success: false, message: "Item does not belong to this order." });
+    }
+
+    const itemRows = await DataFind(`SELECT * FROM tbl_cart_servicelist WHERE id=${serviceListId} LIMIT 1`);
+    if (!itemRows || itemRows.length === 0) {
+      return res.status(404).json({ success: false, message: "Order item not found." });
+    }
+    const itemRow = itemRows[0];
+    const itemQty = Math.max(1, parseFloat(itemRow.service_quntity) || 1);
+
+    const isClear = String(req.body.clear_addons || "") === "1";
+    const rawAddon = req.body.addon;
+    const addonIds = isClear
+      ? []
+      : (Array.isArray(rawAddon) ? rawAddon : String(rawAddon || "").split(","))
+          .map((v) => parseInt(String(v).trim(), 10))
+          .filter((n) => Number.isInteger(n) && n > 0);
+
+    const selectedAddons = [];
+    for (const addonId of addonIds) {
+      const aRows = await DataFind(`SELECT id, addon, price FROM tbl_addons WHERE id=${addonId} LIMIT 1`);
+      if (aRows && aRows.length > 0) {
+        const customRaw = req.body["addon_price_" + addonId];
+        const unitPrice =
+          customRaw !== undefined && String(customRaw).trim() !== ""
+            ? Math.max(0, parseFloat(customRaw) || 0)
+            : Math.max(0, parseFloat(aRows[0].price) || 0);
+        selectedAddons.push({
+          id: Number(aRows[0].id),
+          name: String(aRows[0].addon || "").trim(),
+          price: Number(unitPrice.toFixed(2)),
+          default_price: Number((parseFloat(aRows[0].price) || 0).toFixed(2)),
+        });
+      }
+    }
+
+    const { lineTotal } = calculateItemAddonLineTotal(selectedAddons, itemQty);
+    const serializedJson = selectedAddons.length > 0 ? JSON.stringify(selectedAddons).replace(/'/g, "''") : "";
+    const jsonSql = serializedJson ? `'${serializedJson}'` : "NULL";
+
+    const upd = await DataUpdate(
+      "tbl_cart_servicelist",
+      `addons_json = ${jsonSql}, addon_price = ${lineTotal}`,
+      `id = ${serviceListId}`,
+      req.hostname,
+      req.protocol,
+    );
+    if (upd === -1) {
+      return res.status(500).json({ success: false, message: process.env.dataerror || "Database operation failed" });
+    }
+
+    const updatedOrder = await recalcOrderAddonAndTotals(orderId, req.hostname, req.protocol);
+    const cartservice = await DataFind(
+      "SELECT * FROM tbl_cart_servicelist WHERE find_in_set(tbl_cart_servicelist.id,'" +
+        updatedOrder.service_list +
+        "')",
+    );
+
+    return res.status(200).json({
+      success: true,
+      order_date: updatedOrder,
+      cartservice,
+      itemId: serviceListId,
+      itemAddons: selectedAddons,
+      loginas,
+    });
+  } catch (error) {
+    console.error("Error in POST /admin/edit_item_addons:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 });
 

@@ -3,7 +3,7 @@
 
 <head>
   <%- include('templet/meta') -%>
-  <link rel="stylesheet" href="/css/pos-compact.css?v=17">
+  <link rel="stylesheet" href="/css/pos-compact.css?v=21">
 </head>
 
 <body class="pos-screen-layout">
@@ -208,13 +208,9 @@
             <div class="card-body p-1.5 px-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
               <!-- Left Section: Navigation & Store Identity -->
               <div class="d-flex align-items-center gap-2 flex-wrap">
-                <a href="/index" class="btn btn-sm pos-menu-btn d-inline-flex align-items-center justify-content-center gap-1 text-decoration-none" id="pos_dashboard_link" title="<%= (typeof language !== 'undefined' && language.Dashboard) ? language.Dashboard : 'Dashboard' %>">
-                  <i class="fas fa-home fs-14"></i>
-                  <span class="d-none d-xl-inline fw-semibold"><%= (typeof language !== 'undefined' && language.Dashboard) ? language.Dashboard : 'Dashboard' %></span>
-                </a>
                 <% if (isPos2Mode) { %>
-                <span class="badge bg-primary-subtle text-primary rounded-pill fw-bold px-2 py-1 fs-11">
-                  <i class="fa fa-bolt me-1"></i>POS-2
+                <span class="badge bg-primary-subtle text-primary rounded-pill fw-bold px-2 py-1 fs-12">
+                  <i class="fa fa-bolt me-1"></i>POS
                 </span>
                 <% } %>
 
@@ -456,9 +452,9 @@
                     <i class="fa fa-sitemap fs-12"></i>
                   </span>
                   <div class="min-w-0">
-                    <div class="text-muted lh-1" style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">Active Job Type</div>
+                    <div class="text-muted lh-1" style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">Active Service</div>
                     <div class="d-flex align-items-center flex-wrap gap-2 mt-0.5">
-                      <strong class="fs-13 text-truncate" id="pos2_active_job_type_breadcrumb"><%= safeActiveJtLabel || 'No Job Type Selected' %></strong>
+                      <strong class="fs-13 text-truncate" id="pos2_active_job_type_breadcrumb"><%= safeActiveJtLabel || 'No Service Selected' %></strong>
                       <span class="badge bg-success-subtle text-success rounded-pill fs-11 <%= safeActiveJobType ? '' : 'd-none' %>" id="pos2_active_job_type_count">
                         <%= safeActiveJobType ? (safeActiveJobType.pricedCount + (safeActiveJobType.pricedCount === 1 ? ' item' : ' items')) : '' %>
                       </span>
@@ -467,7 +463,7 @@
                 </div>
                 <button type="button" class="btn btn-xs btn-primary rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1 flex-shrink-0" id="btn_pos2_change_job_type">
                   <i class="fa fa-exchange-alt fs-11"></i>
-                  <span id="pos2_change_job_type_label"><%= safeActiveJobType ? 'Change Job Type' : 'Select Job Type' %></span>
+                  <span id="pos2_change_job_type_label"><%= safeActiveJobType ? 'Change Service' : 'Select Service' %></span>
                 </button>
               </div>
 
@@ -600,16 +596,9 @@
               <div class="row g-2 g-md-3">
                 <!-- Order Number -->
                 <div class="col-6 col-sm-4 col-xl-3">
-                  <div class="d-flex align-items-center justify-content-between gap-1">
-                    <label class="pos-field-label mb-0">
-                      <%= language.Order_No || 'Order #' %> <span class="text-danger">*</span>
-                    </label>
-                    <% if (isPos2Mode) { %>
-                    <span id="pos2_cart_job_type_pill" class="badge bg-primary-subtle text-primary rounded-pill fs-10 text-truncate pos2-cart-jt-chip <%= safeActiveJobType ? '' : 'd-none' %>" style="max-width: 110px;" title="Active Job Type (click to change)">
-                      <i class="fa fa-sitemap me-1"></i><span id="pos2_cart_job_type_text"><%= safeActiveJtLabel %></span>
-                    </span>
-                    <% } %>
-                  </div>
+                  <label class="pos-field-label mb-0">
+                    <%= language.Order_No || 'Order #' %> <span class="text-danger">*</span>
+                  </label>
                   <input type="text" id="pos_order_id" class="form-control pos-input-sm w-100 fw-bold text-dark" value="<%= cart.order_id %>" readonly title="Order ID">
                 </div>
 
@@ -719,27 +708,95 @@
                       </option>
                       <% }); %>
                     </select>
-                    <div class="d-flex align-items-center justify-content-between mt-1">
-                      <span id="pos_cust_comm_pref_badge" class="badge bg-light text-muted border fs-11 fw-normal" title="Customer communication channel preference">
-                        <i class="fa fa-paper-plane me-1"></i><span class="comm-pref-text">Pref: Not Set</span>
-                      </span>
-                    </div>
                   <% } %>
+                  <%
+                    const safeCustomerTypes = (typeof customer_types !== 'undefined' && Array.isArray(customer_types)) ? customer_types : [];
+                    const formatCtShortCode = (ctObj) => {
+                      if (!ctObj) return 'C • C';
+                      const rawCode = String(ctObj.code || '').trim();
+                      if (rawCode) return rawCode;
+                      const nm = String(ctObj.name || '').trim();
+                      const m = nm.match(/\b(Counter|Route|Pick-?up)\b.*?\b(Counter|Route|Delivery)\b/i);
+                      if (m) {
+                        const a = /^c/i.test(m[1]) ? 'C' : 'R';
+                        const b = /^c/i.test(m[2]) ? 'C' : 'R';
+                        return a + ' • ' + b;
+                      }
+                      return nm || 'C • C';
+                    };
+                    let activeCtObj = null;
+                    safeCustomerTypes.forEach(function(ct, idx) {
+                      const matched = (cart.order_type === ct.name || cart.order_type === ct.code || normalizedOT === ct.name || normalizedOT === ct.code || (!cart.order_type && (ct.name === 'Counter • Counter' || ct.code === 'C • C' || idx === 0)));
+                      if (matched && !activeCtObj) activeCtObj = ct;
+                    });
+                    if (!activeCtObj && safeCustomerTypes.length > 0) activeCtObj = safeCustomerTypes[0];
+                    const activeCtName = activeCtObj ? (activeCtObj.name || activeCtObj.code || 'Counter • Counter') : (normalizedOT || 'Counter • Counter');
+                    const activeCtCode = activeCtObj ? formatCtShortCode(activeCtObj) : 'C • C';
+                    const isActiveCtRoute = /route|pick-?up|delivery|\bR\b/i.test(activeCtCode) || /route|pick-?up|delivery/i.test(activeCtName);
+                  %>
+                  <select class="d-none" id="<%= isEditMode ? 'edit_pos_order_type' : 'pos_order_type' %>" name="<%= isEditMode ? 'edit_pos_order_type' : 'order_type' %>" <%= login === 'customer' ? 'disabled' : '' %>>
+                    <option value="" disabled <%= (!cart.order_type || cart.order_type === '') ? 'selected' : '' %>><%= language.Select_Customer_Type || 'Select Customer Type' %></option>
+                    <% safeCustomerTypes.forEach(function(ct, idx) { %>
+                    <option value="<%= ct.name %>" data-code="<%= formatCtShortCode(ct) %>" title="<%= ct.name %><%= ct.description ? ' - ' + ct.description : '' %>" <%= (activeCtObj && activeCtObj.name === ct.name) ? 'selected' : '' %>><%= ct.name || ct.code %></option>
+                    <% }); %>
+                  </select>
+                  <div class="d-flex align-items-center justify-content-between gap-2 mt-1 flex-wrap">
+                    <% if (!isEditMode && login !== 'customer') { %>
+                    <span id="pos_cust_comm_pref_badge" class="badge bg-light text-muted border fs-11 fw-normal" title="Customer communication channel preference">
+                      <i class="fa fa-paper-plane me-1"></i><span class="comm-pref-text">Pref: Not Set</span>
+                    </span>
+                    <% } %>
+                    <div class="dropdown pos-order-type-dropdown <%= (isEditMode || login === 'customer') ? '' : 'ms-auto' %>" id="pos_order_type_dropdown">
+                      <button type="button" class="btn btn-xs dropdown-toggle pos-order-type-btn <%= isActiveCtRoute ? 'is-route' : '' %>" id="pos_order_type_btn" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" title="<%= activeCtName %>" <%= login === 'customer' ? 'disabled' : '' %>>
+                        <i class="fa fa-exchange-alt me-1 fs-10"></i><span id="pos_order_type_code_text"><%= activeCtCode %></span>
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end pos-order-type-menu shadow-sm py-1" aria-labelledby="pos_order_type_btn">
+                        <% safeCustomerTypes.forEach(function(ct) {
+                          const ctShort = formatCtShortCode(ct);
+                          const isOptActive = activeCtObj && activeCtObj.name === ct.name;
+                          const optIsRoute = /route|pick-?up|delivery|\bR\b/i.test(ctShort) || /route|pick-?up|delivery/i.test(ct.name || '');
+                        %>
+                        <li>
+                          <button type="button" class="dropdown-item pos-order-type-option d-flex align-items-start gap-2 <%= isOptActive ? 'active' : '' %>" data-value="<%= ct.name %>" data-code="<%= ctShort %>" data-name="<%= ct.name || ctShort %>">
+                            <span class="badge <%= optIsRoute ? 'bg-info-subtle text-info' : 'bg-secondary-subtle text-secondary' %> flex-shrink-0 mt-1"><%= ctShort %></span>
+                            <span class="d-flex flex-column text-start lh-sm">
+                              <span class="fw-semibold fs-12"><%= ct.name || ctShort %></span>
+                              <% if (ct.description) { %>
+                              <small class="text-muted fs-10 text-wrap"><%= ct.description %></small>
+                              <% } %>
+                            </span>
+                          </button>
+                        </li>
+                        <% }); %>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
 
-                <!-- Customer Type -->
+                <!-- Selected Service (POS-2) -->
                 <div class="col-12 col-md-6">
-                  <label class="pos-field-label mb-0" for="<%= isEditMode ? 'edit_pos_order_type' : 'pos_order_type' %>">
-                    <%= language.Customer_Type || 'Customer Type' %> <span class="text-danger">*</span>
-                  </label>
-                  <select class="form-select w-100 fw-bold" id="<%= isEditMode ? 'edit_pos_order_type' : 'pos_order_type' %>" name="<%= isEditMode ? 'edit_pos_order_type' : 'order_type' %>" <%= login === 'customer' ? 'disabled' : '' %>>
-                    <option value="" disabled <%= (!cart.order_type || cart.order_type === '') ? 'selected' : '' %>><%= language.Select_Customer_Type || 'Select Customer Type' %></option>
-                    <% if (typeof customer_types !== 'undefined' && customer_types && customer_types.length > 0) { %>
-                    <% customer_types.forEach(function(ct, idx) { %>
-                    <option value="<%= ct.name %>" data-code="<%= ct.code || '' %>" title="<%= ct.name %><%= ct.description ? ' - ' + ct.description : '' %>" <%= (cart.order_type === ct.name || cart.order_type === ct.code || normalizedOT === ct.name || normalizedOT === ct.code || (!cart.order_type && (ct.name === 'Counter • Counter' || ct.code === 'C • C' || idx === 0))) ? 'selected' : '' %>><%= ct.name || ct.code %></option>
-                    <% }); %>
-                    <% } %>
-                  </select>
+                  <% if (isPos2Mode) { %>
+                  <div class="d-flex align-items-center justify-content-between" style="margin-bottom: 5px">
+                    <label class="pos-field-label mb-0">
+                      <%= language.Selected_Service || 'Selected Service' %>
+                    </label>
+                    <span class="badge bg-success-subtle text-success rounded-pill fs-10 <%= safeActiveJobType ? '' : 'd-none' %>" id="pos2_cart_service_count">
+                      <%= safeActiveJobType ? (safeActiveJobType.pricedCount + (safeActiveJobType.pricedCount === 1 ? ' item' : ' items')) : '' %>
+                    </span>
+                  </div>
+                  <div class="input-group input-group-sm pos-cust-selector-trigger" id="pos2_cart_job_type_pill" role="button" tabindex="0" title="Click to change active service">
+                    <span class="input-group-text bg-light-subtle border-end-0 py-0 px-2 text-primary">
+                      <i class="fa fa-sitemap"></i>
+                    </span>
+                    <div id="pos2_cart_job_type_text" class="form-control pos-input-sm border-start-0 border-end-0 ps-1 fw-bold text-dark d-flex align-items-center text-truncate">
+                      <%= safeActiveJtLabel || 'No Service Selected' %>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-primary px-2 py-0 fw-semibold d-inline-flex align-items-center gap-1 fs-11">
+                      <i class="fa fa-exchange-alt fs-10"></i>
+                      <span>Change</span>
+                    </button>
+                  </div>
+                  <% } %>
                 </div>
 
                 <!-- Total Orders -->
@@ -874,6 +931,21 @@
                     %>
                     <tr>
                       <td>
+                        <%
+                          const hideRowJobTypeBadge = Boolean(isPos2Mode || (cart && Number(cart.job_type_id) > 0));
+                          let parsedRowAddons = [];
+                          try {
+                            if (x.addons_json) {
+                              const rawA = typeof x.addons_json === 'string' ? JSON.parse(x.addons_json) : x.addons_json;
+                              if (Array.isArray(rawA)) parsedRowAddons = rawA.filter(a => a && a.name);
+                            }
+                          } catch (_) { parsedRowAddons = []; }
+                          const visibleAddonNames = parsedRowAddons.slice(0, 2).map(a => a.name).join(', ');
+                          const hiddenAddonCount = Math.max(0, parsedRowAddons.length - 2);
+                          const addonsTooltip = parsedRowAddons.length > 0
+                            ? parsedRowAddons.map(a => a.name + ' (' + posCurrSym + Number(a.price || 0).toFixed(2) + ')').join(', ')
+                            : 'Add addons to this item';
+                        %>
                         <div class="pos-cart-service-info">
                           <span class="pos-cart-item-title" title="<%= x.service_name %>">
                             <%= x.service_name %>
@@ -882,7 +954,9 @@
                             <% } %>
                           </span>
                           <div class="d-flex align-items-center gap-1 flex-wrap mt-1">
+                            <% if (!hideRowJobTypeBadge) { %>
                             <span class="pos-cart-item-badge">[<%= x.service_type_name %>]</span>
+                            <% } %>
                             <div class="dropdown d-inline-block pos-gender-dropdown" data-id="<%= x.id %>" data-gender="<%= itemGender %>" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %>>
                               <button type="button" class="btn btn-xs dropdown-toggle pos-gender-btn <%= genderStateClass %>" aria-expanded="false" title="<%= itemGender %>" <%= (login !== 'customer') ? '' : 'disabled' %>>
                                 <span class="pos-gender-code"><%= genderShort %></span>
@@ -898,6 +972,13 @@
                                 <% }); %>
                               </ul>
                             </div>
+                            <button type="button" class="btn btn-xs pos-item-addons-btn <%= parsedRowAddons.length > 0 ? 'has-addons' : '' %>" data-id="<%= x.id %>" data-item-name="<%= x.service_name %>" data-qty="<%= x.service_quntity || 1 %>" data-addons='<%= JSON.stringify(parsedRowAddons) %>' <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> title="<%= addonsTooltip %>" <%= (login !== 'customer') ? '' : 'disabled' %>>
+                              <% if (parsedRowAddons.length > 0) { %>
+                                <i class="fa fa-puzzle-piece me-1"></i><span class="pos-item-addons-names"><%= visibleAddonNames %></span><% if (hiddenAddonCount > 0) { %><span class="badge bg-primary text-white ms-1 pos-item-addons-more">+<%= hiddenAddonCount %></span><% } %>
+                              <% } else { %>
+                                <i class="fa fa-plus me-1"></i><span><%= language.Addons || 'Addons' %></span>
+                              <% } %>
+                            </button>
                           </div>
                         </div>
                       </td>
@@ -973,96 +1054,56 @@
 
               <!-- Bottom Actions & Financial Summary Area -->
               <div class="pos-bottom-section">
-                <!-- Active Addons Identification & Quick Clear Bar -->
-                <div id="pos_active_addons_bar" class="pos-active-addons-bar d-flex align-items-center justify-content-between gap-2 mb-1 px-2 py-1 rounded <%= hasActiveAddons ? '' : 'd-none' %>">
-                  <div class="d-flex align-items-center flex-wrap gap-1 min-w-0">
-                    <span class="fw-bold text-primary pos-addon-bar-title">
-                      <i class="fa fa-puzzle-piece me-1"></i><%= language.Addons || 'Addons' %>:
-                    </span>
-                    <div id="pos_active_addons_pills" class="d-inline-flex align-items-center flex-wrap gap-1">
-                      <% if (activeCartAddons.length > 0) { %>
-                        <% activeCartAddons.forEach(function(ad) { %>
-                          <span class="badge pos-addon-pill d-inline-flex align-items-center gap-1" data-addon-id="<%= ad.id %>">
-                            <span><%= ad.addon %></span>
-                            <span class="opacity-75">($<%= (Number(ad.price) || 0).toFixed(2) %>)</span>
-                            <button type="button" class="btn-close pos-addon-pill-remove" data-id="<%= ad.id %>" title="Remove <%= ad.addon %>" aria-label="Remove"></button>
-                          </span>
-                        <% }) %>
-                      <% } else if ((Number(cart.addon_price) || 0) > 0) { %>
-                        <span class="badge pos-addon-pill d-inline-flex align-items-center gap-1">
-                          <span>Custom Addon Amount</span>
-                          <span>($<%= (Number(cart.addon_price) || 0).toFixed(2) %>)</span>
-                        </span>
-                      <% } %>
-                    </div>
-                  </div>
-                  <button type="button" class="btn btn-outline-danger pos-btn-clear-addons flex-shrink-0" id="btn_pos_clear_addons" title="Clear all addons">
-                    <i class="fa fa-times-circle me-1"></i>Clear Addons
-                  </button>
-                </div>
-
                 <div class="<%= ((accessdata.logas == 'custmor' && accessdata.roll?.pos?.includes('write')) || (accessdata.roll?.pos && accessdata.roll.pos.includes('write'))) ? 'd-block' : 'd-none' %>">
-                  <div class="row g-1">
+                  <div class="row row-cols-3 row-cols-md-5 g-1">
                     <% if (isEditMode) { %>
-                      <div class="col-4 col-md-2">
-                        <button type="button" class="btn <%= hasActiveAddons ? 'btn-info text-white' : 'btn-primary' %> pos-btn-mini w-100" id="btn_pos_addons_modal" data-bs-toggle="modal" data-bs-target="#addons">
-                          <i class="fa <%= hasActiveAddons ? 'fa-check-circle' : 'fa-plus-circle' %> me-1" id="pos_addons_btn_icon"></i><span><%= language.Addons %></span>
-                          <span class="badge bg-white text-dark rounded-pill ms-1 <%= hasActiveAddons ? '' : 'd-none' %>" id="pos_addons_btn_badge"><%= activeCartAddons.length > 0 ? activeCartAddons.length : 1 %></span>
-                        </button>
-                      </div>
-                      <div class="col-4 col-md-2">
+                      <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_POS_coupon_model_show">
                           <i class="fa fa-tag me-1"></i><%= language.Coupon %>
                         </button>
                       </div>
-                      <div class="col-4 col-md-2">
+                      <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_direct_save_btn">
                           <i class="fa fa-save me-1"></i><%= language.Save || 'Save Order' %>
                         </button>
                       </div>
-                      <div class="col-4 col-md-2">
+                      <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_btn_pos_void">
                           <i class="fa fa-ban me-1"></i><%= language.Void || 'Void' %>
                         </button>
                       </div>
-                      <div class="col-4 col-md-2">
+                      <div class="col">
                         <a class="btn btn-primary pos-btn-mini w-100" href="<%= safePosBaseUrl %>">
                           <i class="fa fa-plus me-1"></i><%= language.New || 'New Order' %>
                         </a>
                       </div>
-                      <div class="col-4 col-md-2">
+                      <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="edit_btn_pos_print">
                           <i class="fa fa-print me-1"></i><span><%= language.Print || 'Print' %></span>
                         </button>
                       </div>
                     <% } else { %>
-                      <div class="col-4 col-md-2">
-                        <button type="button" class="btn <%= hasActiveAddons ? 'btn-info text-white' : 'btn-primary' %> pos-btn-mini w-100" id="btn_pos_addons_modal" data-bs-toggle="modal" data-bs-target="#addons">
-                          <i class="fa <%= hasActiveAddons ? 'fa-check-circle' : 'fa-plus-circle' %> me-1" id="pos_addons_btn_icon"></i><span><%= language.Addons %></span>
-                          <span class="badge bg-white text-dark rounded-pill ms-1 <%= hasActiveAddons ? '' : 'd-none' %>" id="pos_addons_btn_badge"><%= activeCartAddons.length > 0 ? activeCartAddons.length : 1 %></span>
-                        </button>
-                      </div>
-                      <div class="col-4 col-md-2">
+                      <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="POS_coupon_model_show">
                           <i class="fa fa-tag me-1"></i><%= language.Coupon %>
                         </button>
                       </div>
-                      <div class="col-4 col-md-2">
+                      <div class="col">
                         <button type="button" class="btn btn-danger pos-btn-mini w-100 fw-bold" id="btn_pos_void">
                           <i class="fa fa-ban me-1"></i><%= language.Void || 'Void' %>
                         </button>
                       </div>
-                      <div class="col-4 col-md-2">
+                      <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="btn_pos_new_order">
                           <i class="fa fa-plus me-1"></i><span>New Order</span>
                         </button>
                       </div>
-                      <div class="col-4 col-md-2">
+                      <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="btn_pos_save_draft">
                           <i class="fa fa-save me-1"></i><span>Save Order</span>
                         </button>
                       </div>
-                      <div class="col-4 col-md-2">
+                      <div class="col">
                         <button type="button" class="btn btn-primary pos-btn-mini w-100" id="btn_pos_direct_print">
                           <i class="fa fa-print me-1"></i><span><%= language.Print || 'Print' %></span>
                         </button>
@@ -1078,10 +1119,7 @@
                     </div>
                     <div class="pos-total-row align-items-center">
                       <span class="pos-total-label"><%= language.Addon_Total %>:</span>
-                      <div class="d-inline-flex align-items-center gap-1">
-                        <span class="pos-total-value symbol possymbol d-none" id="POS_addon_total"><%= (Number(cart.addon_price) || 0).toFixed(2) %></span>
-                        <input type="number" class="form-control pos-table-input pos-addon-total-input no-spin-arrows" id="POS_addon_total_input" value="<%= (Number(cart.addon_price) || 0).toFixed(2) %>" min="0" step="0.25" <%= isEditMode ? ('data-order_id="' + cart.id + '"') : '' %> title="Edit Addon Total Amount">
-                      </div>
+                      <span class="pos-total-value symbol possymbol" id="POS_addon_total"><%= (Number(cart.addon_price) || 0).toFixed(2) %></span>
                     </div>
                     <div class="pos-total-row text-success">
                       <span class="pos-total-label text-success"><%= language.Coupon_Discount %>:</span>
@@ -1852,17 +1890,19 @@
     </div>
   </div>
 
-  <!-- Modal Addons Selection -->
+  <!-- Modal Per-Item Addons Selection -->
   <div class="modal fade" id="addons">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
       <form id="add_addons_pos_cart" method="post" class="modal-content need-validation">
+        <input type="hidden" name="service_list_id" id="pos_addons_item_id" value="">
+        <input type="hidden" id="pos_addons_item_qty" value="1">
         <% if (isEditMode) { %>
         <input type="hidden" name="order_id" id="pos_addons_order_id" value="<%= cart.id %>">
         <% } %>
         <div class="modal-header d-flex align-items-center justify-content-between">
           <div>
-            <h5 class="modal-title mb-0"><%= language.Add_Addons %></h5>
-            <small class="text-muted">Select addons and optionally adjust addon amounts for this order</small>
+            <h5 class="modal-title mb-0"><%= language.Add_Addons || 'Item Addons' %></h5>
+            <small class="text-muted" id="pos_addons_modal_item_label">Select addons and optionally adjust unit amounts for this item</small>
           </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
@@ -1874,18 +1914,17 @@
             </div>
             <% } %>
             <% addonlist.forEach(function(data) { %>
-            <% const isAddonChecked = cartAddonIds.includes(String(data.id)); %>
             <div class="col-md-6">
-              <div class="card h-100 border p-2 mb-0 d-flex flex-row align-items-center justify-content-between rounded-3 addon-clickable pos-addon-modal-card <%= isAddonChecked ? 'border-primary bg-light-subtle' : '' %>" data-id="<%= data.id %>">
+              <div class="card h-100 border p-2 mb-0 d-flex flex-row align-items-center justify-content-between rounded-3 addon-clickable pos-addon-modal-card" data-id="<%= data.id %>">
                 <label class="d-flex align-items-center gap-2 mb-0 flex-grow-1 cursor-pointer" for="update_customer_read_<%= data.id %>" role="button">
-                  <input class="form-check-input m-0 pos-addon-checkbox" type="checkbox" id="update_customer_read_<%= data.id %>" name="addon" value="<%= data.id %>" data-addon-name="<%= data.addon %>" data-default-price="<%= (Number(data.price) || 0).toFixed(2) %>" <%= isAddonChecked ? 'checked' : '' %>>
+                  <input class="form-check-input m-0 pos-addon-checkbox" type="checkbox" id="update_customer_read_<%= data.id %>" name="addon" value="<%= data.id %>" data-addon-name="<%= data.addon %>" data-default-price="<%= (Number(data.price) || 0).toFixed(2) %>">
                   <div>
                     <h6 class="mb-0 fw-semibold text-dark"><%= data.addon %></h6>
-                    <small class="text-muted">Default: $<%= (Number(data.price) || 0).toFixed(2) %></small>
+                    <small class="text-muted">Default: <%= posCurrSym %><%= (Number(data.price) || 0).toFixed(2) %> / pc</small>
                   </div>
                 </label>
                 <div class="d-flex align-items-center gap-1 ms-2 flex-shrink-0">
-                  <input type="number" class="form-control form-control-sm pos-table-input pos-modal-addon-price no-spin-arrows" name="addon_price_<%= data.id %>" id="pos_addon_price_<%= data.id %>" data-addon-id="<%= data.id %>" data-default-price="<%= (Number(data.price) || 0).toFixed(2) %>" value="<%= (Number(data.price) || 0).toFixed(2) %>" min="0" step="0.25" title="Addon Amount">
+                  <input type="number" class="form-control form-control-sm pos-table-input pos-modal-addon-price no-spin-arrows" name="addon_price_<%= data.id %>" id="pos_addon_price_<%= data.id %>" data-addon-id="<%= data.id %>" data-default-price="<%= (Number(data.price) || 0).toFixed(2) %>" value="<%= (Number(data.price) || 0).toFixed(2) %>" min="0" step="0.25" title="Unit Addon Amount">
                 </div>
               </div>
             </div>
@@ -1893,9 +1932,10 @@
           </div>
         </div>
         <div class="modal-footer d-flex align-items-center justify-content-between flex-wrap gap-2">
-          <div class="d-flex align-items-center gap-2">
-            <span class="text-muted small fw-semibold"><%= language.Addon_Total || 'Selected Addons Total' %>:</span>
-            <span class="fw-bold text-primary fs-6" id="pos_modal_addons_total_preview">$<%= (Number(cart.addon_price) || 0).toFixed(2) %></span>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="text-muted small fw-semibold"><%= language.Addon_Total || 'Item Addons Total' %>:</span>
+            <span class="fw-bold text-primary fs-6" id="pos_modal_addons_total_preview"><%= posCurrSym %>0.00</span>
+            <small class="text-muted" id="pos_modal_addons_qty_hint"></small>
           </div>
           <div class="d-flex align-items-center gap-2">
             <button type="button" class="btn btn-outline-danger" id="btn_modal_clear_addons">
@@ -3859,7 +3899,7 @@
       shouldOpenJobTypeModal: safeShouldOpenJtModal
     }) %>;
   </script>
-  <script src="/js/pos2.js?v=5"></script>
+  <script src="/js/pos2.js?v=8"></script>
   <% } %>
 </body>
 

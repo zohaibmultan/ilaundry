@@ -1,27 +1,19 @@
-<!-- POS-2 Modal: Select Job Type / Sub-Type (Two-Section Rectangular Icon Layout) -->
+<!-- POS-2 Modal: Select Service (Single-Click Parent Grid Layout) -->
 <div class="modal fade" id="pos2JobTypeModal" tabindex="-1" aria-labelledby="pos2JobTypeModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl modal-fullscreen-sm-down" role="document">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg modal-fullscreen-sm-down" role="document">
     <div class="modal-content border-0 shadow-lg rounded-3">
       <!-- Modal Header -->
-      <div class="modal-header border-bottom py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="modal-header border-bottom py-3 px-4 d-flex align-items-center justify-content-between gap-2">
         <div class="d-flex align-items-center gap-2">
           <span class="d-inline-flex align-items-center justify-content-center rounded-circle text-primary bg-primary-subtle flex-shrink-0" style="width: 34px; height: 34px;">
             <i class="fa fa-sitemap"></i>
           </span>
           <div>
-            <h5 class="modal-title fw-bold mb-0" id="pos2JobTypeModalLabel">Select Job Type</h5>
-            <small class="text-muted d-none d-sm-block">Pick a Job Type above, then choose a Sub Type or confirm directly</small>
+            <h5 class="modal-title fw-bold mb-0" id="pos2JobTypeModalLabel">Select Service</h5>
+            <small class="text-muted d-none d-sm-block">Click any service below to start ordering</small>
           </div>
         </div>
-
-        <div class="d-flex align-items-center gap-2 ms-auto">
-          <!-- Compact Search Bar -->
-          <div class="input-group input-group-sm pos2-jt-header-search">
-            <span class="input-group-text"><i class="fa fa-search text-muted"></i></span>
-            <input type="search" class="form-control" id="pos2JobTypeSearch" placeholder="Search job types..." autocomplete="off">
-          </div>
-          <button type="button" class="btn-close d-none ms-1" id="btnPos2JobTypeModalClose" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
+        <button type="button" class="btn-close d-none" id="btnPos2JobTypeModalClose" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
       <!-- Modal Body -->
@@ -34,7 +26,7 @@
             Select Store <span class="text-danger">*</span>
           </label>
           <select class="form-select form-select-sm" id="pos2ModalStoreSelect">
-            <option value="0" <%= (!cart.store_id || cart.store_id == 0) ? 'selected' : '' %> disabled>Choose a store to view its Job Types...</option>
+            <option value="0" <%= (!cart.store_id || cart.store_id == 0) ? 'selected' : '' %> disabled>Choose a store to view its Services...</option>
             <% (storeList || []).forEach(function(st) { %>
             <option value="<%= st.id %>" <%= (String(cart.store_id) === String(st.id)) ? 'selected' : '' %>><%= st.name %></option>
             <% }); %>
@@ -42,64 +34,29 @@
         </div>
         <% } %>
 
-        <!-- Section 1: Parent Job Types (Horizontal Slider) -->
+        <!-- Parent Services Grid (Single-Click Immediate Selection) -->
         <section id="pos2ParentSection" class="pos2-jt-section">
-          <h6 class="pos2-jt-section-title text-center fw-bold mb-2">Job Types</h6>
-          <div class="pos2-jt-hslider-wrap d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-outline-secondary pos2-jt-slider-nav flex-shrink-0" id="btnPos2SliderPrev" title="Scroll Left" aria-label="Scroll Left" disabled>
-              <i class="fas fa-chevron-left"></i>
-            </button>
-            <div id="pos2ParentSliderTrack" class="pos2-jt-hslider-track flex-grow-1" role="listbox" aria-label="Parent Job Types">
-              <div class="text-center py-4 text-muted w-100">
-                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                <span>Loading job types...</span>
-              </div>
-            </div>
-            <button type="button" class="btn btn-outline-secondary pos2-jt-slider-nav flex-shrink-0" id="btnPos2SliderNext" title="Scroll Right" aria-label="Scroll Right" disabled>
-              <i class="fas fa-chevron-right"></i>
-            </button>
-          </div>
-        </section>
-
-        <hr class="pos2-jt-section-divider my-3">
-
-        <!-- Section 2: Selected Job Type's Sub Types (Vertical Scroll Grid) -->
-        <section id="pos2SubSection" class="pos2-jt-section">
-          <h6 class="pos2-jt-section-title text-center fw-bold mb-2 d-flex align-items-center justify-content-center flex-wrap gap-2">
-            <span>Job Sub Types</span>
-            <span id="pos2SubSectionParentChip" class="badge bg-primary-subtle text-primary rounded-pill fs-11 fw-semibold d-none"></span>
-          </h6>
-          <div id="pos2SubTypesContainer" class="pos2-jt-vscroll-box">
-            <div class="pos2-jt-empty-state text-center py-5 text-muted">
-              <i class="fa fa-hand-pointer fa-2x opacity-50 mb-2 d-block"></i>
-              <div class="fw-semibold">Select a Job Type above to view its Sub Types</div>
+          <div id="pos2ParentSliderTrack" class="pos2-jt-parent-grid" role="listbox" aria-label="Services">
+            <div class="text-center py-4 text-muted w-100">
+              <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+              <span>Loading services...</span>
             </div>
           </div>
         </section>
       </div>
 
       <!-- Modal Footer -->
-      <div class="modal-footer border-top py-2.5 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div class="small text-muted d-flex align-items-center gap-2 min-w-0">
-          <i class="fa fa-check-circle text-primary d-none" id="pos2ModalSelectedIcon"></i>
-          <span id="pos2ModalSelectedPreview" class="text-truncate fw-semibold">Select a Job Type or Sub Type</span>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <a href="/index" class="btn btn-sm btn-outline-secondary" id="btnPos2JobTypeCancel">
-            <i class="fa fa-times me-1"></i>
-            <span>Cancel</span>
-          </a>
-          <button type="button" class="btn btn-sm btn-primary px-4 fw-semibold shadow-sm" id="btnPos2ConfirmJobType" disabled>
-            <i class="fa fa-check me-1"></i>
-            <span>Confirm Job Type</span>
-          </button>
-        </div>
+      <div class="modal-footer border-top py-2.5 px-4 d-flex justify-content-end align-items-center">
+        <a href="/index" class="btn btn-sm btn-outline-secondary" id="btnPos2JobTypeCancel">
+          <i class="fa fa-times me-1"></i>
+          <span>Cancel</span>
+        </a>
       </div>
     </div>
   </div>
 </div>
 
-<!-- POS-2 Modal: Confirm Clear Cart Before Switching Job Type -->
+<!-- POS-2 Modal: Confirm Clear Cart Before Switching Service -->
 <div class="modal fade" id="pos2SwitchJobTypeConfirmModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content border-0 shadow-lg rounded-3">
@@ -108,7 +65,7 @@
           <span class="d-inline-flex align-items-center justify-content-center rounded-circle text-warning bg-warning-subtle" style="width: 34px; height: 34px;">
             <i class="fas fa-exchange-alt"></i>
           </span>
-          <span>Switch Job Type?</span>
+          <span>Switch Service?</span>
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
@@ -118,7 +75,7 @@
         </p>
         <div class="alert alert-warning py-2 px-3 small mb-0">
           <i class="fas fa-exclamation-triangle me-1"></i>
-          Switching to a different Job Type will clear the items currently in this cart so each order uses a single Job Type.
+          Switching to a different Service will clear the items currently in this cart so each order uses a single Service.
         </div>
       </div>
       <div class="modal-footer border-top">

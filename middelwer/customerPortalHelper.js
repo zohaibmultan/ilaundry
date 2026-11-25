@@ -405,7 +405,7 @@ async function loadCustomerOrdersEnriched(customerId, fallbackStoreName = "Store
     const idList = Array.from(serviceIdSet);
     const placeholders = idList.map(() => "?").join(",");
     const items = await DataFind(
-      `SELECT id, service_name, service_type_name, service_type_price, service_quntity, no_of_items, primary_color, brand_label, gender
+      `SELECT id, service_name, service_type_name, service_type_price, service_quntity, no_of_items, primary_color, brand_label, gender, addons_json, addon_price
        FROM tbl_cart_servicelist
        WHERE id IN (${placeholders})`,
       idList
@@ -447,6 +447,23 @@ async function loadCustomerOrdersEnriched(customerId, fallbackStoreName = "Store
           const qty = parseFloat(item.service_quntity || 1) || 1;
           const pcs = parseInt(item.no_of_items || 1, 10) || 1;
           totalPieces += Math.round(qty * pcs);
+          let parsedAddons = [];
+          try {
+            if (item.addons_json) {
+              const rawA = typeof item.addons_json === "string" ? JSON.parse(item.addons_json) : item.addons_json;
+              if (Array.isArray(rawA)) {
+                parsedAddons = rawA
+                  .filter((a) => a && (a.name || a.addon))
+                  .map((a) => ({
+                    id: parseInt(a.id, 10) || 0,
+                    name: String(a.name || a.addon || "").trim(),
+                    price: Number(Number(a.price || 0).toFixed(2)),
+                  }));
+              }
+            }
+          } catch (_) {
+            parsedAddons = [];
+          }
           orderItems.push({
             id: item.id,
             service_name: item.service_name || "Service",
@@ -458,6 +475,8 @@ async function loadCustomerOrdersEnriched(customerId, fallbackStoreName = "Store
             brand_label: item.brand_label || "",
             primary_color: item.primary_color || "",
             gender: (item.gender && String(item.gender).trim()) ? String(item.gender).trim() : "None",
+            addons: parsedAddons,
+            addonTotal: Number(Number(item.addon_price || 0).toFixed(2)),
           });
         }
       });

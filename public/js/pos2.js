@@ -227,66 +227,35 @@
 
     if (!storeVal || storeVal === "0") {
       $track.html(
-        '<div class="text-center py-4 text-muted w-100">' +
+        '<div class="text-center py-4 text-muted w-100" style="grid-column: 1 / -1;">' +
           '<i class="fa fa-store fa-2x opacity-50 mb-2 d-block"></i>' +
-          '<div class="fw-semibold small">Please select a store above to view its Job Types.</div>' +
+          '<div class="fw-semibold small">Please select a store above to view its Services.</div>' +
         "</div>"
       );
-      updateSliderArrowStates();
       return;
     }
 
     if (!jobTypeTree || jobTypeTree.length === 0) {
       $track.html(
-        '<div class="text-center py-4 text-muted w-100">' +
+        '<div class="text-center py-4 text-muted w-100" style="grid-column: 1 / -1;">' +
           '<i class="fa fa-sitemap fa-2x opacity-50 mb-2 d-block"></i>' +
-          '<div class="fw-semibold small mb-2">No Active Job Types Found</div>' +
-          '<a href="/job-types" class="btn btn-xs btn-primary"><i class="fa fa-cog me-1"></i>Manage Job Types</a>' +
+          '<div class="fw-semibold small mb-2">No Active Services Found</div>' +
+          '<a href="/job-types" class="btn btn-xs btn-primary"><i class="fa fa-cog me-1"></i>Manage Services</a>' +
         "</div>"
       );
-      updateSliderArrowStates();
-      return;
-    }
-
-    const query = ($("#pos2JobTypeSearch").val() || "").trim().toLowerCase();
-    const visibleParents = jobTypeTree.filter((root) => {
-      if (!query) return true;
-      const rootText = `${root.name || ""} ${root.description || ""}`.toLowerCase();
-      if (rootText.includes(query)) return true;
-      const subs = collectSubTypes(root);
-      return subs.some(({ node }) => `${node.name || ""} ${node.description || ""}`.toLowerCase().includes(query));
-    });
-
-    if (visibleParents.length === 0) {
-      $track.html(
-        '<div class="text-center py-4 text-muted w-100">' +
-          '<i class="fa fa-search opacity-50 mb-1 d-block"></i>' +
-          '<div class="small fw-semibold">No matching Job Types found</div>' +
-        "</div>"
-      );
-      updateSliderArrowStates();
       return;
     }
 
     const htmlParts = [];
-    for (const root of visibleParents) {
-      const subs = collectSubTypes(root);
+    for (const root of jobTypeTree) {
       const hasDirectPrices = Number(root.pricedCount) > 0;
-      const canBrowseChildren = hasPricedDescendant(root);
-      const isClickable = hasDirectPrices || canBrowseChildren;
-      const isActiveParent = Number(activeParentJtId) === Number(root.id);
-      const isDirectlySelected = Number(pendingSelectedJtId) === Number(root.id);
-
-      const subCountBadge =
-        subs.length > 0
-          ? `<span class="badge bg-info-subtle text-info rounded-pill pos2-jt-tile-badge">${subs.length} sub</span>`
-          : "";
+      const isClickable = hasDirectPrices;
+      const isCurrentActive = Boolean(activeJobType && Number(activeJobType.id) === Number(root.id));
 
       const classes = [
         "pos2-jt-tile",
         "pos2-jt-parent-tile",
-        isActiveParent ? "is-active-parent" : "",
-        isDirectlySelected ? "is-selected" : "",
+        isCurrentActive ? "is-selected" : "",
         isClickable ? "" : "is-disabled",
       ]
         .filter(Boolean)
@@ -294,150 +263,20 @@
 
       htmlParts.push(
         `<button type="button" class="${classes}" role="option" ` +
-          `aria-selected="${isActiveParent ? "true" : "false"}" ` +
+          `aria-selected="${isCurrentActive ? "true" : "false"}" ` +
           `data-jt-id="${root.id}" ` +
           `data-has-prices="${hasDirectPrices ? "1" : "0"}" ` +
-          `${isClickable ? "" : 'disabled aria-disabled="true"'}>` +
-          buildTileInnerHtml(root, false, subCountBadge) +
+          `${isClickable ? "" : 'disabled aria-disabled="true" title="No priced items configured"'}>` +
+          buildTileInnerHtml(root, false, "") +
         `</button>`
       );
     }
 
     $track.html(htmlParts.join(""));
-    setTimeout(updateSliderArrowStates, 30);
-  }
-
-  function renderSubJobTypesSection() {
-    const $container = $("#pos2SubTypesContainer");
-    const $chip = $("#pos2SubSectionParentChip");
-    const storeVal = $("#pos_store_id").val() || $("#pos_staff_store_id").val() || "0";
-    const query = ($("#pos2JobTypeSearch").val() || "").trim().toLowerCase();
-
-    if (!storeVal || storeVal === "0" || !jobTypeTree || jobTypeTree.length === 0) {
-      $chip.addClass("d-none").text("");
-      $container.html(
-        '<div class="pos2-jt-empty-state text-center py-5 text-muted">' +
-          '<i class="fa fa-hand-pointer fa-2x opacity-50 mb-2 d-block"></i>' +
-          '<div class="fw-semibold small">Select a Job Type above to view its Sub Types</div>' +
-        "</div>"
-      );
-      return;
-    }
-
-    // Case 1: No Parent selected yet
-    if (!activeParentJtId) {
-      $chip.addClass("d-none").text("");
-
-      // If searching globally while no parent is clicked, surface matching sub-types across all parents
-      if (query) {
-        const globalMatches = [];
-        for (const root of jobTypeTree) {
-          for (const entry of collectSubTypes(root)) {
-            const txt = `${entry.node.name || ""} ${entry.node.description || ""} ${root.name || ""}`.toLowerCase();
-            if (txt.includes(query)) {
-              globalMatches.push({ node: entry.node, parentName: root.name, rootId: root.id });
-            }
-          }
-        }
-
-        if (globalMatches.length === 0) {
-          $container.html(
-            '<div class="pos2-jt-empty-state text-center py-5 text-muted">' +
-              '<i class="fa fa-search fa-2x opacity-50 mb-2 d-block"></i>' +
-              '<div class="fw-semibold small">No matching Sub Types found</div>' +
-            "</div>"
-          );
-          return;
-        }
-
-        const cards = globalMatches.map(({ node, parentName, rootId }) => {
-          const hasPrices = Number(node.pricedCount) > 0;
-          const isSelected = hasPrices && Number(pendingSelectedJtId) === Number(node.id);
-          const parentTag = `<span class="badge bg-primary-subtle text-primary rounded-pill pos2-jt-tile-badge">${escapeHtml(parentName)}</span>`;
-          return (
-            `<button type="button" class="pos2-jt-tile pos2-jt-sub-tile ${isSelected ? "is-selected" : ""} ${hasPrices ? "" : "is-disabled"}" ` +
-              `data-jt-id="${node.id}" data-root-id="${rootId}" data-has-prices="${hasPrices ? "1" : "0"}" ${hasPrices ? "" : 'disabled aria-disabled="true"'}>` +
-              buildTileInnerHtml(node, true, parentTag) +
-            `</button>`
-          );
-        });
-        $container.html(`<div class="pos2-jt-sub-grid">${cards.join("")}</div>`);
-        return;
-      }
-
-      $container.html(
-        '<div class="pos2-jt-empty-state text-center py-5 text-muted">' +
-          '<i class="fa fa-hand-pointer fa-2x opacity-50 mb-2 d-block"></i>' +
-          '<div class="fw-semibold">Select a Job Type above to view its Sub Types</div>' +
-          '<div class="small opacity-75 mt-1">Click any Job Type card in the top row</div>' +
-        "</div>"
-      );
-      return;
-    }
-
-    // Case 2: A Parent Job Type is active in Section 1
-    const parentNode = findJobTypeNodeById(jobTypeTree, activeParentJtId);
-    if (!parentNode) {
-      activeParentJtId = null;
-      renderSubJobTypesSection();
-      return;
-    }
-
-    $chip.text(parentNode.name).removeClass("d-none");
-    let subEntries = collectSubTypes(parentNode);
-
-    if (subEntries.length === 0) {
-      const canConfirmDirect = Number(parentNode.pricedCount) > 0;
-      $container.html(
-        '<div class="pos2-jt-empty-state text-center py-5 text-muted">' +
-          `<i class="fa ${canConfirmDirect ? "fa-check-circle text-success" : "fa-info-circle"} fa-2x opacity-75 mb-2 d-block"></i>` +
-          `<div class="fw-semibold">${escapeHtml(parentNode.name)} has no Sub Types</div>` +
-          `<div class="small mt-1">${canConfirmDirect ? 'Click <strong>Confirm Job Type</strong> below to load its priced services.' : "No priced items are configured under this Job Type."}</div>` +
-        "</div>"
-      );
-      return;
-    }
-
-    if (query) {
-      const parentMatches = `${parentNode.name || ""} ${parentNode.description || ""}`.toLowerCase().includes(query);
-      if (!parentMatches) {
-        subEntries = subEntries.filter(({ node }) =>
-          `${node.name || ""} ${node.description || ""}`.toLowerCase().includes(query)
-        );
-      }
-    }
-
-    if (subEntries.length === 0) {
-      $container.html(
-        '<div class="pos2-jt-empty-state text-center py-5 text-muted">' +
-          '<i class="fa fa-search fa-2x opacity-50 mb-2 d-block"></i>' +
-          `<div class="fw-semibold small">No Sub Types under ${escapeHtml(parentNode.name)} match your search</div>` +
-        "</div>"
-      );
-      return;
-    }
-
-    const cards = subEntries.map(({ node, subTrail }) => {
-      const hasPrices = Number(node.pricedCount) > 0;
-      const isSelected = hasPrices && Number(pendingSelectedJtId) === Number(node.id);
-      const trailTag = subTrail
-        ? `<span class="badge bg-secondary-subtle text-secondary rounded-pill pos2-jt-tile-badge">${escapeHtml(subTrail)}</span>`
-        : "";
-      return (
-        `<button type="button" class="pos2-jt-tile pos2-jt-sub-tile ${isSelected ? "is-selected" : ""} ${hasPrices ? "" : "is-disabled"}" ` +
-          `data-jt-id="${node.id}" data-root-id="${parentNode.id}" data-has-prices="${hasPrices ? "1" : "0"}" ${hasPrices ? "" : 'disabled aria-disabled="true"'}>` +
-          buildTileInnerHtml(node, true, trailTag) +
-        `</button>`
-      );
-    });
-
-    $container.html(`<div class="pos2-jt-sub-grid">${cards.join("")}</div>`);
   }
 
   function renderJobTypeModalUI() {
     renderParentJobTypesSection();
-    renderSubJobTypesSection();
-    updateSelectedPreviewInModal();
   }
 
   function openJobTypeModal(allowDismiss) {
@@ -447,10 +286,8 @@
     const modalEl = document.getElementById("pos2JobTypeModal");
     if (!modalEl) return;
 
-    // Always start unselected on open (Section 2 prompts to pick a Job Type above)
     activeParentJtId = null;
     pendingSelectedJtId = null;
-    $("#pos2JobTypeSearch").val("");
     renderJobTypeModalUI();
 
     const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl, {
@@ -469,27 +306,31 @@
     const $barName = $("#pos2_active_job_type_breadcrumb");
     const $barCount = $("#pos2_active_job_type_count");
     const $barBtnLabel = $("#pos2_change_job_type_label");
-    const $cartChip = $("#pos2_cart_job_type_pill");
     const $cartChipText = $("#pos2_cart_job_type_text");
+    const $cartCount = $("#pos2_cart_service_count");
 
     if (activeJobType) {
       const crumbText = formatBreadcrumbText(activeBreadcrumb, activeJobType.name);
       $barName.text(crumbText);
       const cnt = Number(activeJobType.pricedCount) || 0;
-      $barCount
-        .text(`${cnt} ${cnt === 1 ? "item" : "items"}`)
-        .removeClass("d-none");
-      $barBtnLabel.text("Change Job Type");
-      if ($cartChip.length) {
+      const cntLabel = `${cnt} ${cnt === 1 ? "item" : "items"}`;
+      $barCount.text(cntLabel).removeClass("d-none");
+      $barBtnLabel.text("Change Service");
+      if ($cartChipText.length) {
         $cartChipText.text(crumbText);
-        $cartChip.removeClass("d-none");
+      }
+      if ($cartCount.length) {
+        $cartCount.text(cntLabel).removeClass("d-none");
       }
     } else {
-      $barName.text("No Job Type Selected");
+      $barName.text("No Service Selected");
       $barCount.addClass("d-none");
-      $barBtnLabel.text("Select Job Type");
-      if ($cartChip.length) {
-        $cartChip.addClass("d-none");
+      $barBtnLabel.text("Select Service");
+      if ($cartChipText.length) {
+        $cartChipText.text("No Service Selected");
+      }
+      if ($cartCount.length) {
+        $cartCount.addClass("d-none");
       }
     }
   }
@@ -585,11 +426,17 @@
     }
   }
 
-  function confirmSelectedJobType(clearCartFlag) {
-    if (!pendingSelectedJtId) return;
+  let isSelectingService = false;
 
-    const $btn = $("#btnPos2ConfirmJobType");
-    $btn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm me-1"></span>Loading...');
+  function confirmSelectedJobType(clearCartFlag, $clickedTile) {
+    if (!pendingSelectedJtId || isSelectingService) return;
+    isSelectingService = true;
+
+    const $allTiles = $("#pos2ParentSliderTrack .pos2-jt-parent-tile");
+    $allTiles.addClass("is-loading");
+    if ($clickedTile && $clickedTile.length) {
+      $clickedTile.addClass("is-selected");
+    }
 
     $.ajax({
       type: "POST",
@@ -616,15 +463,9 @@
             const inst = bootstrap.Modal.getInstance(modalEl);
             if (inst) inst.hide();
           }
-          if (typeof toastr !== "undefined") {
-            toastr.success(
-              `Job Type set to ${formatBreadcrumbText(res.breadcrumb, res.activeJobType.name)}`,
-              "POS-2"
-            );
-          }
         } else {
           if (typeof toastr !== "undefined") {
-            toastr.error((res && res.message) || "Failed to load Job Type services.");
+            toastr.error((res && res.message) || "Failed to load Service items.");
           }
         }
       },
@@ -637,7 +478,7 @@
             if (inst) inst.hide();
           }
           $("#pos2SwitchCurrentJtName").text(
-            formatBreadcrumbText(activeBreadcrumb, activeJobType ? activeJobType.name : "current Job Type")
+            formatBreadcrumbText(activeBreadcrumb, activeJobType ? activeJobType.name : "current Service")
           );
           const confirmEl = document.getElementById("pos2SwitchJobTypeConfirmModal");
           if (confirmEl) {
@@ -646,11 +487,12 @@
           return;
         }
         if (typeof toastr !== "undefined") {
-          toastr.error(resp.message || "Error selecting Job Type.");
+          toastr.error(resp.message || "Error selecting Service.");
         }
       },
       complete: function () {
-        $btn.prop("disabled", !pendingSelectedJtId).html('<i class="fa fa-check me-1"></i><span>Confirm Job Type</span>');
+        isSelectingService = false;
+        $allTiles.removeClass("is-loading");
       },
     });
   }
@@ -754,12 +596,12 @@
                     '<div class="col-12 col-sm-6">' +
                     '<div class="border rounded-3 p-2.5 d-flex align-items-center justify-content-between gap-2 pos-addon-modal-card">' +
                     '<div class="form-check d-flex align-items-center gap-2 mb-0 flex-grow-1">' +
-                    `<input class="form-check-input pos-addon-checkbox" type="checkbox" name="addon" id="addon_${ad.id}" value="${ad.id}">` +
-                    `<label class="form-check-label fw-semibold mb-0" for="addon_${ad.id}">${escapeHtml(ad.addon)}</label>` +
+                    `<input class="form-check-input pos-addon-checkbox" type="checkbox" name="addon" id="update_customer_read_${ad.id}" value="${ad.id}" data-addon-name="${escapeHtml(ad.addon)}" data-default-price="${p}">` +
+                    `<label class="form-check-label fw-semibold mb-0" for="update_customer_read_${ad.id}">${escapeHtml(ad.addon)}</label>` +
                     "</div>" +
                     '<div class="input-group input-group-sm" style="width: 115px;">' +
                     `<span class="input-group-text">${escapeHtml(sym)}</span>` +
-                    `<input type="number" class="form-control pos-modal-addon-price text-end" name="addon_price_${ad.id}" data-addon-id="${ad.id}" data-default-price="${p}" value="${p}" min="0" step="0.25">` +
+                    `<input type="number" class="form-control pos-modal-addon-price text-end" name="addon_price_${ad.id}" id="pos_addon_price_${ad.id}" data-addon-id="${ad.id}" data-default-price="${p}" value="${p}" min="0" step="0.25">` +
                     "</div>" +
                     "</div>" +
                     "</div>";
@@ -805,99 +647,17 @@
   // Event Bindings
   // =========================================================================
 
-  // Compact Modal Search
-  let jtSearchTimer = null;
-  $(document).on("input", "#pos2JobTypeSearch", function () {
-    clearTimeout(jtSearchTimer);
-    jtSearchTimer = setTimeout(renderJobTypeModalUI, 120);
-  });
-
-  // Section 1 Horizontal Slider Arrows
-  $(document).on("click", "#btnPos2SliderPrev", function () {
-    const track = document.getElementById("pos2ParentSliderTrack");
-    if (track) track.scrollBy({ left: -340, behavior: "smooth" });
-  });
-
-  $(document).on("click", "#btnPos2SliderNext", function () {
-    const track = document.getElementById("pos2ParentSliderTrack");
-    if (track) track.scrollBy({ left: 340, behavior: "smooth" });
-  });
-
-  // Horizontal scroll listener & mouse-wheel support on Section 1
-  $(document).ready(function () {
-    const track = document.getElementById("pos2ParentSliderTrack");
-    if (track) {
-      track.addEventListener("scroll", updateSliderArrowStates, { passive: true });
-      track.addEventListener(
-        "wheel",
-        function (e) {
-          if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && track.scrollWidth > track.clientWidth) {
-            e.preventDefault();
-            track.scrollLeft += e.deltaY;
-          }
-        },
-        { passive: false }
-      );
-    }
-
-    const modalEl = document.getElementById("pos2JobTypeModal");
-    if (modalEl) {
-      modalEl.addEventListener("shown.bs.modal", function () {
-        updateSliderArrowStates();
-      });
-    }
-
-    window.addEventListener("resize", updateSliderArrowStates);
-  });
-
-  // Section 1: Click Parent Job Type Card
+  // Single-Click Parent Service Card -> immediately select and start ordering
   $(document).on("click", ".pos2-jt-parent-tile:not(.is-disabled)", function () {
-    const parentId = Number($(this).attr("data-jt-id"));
+    const $tile = $(this);
+    const parentId = Number($tile.attr("data-jt-id"));
     if (!parentId) return;
-    const parentNode = findJobTypeNodeById(jobTypeTree, parentId);
-    if (!parentNode) return;
-
-    activeParentJtId = parentId;
-    pendingSelectedJtId = Number(parentNode.pricedCount) > 0 ? parentId : null;
-    renderJobTypeModalUI();
-  });
-
-  // Section 1: Double-Click Parent Job Type Card (quick confirm if directly priced)
-  $(document).on("dblclick", ".pos2-jt-parent-tile:not(.is-disabled)", function () {
-    const parentId = Number($(this).attr("data-jt-id"));
-    const hasPrices = $(this).attr("data-has-prices") === "1";
-    if (!parentId || !hasPrices) return;
     activeParentJtId = parentId;
     pendingSelectedJtId = parentId;
-    confirmSelectedJobType(pendingSwitchClearCart);
+    confirmSelectedJobType(pendingSwitchClearCart, $tile);
   });
 
-  // Section 2: Click Sub-Type Card
-  $(document).on("click", ".pos2-jt-sub-tile:not(.is-disabled)", function () {
-    const subId = Number($(this).attr("data-jt-id"));
-    if (!subId) return;
-    const rootNode = findRootParentForNode(subId);
-    if (rootNode) activeParentJtId = Number(rootNode.id);
-    pendingSelectedJtId = subId;
-    renderJobTypeModalUI();
-  });
-
-  // Section 2: Double-Click Sub-Type Card (quick confirm)
-  $(document).on("dblclick", ".pos2-jt-sub-tile:not(.is-disabled)", function () {
-    const subId = Number($(this).attr("data-jt-id"));
-    if (!subId) return;
-    const rootNode = findRootParentForNode(subId);
-    if (rootNode) activeParentJtId = Number(rootNode.id);
-    pendingSelectedJtId = subId;
-    confirmSelectedJobType(pendingSwitchClearCart);
-  });
-
-  // Confirm Job Type Button
-  $(document).on("click", "#btnPos2ConfirmJobType", function () {
-    confirmSelectedJobType(pendingSwitchClearCart);
-  });
-
-  // Change / Select Job Type Button on POS-2 Screen
+  // Change / Select Service Button on POS-2 Screen
   $(document).on("click", "#btn_pos2_change_job_type, #pos2_cart_job_type_pill", function () {
     const hasItems = getActiveCartRowCount() > 0;
     if (hasItems && activeJobType) {

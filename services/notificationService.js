@@ -1524,14 +1524,32 @@ function normalizeItemGender(it) {
   return g;
 }
 
+function parseNotifItemAddons(it) {
+  if (!it || !it.addons_json) return [];
+  try {
+    const raw = typeof it.addons_json === "string" ? JSON.parse(it.addons_json) : it.addons_json;
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .filter((a) => a && (a.name || a.addon))
+      .map((a) => ({
+        name: String(a.name || a.addon || "").trim(),
+        price: Number(Number(a.price || 0).toFixed(2)),
+      }));
+  } catch (_) {
+    return [];
+  }
+}
+
 function buildCompactItemsSummary(items) {
   if (!Array.isArray(items) || items.length === 0) return "";
   return items
     .map((it) => {
       const sName = it.service_name || "Service";
       const genderVal = normalizeItemGender(it);
+      const addons = parseNotifItemAddons(it);
+      const addonPart = addons.length > 0 ? ` [+${addons.map((a) => a.name).join(", ")}]` : "";
       const qty = parseFloat(it.service_quntity || 1) || 1;
-      return `${sName} (${genderVal}) x${qty}`;
+      return `${sName} (${genderVal})${addonPart} x${qty}`;
     })
     .join(", ");
 }
@@ -1558,12 +1576,17 @@ function buildWhatsAppOrderSummaryBlock({ eventKey, order, items, sym, grossTota
       const sName = it.service_name || "Service";
       const sType = it.service_type_name ? ` [${it.service_type_name}]` : "";
       const genderVal = normalizeItemGender(it);
+      const addons = parseNotifItemAddons(it);
+      const itemAddonTotal = Number(Number(it.addon_price || 0).toFixed(2));
+      const addonTag = addons.length > 0
+        ? ` [Addons: ${addons.map((a) => a.name).join(", ")}${itemAddonTotal > 0 ? ` (+${sym}${itemAddonTotal.toFixed(2)})` : ""}]`
+        : "";
       const qty = parseFloat(it.service_quntity || 1) || 1;
       const pcs = parseInt(it.no_of_items || 1, 10) || 1;
       const pcsBadge = pcs > 1 ? ` (${pcs} Pcs)` : "";
       const unitPrice = parseFloat(it.service_type_price || it.service_price || 0) || 0;
       const lineTotal = unitPrice * qty;
-      lines.push(`• ${sName}${sType} [Gender: ${genderVal}]${pcsBadge} x ${qty} = ${sym}${lineTotal.toFixed(2)}`);
+      lines.push(`• ${sName}${sType} [Gender: ${genderVal}]${addonTag}${pcsBadge} x ${qty} = ${sym}${lineTotal.toFixed(2)}`);
     });
   }
 
@@ -1765,7 +1788,12 @@ function buildNotificationContent({ eventKey, customer, store, master, order, it
         if (it.brand_label) metaParts.push(`<strong>${it.brand_label}</strong>`);
         if (colorPat || patBadge) metaParts.push(`${colorPat}${patBadge}`);
         metaParts.push(`Gender: <strong>${genderVal}</strong>`);
-        const metaStr = `<div style="font-size:11px;color:#64748b;">${metaParts.join(" &bull; ")}</div>`;
+        const itemAddons = parseNotifItemAddons(it);
+        const itemAddonLineTotal = Number(Number(it.addon_price || 0).toFixed(2));
+        const addonHtml = itemAddons.length > 0
+          ? `<div style="font-size:11px;color:#0369a1;margin-top:2px;">Addons: ${itemAddons.map((a) => `${a.name} (${sym}${a.price.toFixed(2)})`).join(", ")}${itemAddonLineTotal > 0 ? ` <strong>(+${sym}${itemAddonLineTotal.toFixed(2)})</strong>` : ""}</div>`
+          : "";
+        const metaStr = `<div style="font-size:11px;color:#64748b;">${metaParts.join(" &bull; ")}</div>${addonHtml}`;
         const qty = it.service_quntity || 1;
         const price = `${sym}${parseFloat(it.service_type_price || 0).toFixed(2)}`;
         itemsRowsHtml += `
@@ -2634,6 +2662,11 @@ function formatWhatsAppInvoiceMessage({ order, items, customer, store, master, r
     items.forEach((it) => {
       const sName = it.service_name || "Service";
       const genderVal = normalizeItemGender(it);
+      const addons = parseNotifItemAddons(it);
+      const itemAddonTotal = Number(Number(it.addon_price || 0).toFixed(2));
+      const addonTag = addons.length > 0
+        ? ` [Addons: ${addons.map((a) => a.name).join(", ")}${itemAddonTotal > 0 ? ` (+${sym}${itemAddonTotal.toFixed(2)})` : ""}]`
+        : "";
       const qty = parseFloat(it.service_quntity || 1) || 1;
       const pcs = parseInt(it.no_of_items || 1, 10) || 1;
       const totalPcsLine = qty * pcs;
@@ -2641,7 +2674,7 @@ function formatWhatsAppInvoiceMessage({ order, items, customer, store, master, r
       const pcsBadge = pcs > 1 ? ` (${pcs} Pcs)` : "";
       const unitPrice = parseFloat(it.service_type_price || it.service_price || 0) || 0;
       const price = unitPrice * qty;
-      itemsLines.push(`• ${sName} [Gender: ${genderVal}]${pcsBadge} x ${qty} = ${sym}${price.toFixed(2)}`);
+      itemsLines.push(`• ${sName} [Gender: ${genderVal}]${addonTag}${pcsBadge} x ${qty} = ${sym}${price.toFixed(2)}`);
     });
   }
 

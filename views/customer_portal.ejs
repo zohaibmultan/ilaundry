@@ -335,6 +335,13 @@
                                   : 'bg-info-subtle text-info'));
                           %>
                           <span class="badge <%= portalGenderBadge %> ms-1">Gender: <%= portalGender %></span>
+                          <% if (Array.isArray(it.addons) && it.addons.length > 0) { %>
+                          <div class="d-flex flex-wrap gap-1 mt-1">
+                            <% it.addons.forEach(function (ad) { %>
+                            <span class="badge bg-info-subtle text-info fw-normal">+ <%= ad.name %> (<%= curSymbol %><%= Number(ad.price || 0).toFixed(2) %>)</span>
+                            <% }); %>
+                          </div>
+                          <% } %>
                         </td>
                         <td class="text-muted fs-12"><%= it.service_type_name %></td>
                         <td class="text-center">

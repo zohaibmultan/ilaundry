@@ -19,6 +19,11 @@ const {
   getEffectivePosImageSize,
 } = require("../middelwer/posImageHelper");
 const { getActiveGenders } = require("../middelwer/genderHelper");
+const {
+  parseItemAddons,
+  calculateItemAddonLineTotal,
+  recalcCartAddonAndTotals,
+} = require("../middelwer/itemAddonsHelper");
 const { generateOrderId } = require("../middelwer/orderIdHelper");
 
 function canOverridePosPriceDiscount(accessdata) {
@@ -959,11 +964,14 @@ router.post("/direct-add", auth, async (req, res) => {
       priceDelta = Number(Number(existingMatch.service_type_price || itemPrice).toFixed(2));
       wasIncremented = true;
 
+      const existingAddons = parseItemAddons(existingMatch.addons_json);
+      const { lineTotal: updatedAddonLineTotal } = calculateItemAddonLineTotal(existingAddons, newQuantity);
+
       await mySqlQury(
         `UPDATE tbl_cart_servicelist
-         SET service_quntity = ?
+         SET service_quntity = ?, addon_price = ?
          WHERE id = ?`,
-        [newQuantity, targetRowId]
+        [newQuantity, updatedAddonLineTotal, targetRowId]
       );
 
       await mySqlQury(
@@ -976,6 +984,10 @@ router.post("/direct-add", auth, async (req, res) => {
          WHERE created_by = ?`,
         [jobTypeId, priceDelta, createdByKey]
       );
+
+      if (existingAddons.length > 0 || Number(existingMatch.addon_price) > 0) {
+        await recalcCartAddonAndTotals(createdByKey, req.hostname, req.protocol);
+      }
     } else {
       const insertResult = await mySqlQury(
         `INSERT INTO tbl_cart_servicelist

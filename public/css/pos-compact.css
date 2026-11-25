@@ -402,8 +402,8 @@ select.pos-input-sm {
 .col-xl-5>.pos-card {
   display: flex !important;
   flex-direction: column !important;
-  /* height: calc(100vh - 19px) !important; */
-  min-height: 0 !important;
+  height: max(calc(100vh - 20px), 760px) !important;
+  min-height: 760px !important;
 }
 
 .col-xl-7>.pos-card,
@@ -424,9 +424,9 @@ select.pos-input-sm {
 }
 
 .pos-table-scroll {
-  flex: 1 1 50px !important;
+  flex: 1 1 260px !important;
   max-height: none !important;
-  min-height: 50px !important;
+  min-height: 260px !important;
   overflow-y: auto !important;
   overflow-x: auto !important;
   -webkit-overflow-scrolling: touch;
@@ -434,6 +434,12 @@ select.pos-input-sm {
   border-radius: 8px;
   margin-bottom: 10px !important;
   margin-top: 10px !important;
+}
+
+.pos-cart-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .pos-bottom-section {
@@ -480,7 +486,7 @@ select.pos-input-sm {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  max-width: 175px;
+  max-width: 225px;
 }
 
 .pos-cart-item-title {
@@ -1860,10 +1866,9 @@ select.pos-input-sm {
     font-size: 11px !important;
   }
   .pos-table-scroll {
-    /* min-height: 45px !important; */
-    min-height: calc(100vh - 410px) !important;
-    margin-top: 10px !important;
-    margin-bottom: 10px !important;
+    min-height: 260px !important;
+    margin-top: 8px !important;
+    margin-bottom: 8px !important;
   }
   .pos-cart-table thead th {
     padding: 3px 5px !important;
@@ -2878,6 +2883,24 @@ body.pos-screen-layout .pos-content-body .container-fluid {
   width: 152px;
 }
 
+.pos2-jt-parent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  padding: 4px 2px;
+}
+
+.pos2-jt-parent-grid .pos2-jt-parent-tile {
+  flex: none;
+  width: 100%;
+  min-height: 118px;
+}
+
+.pos2-jt-parent-tile.is-loading {
+  opacity: 0.72;
+  pointer-events: none;
+}
+
 .pos2-jt-sub-tile {
   width: 100%;
 }
@@ -3126,6 +3149,80 @@ body.pos-screen-layout .pos-content-body .container-fluid {
   z-index: 1085 !important;
 }
 
+/* ==========================================================================
+   Compact Customer Type Bootstrap Dropdown (beside Pref: Not Set)
+   ========================================================================== */
+.pos-order-type-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 22px !important;
+  padding: 0 8px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  border-radius: 6px !important;
+  border: 1px solid #cbd5e1 !important;
+  background-color: #f8fafc !important;
+  color: #334155 !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.pos-order-type-btn::after {
+  margin-left: 2px !important;
+  border-top-width: 0.3em !important;
+  border-right-width: 0.28em !important;
+  border-left-width: 0.28em !important;
+}
+
+.pos-order-type-btn.is-route {
+  border-color: rgba(14, 165, 233, 0.55) !important;
+  background-color: rgba(14, 165, 233, 0.1) !important;
+  color: #0369a1 !important;
+}
+
+.pos-order-type-menu {
+  min-width: 230px !important;
+  max-width: min(290px, calc(100vw - 24px)) !important;
+  border-radius: 10px !important;
+  z-index: 1090 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.pos-order-type-menu .pos-order-type-option {
+  padding: 6px 10px !important;
+  white-space: normal !important;
+}
+
+[data-theme-version="dark"] .pos-order-type-btn {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme-version="dark"] .pos-order-type-btn.is-route {
+  background-color: rgba(56, 189, 248, 0.18) !important;
+  border-color: rgba(56, 189, 248, 0.6) !important;
+  color: #7dd3fc !important;
+}
+
+[data-theme-version="dark"] .pos-order-type-menu {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme-version="dark"] .pos-order-type-menu .pos-order-type-option {
+  color: #e2e8f0 !important;
+}
+
+[data-theme-version="dark"] .pos-order-type-menu .pos-order-type-option:hover,
+[data-theme-version="dark"] .pos-order-type-menu .pos-order-type-option.active {
+  background-color: rgba(56, 189, 248, 0.18) !important;
+  color: #f8fafc !important;
+}
+
 [data-theme-version="dark"] .pos-gender-btn {
   background-color: #1e293b !important;
   border-color: #475569 !important;
@@ -3166,6 +3263,72 @@ body.pos-screen-layout .pos-content-body .container-fluid {
 }
 
 /* ==========================================================================
+   Per-Item Cart Addons Button (beside Gender Dropdown)
+   ========================================================================== */
+.pos-item-addons-btn {
+  display: inline-flex !important;
+  align-items: center;
+  max-width: 165px;
+  height: 20px !important;
+  padding: 0 6px !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  border-radius: 4px !important;
+  border: 1px dashed #94a3b8 !important;
+  background-color: transparent !important;
+  color: #64748b !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.pos-item-addons-btn:hover {
+  border-color: #3b82f6 !important;
+  color: #2563eb !important;
+  background-color: rgba(59, 130, 246, 0.08) !important;
+}
+
+.pos-item-addons-btn.has-addons {
+  border-style: solid !important;
+  border-color: rgba(37, 99, 235, 0.5) !important;
+  background-color: rgba(37, 99, 235, 0.1) !important;
+  color: #1d4ed8 !important;
+}
+
+.pos-item-addons-names {
+  display: inline-block;
+  max-width: 108px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.pos-item-addons-more {
+  font-size: 9.5px !important;
+  padding: 1px 4px !important;
+  line-height: 1.1 !important;
+}
+
+[data-theme-version="dark"] .pos-item-addons-btn {
+  border-color: #475569 !important;
+  color: #94a3b8 !important;
+  background-color: rgba(30, 41, 59, 0.55) !important;
+}
+
+[data-theme-version="dark"] .pos-item-addons-btn:hover {
+  border-color: #38bdf8 !important;
+  color: #7dd3fc !important;
+  background-color: rgba(56, 189, 248, 0.14) !important;
+}
+
+[data-theme-version="dark"] .pos-item-addons-btn.has-addons {
+  border-style: solid !important;
+  border-color: rgba(56, 189, 248, 0.55) !important;
+  background-color: rgba(56, 189, 248, 0.16) !important;
+  color: #7dd3fc !important;
+}
+
+/* ==========================================================================
    POS & POS-2 Tablet / Mobile Responsive Enhancements
    ========================================================================== */
 @media (max-width: 1199.98px) {
@@ -3175,6 +3338,12 @@ body.pos-screen-layout .pos-content-body .container-fluid {
 }
 
 @media (max-width: 991.98px) {
+  .pos-cart-card,
+  .col-xl-5 > .pos-card {
+    height: auto !important;
+    min-height: calc(100vh - 120px) !important;
+  }
+
   /* Ensure at least 5-8 cart items are clearly visible on phones & portrait tablets */
   .pos-table-scroll {
     flex: 0 0 auto !important;
@@ -3203,6 +3372,11 @@ body.pos-screen-layout .pos-content-body .container-fluid {
 }
 
 @media (max-width: 767.98px) {
+  .pos2-jt-parent-grid {
+    grid-template-columns: repeat(auto-fill, minmax(126px, 1fr));
+    gap: 10px;
+  }
+
   .pos2-jt-parent-tile {
     flex: 0 0 124px;
     width: 124px;
@@ -3233,6 +3407,11 @@ body.pos-screen-layout .pos-content-body .container-fluid {
 }
 
 @media (max-width: 575.98px) {
+  .pos2-jt-parent-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
   .pos2-jt-header-search {
     width: 100% !important;
   }

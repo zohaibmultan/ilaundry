@@ -1603,13 +1603,49 @@
          '</ul>' +
          '</div>';
 
+      var hideRowJobTypeBadge = ($('#is_pos2').val() === '1') || (Number($('#pos2_active_job_type_id').val() || 0) > 0);
+      var rowJobTypeBadgeHtml = hideRowJobTypeBadge ? '' : ('<span class="pos-cart-item-badge">[' + (value.service_type_name || '') + ']</span>');
+
+      var parsedRowAddons = [];
+      try {
+         if (value.addons_json) {
+            var rawA = (typeof value.addons_json === 'string') ? JSON.parse(value.addons_json) : value.addons_json;
+            if (Array.isArray(rawA)) {
+               parsedRowAddons = rawA.filter(function (a) { return a && (a.name || a.addon); });
+            }
+         }
+      } catch (_) { parsedRowAddons = []; }
+
+      var currSym = $('input[name="sym"]').val() || '$';
+      var addonsJsonAttr = JSON.stringify(parsedRowAddons).replace(/'/g, '&#39;');
+      var addonsBtnInner = '';
+      var addonsTooltip = 'Add addons to this item';
+      if (parsedRowAddons.length > 0) {
+         var visibleNames = parsedRowAddons.slice(0, 2).map(function (a) {
+            return String(a.name || a.addon || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+         }).join(', ');
+         var hiddenCount = Math.max(0, parsedRowAddons.length - 2);
+         addonsTooltip = parsedRowAddons.map(function (a) {
+            return (a.name || a.addon || '') + ' (' + currSym + Number(a.price || 0).toFixed(2) + ')';
+         }).join(', ');
+         addonsBtnInner = '<i class="fa fa-puzzle-piece me-1"></i><span class="pos-item-addons-names">' + visibleNames + '</span>' +
+            (hiddenCount > 0 ? ('<span class="badge bg-primary text-white ms-1 pos-item-addons-more">+' + hiddenCount + '</span>') : '');
+      } else {
+         addonsBtnInner = '<i class="fa fa-plus me-1"></i><span>Addons</span>';
+      }
+
+      var itemAddonsBtnHtml = '<button type="button" class="btn btn-xs pos-item-addons-btn ' + (parsedRowAddons.length > 0 ? 'has-addons' : '') + '" data-id="' + value.id + '" data-item-name="' + String(value.service_name || '').replace(/"/g, '&quot;') + '" data-qty="' + (value.service_quntity || 1) + '" data-addons=\'' + addonsJsonAttr + '\'' + orderAttr + ' title="' + addonsTooltip.replace(/"/g, '&quot;') + '" ' + brandColorDisabledAttr + '>' +
+         addonsBtnInner +
+         '</button>';
+
       return '<tr>' +
          '<td>' +
          '<div class="pos-cart-service-info">' +
          '<span class="pos-cart-item-title" title="' + (value.service_name || '') + '">' + (value.service_name || '') + pcsBadge + '</span>' +
          '<div class="d-flex align-items-center gap-1 flex-wrap mt-1">' +
-         '<span class="pos-cart-item-badge">[' + (value.service_type_name || '') + ']</span>' +
+         rowJobTypeBadgeHtml +
          genderDropdownHtml +
+         itemAddonsBtnHtml +
          '</div>' +
          '</div>' +
          '</td>' +
@@ -2010,9 +2046,65 @@
       });
    }
 
+   function syncPosOrderTypeDropdownUI(orderTypeVal) {
+      var $dropdown = $('#pos_order_type_dropdown');
+      if (!$dropdown.length) return;
+      var $select = $('#edit_pos_order_type').length ? $('#edit_pos_order_type') : $('#pos_order_type');
+      var targetVal = orderTypeVal || ($select.length ? $select.val() : '') || 'Counter • Counter';
+
+      var matchedCode = '';
+      var matchedName = targetVal;
+      var $matchedOpt = null;
+
+      $dropdown.find('.pos-order-type-option').each(function () {
+         var $opt = $(this);
+         var v = String($opt.attr('data-value') || '').trim();
+         var c = String($opt.attr('data-code') || '').trim();
+         if (v.toLowerCase() === String(targetVal).trim().toLowerCase() || (c && c.toLowerCase() === String(targetVal).trim().toLowerCase())) {
+            $matchedOpt = $opt;
+            matchedCode = c || v;
+            matchedName = $opt.attr('data-name') || v;
+            return false;
+         }
+      });
+
+      if (!$matchedOpt && $select.length) {
+         var $selOpt = $select.find('option:selected');
+         if ($selOpt.length) {
+            matchedCode = $selOpt.attr('data-code') || $selOpt.text().trim() || targetVal;
+            matchedName = $selOpt.val() || targetVal;
+         }
+      }
+
+      if (!matchedCode) matchedCode = 'C • C';
+
+      var isRoute = /route|pick-?up|delivery|\bR\b/i.test(matchedCode) || /route|pick-?up|delivery/i.test(matchedName);
+      $('#pos_order_type_code_text').text(matchedCode);
+      $('#pos_order_type_btn').attr('title', matchedName).toggleClass('is-route', isRoute);
+      $dropdown.find('.pos-order-type-option').removeClass('active');
+      if ($matchedOpt) {
+         $matchedOpt.addClass('active');
+      }
+   }
+   window.syncPosOrderTypeDropdownUI = syncPosOrderTypeDropdownUI;
+
+   $(document).on('click', '.pos-order-type-option', function (e) {
+      e.preventDefault();
+      var $opt = $(this);
+      var newVal = $opt.attr('data-value');
+      if (!newVal) return;
+
+      var $select = $('#edit_pos_order_type').length ? $('#edit_pos_order_type') : $('#pos_order_type');
+      syncPosOrderTypeDropdownUI(newVal);
+      if ($select.length && $select.val() !== newVal) {
+         $select.val(newVal).trigger('change');
+      }
+   });
+
    // Handle POS Order Type Dropdown Change
    $(document).on("change", "#pos_order_type", function () {
       let orderType = $(this).val();
+      syncPosOrderTypeDropdownUI(orderType);
       updatePosScheduleGroupsVisibility(orderType, false);
       updatePosCheckoutBtnState();
 
@@ -2042,6 +2134,7 @@
    // Handle Edit POS Order Type Dropdown Change
    $(document).on("change", "#edit_pos_order_type", function () {
       let orderType = $(this).val();
+      syncPosOrderTypeDropdownUI(orderType);
       let order_id = $('#order_id').val();
       updatePosScheduleGroupsVisibility(orderType, true);
 
@@ -2702,12 +2795,13 @@
                window.syncPosAddonsUI('0', 0, []);
             }
             if ($('#pos_order_type').length) {
-               $('#pos_order_type').val('Counter & Counter');
-               $('#pos_pickup_date_group').show();
-               $('#pos_delivery_date_group').hide();
-               $('#modal_pickup_group').show();
-               $('#modal_delivery_group').hide();
-               $('#modal_pos_order_type').val('Counter & Counter');
+               $('#pos_order_type').val('Counter • Counter');
+               if (!$('#pos_order_type').val()) {
+                  $('#pos_order_type').val('Counter & Counter');
+               }
+               syncPosOrderTypeDropdownUI($('#pos_order_type').val() || 'Counter • Counter');
+               updatePosScheduleGroupsVisibility($('#pos_order_type').val() || 'Counter • Counter', false);
+               $('#modal_pos_order_type').val($('#pos_order_type').val() || 'Counter • Counter');
             }
             poscurrency()
          }
@@ -3735,154 +3829,144 @@
       var baseUrl = window.location.origin;
 
       function isPosEditOrderMode() {
-         return $('#edit_addons_pos_cart_submit').length > 0 || $('#pos_addons_order_id').length > 0;
+         return $('#edit_addons_pos_cart_submit').length > 0 || $('#pos_addons_order_id').length > 0 || $('#pos_mode').val() === 'edit';
       }
 
       function getPosEditOrderId() {
-         return $('#pos_addons_order_id').val() || $('#POS_addon_total_input').attr('data-order_id') || '';
+         return $('#pos_addons_order_id').val() || $('#order_id').val() || '';
       }
 
       window.updatePosModalAddonsPreview = function () {
-         let total = 0;
+         var sym = $('input[name="sym"]').val() || '$';
+         var qty = Math.max(1, parseFloat($('#pos_addons_item_qty').val()) || 1);
+         var unitTotal = 0;
          $('#POS_addons .pos-addon-checkbox').each(function () {
-            const $cb = $(this);
-            const id = $cb.val();
-            const $card = $cb.closest('.pos-addon-modal-card');
-            const $priceInput = $('#pos_addon_price_' + id);
-            const priceVal = Math.max(0, parseFloat($priceInput.val()) || 0);
+            var $cb = $(this);
+            var id = $cb.val();
+            var $card = $cb.closest('.pos-addon-modal-card');
+            var $priceInput = $('#pos_addon_price_' + id);
+            var priceVal = Math.max(0, parseFloat($priceInput.val()) || 0);
             if ($cb.prop('checked')) {
-               total += priceVal;
+               unitTotal += priceVal;
                $card.addClass('border-primary bg-light-subtle');
             } else {
                $card.removeClass('border-primary bg-light-subtle');
             }
          });
-         $('#pos_modal_addons_total_preview').text('$' + total.toFixed(2));
+         var lineTotal = unitTotal * qty;
+         $('#pos_modal_addons_total_preview').text(sym + lineTotal.toFixed(2));
+         if (qty > 1) {
+            $('#pos_modal_addons_qty_hint').text('(' + sym + unitTotal.toFixed(2) + ' × ' + qty + ')');
+         } else {
+            $('#pos_modal_addons_qty_hint').text('');
+         }
       };
 
-      window.syncPosAddonsUI = function (addonIdsStr, addonTotalVal, selectedAddonsList) {
-         const cleanTotal = Math.max(0, parseFloat(addonTotalVal) || 0);
-         $('#POS_addon_total_input').val(cleanTotal.toFixed(2));
-
-         const ids = String(addonIdsStr || '')
-            .split(',')
-            .map(function (s) { return s.trim(); })
-            .filter(function (s) { return s && s !== '0'; });
-
-         // Sync checkboxes inside #addons modal
-         $('#POS_addons .pos-addon-checkbox').each(function () {
-            const id = String($(this).val());
-            $(this).prop('checked', ids.includes(id));
-         });
-
-         // Resolve addon objects from selectedAddonsList or DOM checkboxes
-         let resolvedAddons = Array.isArray(selectedAddonsList) && selectedAddonsList.length > 0
-            ? selectedAddonsList
-            : [];
-         if (resolvedAddons.length === 0 && ids.length > 0) {
-            ids.forEach(function (id) {
-               const $cb = $('#update_customer_read_' + id);
-               const $p = $('#pos_addon_price_' + id);
-               if ($cb.length) {
-                  resolvedAddons.push({
-                     id: id,
-                     addon: $cb.attr('data-addon-name') || 'Addon',
-                     price: parseFloat($p.val()) || parseFloat($cb.attr('data-default-price')) || 0
-                  });
-               }
-            });
-         } else if (resolvedAddons.length > 0) {
-            resolvedAddons.forEach(function (ad) {
-               if (ad && ad.id !== undefined && ad.price !== undefined) {
-                  $('#pos_addon_price_' + ad.id).val(Number(ad.price).toFixed(2));
-               }
-            });
-         }
-
-         const hasActive = resolvedAddons.length > 0 || cleanTotal > 0;
-         const badgeCount = resolvedAddons.length > 0 ? resolvedAddons.length : (cleanTotal > 0 ? 1 : 0);
-
-         const $btn = $('#btn_pos_addons_modal');
-         const $icon = $('#pos_addons_btn_icon');
-         const $badge = $('#pos_addons_btn_badge');
-         if (hasActive) {
-            $btn.removeClass('btn-primary').addClass('btn-info text-white');
-            $icon.removeClass('fa-plus-circle').addClass('fa-check-circle');
-            $badge.text(badgeCount).removeClass('d-none');
-         } else {
-            $btn.removeClass('btn-info text-white').addClass('btn-primary');
-            $icon.removeClass('fa-check-circle').addClass('fa-plus-circle');
-            $badge.text('0').addClass('d-none');
-         }
-
-         const $bar = $('#pos_active_addons_bar');
-         const $pills = $('#pos_active_addons_pills');
-         if (!hasActive) {
-            $bar.addClass('d-none');
-            $pills.html('');
-         } else {
-            $bar.removeClass('d-none');
-            let html = '';
-            if (resolvedAddons.length > 0) {
-               resolvedAddons.forEach(function (ad) {
-                  const pStr = (Number(ad.price) || 0).toFixed(2);
-                  const safeName = $('<div>').text(ad.addon || 'Addon').html();
-                  html +=
-                     '<span class="badge pos-addon-pill d-inline-flex align-items-center gap-1" data-addon-id="' + ad.id + '">' +
-                     '<span>' + safeName + '</span>' +
-                     '<span class="opacity-75">($' + pStr + ')</span>' +
-                     '<button type="button" class="btn-close pos-addon-pill-remove" data-id="' + ad.id + '" title="Remove ' + safeName + '" aria-label="Remove"></button>' +
-                     '</span>';
-               });
-            } else if (cleanTotal > 0) {
-               html =
-                  '<span class="badge pos-addon-pill d-inline-flex align-items-center gap-1">' +
-                  '<span>Custom Addon Amount</span>' +
-                  '<span>($' + cleanTotal.toFixed(2) + ')</span>' +
-                  '</span>';
-            }
-            $pills.html(html);
-         }
-
-         window.updatePosModalAddonsPreview();
+      // Backward-compatible helper for store-switch / clearcart callers
+      window.syncPosAddonsUI = function (addonIdsStr, addonTotalVal) {
+         var cleanTotal = Math.max(0, parseFloat(addonTotalVal) || 0);
+         $('#POS_addon_total').html(cleanTotal.toFixed(2));
       };
 
-      function applyPosAddonsResponse(res, isEdit) {
+      function applyPosItemAddonsResponse(res, isEdit) {
+         if (!res || res == 400 || res.success === false) {
+            if (typeof toastr !== 'undefined') toastr.error((res && res.message) || 'Failed to save item addons.');
+            return;
+         }
          if (isEdit) {
-            if (res == 400 || (res && res.success === false)) {
-               if (typeof toastr !== 'undefined') toastr.error(res.message || 'gross_total Less-than paid_amount');
-               return;
-            }
-            const ord = res.order_date || {};
+            var ord = res.order_date || {};
             $('#POS_paid_amount').html((Number(ord.paid_amount) || 0).toFixed(2));
             $('#POS_gross_total').html((Number(ord.gross_total) || 0).toFixed(2));
             $('#POS_sub_total').html((Number(ord.sub_total) || 0).toFixed(2));
             $('#POS_addon_total').html((Number(ord.addon_price) || 0).toFixed(2));
             $('#POS_coupon_total').html((Number(ord.coupon_discount) || 0).toFixed(2));
             $('#POS_tax_total').html((Number(ord.tax_amount) || 0).toFixed(2));
-            window.syncPosAddonsUI(ord.addon_data, ord.addon_price, res.selected_addons || []);
-            poscurrency();
+            if (Array.isArray(res.cartservice)) {
+               $('#POS_service_added_list').html('');
+               $.each(res.cartservice, function (index, value) {
+                  $('#POS_service_added_list').append(renderCartRowHTML(value, true, ord.id, res.loginas));
+               });
+            }
          } else {
-            const crt = res.cart || {};
+            var crt = res.cart || {};
             $('#POS_gross_total').html((Number(crt.gross_total) || 0).toFixed(2));
             $('#POS_sub_total').html((Number(crt.sub_total) || 0).toFixed(2));
             $('#POS_addon_total').html((Number(crt.addon_price) || 0).toFixed(2));
             $('#POS_coupon_total').html((Number(crt.coupon_discount) || 0).toFixed(2));
             $('#POS_tax_total').html((Number(crt.tax_amount) || 0).toFixed(2));
-            window.syncPosAddonsUI(crt.addon_id, crt.addon_price, res.selected_addons || []);
-            poscurrency();
+            if (Array.isArray(res.cartservice)) {
+               $('#POS_service_added_list').html('');
+               $.each(res.cartservice, function (index, value) {
+                  $('#POS_service_added_list').append(renderCartRowHTML(value, false, null, res.loginas));
+               });
+            }
          }
+         if (res.loginas == 0 || $('#can_override_pos_price_discount').val() === '0') {
+            $('input[name=service_type_price]').prop('readonly', true);
+         }
+         poscurrency();
       }
+
+      // Open Addons modal scoped to a specific cart item row
+      $(document).on('click', '.pos-item-addons-btn', function (e) {
+         e.preventDefault();
+         var $btn = $(this);
+         if ($btn.prop('disabled')) return;
+
+         var itemId = $btn.attr('data-id') || '';
+         var itemName = $btn.attr('data-item-name') || 'Item';
+         var $row = $btn.closest('tr');
+         var liveQty = parseFloat($row.find('.pos-table-input-qty').val()) || parseFloat($btn.attr('data-qty')) || 1;
+         var orderId = $btn.attr('data-order_id') || getPosEditOrderId();
+
+         var savedAddons = [];
+         try {
+            var raw = $btn.attr('data-addons');
+            if (raw) savedAddons = JSON.parse(raw);
+            if (!Array.isArray(savedAddons)) savedAddons = [];
+         } catch (_) { savedAddons = []; }
+
+         $('#pos_addons_item_id').val(itemId);
+         $('#pos_addons_item_qty').val(liveQty);
+         if (orderId && $('#pos_addons_order_id').length) {
+            $('#pos_addons_order_id').val(orderId);
+         }
+         $('#pos_addons_modal_item_label').html(
+            'Addons for: <strong class="text-primary">' + $('<div>').text(itemName).html() + '</strong>' +
+            (liveQty > 1 ? (' <span class="badge bg-secondary-subtle text-secondary ms-1">Qty: ' + liveQty + '</span>') : '')
+         );
+
+         // Reset modal checkboxes & prices to default
+         $('#POS_addons .pos-addon-checkbox').prop('checked', false);
+         $('#POS_addons .pos-modal-addon-price').each(function () {
+            var defP = $(this).attr('data-default-price') || '0.00';
+            $(this).val(Number(defP).toFixed(2));
+         });
+
+         // Apply this item's saved addons
+         savedAddons.forEach(function (ad) {
+            if (!ad || !ad.id) return;
+            var $cb = $('#POS_addons .pos-addon-checkbox[value="' + ad.id + '"]');
+            var $pr = $('#pos_addon_price_' + ad.id);
+            if ($cb.length) $cb.prop('checked', true);
+            if ($pr.length && ad.price !== undefined) {
+               $pr.val(Number(ad.price).toFixed(2));
+            }
+         });
+
+         window.updatePosModalAddonsPreview();
+         $('#addons').modal('show');
+      });
 
       $(document).on('change', '#POS_addons .pos-addon-checkbox', function () {
          window.updatePosModalAddonsPreview();
       });
 
       $(document).on('input change', '#POS_addons .pos-modal-addon-price', function () {
-         const addonId = $(this).attr('data-addon-id');
-         const val = parseFloat($(this).val());
+         var addonId = $(this).attr('data-addon-id');
+         var val = parseFloat($(this).val());
          if (!isNaN(val) && val > 0) {
-            $('#update_customer_read_' + addonId).prop('checked', true);
+            $('#POS_addons .pos-addon-checkbox[value="' + addonId + '"]').prop('checked', true);
          }
          window.updatePosModalAddonsPreview();
       });
@@ -3893,44 +3977,58 @@
 
       $("#add_addons_pos_cart_submit").click(function (e) {
          e.preventDefault();
+         if (!$('#pos_addons_item_id').val()) return;
          $.ajax({
             type: 'POST',
-            url: baseUrl + "/admin/addonsadd",
+            url: baseUrl + "/admin/item_addons",
             data: $('#add_addons_pos_cart').serialize(),
+            dataType: 'json',
             success: function (res) {
                $('#addons').modal('hide');
-               applyPosAddonsResponse(res, false);
+               applyPosItemAddonsResponse(res, false);
             },
+            error: function (xhr) {
+               var msg = (xhr && xhr.responseJSON && xhr.responseJSON.message) || 'Error saving item addons.';
+               if (typeof toastr !== 'undefined') toastr.error(msg);
+            }
          });
       });
 
       $("#edit_addons_pos_cart_submit").click(function (e) {
          e.preventDefault();
+         if (!$('#pos_addons_item_id').val()) return;
          $.ajax({
             type: 'POST',
-            url: baseUrl + "/admin/edit_onsadd",
+            url: baseUrl + "/admin/edit_item_addons",
             data: $('#add_addons_pos_cart').serialize(),
+            dataType: 'json',
             success: function (res) {
                $('#addons').modal('hide');
-               applyPosAddonsResponse(res, true);
+               applyPosItemAddonsResponse(res, true);
             },
+            error: function (xhr) {
+               var msg = (xhr && xhr.responseJSON && xhr.responseJSON.message) || 'Error saving item addons.';
+               if (typeof toastr !== 'undefined') toastr.error(msg);
+            }
          });
       });
 
-      // Clear all addons (both from POS Cart bar and from inside Addons Modal)
-      $(document).on('click', '#btn_pos_clear_addons, #btn_modal_clear_addons', function (e) {
+      // Clear all addons for the currently active modal item
+      $(document).on('click', '#btn_modal_clear_addons', function (e) {
          e.preventDefault();
-         const isModalBtn = $(this).attr('id') === 'btn_modal_clear_addons';
+         var itemId = $('#pos_addons_item_id').val();
+         if (!itemId) return;
+
          $('#POS_addons .pos-addon-checkbox').prop('checked', false);
          $('#POS_addons .pos-modal-addon-price').each(function () {
-            const defPrice = $(this).attr('data-default-price') || '0.00';
+            var defPrice = $(this).attr('data-default-price') || '0.00';
             $(this).val(Number(defPrice).toFixed(2));
          });
          window.updatePosModalAddonsPreview();
 
-         const isEdit = isPosEditOrderMode();
-         const endpoint = isEdit ? "/admin/edit_onsadd" : "/admin/addonsadd";
-         const payload = { clear_addons: '1' };
+         var isEdit = isPosEditOrderMode();
+         var endpoint = isEdit ? "/admin/edit_item_addons" : "/admin/item_addons";
+         var payload = { service_list_id: itemId, clear_addons: '1' };
          if (isEdit) {
             payload.order_id = getPosEditOrderId();
          }
@@ -3939,54 +4037,10 @@
             type: 'POST',
             url: baseUrl + endpoint,
             data: payload,
+            dataType: 'json',
             success: function (res) {
-               if (isModalBtn) {
-                  $('#addons').modal('hide');
-               }
-               applyPosAddonsResponse(res, isEdit);
-               if (typeof toastr !== 'undefined') {
-                  toastr.info('Addons cleared from order');
-               }
-            }
-         });
-      });
-
-      // Remove a single addon pill from POS Cart bar
-      $(document).on('click', '.pos-addon-pill-remove', function (e) {
-         e.preventDefault();
-         e.stopPropagation();
-         const removeId = String($(this).attr('data-id'));
-         $('#update_customer_read_' + removeId).prop('checked', false);
-         const isEdit = isPosEditOrderMode();
-         const endpoint = isEdit ? "/admin/edit_onsadd" : "/admin/addonsadd";
-
-         $.ajax({
-            type: 'POST',
-            url: baseUrl + endpoint,
-            data: $('#add_addons_pos_cart').serialize(),
-            success: function (res) {
-               applyPosAddonsResponse(res, isEdit);
-            }
-         });
-      });
-
-      // Inline edit of total addon amount on POS screen (#POS_addon_total_input)
-      $(document).on('change', '#POS_addon_total_input', function () {
-         const rawVal = Math.max(0, parseFloat($(this).val()) || 0);
-         $(this).val(rawVal.toFixed(2));
-         const isEdit = isPosEditOrderMode();
-         const endpoint = isEdit ? "/admin/edit_onsadd" : "/admin/addonsadd";
-         const payload = { custom_addon_price: rawVal.toFixed(2) };
-         if (isEdit) {
-            payload.order_id = getPosEditOrderId();
-         }
-
-         $.ajax({
-            type: 'POST',
-            url: baseUrl + endpoint,
-            data: payload,
-            success: function (res) {
-               applyPosAddonsResponse(res, isEdit);
+               $('#addons').modal('hide');
+               applyPosItemAddonsResponse(res, isEdit);
             }
          });
       });

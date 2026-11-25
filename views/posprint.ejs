@@ -1153,6 +1153,20 @@
                   <% if (colorStr) { %><span><%= colorStr %></span> &bull; <% } %>
                   <span>Gender: <b><%= itemGender %></b></span>
                 </div>
+                <%
+                  let receiptItemAddons = [];
+                  try {
+                    if (item.addons_json) {
+                      const rawRA = typeof item.addons_json === 'string' ? JSON.parse(item.addons_json) : item.addons_json;
+                      if (Array.isArray(rawRA)) receiptItemAddons = rawRA.filter(a => a && (a.name || a.addon));
+                    }
+                  } catch (_) { receiptItemAddons = []; }
+                %>
+                <% if (receiptItemAddons.length > 0) { %>
+                <div style="font-size: 8.5px; color: #334155; margin-top: 1px; line-height: 1.2;">
+                  <b>Addons:</b> <%= receiptItemAddons.map(a => (a.name || a.addon) + ' (' + (accessdata.symbol || '$') + Number(a.price || 0).toFixed(2) + ')').join(', ') %><% if (Number(item.addon_price || 0) > 0) { %> [+<%= (accessdata.symbol || '$') %><%= Number(item.addon_price).toFixed(2) %>]<% } %>
+                </div>
+                <% } %>
               </td>
               <td class="text-center">
                 <%= item.no_of_items %>
@@ -1606,7 +1620,19 @@
                   if (item.secondary_color) meta.push(item.secondary_color);
                   if (item.garment_pattern && item.garment_pattern !== 'Solid') meta.push(item.garment_pattern);
                   meta.push('Gender: ' + itemGender);
-                  return `<div class="tag-order-row" style="font-size: 8px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${meta.join(' • ')}</div>`;
+                  let tagAddonRow = '';
+                  try {
+                    if (item.addons_json) {
+                      const rawTA = typeof item.addons_json === 'string' ? JSON.parse(item.addons_json) : item.addons_json;
+                      if (Array.isArray(rawTA)) {
+                        const aNames = rawTA.map(a => a && (a.name || a.addon)).filter(Boolean);
+                        if (aNames.length > 0) {
+                          tagAddonRow = `<div class="tag-order-row" style="font-size: 8px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Addons: ${aNames.join(', ')}</div>`;
+                        }
+                      }
+                    }
+                  } catch (_) {}
+                  return `<div class="tag-order-row" style="font-size: 8px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${meta.join(' • ')}</div>` + tagAddonRow;
                 })()}
                 <div class="tag-order-row"><b>${readyDate}${tagDateSuffix}</b></div>
               </div>
