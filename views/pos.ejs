@@ -208,6 +208,10 @@
             <div class="card-body p-1.5 px-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
               <!-- Left Section: Navigation & Store Identity -->
               <div class="d-flex align-items-center gap-2 flex-wrap">
+                <a href="/index" class="btn btn-sm pos-menu-btn d-inline-flex align-items-center justify-content-center gap-1 text-decoration-none" id="pos_dashboard_link" title="<%= (typeof language !== 'undefined' && language.Dashboard) ? language.Dashboard : 'Back to Dashboard' %>">
+                  <i class="fas fa-arrow-left fs-12"></i>
+                  <span class="d-none d-sm-inline fw-semibold fs-12"><%= (typeof language !== 'undefined' && language.Back) ? language.Back : 'Back' %></span>
+                </a>
                 <% if (isPos2Mode) { %>
                 <span class="badge bg-primary-subtle text-primary rounded-pill fw-bold px-2 py-1 fs-12">
                   <i class="fa fa-bolt me-1"></i>POS
@@ -743,7 +747,7 @@
                   <div class="d-flex align-items-center justify-content-between gap-2 mt-1 flex-wrap">
                     <% if (!isEditMode && login !== 'customer') { %>
                     <span id="pos_cust_comm_pref_badge" class="badge bg-light text-muted border fs-11 fw-normal" title="Customer communication channel preference">
-                      <i class="fa fa-paper-plane me-1"></i><span class="comm-pref-text">Pref: Not Set</span>
+                      <i class="fa fa-paper-plane me-1"></i><span class="comm-pref-text">Customer Type: Not Set</span>
                     </span>
                     <% } %>
                     <div class="dropdown pos-order-type-dropdown <%= (isEditMode || login === 'customer') ? '' : 'ms-auto' %>" id="pos_order_type_dropdown">
